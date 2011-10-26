@@ -1,0 +1,17 @@
+$version = '0.02';
+
+$result = bless( {
+  'LibrarySearchPaths' => [],
+  'FileAndMd5' => [
+    {
+      'FILE' => '/devel/perl_modules/PerlBuildSystem/Pbsfiles/cyclic/a.c',
+      'MD5' => '22c996360c847ae643c34bfb37de3835'
+    },
+    {
+      'FILE' => '/devel/perl_modules/PerlBuildSystem/Pbsfiles/cyclic/b.c',
+      'MD5' => '9bd238335d592b0c1f90d7ad4ac8450b'
+    }
+  ]
+}, 'PBS::SubpbsResult' );
+
+
