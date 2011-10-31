@@ -97,7 +97,7 @@ unless(defined $warp_configuration)
 		else
 			{
 			PrintError("Warp file generation aborted: Can't compute MD5 for prf file '$pbs_prf'!") ;
-			close(DUMP) ;
+			#close(DUMP) ;
 			return ;
 			}
 		}

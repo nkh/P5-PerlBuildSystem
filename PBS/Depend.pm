@@ -188,7 +188,7 @@ for my $post_build_rule (@post_build_rules)
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
 	my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
-	my $rule_info = "'$rule_name' @ '$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
+	my $rule_info = "'$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
 	
 	my $depender  = $dependency_rules->[$rule_index]{DEPENDER} ;
    
@@ -215,6 +215,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	
 	my ($triggered, @dependencies ) = @$dependency_result ;
 	
+	if(grep {! defined } @dependencies)
+		{
+		die ERROR("Error: While depending '$node_name', rule $rule_info, returned an undefined dependency\n")
+		}
+
 	#DEBUG	
 	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, POST => 1, TRIGGERED => $triggered, DEPENDENCIES => \@dependencies)) ;
 	
@@ -262,7 +267,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		#~ PrintInfo("\t'$rule_info'  matched: $depender_message\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		
 		#----------------------------------------------------------------------------
-		# is it a sub pbs definition?
+		# is it a subpbs definition?
 		#----------------------------------------------------------------------------
 		if(@dependencies && 'HASH' eq ref $dependencies[0])
 			{
@@ -275,7 +280,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
 				{
-				PrintInfo("   $node_name has matching sub pbs, rule $rule_index:$rule_info\n") ;
+				PrintInfo("  [$PBS::PBS::Pbs_call_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -375,7 +380,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					$dependency_info = "'$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
+					$dependency_info = "[$PBS::PBS::Pbs_call_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
 					}
 					
 				PrintInfo("   $dependency_info\n") ;
@@ -521,7 +526,7 @@ if(@sub_pbs)
 				PrintWarning("    $dependency->{NAME}\n") ;
 				}
 			
-			# force sub pbs by eliminating the dependencies
+			# force subpbs by eliminating the dependencies
 			$tree->{__MATCHING_RULES} = [] ;
 			
 			for my $dependency (keys %$tree)
@@ -542,7 +547,7 @@ if(@sub_pbs)
 		}
 	else
 		{
-		PrintError "In Pbsfile : $Pbsfile, $node_name has multiple sub pbs defined:\n" ;
+		PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
 		PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
 		
 		Carp::croak  ;
@@ -681,12 +686,15 @@ for my $dependency (@dependencies)
 		$display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO})) ;
 		
 		my $rule_info =  $dependency_rules->[$rule_index]{NAME} . $dependency_rules->[$rule_index]{ORIGIN} ;
+		my $linked_node_is_depended = exists $inserted_nodes->{$dependency_name}{__DEPENDED}
+						? ''
+						: ' [not depended yet]'  ;
 							
-		my $linked_node_info = "      Linking '$dependency_name'" ;
-		$linked_node_info   .= " (from $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE}" ;
-		$linked_node_info   .= " -> $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE})\n" ;
+		my $linked_node_info = "      Linking '$dependency_name'" 
+					. $linked_node_is_depended
+					. " from $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE}" 
+					. ":$inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}\n" ;
 		
-		$linked_node_info   .= "         Above node is not depended yet!\n" unless (exists $inserted_nodes->{$dependency_name}{__DEPENDED}) ;
 			
 		if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
 			{
@@ -704,22 +712,18 @@ for my $dependency (@dependencies)
 				
 				if(exists $inserted_nodes->{$dependency_name}{__DEPENDED} && @local_rules_matching)
 					{
-					my $local_matching_rules_warning = '' ;
+					my @local_rules_matching_info ;
 					
 					for my $matching_rule_index (@local_rules_matching)
 						{
-						$local_matching_rules_warning .=
-							"            $matching_rule_index:"
+						push @local_rules_matching_info, 
+							"$matching_rule_index:"
 							. $dependency_rules->[$matching_rule_index]{NAME}
-							. $dependency_rules->[$matching_rule_index]{ORIGIN}
-							. "\n" ;
+							. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
 						}
-						
-					if($local_matching_rules_warning ne '')
-						{
-						$linked_node_info .= "         Ignoring local matching rules from '$Pbsfile':\n$local_matching_rules_warning" ;
-						$display_linked_node_info++ ;
-						}
+					
+					$linked_node_info .= "         Ignoring local matching rules from '$Pbsfile': " . join(', ', @local_rules_matching_info) . "\n" ;
+					$display_linked_node_info++ ;
 					}
 				}
 			}
@@ -826,12 +830,25 @@ if($has_matching_non_subpbs_rules)
 			&& $tree->{$dependency}{__DEPENDED_AT} ne $Pbsfile
 			)
 			{
+
+			my @depending_rules ;
+
+			for my $matching_rule (@{$tree->{$dependency}{__MATCHING_RULES}})
+				{
+				my $index = $matching_rule->{RULE}{INDEX} ;
+				my $rule = $matching_rule->{RULE}{DEFINITIONS}[$index] ;
+			
+				push @depending_rules, "'$index:$rule->{NAME}:$rule->{LINE}'" ;
+				}
+
+			my $depending_rules = join ', ', @depending_rules ;
+
 			PrintWarning
 				(
-				  "Node '$dependency' inserted at rule: "
+				  "Node '$node_name' has dependency '$dependency' which was inserted at rule: "
 				. "$tree->{$dependency}{__INSERTED_AT}{INSERTION_RULE} "
 				. " [Pbsfile: $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE}]"
-				. " has been depended in Pbsfile: '$tree->{$dependency}{__DEPENDED_AT}'.\n"
+				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules\n"
 				) ;
 			
 			#~ warn DumpTree($tree->{$dependency}, "node depended elsewhere:") ;
@@ -865,7 +882,7 @@ else
 		{
 		if(@sub_pbs != 1)
 			{
-			PrintError "In Pbsfile : $Pbsfile, $node_name has multiple sub pbs defined:\n" ;
+			PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
 			PrintError(DumpTree(\@sub_pbs,, "Sub Pbs:")) ;
 			
 			Carp::croak  ;
@@ -888,7 +905,7 @@ else
 			if(defined $pbs_config->{SUBPBS_FILE_INFO})
 				{
 				my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
-				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::PBS::Pbs_call_depth] Depending '$node_name' $alias_message, $node_info, with sub pbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
+				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::PBS::Pbs_call_depth] Depending '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
 				}
 			else
 				{
@@ -905,9 +922,9 @@ else
 		my $tree_name = "sub_pbs$sub_pbs_name" ;
 		$tree_name =~ s/.\//_/g ;
 		
-		PrintInfo(DumpTree($sub_pbs_hash, "sub pbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
+		PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
 			
-		# Synchonize with elements from the sub pbs definition, specially build and source dirs 
+		# Synchonize with elements from the subpbs definition, specially build and source dirs 
 		# we overide elements
 		my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash} ;
 		$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;

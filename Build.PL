@@ -353,6 +353,7 @@ my $build = $class->new
 		'File::Slurp'         => '0',
 		'IO::String'          => '0',
 		'File::Copy::Recursive' => '0',
+		'Net::SCP' => 0,
 		},
 	requires => 
 		{
@@ -372,6 +373,7 @@ my $build = $class->new
 		'Class::MethodMaker' => '0',
 	        'Term::ReadKey' => '0',
 	        'PadWalker' => '0',
+		#GDBM::File' => 0 ,
 
 		'Devel::Depend::Cpp'  => '0.08',
 		'Devel::Depend::Cl'   => '0.04',

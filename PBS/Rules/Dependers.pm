@@ -188,7 +188,7 @@ else
 					
 					if($display_regex)
 						{
-						PrintInfo2("   $dependent_to_check =~ $dependent_regex_definition. Regex rule '$name' @ $file_name:$line.\n") ;
+						PrintInfo2("   $dependent_to_check =~ $dependent_regex_definition. Rule '$name' @ $file_name:$line.\n") ;
 						}
 						
 					return($dependent_to_check =~ $dependent_regex_definition) ;
