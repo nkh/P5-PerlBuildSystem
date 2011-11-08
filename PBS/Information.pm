@@ -64,8 +64,20 @@ if($pbs_config->{DISPLAY_BUILDER_INFORMATION})
 		}
 	}
 	
+use Term::Size ;
+my $terminal_width = 10_000 ;
+
+if($^O ne 'MSWin32')
+	{
+	# overkill to run an eval each time we display a file name	
+	eval "(\$terminal_width) = Term::Size::chars *STDOUT{IO} ;" ;
+	}
+
 my $columns = length("Node $type'$name':") ;
+$columns = $columns < $terminal_width ? $columns : $terminal_width ;
+
 my $separator = INFO ('#' . ('-' x ($columns - 1)) . "\n")  ;
+
 my $node_header = $separator ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})

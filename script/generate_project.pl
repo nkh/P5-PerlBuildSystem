@@ -238,7 +238,7 @@ my $prf_path = "$subpbs->{DIRECTORY}/pbs.prf";
 open (PRF_FILE, ">", $prf_path) || die "Error writing '$prf_path': $!\n";
 print PRF_FILE <<EOP ;
 AddTargets('objects') ;
-AddCommandLineSwitches('-dpt', '-j 3') ;
+AddCommandLineSwitches('-dpt', '-j 3', '-nh') ;
 EOP
 close PRF_FILE;
 

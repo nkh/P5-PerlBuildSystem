@@ -359,7 +359,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 			{
 			my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-			PrintInfo("PBS depend run $pbs_runs at depth: $Pbs_call_depth [$number_of_nodes].        \r", 0) ;
+			PrintInfo("PBS depend run '$pbs_runs' at depth '$Pbs_call_depth' [$number_of_nodes].            \r", 0) ;
 			}
 		
 		($build_result, $build_message)
@@ -379,7 +379,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 				, $build_point
 				, $depend_and_build
 				) ;
-									
+		
 		}
 	}
 else

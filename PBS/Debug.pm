@@ -76,7 +76,9 @@ sub setup_debugger_run
 {
 my ($pbs_config) = @_ ;
 
-PrintBanner() if(*DB::DB{CODE}) ;
+return unless *DB::DB{CODE} ;
+
+PrintBanner() ;
 
 # modify some run time options
 undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
