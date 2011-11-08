@@ -1,6 +1,10 @@
 Perl Build System
 =================
 
+where does the 3000 nodes discrepqncy come from in the generated tests
+	
+-bi does not work with -j
+	shows info but build fails although it should continue
 
 debug breakpoint could display an informative message about what it is doing
 and what is available for poking
