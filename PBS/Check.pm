@@ -96,14 +96,18 @@ my $name = $tree->{__NAME} ;
 
 if(exists $tree->{__CYCLIC_FLAG})
 	{
-	# les this sub find the cycle
+	# lets this sub find the cycle
 	if($tree->{__CYCLIC_FLAG} > 1)
 		{
 		$tree->{__CYCLIC_ROOT}++; # used in graph generation
 		
 		# already displayed the cycle, stop cycling
 		
-		die if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)) ;
+		if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+			{
+			my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config) ; 
+			die ERROR "Cycles dependencies detected ($number_of_cycles):\n$cycles" ;
+			}
 		
 		if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
 			{
@@ -126,7 +130,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 	
 	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		PrintError "Cycle at node '$name' $node_info.\n" ;
+		#PrintError "Cycle at node '$name' $node_info.\n" ;
 		}
 	else
 		{

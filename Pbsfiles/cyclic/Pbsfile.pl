@@ -29,14 +29,15 @@ PbsUse('Rules/C') ;
 my @object_files = qw(a.c b.c) ;
 
 AddRule [VIRTUAL], 'all',   [ 'all'     => 'cyclic_test' ], BuildOk("All finished.");
-AddRule            'cyclic_test', [ 'cyclic_test' => 'cyclic_test.objects' ], BuildOk() ;
+AddRule [VIRTUAL], 'cyclic_test', [ 'cyclic_test' => 'cyclic_test.objects' ], BuildOk() ;
 
 AddRule 'objects', ['cyclic_test.objects' => @object_files], \&CreateObjectsFile ;
 
 
 #-------------------------------------------------------------------------------
 
-AddRule 'a', ['a' => 'b', 'b2', 'b3'] ;
+AddRule 'a', ['a' => 'b', 'b2', 'b3'] ; # three cycles
+#AddRule 'a', ['a' => 'b'] ; # single cycle
 AddRule 'b', ['b' => 'c'] ;
 AddRule 'c', ['c' => 'a'] ;
 

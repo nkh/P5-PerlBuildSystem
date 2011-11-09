@@ -1,8 +1,11 @@
 Perl Build System
 =================
 
-where does the 3000 nodes discrepqncy come from in the generated tests
-	
+project generation srip can generate project which doesn't require compilation
+	- we can still use .c file but
+		- replace the .o depender
+		- build the .o by touching them
+			
 -bi does not work with -j
 	shows info but build fails although it should continue
 
@@ -23,7 +26,7 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 #add default pbsfile in generated project
 #add examples/scripts to run the various warp modes
 
-stdout/err redirection should be done through a standard module
+#stdout/err redirection should be done through a standard module
 
 #use Memoize to speedup Warp 1.8
 	25% faster with memoize
@@ -53,7 +56,7 @@ node config should keep the package config and only store its config delta inste
 PBS accepts cyclic dependencies in source files (IE c, h)
 	this should work only if a swith is set instead for being default
 	when the dependency is in C file cache, no warning is displayed when
-		the cache is used (OK but let's spammer the little buggers)
+		the cache is used (OK but let's spam the little buggers)
 	
 Plugin FileWatchClient has a peculiar way of finding out what a node __BUILD_NAME is
 	=> define the nodes (passed as arguments) in a better way

@@ -38,22 +38,20 @@ my $cycle_display_sub = sub
 	
 	my $indent = '' ;
 	my $cycle = '' ;
-	
+
+	my $root_node ;
+
 	for my $node (@$cycles)
 		{
 		if($node->[0] eq 'HASH' && exists $node->[2]{__NAME})
 			{
 			my $name = $node->[2]{__NAME} ;
 			
-			$cycle .= "$indent'$name' " ;
-			
-			if($pbs_config->{ADD_ORIGIN})
-				{
-				$cycle .= "inserted at rule: '$inserted_nodes->{$name}{__INSERTED_AT}{INSERTION_RULE}'" ;
-				}
-				
-			$cycle .= "\n" ;
+			$cycle .= "$indent'$name' " 
+				."inserted at rule: '$inserted_nodes->{$name}{__INSERTED_AT}{INSERTION_RULE}'\n" ;
+
 			$indent .= ' ' ;
+			$root_node = $cycle unless defined $root_node ;
 			}
 		else
 			{
@@ -61,7 +59,7 @@ my $cycle_display_sub = sub
 			}
 		}
 		
-	$all_cycles .= $cycle . "\n" ;
+	$all_cycles .= $cycle . $indent . $root_node . "\n" ;
 	$number_of_cycles++ ;
 	} ;
 	
