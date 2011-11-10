@@ -372,7 +372,8 @@ my $build = $class->new
 		'Data::Compare'       => '0',
 		'Class::MethodMaker' => '0',
 	        'Term::ReadKey' => '0',
-	        'PadWalker' => '0',
+	        'Term::Bash::Completion::Generator' => 0,
+		'PadWalker' => '0',
 		#GDBM::File' => 0 ,
 
 		'Devel::Depend::Cpp'  => '0.08',

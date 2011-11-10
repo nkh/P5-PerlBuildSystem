@@ -1287,6 +1287,8 @@ for (my $i = 0 ; $i < @flags_and_help; $i += 4)
 
 #-------------------------------------------------------------------------------
 
+use Term::Bash::Completion::Generator ;
+
 sub GenerateBashCompletionScript
 {
 my @flags_and_help = GetSwitches() ;
@@ -1298,49 +1300,12 @@ for (my $i = 0 ; $i < @flags_and_help; $i += 4)
 	push @switches, $switch ;
 	}
 
+my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
 
-print <<'EOH' ;
-_pbs_bash_completion()
-{
-    local cur
+my ($completion_command, $perl_script) = Term::Bash::Completion::Generator::generate_perl_completion_script('pbs', $completion_list, 1) ;
 
-    COMPREPLY=()
-    cur=${COMP_WORDS[COMP_CWORD]}
-
-    # completing an option (may or may not be separated by a space)
-
-    if [[ "$cur" == -* ]]; then
-	COMPREPLY=( $( compgen -W '\
-			\
-EOH
-
-for my $switch (sort @switches)
-	{
-	my @switch_x = split('\|', $switch) ;
-	
-	#~ print "$switch => \n" ;
-	for (@switch_x) 
-		{
-		s/=.*// ;
-		s/:.*// ;
-		
-		print "\t\t\t-$_ --$_ \\\n" ;
-		}
-		
-	print "\t\t\t\\ \n" ;
-	}
-	
-print <<'EOF' ;	
-			' -- $cur ) )
-#    else
-#	_filedir
-    fi
-
-    return 0
-}
-complete -F _pbs_bash_completion -o default pbs
-EOF
-
+print STDOUT $completion_command ;
+print STDERR $perl_script ;
 }
 
 #-------------------------------------------------------------------------------
