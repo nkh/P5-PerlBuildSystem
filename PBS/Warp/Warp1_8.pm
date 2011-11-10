@@ -280,7 +280,7 @@ my $md5_file= "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
 open(MD5, ">", $md5_file) or die qq[Can't open $md5_file: $!] ;
 
 my %pbsfile_md5s = %$warp_configuration ;
-my %node_md5s ;
+my ($number_of_nodes_hashed, %node_md5s) = (0) ;
 
 for my $node_name (keys %$inserted_nodes)
 	{
@@ -296,6 +296,8 @@ for my $node_name (keys %$inserted_nodes)
 			{
 			if(exists $node->{__INSERTED_AT}{INSERTION_TIME})
 				{
+				$number_of_nodes_hashed++ ;
+
 				# this is a new node
 				if(defined $node->{__MD5} && $node->{__MD5} ne 'not built yet')
 					{
@@ -345,7 +347,7 @@ print MD5 'return($version, $pbsfile_md5s, $node_md5s);';
 close(MD5) ;
 
 my $md5_generation_time = tv_interval($t0_md5_generate, [gettimeofday]) ;
-PrintInfo(sprintf("md5 generation time: %0.2f s.\n", $md5_generation_time)) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+PrintInfo(sprintf("md5 generation time [$number_of_nodes_hashed]: %0.2f s.\n", $md5_generation_time)) if($pbs_config->{DISPLAY_WARP_TIME}) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
