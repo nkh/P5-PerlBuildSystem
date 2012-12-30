@@ -114,15 +114,14 @@ if(defined $pbs_config->{WIZARD})
 	return(1) ;
 	}
 
-# Get the Pbsfile name,  cases above diddn't need it and we disn't want any "no pbsfile to defined  the build" to be (eventually) displayed
-my ($pbsfile, $error_message) = PBS::PBSConfig::GetPbsfileName($pbs_config) ;
-PrintError $error_message unless defined $pbsfile && $pbsfile ne '' ;
-
 my $display_user_help        = $pbs_config->{DISPLAY_PBSFILE_POD} ;
 my $extract_pod_from_pbsfile = $pbs_config->{PBS2POD} ;
 
 if($display_user_help || $extract_pod_from_pbsfile)
 	{
+	my ($pbsfile, $error_message) = PBS::PBSConfig::GetPbsfileName($pbs_config) ;
+	PrintError $error_message unless defined $pbsfile && $pbsfile ne '' ;
+	
 	PBS::PBSConfigSwitches::DisplayUserHelp($pbsfile , $display_user_help, $pbs_config->{RAW_POD}) ;
 	return(1) ;
 	}
@@ -216,7 +215,7 @@ if(@$targets)
 else
 	{
 	PrintError("No targets given on the command line!\n") ;
-	PBS::PBSConfigSwitches::DisplayUserHelp($pbsfile , 1, 0) ;
+	PBS::PBSConfigSwitches::DisplayUserHelp($pbs_config->{PBSFILE}, 1, 0) ;
 		
 	$build_success = 0 ;
 	}

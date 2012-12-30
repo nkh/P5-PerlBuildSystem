@@ -1,0 +1,1 @@
+pbs a.c -no_warp -dd -tno -display_all_subpbs_alternatives -fr -display_search_info -daa -sfi -display_subpbs_search_info

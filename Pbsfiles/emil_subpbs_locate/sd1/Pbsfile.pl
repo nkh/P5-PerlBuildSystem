@@ -1,5 +1,5 @@
 
 AddConfigTo('BuiltIn', CFLAGS_INCLUDE => '-I ./b');
 
-PbsUse('Configs/gcc');
+PbsUse('Configs/Compilers/gcc');
 PbsUse('Rules/C');

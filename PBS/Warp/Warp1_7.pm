@@ -39,6 +39,9 @@ sub WarpPbs
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
+eval "use GDBM_File;" ;
+die ERROR("Warp 1.7 needs module GDBM_File which is not installed:\n\n$@\n") if $@ ;
+
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_7';
 my $warp_file= "$warp_path/Pbsfile_$warp_signature.blob" ;
@@ -324,8 +327,6 @@ sub LoadWarpBlob
 {
 my ($warp_file) = @_ ;
 
-use GDBM_File ;
-
 my $t0_warp_generate =  [gettimeofday] ;
 
 tie my %db, 'GDBM_File', $warp_file, &GDBM_WRCREAT, 0640;
@@ -497,7 +498,6 @@ return($number_of_removed_nodes) ;
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-
 sub GenerateWarpBlob
 {
 # indexing the node name  saves another 10% in size
@@ -507,7 +507,6 @@ my $t0_warp_generate =  [gettimeofday] ;
 
 my ($header, $blob, $warp_file) = @_ ;
 
-use GDBM_File ;
 tie my %db, 'GDBM_File', $warp_file, &GDBM_WRCREAT, 0640;
 
 use Storable  qw(freeze thaw);

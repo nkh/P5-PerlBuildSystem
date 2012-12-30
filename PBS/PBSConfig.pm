@@ -558,6 +558,11 @@ my $error_message = '' ;
 if(defined $pbs_config->{PBSFILE})
 	{
 	$pbsfile = $pbs_config->{PBSFILE} ;
+	
+	if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
+		{
+		PrintInfo "Using pbsfile '$pbsfile' (given as argument).\n" ;
+		}
 	}
 else
 	{
@@ -578,6 +583,10 @@ else
 		if(keys %existing_pbsfile == 1)
 			{
 			($pbsfile) = keys %existing_pbsfile ;
+			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
+				{
+				PrintInfo "Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
+				}
 			}
 		else
 			{

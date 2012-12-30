@@ -1,6 +1,17 @@
 Perl Build System
 =================
 
+AddNodeFileDependency
+	the dependency must exist or it's MD5 cqn't be computed
+	=> should wait till the depending node is build to compute dependent md5
+	!!! why wouldn't we just add a rule? why does the file dependency have to be in the digest but not in the graph?
+
+AddVariableDependency
+	=> should be done in the rule
+	=> should automatically add the variables that are used during the build of the node
+
+log creation doens't work with -j
+
 project generation srip can generate project which doesn't require compilation
 	- we can still use .c file but
 		- replace the .o depender

@@ -1,6 +1,6 @@
 AddCommandLineSwitches(
-    '-sd /devel/subpbs_locate/sd2',
-    '-sd /devel/subpbs_locate/sd1'
+    '-sd /devel/perl_modules/PerlBuildSystem/Pbsfiles/emil_subpbs_locate/sd2',
+    '-sd /devel/perl_modules/PerlBuildSystem/Pbsfiles/emil_subpbs_locate/sd1'
 );
 
 1;
