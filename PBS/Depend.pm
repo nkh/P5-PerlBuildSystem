@@ -149,7 +149,7 @@ for my $regex (@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	
 my %dependency_rules ; # keep a list of  which rules generated which dependencies
 my $has_dependencies = 0 ;
-my $has_matching_non_subpbs_rules = 0 ;
+my @has_matching_non_subpbs_rules ;
 my @sub_pbs ; # list of subpbs matching this node
 
 tie my %triggered_nodes, 'Tie::Hash::Indexed';
@@ -287,8 +287,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			}
 		else
 			{
-			$has_matching_non_subpbs_rules++ ;
-			}
+			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
+ 			}
 		
 		#~ warn DumpTree(\@dependencies, "dependencies:") ;
 		
@@ -786,18 +786,12 @@ for my $dependency (@dependencies)
 		}
 	}
 	
-if($has_matching_non_subpbs_rules)
+if(@has_matching_non_subpbs_rules)
 	{
 	if(@sub_pbs)
 		{
-		PrintError "In Pbsfile : $Pbsfile, $node_name has locally matching rules and matching subpbs definition:\n" ;
-		for my $dependency (keys %$tree)
-			{
-			next if $dependency =~ /^__/ ;
-			PrintError("\t$dependency\n") ;
-			}
-			
-		PrintError(DumpTree(\@sub_pbs, "And Sub Pbs:")) ;
+		PrintError DumpTree(\@has_matching_non_subpbs_rules, "In Pbsfile : $Pbsfile, $node_name has locally matching rules:") ;
+		PrintError(DumpTree(\@sub_pbs, "And matching Sub Pbs definition:")) ;
 			
 		Carp::croak ;
 		}
