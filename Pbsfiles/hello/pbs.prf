@@ -1,5 +1,5 @@
 
-AddTargets('all') ;
+#AddTargets('all') ;
 
 AddCommandLineSwitches
 	(

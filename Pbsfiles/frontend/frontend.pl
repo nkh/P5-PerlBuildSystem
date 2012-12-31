@@ -1,8 +1,9 @@
 
-AddRule [VIRTUAL], 'all', ['all' => 'ib'], \&Builder ;
+AddRule 'all', ['all'], \&Builder ;
+#AddRule [VIRTUAL], 'all', ['all' => 'ib'], \&Builder ;
 
-AddRule [IMMEDIATE_BUILD], 'ib', ['ib'], ["echo %FILE_TO_BUILD"] ;
-#~ AddRule [IMMEDIATE_BUILD], 'ib', ['ib' => 'iba', 'ibb'], ["echo %FILE_TO_BUILD"] ;
+#AddRule [IMMEDIATE_BUILD], 'ib', ['ib'], ["echo builder for node %FILE_TO_BUILD"] ;
+#AddRule [IMMEDIATE_BUILD], 'ib', ['ib' => 'iba', 'ibb'], ["echo builder for node %FILE_TO_BUILD"] ;
 
 # same dependency tree as all
 AddRule 'subpbs_name',
@@ -38,7 +39,8 @@ return
 		, PBS_CONFIG =>
 			{
 			  #~ DISPLAY_NO_STEP_HEADER => 1
-			  CREATE_LOG => $pbs_config->{CREATE_LOG}
+			  DISPLAY_NO_PROGRESS_BAR => 1	
+			, CREATE_LOG => $pbs_config->{CREATE_LOG}
 			, LOG_NAME   => $pbs_config->{LOG_NAME} 
 			, DUMP       => $pbs_config->{DUMP} 
 			}

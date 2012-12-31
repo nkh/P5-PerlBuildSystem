@@ -123,7 +123,7 @@ my $tree_node = GenerateTreeGraph
 			, \%inserted_edges
 			, \%inserted_configs
 			, \%inserted_pbs_configs
-			, 'light_yellow' # fill color
+			, 'lightyellow' # fill color
 			, 0 # root rank 
 			, 0 # start rank
 			, $primary_group
@@ -405,7 +405,7 @@ if($node_type eq 'HASH')
 		}
 	else
 		{
-		if($node->{__INSERTED_AT}{INSERTION_FILE} ne $node->{__DEPENDED_AT})
+		if(! defined $node->{__DEPENDED_AT} || $node->{__INSERTED_AT}{INSERTION_FILE} ne $node->{__DEPENDED_AT})
 			{
 			push @node_attributes, (shape => 'house') ;
 			}

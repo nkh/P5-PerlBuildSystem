@@ -1,4 +1,4 @@
-=head1 PBSFILE USER HELP
+=for PBS =head1 PBSFILE USER HELP
 
 Test digest and dependency files
 
