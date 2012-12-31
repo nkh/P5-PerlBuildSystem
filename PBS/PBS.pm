@@ -384,7 +384,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	}
 else
 	{
-	PrintError("No '$Pbsfile' to define build.\n") ;
+	PrintError("Can't find Pbsfile '$Pbsfile' to define build.\n". DumpTree($pbs_config->{SUBPBS_HASH}, "'Subpbs rule definition:", DISPLAY_ADDRESS => 0)) ;
 	die ;
 	}
 	

@@ -909,7 +909,7 @@ else
 				}
 			else
 				{
-				PrintWarning("Depending '$node_name' $alias_message.\n") ;
+				PrintWarning("Depending '$node_name' $alias_message with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
 				}
 			}
 			
@@ -926,7 +926,7 @@ else
 			
 		# Synchonize with elements from the subpbs definition, specially build and source dirs 
 		# we overide elements
-		my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash} ;
+		my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
 		$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
 		$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
 		
