@@ -28,7 +28,7 @@ AddConfig
 #~ print Dumper({GetConfig()}) ;
 #~ die ;
 
-PbsUse('Configs/default_gcc') ;
+PbsUse('Configs/Compilers/gcc') ;
 use Data::Dumper ;
 AddConfigTo
 	(

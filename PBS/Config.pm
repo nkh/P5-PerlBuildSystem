@@ -475,7 +475,7 @@ if(defined $global_flags)
 # Get the config and extract what we need from it
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
-if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
+if(defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
 	PrintInfo("Merging to configuration: '${package}::${original_type}::$original_class' from '$origin'.\n") ;
 	}
@@ -541,7 +541,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 				) ;
 		}
 		
-	if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
+	if(defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 		{
 		PrintInfo("\t$key => $value\n") ;
 		}

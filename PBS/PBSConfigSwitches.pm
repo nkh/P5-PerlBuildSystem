@@ -637,12 +637,16 @@ EOT
 	, 'Display the delta between the parent config and the config after the Pbsfile is run.'
 	, ''
 					
-	, 'dca|display_config_all'          => \$pbs_config->{DISPLAY_CONFIGURATION_ALL}
+	, 'dcn|display_config_namespaces'   => \$pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES}
 		, 'Display the config namespaces used during a Pbs run (even unused config namspaces).'
 		, ''
 		
 	, 'dac|display_all_configs'         => \$pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS}
-		, '(DF). Display all registred configs and how they are build.'
+		, '(DF). Display all configurations.'
+		, ''
+		
+	, 'dam|display_configs_merge'       => \$pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE}
+		, '(DF). Display how configurations are merged.'
 		, ''
 		
 	, 'no_silent_override'         => \$pbs_config->{NO_SILENT_OVERRIDE}

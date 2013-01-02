@@ -12,14 +12,11 @@ Test digest node specific attributes  through subs as arguments
 
 =cut
 
-#~ AddConfig(USE_C_DEPENDER_SIMPLE => 1) ;
-AddConfig(C_DEPENDER_SYSTEM_INCLUDES => 1) ;
+#~ AddConfig(C_DEPENDER_SYSTEM_INCLUDES => 1) ;
 
 use Devel::Depend::Cpp ;
 
 PbsUse('Configs/Compilers/gcc') ;
-
-#~ PbsUse('Configs/gcc') ;
 PbsUse('Rules/C') ;
 
 AddRule [VIRTUAL], 'all', ['all' => 'a.out'], BuildOk('') ;
@@ -91,7 +88,7 @@ return sub
 	$tree->{__VERY_SPECIAL_BUILDER_ARGUMENTS} = [@definition_time_arguments] ;
 	
 	use Data::TreeDumper ;
-	PrintDebug DumpTree $tree ;
+	#~ PrintDebug DumpTree($tree, "configuration for $tree->{name}") ;
 	}
 }
 

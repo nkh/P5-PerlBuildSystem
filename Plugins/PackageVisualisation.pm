@@ -53,7 +53,7 @@ if($pbs_config->{DISPLAY_CONFIGURATION})
 			) ;
 		}
 		
-if($pbs_config->{DISPLAY_CONFIGURATION_ALL})
+if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
 		{
 		PrintInfo
 			(
