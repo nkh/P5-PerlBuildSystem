@@ -221,10 +221,18 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	print "\n" ;
 	}
 	
+my $command_index = 0 ;
+my $display_command_information = @{$shell_commands} > 1 && $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} ;
+
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
+	$command_index++ ;
+	my $command_information = "Running command $command_index of " . scalar(@$shell_commands)  ;
+	
 	if('CODE' eq ref $shell_command)
 		{
+		PrintInfo2 $command_information . " (perl sub)\n" if $display_command_information ;
+		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		
 		if($result[0] == 0)
@@ -245,9 +253,13 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						, $triggering_dependencies
 						) ;
 						
+		PrintInfo2 $command_information . " (shell command. $shell_command)\n" if $display_command_information ;
+		
 		$node_shell->RunCommand($command) ;
 		}
 	}
+	
+PrintInfo2 "Ran all defined commands\n" if $display_command_information ;
 	
 return(1 , "OK Building $file_to_build") ;
 }

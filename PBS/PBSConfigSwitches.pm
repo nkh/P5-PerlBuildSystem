@@ -510,7 +510,7 @@ EOT
 		, ''
 		
 	, 'nb|node_builder'                  => \$pbs_config->{DISPLAY_NODE_BUILDER}
-		, 'Display information on the Builder used to build a node.'
+		, 'Display the rule which defined the Builder and which command is being run.'
 		, ''
 		
 	, 'nconf|node_config'                => \$pbs_config->{DISPLAY_NODE_CONFIG}
