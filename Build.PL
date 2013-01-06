@@ -340,6 +340,11 @@ my $build = $class->new
 	dist_version => GetVersionandRevisionFrom('PBS/FrontEnd.pm'),
 	
 	license => 'perl',
+	configure_requires => 
+		{
+		'Net::SCP' => 0,
+		} ,
+	
 	build_requires => 
 		{
 		'Text::Diff' => 0,
@@ -376,8 +381,8 @@ my $build = $class->new
 		'PadWalker' => '0',
 		#GDBM::File' => 0 ,
 
-		'Devel::Depend::Cpp'  => '0.08',
-		'Devel::Depend::Cl'   => '0.04',
+		'Devel::Depend::Cpp'  => '0.10',
+		'Devel::Depend::Cl'   => '0.05',
 		},
 		
 	pm_files     => \%all_modules,
