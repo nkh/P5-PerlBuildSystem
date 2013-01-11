@@ -65,6 +65,17 @@ else
 
 #-------------------------------------------------------------------------------
 
+sub ClonePackageConfig
+{
+my ($source_package, $destination_package) = @_ ;
+my ($caller_package, $file_name, $line) = caller() ;
+
+use Clone ;
+$configs{$destination_package} =  Clone::clone($configs{$source_package}) ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub GetConfigFrom
 {
 my ($package, $file_name, $line) = caller() ;

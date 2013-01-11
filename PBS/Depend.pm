@@ -927,14 +927,59 @@ else
 		my $sub_node_name = $node_name ;
 		$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
 		
-		my $package_config = PBS::Config::GetPackageConfig($load_package) ;
 		my %sub_config = PBS::Config::ExtractConfig
 								(
-								$package_config
+								PBS::Config::GetPackageConfig($load_package)
 								, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
 								, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
 								) ;
-								
+						
+		#~ my $package = "PACKAGE_CONFIG_$sub_node_name" ;
+		#~ eval qq! package $package
+		package TEST_PACKAGE_CONFIG
+			{
+			use PBS::Output ;
+			use Data::TreeDumper ;
+			
+			local $PBS::PBS::Pbs_call_depth ;
+			$PBS::PBS::Pbs_call_depth++ ;
+			
+			PBS::PBSConfig::RegisterPbsConfig("TEST_PACKAGE_CONFIG", $pbs_config) ;
+				
+			PBS::Config::ClonePackageConfig($load_package, "TEST_PACKAGE_CONFIG") ;
+			
+			#~ print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")) . "\n\n\n" ;
+			
+			#todo: check the $sub_pbs_hash->{PACKAGE_CONFIG} for type and validity
+			if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+				{
+				my $title = "Node '$sub_node_name' to be dependended in subpbs has extra configuration" ;
+				
+				if($pbs_config->{DISPLAY_CONFIGURATION})
+					{
+					PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
+					}
+				else
+					{
+					PrintWarning "$title.\n" ;
+					}
+
+				#override parent => not needed, we cloned it
+				PBS::Config::AddConfig(%{$sub_pbs_hash->{PACKAGE_CONFIG}}) 
+				}
+			
+			#~ print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")) . "\n\n\n" ;
+			
+			%sub_config = PBS::Config::ExtractConfig
+					(
+					PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")
+					, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
+					, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+					) ;
+									
+			
+			} ;
+			
 		#~ PrintError(DumpTree($sub_pbs_config, "subpbs config for package $sub_pbs_name :")) ;
 		
 		my $already_inserted_nodes = $inserted_nodes ;
