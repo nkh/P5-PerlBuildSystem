@@ -927,14 +927,17 @@ else
 		my $sub_node_name = $node_name ;
 		$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
 		
-		my $package_config = PBS::Config::GetPackageConfig($load_package) ;
-		my %sub_config = PBS::Config::ExtractConfig
-								(
-								$package_config
-								, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
-								, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
-								) ;
-								
+		my $sub_config = PBS::Config::get_subps_configuration
+					(
+					$sub_pbs_hash,
+					\@sub_pbs,
+					$tree,
+					$sub_node_name,
+					$pbs_config,
+					$load_package,
+					) ;
+		
+			
 		#~ PrintError(DumpTree($sub_pbs_config, "subpbs config for package $sub_pbs_name :")) ;
 		
 		my $already_inserted_nodes = $inserted_nodes ;
@@ -946,7 +949,7 @@ else
 				  $sub_pbs_name
 				, $load_package
 				, $sub_pbs_config
-				, \%sub_config
+				, $sub_config
 				, [$sub_node_name]
 				, $already_inserted_nodes
 				, $tree_name

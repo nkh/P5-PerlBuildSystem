@@ -94,6 +94,17 @@ return
 
 #-------------------------------------------------------------------------------
 
+sub ClonePackageConfig
+{
+my ($source_package, $destination_package) = @_ ;
+my ($caller_package, $file_name, $line) = caller() ;
+
+use Clone ;
+$configs{$destination_package} =  Clone::clone($configs{$source_package}) ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub GetConfig
 {
 my ($package, $file_name, $line) = caller() ;
@@ -436,6 +447,16 @@ PrintInfo(DumpTree(\%configs, 'All configurations:')) ;
 
 #------------------------------------------------------------------------------------------
 
+my %valid_attributes = 
+	(
+	FORCE => 1,
+	LOCKED => 1,
+	UNLOCKED => 1,
+	OVERRIDE_PARENT => 1,
+	LOCAL => 1,
+	SILENT_OVERRIDE => 1,
+	) ;
+	
 sub MergeConfig
 {
 my $package            = shift ; # name of the packages and eventual command flags
@@ -475,7 +496,7 @@ if(defined $global_flags)
 # Get the config and extract what we need from it
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
-if(defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
+if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
 	{
 	PrintInfo("Merging to configuration: '${package}::${original_type}::$original_class' from '$origin'.\n") ;
 	}
@@ -502,11 +523,31 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		$flags =~ s/^:+// ;
 		
+		my @found_invalid_attribute ;
+		
 		for my $attribute (split /:+/, $flags)
 			{
-			$attributes{uc($attribute)}++ ;
+			$attribute = uc $attribute ;
+			
+			if(! exists $valid_attributes{$attribute})
+				{
+				push @found_invalid_attribute, $attribute ;
+				}
+			else
+				{
+				$attributes{uc($attribute)}++ ;
+				}
 			}
-		
+	
+		if(@found_invalid_attribute)
+			{
+			PrintError
+				"Configuration variable '$key' with attributes '$flags' defined at '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
+				. "Valid attributes are: " . join( ', ',  sort keys %valid_attributes) . "\n" ;
+				
+			die ;
+			}
+			
 		$force           = $attributes{FORCE}           || $global_attributes{FORCE}           || '' ;
 		$locked          = $attributes{LOCKED}          || $global_attributes{LOCKED}          || '' ;
 		$unlocked        = $attributes{UNLOCKED}        || $global_attributes{UNLOCKED}        || '' ;
@@ -543,7 +584,26 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		
 	if(defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 		{
-		PrintInfo("\t$key => $value\n") ;
+		if($flags ne '')
+			{
+			my $indent = "\t" x ($PBS::PBS::Pbs_call_depth + 1) ;
+				
+			PrintInfo DumpTree
+					{
+					force => $force,
+					locked => $locked,
+					unlocked => $unlocked,
+					override_parent => $override_parent, 
+					local => $local,
+					silent_override => $silent_override,
+					} , 
+					"$key => $value, attributes $flags",
+					INDENTATION => $indent ;
+			}
+		else
+			{
+			PrintInfo("\t$key => $value\n") ;
+			}
 		}
 		
 	#DEBUG	
@@ -602,7 +662,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 				DumpTree
 					(
 					  $config_to_merge_to->{$type}{$class}{$key}
-					, "Configuration variable '$key' defined at $origin, wants to override locked variable:\n"
+					, "Configuration variable '$key' => '$value' defined at $origin, wants to override locked variable:\n"
 					  . "${package}::${type}::${class}::$key:"
 					)
 				) ;
@@ -622,14 +682,29 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			my $value_txt = defined $value ? $value : 'undef' ;
 			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "$origin => $value_txt" ;
 			
-			PrintWarning
-				(
-				DumpTree
+			unless($silent_override)
+				{
+				my ($locked_message,$warn_sub) = ('') ;
+				
+				if($force && $config_to_merge_to->{$type}{$class}{$key}{LOCKED})
+					{
+					$locked_message = 'locked ' ;
+					$warn_sub = \&PrintWarning2 ;
+					}
+				else
+					{
+					$warn_sub = \&PrintWarning ;
+					}
+				
+				$warn_sub ->
 					(
-					$config_to_merge_to->{$type}{$class}{$key}
-					, "Overriding config '${package}::${type}::${class}::$key' it is now:"
-					)
-				) unless $silent_override ;
+					DumpTree
+						(
+						$config_to_merge_to->{$type}{$class}{$key}
+						, "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:"
+						)
+					) 
+				}
 				
 			$config_to_merge_to->{$type}{__PBS}{__OVERRIDE}{VALUE} = 1 ;
 			push @{$config_to_merge_to->{$type}{__PBS}{__OVERRIDE}{ORIGIN}}, "$key @ $origin" ;
@@ -844,6 +919,127 @@ if(keys %defines)
 	AddConfigEntry($package, 'CURRENT', 'User', "$package:$file_name:$line", $variable_name => $defines) ;
 	}
 }
+
+#-------------------------------------------------------------------------------
+
+sub get_subps_configuration
+{
+# create the sup pbs package configuration from the configuration of the parent package plus any sub pbs {PACKAGE_CONFIG} if any
+
+# note that we must run multiple subs in a special perl package as the configuration engine uses the current package to separate pbs runs
+
+my
+	(
+	$sub_pbs_hash,
+	$sub_pbs,
+	$tree,
+	$sub_node_name,
+	$pbs_config,
+	$load_package,
+	) = @_ ;
+	
+my %sub_config ;
+
+if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+	{
+	my $subpbs_package_node_config = "__SUBPS_CONFIG_FOR_NODE_$sub_node_name" ;
+	$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;
+	
+	my $code_string = <<"EOE" ;
+		package $subpbs_package_node_config
+		{
+		use PBS::Output ;
+		use Data::TreeDumper ;
+		
+		PBS::Config::create_subpbs_node_config
+			(
+			\$sub_pbs,
+			\$subpbs_package_node_config,
+			\$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
+			\$sub_node_name,
+			\$pbs_config,
+			\$load_package,
+			) ;
+		} ;
+EOE
+	#~ print $code_string ;
+	%sub_config = eval $code_string ;
+	die $@ if $@ ;
+	}
+else
+	{
+	%sub_config = PBS::Config::ExtractConfig
+			(
+			PBS::Config::GetPackageConfig($load_package)
+			, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
+			, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+			) ;
+	}
+	
+return \%sub_config ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub create_subpbs_node_config
+{
+# the node config is first merged in a copy of the local config. This gives us all the warnings
+# that we normally get when manipulating a configuration
+# we also display the node configuration if DISPLAY_CONFIGURATION is set
+
+my($sub_pbs, $subpbs_package_node_config, $config_namespaces, $sub_node_name, $pbs_config,$load_package) = @_ ;
+
+my $rule = $sub_pbs->[0]{RULE} ;
+my $sub_pbs_package_config = $rule->{TEXTUAL_DESCRIPTION}{PACKAGE_CONFIG} ;
+
+my $subpbd_definition_location = "#line " . $sub_pbs->[0]{RULE}{LINE} . " " . $sub_pbs->[0]{RULE}{FILE} ;
+	
+local $PBS::PBS::Pbs_call_depth ;
+$PBS::PBS::Pbs_call_depth++ ;
+
+PBS::PBSConfig::RegisterPbsConfig($subpbs_package_node_config, $pbs_config) ;
+PBS::Config::ClonePackageConfig($load_package, $subpbs_package_node_config) ;
+
+#print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig($subpbs_package_node_config)) . "\n\n\n" ;
+
+# check the $sub_pbs_package_config for type validity
+if('HASH' ne ref $sub_pbs_package_config)
+	{
+	PrintError 
+		DumpTree 
+			$rule->{TEXTUAL_DESCRIPTION},
+			"Section PACKAGE_CONFIG in sub pbs definition is not a hash, '$rule->{NAME}:$rule->{FILE}:$rule->{LINE}'" 
+			. "(type is '" . ref($sub_pbs_package_config) . "')",
+			DISPLAY_ADDRESS => 0 ;
+	die ;
+	}
+	
+my $title = "Node '$sub_node_name' to be dependended in subpbs has extra configuration" ;
+
+if($pbs_config->{DISPLAY_CONFIGURATION})
+	{
+	PrintWarning DumpTree($sub_pbs_package_config, "$title:") . "\n" ;
+	}
+else
+	{
+	PrintWarning "$title\n" ;
+	}
+
+eval <<"EOE" ;
+package $subpbs_package_node_config ;
+#line $rule->{LINE} $rule->{FILE}
+PBS::Config::AddConfig(%{\$sub_pbs_package_config}) ;
+EOE
+die $@ if $@ ;
+
+return 
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($subpbs_package_node_config)
+		, $config_namespaces
+		, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+		) ;
+} ;
 
 #-------------------------------------------------------------------------------
 

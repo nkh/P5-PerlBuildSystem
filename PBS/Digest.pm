@@ -871,7 +871,7 @@ if($display_digest)
 	{
 	if($digest_is_different)
 		{
-		PrintInfo("Digests for file $name are different [$digest_is_different]:\n") ;
+		PrintInfo("Digests in file $name is different [$digest_is_different]:\n") ;
 		
 		#~PrintInfo(Data::Dumper->Dump($digest, "digest:\n")) ;
 		#~PrintInfo(Data::Dumper->Dump($expected_digest, "expected_digest:\n")) ;
@@ -887,7 +887,6 @@ if($display_digest)
 			{
 			my $digest_value = $digest->{$key} || 'undef' ;
 			my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-			#PrintError("\tkey '$key' is different.\n") ;
 			PrintError("\tkey '$key' is different: $digest_value <=> $expected_digest_value\n") ;
 			}
 			
@@ -900,7 +899,7 @@ if($display_digest)
 		}
 	else
 		{
-		PrintInfo("Digests for file '$name' are identical.\n") unless $display_different_digest_only ;
+		PrintInfo("Digest in file '$name' is identical.\n") unless $display_different_digest_only ;
 		}
 	}
 
