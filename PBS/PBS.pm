@@ -461,14 +461,14 @@ my ($package, $file_name, $line) = caller() ;
 
 for my $source_name (@{[@_]})
 	{
-	if('' ne ref $source_name)
-		{
-		die  ERROR("PbsUse only accepts strings as input. Called @ $file_name:$line.\n")  ;
-		}
-		
 	unless(defined $source_name)
 		{
 		die  ERROR("PbsUse must be given a name. Called @ $file_name:$line.\n")  ;
+		}
+		
+	if('' ne ref $source_name)
+		{
+		die  ERROR("PbsUse only accepts strings as input. Called @ $file_name:$line.\n")  ;
 		}
 		
 	my $t0 = [gettimeofday];
@@ -487,6 +487,10 @@ for my $source_name (@{[@_]})
 		}
 	
 	if(file_name_is_absolute($source_name))
+		{
+		$located_source_name = $source_name ;
+		}
+	elsif($source_name =~ m~^./~)
 		{
 		$located_source_name = $source_name ;
 		}

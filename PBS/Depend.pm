@@ -927,65 +927,17 @@ else
 		my $sub_node_name = $node_name ;
 		$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
 		
-		my %sub_config = PBS::Config::ExtractConfig
-								(
-								PBS::Config::GetPackageConfig($load_package)
-								, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
-								, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
-								) ;
-						
-		my $subpbs_package_node_config = "PACKAGE_CONFIG_$sub_node_name" ;
-		$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;
-		
-		my $code_string = <<"EOE" ;
-			package $subpbs_package_node_config ;
-			#package TEST_PACKAGE_CONFIG
-			{
-			use PBS::Output ;
-			use Data::TreeDumper ;
-			
-			local \$PBS::PBS::Pbs_call_depth ;
-			\$PBS::PBS::Pbs_call_depth++ ;
-			
-			PBS::PBSConfig::RegisterPbsConfig("$subpbs_package_node_config", \$pbs_config) ;
-				
-			PBS::Config::ClonePackageConfig(\$load_package, "$subpbs_package_node_config") ;
-			
-			#print "\\n\\n\\n" . DumpTree(PBS::Config::GetPackageConfig("$subpbs_package_node_config")) . "\\n\\n\\n" ;
-			
-			#todo: check the \$sub_pbs_hash->{PACKAGE_CONFIG} for type and validity
-			if(defined \$sub_pbs_hash->{PACKAGE_CONFIG})
-				{
-				my \$title = qq!Node '\$sub_node_name' to be dependended in subpbs has extra configuration! ;
-				
-				if(\$pbs_config->{DISPLAY_CONFIGURATION})
-					{
-					PrintWarning DumpTree(\$sub_pbs_hash->{PACKAGE_CONFIG}, qq!\$title:!) . "\\n" ;
-					}
-				else
-					{
-					PrintWarning qq!\$title.\\n! ;
-					}
-
-				PBS::Config::AddConfig(%{\$sub_pbs_hash->{PACKAGE_CONFIG}}) 
-				}
-			
-			#~ print "\\n\\n\\n" . DumpTree(PBS::Config::GetPackageConfig("$subpbs_package_node_config")) . "\\n\\n\\n" ;
-			
-			\%sub_config = PBS::Config::ExtractConfig
+		my $sub_config = PBS::Config::get_subps_configuration
 					(
-					PBS::Config::GetPackageConfig("$subpbs_package_node_config")
-					, \$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
-					, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+					$sub_pbs_hash,
+					\@sub_pbs,
+					$tree,
+					$sub_node_name,
+					$pbs_config,
+					$load_package,
 					) ;
-									
-			} ;
-EOE
-		#~ print $code_string ;
-		eval $code_string ;
-		die $@ if $@ ;
-
-
+		
+			
 		#~ PrintError(DumpTree($sub_pbs_config, "subpbs config for package $sub_pbs_name :")) ;
 		
 		my $already_inserted_nodes = $inserted_nodes ;
@@ -997,7 +949,7 @@ EOE
 				  $sub_pbs_name
 				, $load_package
 				, $sub_pbs_config
-				, \%sub_config
+				, $sub_config
 				, [$sub_node_name]
 				, $already_inserted_nodes
 				, $tree_name
