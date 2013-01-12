@@ -934,52 +934,58 @@ else
 								, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
 								) ;
 						
-		#~ my $package = "PACKAGE_CONFIG_$sub_node_name" ;
-		#~ eval qq! package $package
-		package TEST_PACKAGE_CONFIG
+		my $subpbs_package_node_config = "PACKAGE_CONFIG_$sub_node_name" ;
+		$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;
+		
+		my $code_string = <<"EOE" ;
+			package $subpbs_package_node_config ;
+			#package TEST_PACKAGE_CONFIG
 			{
 			use PBS::Output ;
 			use Data::TreeDumper ;
 			
-			local $PBS::PBS::Pbs_call_depth ;
-			$PBS::PBS::Pbs_call_depth++ ;
+			local \$PBS::PBS::Pbs_call_depth ;
+			\$PBS::PBS::Pbs_call_depth++ ;
 			
-			PBS::PBSConfig::RegisterPbsConfig("TEST_PACKAGE_CONFIG", $pbs_config) ;
+			PBS::PBSConfig::RegisterPbsConfig("$subpbs_package_node_config", \$pbs_config) ;
 				
-			PBS::Config::ClonePackageConfig($load_package, "TEST_PACKAGE_CONFIG") ;
+			PBS::Config::ClonePackageConfig(\$load_package, "$subpbs_package_node_config") ;
 			
-			#~ print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")) . "\n\n\n" ;
+			#print "\\n\\n\\n" . DumpTree(PBS::Config::GetPackageConfig("$subpbs_package_node_config")) . "\\n\\n\\n" ;
 			
-			#todo: check the $sub_pbs_hash->{PACKAGE_CONFIG} for type and validity
-			if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+			#todo: check the \$sub_pbs_hash->{PACKAGE_CONFIG} for type and validity
+			if(defined \$sub_pbs_hash->{PACKAGE_CONFIG})
 				{
-				my $title = "Node '$sub_node_name' to be dependended in subpbs has extra configuration" ;
+				my \$title = qq!Node '\$sub_node_name' to be dependended in subpbs has extra configuration! ;
 				
-				if($pbs_config->{DISPLAY_CONFIGURATION})
+				if(\$pbs_config->{DISPLAY_CONFIGURATION})
 					{
-					PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
+					PrintWarning DumpTree(\$sub_pbs_hash->{PACKAGE_CONFIG}, qq!\$title:!) . "\\n" ;
 					}
 				else
 					{
-					PrintWarning "$title.\n" ;
+					PrintWarning qq!\$title.\\n! ;
 					}
 
-				#override parent => not needed, we cloned it
-				PBS::Config::AddConfig(%{$sub_pbs_hash->{PACKAGE_CONFIG}}) 
+				PBS::Config::AddConfig(%{\$sub_pbs_hash->{PACKAGE_CONFIG}}) 
 				}
 			
-			#~ print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")) . "\n\n\n" ;
+			#~ print "\\n\\n\\n" . DumpTree(PBS::Config::GetPackageConfig("$subpbs_package_node_config")) . "\\n\\n\\n" ;
 			
-			%sub_config = PBS::Config::ExtractConfig
+			\%sub_config = PBS::Config::ExtractConfig
 					(
-					PBS::Config::GetPackageConfig("TEST_PACKAGE_CONFIG")
-					, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
+					PBS::Config::GetPackageConfig("$subpbs_package_node_config")
+					, \$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
 					, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
 					) ;
 									
-			
 			} ;
-			
+EOE
+		#~ print $code_string ;
+		eval $code_string ;
+		die $@ if $@ ;
+
+
 		#~ PrintError(DumpTree($sub_pbs_config, "subpbs config for package $sub_pbs_name :")) ;
 		
 		my $already_inserted_nodes = $inserted_nodes ;
