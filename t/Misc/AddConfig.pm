@@ -169,7 +169,7 @@ _EOF_
     # Build
     $t->build_test;
     my $stdout = $t->stdout;
-    like($stdout, qr|Overriding config|,
+    like($stdout, qr|Overriding locked config|,
 	 'Message about overriding a config variable');
     $t->test_target_contents('file2 contents');
 }

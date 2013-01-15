@@ -152,6 +152,47 @@ _EOF_
     $t->test_target_contents('file2 contentsfile contents');
 }
 
+sub PACKAGE_CONFIG : Test(2) {
+# Write files
+    $t->write_pbsfile(<<'_EOF_');
+	AddConfig 
+		AR => 'ABC',
+		# 'locked' variables have to be overriden even in sub pbs PACKAGE_CONFIG
+		'AR:locked' => 'from_top_pbsfile',
+		AR2 => 'ABCD' ;
+
+	AddRule [VIRTUAL], 'all', ['all' => 'xx',], BuildOk ;
+
+	AddRule 'xx',
+		{
+		NODE_REGEX => 'xx',
+		PBSFILE  => './xx.pl',
+		PACKAGE => 'xx',
+		PACKAGE_CONFIG =>
+			{
+			# without 'force' pbs would detect this as an error and stop
+			'AR:force' => 'from_package_config_xx',
+			AR2 => 'from_package_config_xx',
+			},
+		} ;
+			
+_EOF_
+    $t->write('xx.pl', <<'_EOF_');
+	
+	AddConfigVariableDependencies('ar' => 'AR') ;
+	
+	AddRule 'name', ['xx'], "echo %AR >> %FILE_TO_BUILD";
+	
+_EOF_
+
+#~ $t->generate_test_snapshot_and_exit() ;
+
+# Build
+    $t->target('all');
+    $t->build_test();
+    $t->test_file_contents($t->catfile($t->build_dir, 'xx'), "from_package_config_xx\n");
+}
+
 unless (caller()) {
     $ENV{"TEST_VERBOSE"} = 1;
     Test::Class->runtests;

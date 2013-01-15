@@ -36,7 +36,7 @@ are only knows at run time and can't be written statically as above?
 
 The first solution is to dynamically call AddConfigVariableDependencies in your pbsfile code:
 
-	my %configuration_data = GetConfigAsList() ;
+	my %configuration_data = GetConfig() ; # returns a copy of the package configuration
 	
 	for my $variable_name (%configuration_data)
 		{
