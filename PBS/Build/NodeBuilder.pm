@@ -465,11 +465,11 @@ if($@)
 if($build_result == BUILD_FAILED)
 	{
 	#~ PrintInfo("Removing '$build_name'.\n") ;
-	unlink($build_name) ;
+	unlink($build_name) if PBS::Digest::IsDigestToBeGenerated($file_tree->{__LOAD_PACKAGE}, $file_tree) ;
 		
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
-						. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
-						
+			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
+			
 	$build_message .="\n\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
 	$file_tree->{__BUILD_FAILED} = $build_message ;
 	}
@@ -596,7 +596,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 	if($build_result == BUILD_FAILED)
 		{
-		unlink($build_name) ;
+		unlink($build_name) if PBS::Digest::IsDigestToBeGenerated($file_tree->{__LOAD_PACKAGE}, $file_tree) ;
 		$file_tree->{__BUILD_FAILED} = $build_message ;
 		last ;
 		}
