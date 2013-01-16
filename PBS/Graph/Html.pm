@@ -112,7 +112,8 @@ EOH
 					(
 					$pbs_config->{DATA}
 					,	{
-						  START_LEVEL => 1
+						Data::TreeDumper::GetPackageSetup()
+						, START_LEVEL => 1
 						, USE_ASCII   => 1
 						, TITLE       => "All Config :\n"
 						}
@@ -184,9 +185,10 @@ EOH
 						(
 						$node->{__TRIGGERED}
 						,	{
-							  START_LEVEL => 1
+							Data::TreeDumper::GetPackageSetup()
+							,  START_LEVEL => 1
 							, USE_ASCII   => 1
-							, TITLE       => "Triggered   :\n"
+							, TITLE       => "Triggered   :"
 							}
 						) ;
 		}
