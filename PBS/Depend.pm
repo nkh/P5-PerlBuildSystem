@@ -998,7 +998,7 @@ else
 				$dependency_info = "   '$node_name' wasn't depended" ;
 				}
 				
-			PrintInfo "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;
+			PrintWarning "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;
 			}
 		}
 	}

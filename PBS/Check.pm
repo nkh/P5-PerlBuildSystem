@@ -144,7 +144,7 @@ unless(exists $tree->{__DEPENDED})
 	{
 	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		PrintWarning "Node '$name' was not depended! "
+		PrintWarning "Node '$name' was not depended! (late depend check) "
 			. "Node was inserted at '$tree->{__INSERTED_AT}{INSERTION_FILE}'"
 			. " rule '$tree->{__INSERTED_AT}{INSERTION_RULE}'\n" ;
 		}

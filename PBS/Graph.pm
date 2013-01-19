@@ -418,8 +418,8 @@ if($node_type eq 'HASH')
 	
 	if($display_definition_package)
 		{
-		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE} ;
-		my $package = $node->{__PBS_CONFIG}{PACKAGE} ;
+		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE}  || 'no pbsfile in pbsconfig';
+		my $package = $node->{__PBS_CONFIG}{PACKAGE} || 'no package in pbs config';
 		
 		push @node_attributes, (cluster => $package . ':' . $Pbsfile) ;
 		}
@@ -478,8 +478,9 @@ if($node_type eq 'HASH')
 		$html_data{CONFIG}{"$free_config_index"}{FILE} = $html_link ;
 		$html_data{CONFIG}{"$free_config_index"}{DATA} = $node->{__CONFIG} ;
 		
-		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE} ;
-		my $package = $node->{__PBS_CONFIG}{PACKAGE} ;
+		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE}  || 'no pbsfile in pbsconfig';
+		my $package = $node->{__PBS_CONFIG}{PACKAGE} || 'no package in pbs config';
+		
 		my $config_md5 ;
 		
 		use Digest::MD5 qw(md5_hex) ;
@@ -508,7 +509,7 @@ if($node_type eq 'HASH')
 		$config_md5 = md5_hex(Data::Dumper->Dump([$node->{__CONFIG}], ['config'])) ;
 		}
 		
-		$config_name = $config_md5 . $package ;
+		$config_name = $config_md5 . ($package || '') ;
 		my $config_node ;
 		
 		if(exists $inserted_graph_nodes->{$config_name})
