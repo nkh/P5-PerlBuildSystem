@@ -309,7 +309,7 @@ EOT
 		, ''
 		
 	, 'plp|pbs_lib_path=s'              => $pbs_config->{LIB_PATH}
-		, "Path to the pbs libs. The directory must start at '/' (root) or '.' or pbs will display an error message and exit."
+		, "Path to the pbs libs. Multiple directories can be given, each directory must start at '/' (root) or '.' or pbs will display an error message and exit."
 		, ''
 		
 	, 'display_pbs_lib_path'            => \$pbs_config->{DISPLAY_LIB_PATH}
@@ -784,7 +784,7 @@ EOT
 		, 'Display the command and output of the program generating dependencies.'
 		, ''
 		
-	, 'ddr|display_dependencies_regex=s'=> \$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}
+	, 'ddr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX}
 		, 'Define the regex used to qualify a dependency for display.'
 		, ''
 		

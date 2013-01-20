@@ -552,7 +552,7 @@ sub GetPbsfileName
 {
 my $pbs_config = shift ;
 
-my $pbsfile = '' ;
+my $pbsfile ;
 my $error_message = '' ;
 
 if(defined $pbs_config->{PBSFILE})
