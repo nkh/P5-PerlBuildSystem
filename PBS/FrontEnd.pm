@@ -50,13 +50,13 @@ my ($targets) = $pbs_config->{TARGETS} ;
 
 if($pbs_config->{DISPLAY_LIB_PATH})
 	{
-	print join(':', @{$pbs_config->{LIB_PATH}}) ;
+	print 'Pbs lib paths:' . join(':', @{$pbs_config->{LIB_PATH}}) . "\n" ;
 	return(1) ;
 	}
 
 if($pbs_config->{DISPLAY_PLUGIN_PATH})
 	{
-	print join(':', @{$pbs_config->{PLUGIN_PATH}}) ;
+	print 'Pbs plugin paths: ' . join(':', @{$pbs_config->{PLUGIN_PATH}}) . "\n" ;
 	return(1) ;
 	}
 

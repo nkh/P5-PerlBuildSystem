@@ -620,6 +620,18 @@ my $pbs_config = GetPbsConfig($package) ;
 my ($rule_name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data) 
 	= RunUniquePluginSub($pbs_config, 'AddSubpbsRule', $file_name, $line, $rule_definition) ;
 
+#~ PrintWarning2 <<EOD ;
+#~ file_name $file_name
+#~ line $line
+#~ definition $rule_definition
+
+#~ rule_name $rule_name
+#~ node regex $node_regex
+#~ pbsfile $Pbsfile, 
+#~ pbs_package $pbs_package
+
+#~ EOD
+
 RegisterRule
 	(
 	$file_name, $line, $package

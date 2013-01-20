@@ -750,8 +750,7 @@ if(IsDigestToBeGenerated($package, $node))
 			
 		if('HASH' eq ref $digest)
 			{
-			if
-				(
+			my ($digest_is_different, $why) =
 				$comparator->
 					(
 					  $node->{__BUILD_NAME}
@@ -759,10 +758,11 @@ if(IsDigestToBeGenerated($package, $node))
 					, $digest
 					, $pbs_config->{DISPLAY_DIGEST}
 					, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} 
-					)
-				)
+					) ;
+					
+			if($digest_is_different)
 				{
-				($rebuild_because_of_digest, $result_message) = (1, "Difference in digest.") ;
+				($rebuild_because_of_digest, $result_message) = (1, "Difference in digest: $why") ;
 				}
 			}
 		else
@@ -867,43 +867,57 @@ for my $key( keys %$digest)
 		}
 	}
 	
-if($display_digest)
+my @digest_different_text ;
+
+if($digest_is_different)
 	{
-	if($digest_is_different)
+	PrintInfo("Digests in file $name is different [$digest_is_different]:\n") if($display_digest) ;
+	
+	#~PrintInfo(Data::Dumper->Dump($digest, "digest:\n")) ;
+	#~PrintInfo(Data::Dumper->Dump($expected_digest, "expected_digest:\n")) ;
+	
+	for my $key (@in_file_digest_but_not_expected_digest)
 		{
-		PrintInfo("Digests in file $name is different [$digest_is_different]:\n") ;
+		my $digest_value = $digest->{$key} || 'undef' ;
 		
-		#~PrintInfo(Data::Dumper->Dump($digest, "digest:\n")) ;
-		#~PrintInfo(Data::Dumper->Dump($expected_digest, "expected_digest:\n")) ;
+		my $only_in_file_digest_text = "key '$key' exists only in file digest" ;
+		push @digest_different_text, $only_in_file_digest_text ;
 		
-		for my $key (@in_file_digest_but_not_expected_digest)
-			{
-			my $digest_value = $digest->{$key} || 'undef' ;
-			PrintWarning("\tkey '$key' exists only in file digest.\n") ;
-			#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
-			}
-			
-		for my $key (@different_in_file_digest)
-			{
-			my $digest_value = $digest->{$key} || 'undef' ;
-			my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-			PrintError("\tkey '$key' is different: $digest_value <=> $expected_digest_value\n") ;
-			}
-			
-		for my $key (@in_expected_digest_but_not_file_digest)
-			{
-			my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-			PrintError("\tkey '$key' exists only in expected digest.\n") ;
-			#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
-			}
+		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
+		#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
 		}
-	else
+		
+	for my $key (@different_in_file_digest)
 		{
-		PrintInfo("Digest in file '$name' is identical.\n") unless $display_different_digest_only ;
+		my $digest_value = $digest->{$key} || 'undef' ;
+		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
+		
+		my $different_digest_text = "key '$key' is different: $digest_value <=> $expected_digest_value" ;
+		push @digest_different_text, $different_digest_text ;
+		
+		PrintError("\t$different_digest_text\n") if($display_digest) ;
+		}
+		
+	for my $key (@in_expected_digest_but_not_file_digest)
+		{
+		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
+		
+		my $only_in_expected_digest_text = "key '$key' exists only in expected digest" ;
+		push @digest_different_text, $only_in_expected_digest_text ;
+		
+		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
+		#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
 		}
 	}
+else
+	{
+	my $digest_is_identical = "Digest in file '$name' is identical" ;
+	push @digest_different_text, $digest_is_identical ;
+	
+	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
+	}
 
-return($digest_is_different) ;
+return($digest_is_different, join(', ', @digest_different_text) );
 }
 
 #-------------------------------------------------------------------------------
@@ -946,41 +960,54 @@ for my $key( keys %$expected_digest)
 		}
 	}
 	
-if($display_digest)
+my @digest_different_text ;
+
+if($digest_is_different)
 	{
-	if($digest_is_different)
+	PrintInfo("Digests for file $name are diffrent [$digest_is_different]:\n") if($display_digest) ;
+	
+	for my $key (@in_file_digest_but_not_expected_digest)
 		{
-		PrintInfo("Digests for file $name are diffrent [$digest_is_different]:\n") ;
+		my $digest_value = $digest->{$key} || 'undef' ;
 		
-		for my $key (@in_file_digest_but_not_expected_digest)
-			{
-			my $digest_value = $digest->{$key} || 'undef' ;
-			PrintWarning("\tkey '$key' exists only in file digest.\n") ;
-			#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
-			}
-			
-		for my $key (@different_in_file_digest)
-			{
-			my $digest_value = $digest->{$key} || 'undef' ;
-			my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-			#PrintError("\tkey '$key' is different.\n") ;
-			PrintError("\tkey '$key' is different: $digest_value <=> $expected_digest_value\n") ;
-			}
-			
-		for my $key (@in_expected_digest_but_not_file_digest)
-			{
-			my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-			PrintError("\tkey '$key' exists only in expected digest.\n") ;
-			#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
-			}
+		my $only_in_file_digest_text = "key '$key' exists only in file digest" ;
+		push @digest_different_text, $only_in_file_digest_text ;
+		
+		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
+		#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
 		}
-	else
+		
+	for my $key (@different_in_file_digest)
 		{
-		PrintInfo("Digest for file '$name' are identical.\n") unless $display_different_digest_only ;
+		my $digest_value = $digest->{$key} || 'undef' ;
+		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
+		
+		my $different_digest_text = "key '$key' is different: $digest_value <=> $expected_digest_value" ;
+		push @digest_different_text, $different_digest_text ;
+		
+		PrintError("\t$different_digest_text\n") if($display_digest) ;
+		}
+		
+	for my $key (@in_expected_digest_but_not_file_digest)
+		{
+		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
+		
+		my $only_in_expected_digest_text = "key '$key' exists only in expected digest" ;
+		push @digest_different_text, $only_in_expected_digest_text ;
+		
+		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
+		#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
 		}
 	}
+else
+	{
+	my $digest_is_identical = "Digests for file '$name' are identical" ;
+	push @digest_different_text, $digest_is_identical ;
+		
+	PrintInfo("$digest_is_identical.\n") if($display_digest && ! $display_different_digest_only) ;
+	}
 
-return(!$digest_is_different) ;
+return(!$digest_is_different, join(', ', @digest_different_text) ) ;
 }
 
 #-------------------------------------------------------------------------------

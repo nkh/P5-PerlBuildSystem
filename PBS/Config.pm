@@ -447,15 +447,7 @@ PrintInfo(DumpTree(\%configs, 'All configurations:')) ;
 
 #------------------------------------------------------------------------------------------
 
-my %valid_attributes = 
-	(
-	FORCE => 1,
-	LOCKED => 1,
-	UNLOCKED => 1,
-	OVERRIDE_PARENT => 1,
-	LOCAL => 1,
-	SILENT_OVERRIDE => 1,
-	) ;
+my %valid_attributes = map {$_ => 1} qw(FORCE LOCKED UNLOCKED OVERRIDE_PARENT LOCAL SILENT_OVERRIDE) ;
 	
 sub MergeConfig
 {
@@ -631,16 +623,16 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 
 	# Always merge variables of class PBS_FORCED, regardless of parent config/locked etc.
 	if($class eq '__PBS_FORCED')
-	{
-	# warning: this adds a single entry
-	$config_to_merge_to->{$type}{$class}{$key}{VALUE} = $value ;
-	$config_to_merge_to_cache->{$key} = $value ;
-	
-	my $value_txt = defined $value ? $value : 'undef' ;
-	push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}}, "$origin => $value_txt" ;
-	
-	return ;
-	}
+		{
+		# warning: this adds a single entry
+		$config_to_merge_to->{$type}{$class}{$key}{VALUE} = $value ;
+		$config_to_merge_to_cache->{$key} = $value ;
+		
+		my $value_txt = defined $value ? $value : 'undef' ;
+		push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}}, "$origin => $value_txt" ;
+		
+		return ;
+		}
 	
 	if($override_parent)
 		{
@@ -672,7 +664,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		$config_to_merge_to->{$type}{$class}{$key}{LOCKED} = 1 if $locked ;
 		$config_to_merge_to->{$type}{$class}{$key}{LOCKED} = 0 if $unlocked ;
 		
-		#~ if($config_to_merge_to->{$type}{$class}{$key}{VALUE} ne $value)
+		# note that we do a deep compare not an 'ne'
 		if(! Compare($config_to_merge_to->{$type}{$class}{$key}{VALUE},$value))
 			{
 			# not equal
@@ -680,7 +672,9 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			$config_to_merge_to_cache->{$key} = $value ;
 			
 			my $value_txt = defined $value ? $value : 'undef' ;
-			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "$origin => $value_txt" ;
+			
+			# just show where the override happens to avoid cluttering the display
+			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "Setting new value at $origin" ;
 			
 			unless($silent_override)
 				{
@@ -701,11 +695,17 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 					DumpTree
 						(
 						$config_to_merge_to->{$type}{$class}{$key}
-						, "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:"
+						#~ , "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:"
+						, "Overriding ${locked_message}config\n\tpackage: '${package}'\n\ttype: '${type}'"
+							."\n\tclass '${class}'\n\tkey: '$key' it is now:"
 						)
 					) 
 				}
 				
+			# now remember the origin and the value
+			pop @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}} ;
+			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "$origin => $value_txt" ;
+			
 			$config_to_merge_to->{$type}{__PBS}{__OVERRIDE}{VALUE} = 1 ;
 			push @{$config_to_merge_to->{$type}{__PBS}{__OVERRIDE}{ORIGIN}}, "$key @ $origin" ;
 			}
@@ -833,7 +833,7 @@ does it mean that command line cna't be overriden at all even by LOCAL
 			}
 		}
 		
-	# TODO: add warning for locla override
+	# TODO: add warning for local override
 	}
 }
 
@@ -925,7 +925,6 @@ if(keys %defines)
 sub get_subps_configuration
 {
 # create the sup pbs package configuration from the configuration of the parent package plus any sub pbs {PACKAGE_CONFIG} if any
-
 # note that we must run multiple subs in a special perl package as the configuration engine uses the current package to separate pbs runs
 
 my

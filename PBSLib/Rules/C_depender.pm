@@ -707,7 +707,7 @@ if (defined $tree->{__PBS_CONFIG}{SHOW_C_DEPENDING})
 	$depend_info .= " with: $depend_switches" if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO}) ;
 	$depend_info .= "\n" ;
 	
-	PrintInfo($depend_info) ;
+	PrintInfo2($depend_info) ;
 #	unless defined $PBS::Shell::silent_commands ;
 	}
 
@@ -980,12 +980,19 @@ unless (defined $config->{CFLAGS_INCLUDE})
 	PrintError("Configuration variable 'CFLAGS_INCLUDE' doesn't exist. Aborting.\n") ;
 	die ;
 	}
+
+#~ unless (defined $config->{CFLAGS})
+	#~ {
+	#~ PrintError("Configuration variable 'CFLAGS' doesn't exist. Aborting.\n") ;
+	#~ die ;
+	#~ }
 	
 unless (defined $config->{CDEFINES})
 	{
 	PrintError("Configuration variable 'CDEFINES' doesn't exist. Aborting.\n") ;
 	die ;
 	}
+
 }
 
 #-------------------------------------------------------------------------------
@@ -1000,6 +1007,7 @@ return
 		{
 		  '__VARIABLE:CC'                         => $config->{CC}
 		, '__VARIABLE:CFLAGS_INCLUDE'             => $config->{CFLAGS_INCLUDE}
+		#~ , '__VARIABLE:CFLAGS'                     => $config->{CFLAGS}
 		, '__VARIABLE:CDEFINES'                   => $config->{CDEFINES}
 		, '__VARIABLE:C_DEPENDER_SYSTEM_INCLUDES' => $config->{C_DEPENDER_SYSTEM_INCLUDES} || 0
 		, '__VARIABLE:C_FILE'                     => $c_file_md5
