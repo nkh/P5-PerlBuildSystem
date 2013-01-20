@@ -566,8 +566,8 @@ sub BuildOk
 # Syntactic sugar, this function can be called instead for 
 # defining a closure or giving a sub ref
 
-my $message = shift || '' ;
-my $print   = shift || 0 ;
+my $message = shift || 'no user message' ;
+my $print   = shift || 1 ;
 
 my ($package, $file_name, $line) = caller() ;
 
@@ -577,7 +577,7 @@ return
 		{
 		my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
 		
-		PrintUser($message . "\n") if $print ;
+		PrintInfo("\tPBS::BuildOk: $message \n") if $print ;
 		return(1, $message) ;
 		}
 	) ;

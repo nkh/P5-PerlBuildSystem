@@ -257,9 +257,19 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				die ERROR "Node sub is not a sub @ $rule_info\n" ;
 				}
 				
-			for my $sub (@$subs)
+			if(@$subs)
 				{
-				$sub->($node_name, $config, $tree, $inserted_nodes) ;
+				PrintInfo 'Running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'\n" 
+					if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+				
+				my $index = -1 ;
+				for my $sub (@$subs)
+					{
+					$index++ ;
+					PrintInfo "Running node sub index '$index'\n" if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+					
+					$sub->($node_name, $config, $tree, $inserted_nodes) ;
+					}
 				}
 			}
 			

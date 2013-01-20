@@ -780,14 +780,18 @@ EOT
 		, 'Display the dependencies that are newer than a c file.'
 		, ''
 		
-	, 'display_cpp_output'          => \$pbs_config->{DISPLAY_CPP_OUTPUT}
+	, 'display_cpp_output'              => \$pbs_config->{DISPLAY_CPP_OUTPUT}
 		, 'Display the command and output of the program generating dependencies.'
 		, ''
 		
-	, 'ddr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX}
-		, '(DF) Define the regex used to qualify a dependency for display.'
+	, 'ddr|display_dependencies_regex=s'=> \$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}
+		, 'Define the regex used to qualify a dependency for display.'
 		, ''
 		
+	, 'dnsr|display_node_subs_run'      => \$pbs_config->{DISPLAY_NODE_SUBS_RUN}
+		, 'Show when a node sub is run.'
+		, ''
+
 	, 'ddrd|display_dependency_rule_definition' => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION}
 		, 'Display the definition of the rule that generates a dependency.'
 		, ''

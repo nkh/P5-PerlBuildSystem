@@ -28,7 +28,7 @@ AddRule 'a.out', ['a.out' => 'main.o', 'world.o']
 # add some node specific data, the node already matches another rule
 AddNodeConfigVariableDependencies(qr/world.o/, 'OPTIMIZE_CFLAGS') ;
 
-AddRule 'world.o', ['world.o']	, undef
+AddRule 'changing the node config', ['world.o'], undef
 	# the job is done here
 	, [
            \&ChangePbsConfig
