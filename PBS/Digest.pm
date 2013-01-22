@@ -409,26 +409,29 @@ sub GetNodeDigest
 my $node = shift ;
 my $node_package = $node->{__LOAD_PACKAGE} ;
 
+my %node_config = %{$node->{__CONFIG}} ;
 my %node_dependencies ;
 
 for (@{$node_digest_rules{$node_package}})
 	{
 	if($node->{__NAME} =~ $_->{REGEX})
 		{
-		$node_dependencies{$_->{NAME}} = $_->{VALUE} ;
+		my $config_variable_name = $_->{CONFIG_VARIABLE} ;
+		my $config_value = $node_config{$config_variable_name} ;
+		
+		$node_dependencies{$_->{NAME}} = $config_value  ;
 		}
 	}
 	
 if(exists $node_config_variable_dependencies{$node_package})
 	{
-	my %config = %{$node->{__CONFIG}} ;
 	
 	for (@{$node_config_variable_dependencies{$node_package}})
 		{
 		if($node->{__NAME} =~ $_->{REGEX})
 			{
 			my $config_variable_name = $_->{CONFIG_VARIABLE} ;
-			my $config_value = $config{$config_variable_name} ;
+			my $config_value = $node_config{$config_variable_name} ;
 			
 			$node_dependencies{"__NODE_CONFIG_VARIABLE:$config_variable_name"} = $config_value ;
 			}
@@ -563,7 +566,7 @@ my $package    = caller() ;
 
 while(my ($variable_name, $value) = splice(@_, 0, 2))
 	{
-	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_VARIABLE:$variable_name", VALUE => $value} ;
+	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_VARIABLE:$variable_name", CONFIG_VARIABLE => $variable_name, VALUE => $value} ;
 	}
 }
 
@@ -719,7 +722,7 @@ my $digest_file_name = GetDigestFileName($node) ;
 my $pbs_config = $node->{__PBS_CONFIG} ;
 my $package = $node->{__LOAD_PACKAGE} ;
 
-my ($rebuild_because_of_digest, $result_message) = (0, 'digest OK') ;
+my ($rebuild_because_of_digest, $result_message, $number_of_differences) = (0, 'digest OK', 0) ;
 
 if(IsDigestToBeGenerated($package, $node))
 	{
@@ -762,18 +765,18 @@ if(IsDigestToBeGenerated($package, $node))
 					
 			if($digest_is_different)
 				{
-				($rebuild_because_of_digest, $result_message) = (1, "Difference in digest: $why") ;
+				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, "Difference in digest: $why", $digest_is_different) ;
 				}
 			}
 		else
 			{
-			($rebuild_because_of_digest, $result_message) = (1, "Empty digest.") ;
+			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, 'Empty digest.', 1) ;
 			}
 		}
 	else
 		{
 		PrintInfo("Digest file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
-		($rebuild_because_of_digest, $result_message) = (1, "Digest file '$digest_file_name' not found") ;
+		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, "Digest file '$digest_file_name' not found", 1) ;
 		}
 	
 	}
@@ -782,7 +785,7 @@ else
 	($rebuild_because_of_digest, $result_message) = (0, 'Excluded from digest') ;
 	}
 	
-return($rebuild_because_of_digest, $result_message) ;
+return($rebuild_because_of_digest, $result_message, $number_of_differences) ;
 }
 
 #-------------------------------------------------------------------------------

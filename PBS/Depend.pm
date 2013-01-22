@@ -385,7 +385,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $dependency_info ;
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					$dependency_info = "'$node_name' ${node_type}${forced_trigger} rule $rule_index:$rule_info:$rule_type gives dependencies:\n"
+					$dependency_info = "[$PBS::PBS::Pbs_call_depth] '$node_name' ${node_type}${forced_trigger} rule $rule_index:$rule_info:$rule_type has dependencies:\n"
 								. "      " . join("\n      ", map {"'$_'"} @dependency_names) ;
 					}
 				else

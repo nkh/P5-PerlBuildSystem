@@ -60,13 +60,21 @@ $check_dependencies_at_build_time_node_checked++ ;
 # virtual node have no digests so we can't check it
 return(0) if exists $node->{__VIRTUAL} ;
 
+my ($rebuild, $reason,$number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
+
 #todo: with a well build digest, if the only difference is the pbsfile itself, and all other variables 
 # identical, we can skip the build
 # otherwise all the nodes in a pbsfile get rebuild even if the change has no impact on it
 # note that rebuilding the graph still has to be done! The changes to the pbsfiles may not 
 # have an impact on the node to build but it may have on its position in the graph
-
-my ($rebuild, $reason) = PBS::Digest::IsNodeDigestDifferent($node) ;
+if($number_of_differences == 1 &&  $reason =~ q{key '__DEPENDING_PBSFILE' is different} )
+	{
+	if((! $PBS::Shell::silent_commands))
+		{
+		PrintWarning "\tNode doesn't need to be build. Only Pbsfile difference\n" ;
+		}
+	return(0) ;
+	}
 
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
 
