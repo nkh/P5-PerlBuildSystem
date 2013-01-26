@@ -184,7 +184,9 @@ else
 					{
 					my ($dependent_to_check, $target_path, $display_regex) = @_ ;
 					
-					$dependent_regex_definition=~ s/\%TARGET_PATH\//$target_path/ ;
+					$target_path =~ s[/$][] ;
+					
+					$dependent_regex_definition=~ s/\%TARGET_PATH/$target_path/ ;
 					
 					if($display_regex)
 						{
