@@ -108,6 +108,7 @@ for my $target (@$targets)
 my (undef, $target_path) = File::Basename::fileparse($targets->[0], ('\..*')) ;
 
 $target_path =~ s/^\.\/// ;
+$target_path =~ s/\/$// ;
 
 $pbs_config->{TARGET_PATH} = $pbs_config->{SET_PATH_REGEX} || $target_path ;
 
@@ -654,11 +655,13 @@ PrintDebug $source if defined ($pbs_config->{DISPLAY_PBSFILE_SOURCE}) ;
 
 my $result = eval $source ;
 
-#~confess "$@ ." if $@ ;
-#~ PrintError $@ if $@ ;
-
-die "" if $@ ;
-
+if($@)
+	{
+	PrintError "LoadFileInPackage:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
+	#~confess "$@ ." if $@ ;
+	die ;
+	}
+	
 $type .= ': ' unless $type eq '' ;
 
 if((!defined $result) && ($result != 1))
