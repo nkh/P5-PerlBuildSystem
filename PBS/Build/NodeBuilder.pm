@@ -51,6 +51,8 @@ return
 	}) ;
 }
 
+#-------------------------------------------------------------------------------
+
 sub NodeNeedsRebuild
 {
 my ($node) = @_ ;
@@ -73,7 +75,8 @@ if($number_of_differences == 1 &&  $reason =~ q{key '__DEPENDING_PBSFILE' is dif
 		{
 		PrintWarning "\tNode doesn't need to be build. Only Pbsfile difference\n" ;
 		}
-	return(0) ;
+		
+	return(0, 'only pbsfile difference, regenerate_digest') ;
 	}
 
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
@@ -175,6 +178,9 @@ my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
 if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! NodeNeedsRebuild($file_tree)))
 	{
+		
+	#todo: Need to regenerate the digest with the new pbsfile
+	
 	# nothing to do
 	($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
 	}

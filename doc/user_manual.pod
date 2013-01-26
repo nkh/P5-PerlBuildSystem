@@ -343,13 +343,12 @@ all nodes until no new dependencies are generated, this can cause accidental or 
 if the node regex matches too much.
 
 To make it easier to match only the nodes the (sub-)Pbsfile was invoked to depend, PBS provides the
-automatic variable %TARGET_PATH on the dependent side of the dependency definition. It expands to the
+configuration variable %TARGET_PATH on the dependent side of the dependency definition. It expands to the
 path prefix of the node the Pbsfile was invoked to depend (which is not identical to the relative path
-of the Pbsfile. See XXX %TARGET_PATH in the reference section for details). Note that this variable is
-I<not> available on the dependency side of the definition; with the simplified pattern syntax, %TARGET_PATH
-is automatically prepended to the dependencies. With pure perl regex rules, it is all up to you. You
-have to use $path, $basename, $name and $ext to construct the full dependency names yourself. Since the
-SimplifyRule plugin is just a rule preprocessor, these variables are actually available when using
+of the Pbsfile. Note that this variable is I<not> available on the dependency side of the definition; with the simplified
+pattern syntax, %TARGET_PATH is automatically prepended to the dependencies. With pure perl regex rules,
+it is all up to you. You have to use $path, $basename, $name and $ext to construct the full dependency names yourself.
+Since the SimplifyRule plugin is just a rule preprocessor, these variables are actually available when using
 the simplified pattern syntax as well, but the plugin will still prepend %TARGET_PATH to the dependency side,
 so it may not work quite as expected. Here are a few example rules to make it more visual:
 
@@ -469,7 +468,6 @@ To the right of the dependency arrow '=>' is a simple list of the
 dependencies this rule should contribute to the node; remember, several rules can match a node and they all
 have their dependencies added to the node. Each dependency can be either a string (XXX dependency attributes!)
 or a Perl subroutine reference (XXX elaborate, put under advanced topics?).
-XXX how exactly is %TARGET_PATH (or whatever) prepended to the dependency side names?
 
 =head4 Subpbs definition
 
