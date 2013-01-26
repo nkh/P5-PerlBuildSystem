@@ -249,7 +249,10 @@ my @first_level_dependencies = () ;
 
 #~ PrintInfo "=> $dependency_file_name \n" ;
 
-my ($dependency_file_needs_update, $pbs_include_tree) = Verify_C_FileDigest($file_to_depend, $dependency_file_name, $config, $tree) ;
+PrintInfo("C_depender: checking '$file_to_depend' dependencies.\n")  
+	if defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO};
+	
+my ($dependency_file_needs_update, $pbs_include_tree, $changed_dependencies) = Verify_C_FileDigest($file_to_depend, $dependency_file_name, $config, $tree) ;
 
 #~ PrintDebug "'$dependency_file_name' => $dependency_file_needs_update\n" ;
 
@@ -266,12 +269,19 @@ if($dependency_file_needs_update)
 		{
 		# check if a valid un-synched cache exists (a rather high probability)
 		
-		my ($unsynched_dependency_file_needs_update, $unsynched_pbs_include_tree) = Verify_C_FileDigest($file_to_depend, $unsynchronized_dependency_file_name , $config, $tree) ;
+		if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
+			{
+			PrintInfo "\tFound unsynchronized cache.\n" ;
+			}
+			
+		my ($unsynched_dependency_file_needs_update, $unsynched_pbs_include_tree, $unsynched_changed_dependencies) 
+			= Verify_C_FileDigest($file_to_depend, $unsynchronized_dependency_file_name , $config, $tree) ;
+		
 		if($unsynched_dependency_file_needs_update)
 			{
 			if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 				{
-				PrintInfo "   Verifying unsynchronized cache ... Invalid, regenerating.\n" ;
+				PrintInfo "\t\tInvalid, regenerating.\n" ;
 				}
 				
 			# regenerate cache, merge, tag as unsynched
@@ -288,9 +298,14 @@ if($dependency_file_needs_update)
 						, $display_c_dependencies
 						, $tree
 						, $inserted_nodes
+						, $unsynched_changed_dependencies
 						)
 						
-				, PBS::Depend::FORCE_TRIGGER("$file_to_depend digest rebuilt.")
+				, PBS::Depend::FORCE_TRIGGER
+					({
+					ACTION => "$file_to_depend digest rebuilt.",
+					CHANGED_DEPENDENCIES => $unsynched_changed_dependencies,
+					})
 				, PBS::Depend::SYNCHRONIZE
 					(
 					  $unsynchronized_dependency_file_name
@@ -303,7 +318,7 @@ if($dependency_file_needs_update)
 			{
 			if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 				{
-				PrintInfo "   Verifying unsynchronized cache ... Valid.\n" ;
+				PrintInfo "\t\tValid.\n" ;
 				}
 			
 			@first_level_dependencies = 
@@ -317,7 +332,11 @@ if($dependency_file_needs_update)
 					, $inserted_nodes
 					, $unsynched_pbs_include_tree
 					)
-				, PBS::Depend::FORCE_TRIGGER("$file_to_depend digest rebuilt.")
+				, PBS::Depend::FORCE_TRIGGER
+					({
+					ACTION => "$file_to_depend digest from valid unsynched cache.",
+					CHANGED_DEPENDENCIES => $unsynched_changed_dependencies,
+					})
 				, PBS::Depend::SYNCHRONIZE
 					(
 					  $unsynchronized_dependency_file_name
@@ -342,8 +361,13 @@ if($dependency_file_needs_update)
 				, $display_c_dependencies
 				, $tree
 				, $inserted_nodes
+				, $changed_dependencies
 				)
-			, PBS::Depend::FORCE_TRIGGER("$file_to_depend digest rebuilt.")
+			, PBS::Depend::FORCE_TRIGGER
+				({
+				ACTION => "$file_to_depend digest rebuilt.",
+				CHANGED_DEPENDENCIES => $changed_dependencies,
+				})
 			, PBS::Depend::SYNCHRONIZE
 				(
 				  $unsynchronized_dependency_file_name
@@ -445,6 +469,7 @@ my $config               = shift ;
 my $tree                 = shift ;
 
 
+my %changed_dependencies ;
 my $dependency_file_needs_update = 0 ;
 
 our ($c_depender_version, $root_node, $nodes, $node_names, $global_pbs_config, $insertion_file_names) ;
@@ -461,7 +486,7 @@ if(-e $dependency_file_name)
 		{
 		unless('HASH' eq ref $digest)
 				{
-				PrintWarning("C_depender: '$file_to_depend' [Empty].\n") ;
+				PrintWarning("\t'$dependency_file_name' is Empty.\n") ;
 				$dependency_file_needs_update++ ;
 				}
 				
@@ -469,22 +494,22 @@ if(-e $dependency_file_name)
 		
 		unless($VERSION == $c_depender_version)
 				{
-				PrintWarning("C_depender: '$file_to_depend' [Version mismatch].\n") ;
+				PrintWarning("\t'$dependency_file_name' version mismatch.\n") ;
 				$dependency_file_needs_update++ ;
 				}
 				
 		my $c_file_md5 ;
 		unless (defined ($c_file_md5 = PBS::Digest::GetFileMD5($file_to_depend)))
 			{
-			PrintError("C_depender: Can't compute MD5 for '$file_to_depend'.") ;
+			PrintError("\tCan't compute MD5 for '$file_to_depend'.") ;
 			die ;
 			}
 			
 		my $expected_digest = GetStandard_C_Digest($config, $c_file_md5) ;
-		
+
 		for my $dependency (keys %$digest)
 			{
-			last if $dependency_file_needs_update ;
+			last if($dependency_file_needs_update && ! defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO}) ;
 			
 			if(exists $digest->{$dependency} && exists $expected_digest->{$dependency})
 				{
@@ -501,11 +526,11 @@ if(-e $dependency_file_name)
 					{
 					if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 						{
-						PrintInfo("C_depender: '$file_to_depend' [difference]:\n   [$dependency].\n") ;
+						PrintInfo("\tdifference in '$dependency'\n") ;
 						}
 						
 					$dependency_file_needs_update++ ;
-					last ;
+					last unless defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO} ;
 					}
 				}
 			else
@@ -516,10 +541,13 @@ if(-e $dependency_file_name)
 						{
 						if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 							{
-							PrintInfo("C_depender: '$file_to_depend' [MD5 difference]:\n   [$dependency].\n") ;
+							PrintInfo("\tMD5 difference in '$dependency'\n") ;
 							}
+						
+						$changed_dependencies{$dependency}++ ;
+						
 						$dependency_file_needs_update++ ;
-						last ;
+						last unless defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO} ;
 						}
 					}
 				else
@@ -532,20 +560,25 @@ if(-e $dependency_file_name)
 						}
 					else
 						{
-						PrintInfo("C_depender: Can't compute MD5 for '$dependency' (found in dependency file)! Rebuilding.\n") ;
+						PrintInfo("\tCan't compute MD5 for '$dependency' (found in dependency file)!\n") ;
+						
+						$changed_dependencies{$dependency}++ ;
+						
 						$dependency_file_needs_update++ ;
-						last ;
+						last unless defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO} ;
 						}
 						
 					if($digest->{$dependency} ne $C_dependencies_cache::dependency_md5{$dependency})
 						{
 						if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 							{
-							PrintInfo("C_depender: '$file_to_depend' [MD5 difference]\n   [$dependency].\n") ;
+							PrintInfo("\tMD5 difference in '$dependency'\n") ;
 							}
 							
+						$changed_dependencies{$dependency}++ ;
+						
 						$dependency_file_needs_update++ ;
-						last ;
+						last unless defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO} ;
 						}
 					}
 				}
@@ -614,7 +647,7 @@ if(-e $dependency_file_name)
 		}
 	else
 		{
-		PrintWarning "C_depender: Couldn't parse '$dependency_file_name': $@" if $@;
+		PrintWarning "C_depender: Couldn't parse dependency file '$dependency_file_name' for '$file_to_depend': $@\n" if $@;
 		$dependency_file_needs_update++ ;
 		}
 		
@@ -623,13 +656,13 @@ else
 	{
 	if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 		{
-		PrintInfo("C_depender: '$file_to_depend'. [Not found].\n");
+		PrintInfo("C_depender: Dependency file for '$file_to_depend' Not found.\n");
 		}
 		
 	$dependency_file_needs_update++ ;
 	}
 
-return($dependency_file_needs_update, {$root_node => $nodes->{$root_node}}) ;
+return($dependency_file_needs_update, {$root_node => $nodes->{$root_node}}, \%changed_dependencies) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -681,15 +714,19 @@ return $result;
 
 sub GenerateDependencyFile
 {
-my $config                 = shift ;
-my $dependent              = shift ;
-my $file_to_depend         = shift ;
-my $dependency_file_name   = shift ;
-my $source_directory       = shift ;
-my $source_directories     = shift ;
-my $display_c_dependencies = shift ;
-my $tree                   = shift ;
-my $inserted_nodes         = shift ;
+my 
+	(
+	$config,
+	$dependent,
+	$file_to_depend,
+	$dependency_file_name,
+	$source_directory,
+	$source_directories,
+	$display_c_dependencies,
+	$tree,
+	$inserted_nodes,
+	$changed_dependencies,
+	) = @_ ;
 
 Check_C_DependerConfig($config) ;
 
@@ -778,6 +815,8 @@ my $ParentChild = sub
 			, __DEPENDED => 1
 			, __BUILD_DONE => "in C depender (2)"
 			) ;
+			
+		$new_node{__TRIGGERED} ++ if exists $changed_dependencies->{$child} ;
 			
 		$depend_nodes{$child} = \%new_node ;
 		}

@@ -94,7 +94,12 @@ sub use_dependency_cache : Test(4) {
 	$t->build_test;
 	
 	my $stdout = $t->stdout;
-	unlike($stdout, qr|\QC_depender:|, 'The dependency caches are used');
+	
+	like($stdout, qr|
+		^(\QC_depender: checking '\E.*\Q/1.c' dependencies.\E)\n
+		^(\QC_depender: checking '\E.*\Q/2.c' dependencies.\E)\n
+		^(\QProcessed 1 Pbsfile.\E)
+		|mx, 'The dependency caches are up to date');
 }
 
 sub use_unsynchronized_cache : Test(10) {
@@ -116,12 +121,17 @@ sub use_unsynchronized_cache : Test(10) {
 
 	$t->build_test_fail;
 	
-    my $stdout = $t->stdout;
-    unlike($stdout, qr|\QSynchronized C cache file for './1.c'|,
+	my $stdout = $t->stdout;
+	unlike($stdout, qr|\QSynchronized C cache file for './1.c'|,
 		'Did not synchronize C cache for first C file');
-	like($stdout, qr|(?x)\QC_depender: '\E[^']*\Q2.c' [MD5 difference]\E\s*
-		\Q[\E[^\]]*\Qb.h].|, 'Second C file was redepended');
-    unlike($stdout, qr|\QSynchronized C cache file for './2.c'|,
+
+	like($stdout, qr|
+		^\QC_depender: checking '\E.*\Q/2.c' dependencies.\E\n
+		^\s+\QMD5 difference in '\E.*\Q/b.h'\E
+		|mx, 'Second C file was redepended');
+		
+		
+	unlike($stdout, qr|\QSynchronized C cache file for './2.c'|,
 		'Did not synchronize C cache for second C file');
 
 # Fix the error in the first C file.
@@ -132,19 +142,22 @@ sub use_unsynchronized_cache : Test(10) {
 # The C depender will try to redepend the second C file, but it
 # will find the unsynchronized cache, verify it, and use it.
 	$t->build_test;
-
-    $stdout = $t->stdout;
-    like($stdout, qr|\QSynchronized C cache file for './1.c'|,
+	$stdout = $t->stdout;
+	
+	like($stdout, qr|\QSynchronized C cache file for './1.c'|,
 		'Synchronized C cache for first C file');
-    like($stdout, qr|(?x)\QC_depender: '\E[^']*\Q2.c' [MD5 difference]\E\s*
-		\Q[\E[^\]]*\Qb.h].\E\s*
-		\QVerifying unsynchronized cache ... Valid.|,
-		'Found unsynchronized valid cache for second C file');
 		
-    like($stdout, qr|\QSynchronized C cache file for './2.c'|,
+	like($stdout, qr|
+		^\QC_depender: checking '\E.*\Q/2.c' dependencies.\E\n
+		^\s+\QMD5 difference in '\E.*\Q/b.h'\E\n
+		^\s+\QFound unsynchronized cache.\E
+		|mx, 'Found unsynchronized valid cache for second C file');
+
+
+	like($stdout, qr|\QSynchronized C cache file for './2.c'|,
 		'Synchronized C cache for second C file');
 		
-    $t->run_target_test(stdout => "ab2");
+	$t->run_target_test(stdout => "ab2");
 }
 
 sub do_not_use_unsynchronized_cache : Test(9) {
@@ -165,13 +178,12 @@ sub do_not_use_unsynchronized_cache : Test(9) {
 # file is going to be synchronized.
 	$t->build_test_fail;
 	
-    my $stdout = $t->stdout;
-    unlike($stdout, qr|\QSynchronized C cache file for './1.c'|,
-		'Did not synchronize C cache for first C file');
-	like($stdout, qr|(?x)\QC_depender: '\E[^']*\Q2.c' [difference]:\E\s*
-		\Q[__VARIABLE:C_FILE].|, 'Second C file was redepended');
-    unlike($stdout, qr|\QSynchronized C cache file for './2.c'|,
-		'Did not synchronize C cache for second C file');
+	my $stdout = $t->stdout;
+	unlike($stdout, qr|\QSynchronized C cache file for './1.c'|,'Did not synchronize C cache for first C file');
+	
+	like($stdout, qr|2.c.*__VARIABLE:C_FILE|ms, 'Second C file was redepended');
+		
+	unlike($stdout, qr|\QSynchronized C cache file for './2.c'|,	'Did not synchronize C cache for second C file');
 
 # Fix the error in the first C file and modify the second C
 # file again, now to include a third include file.
