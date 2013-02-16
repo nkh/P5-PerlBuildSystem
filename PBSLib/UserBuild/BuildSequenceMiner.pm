@@ -32,19 +32,19 @@ die "Unsupported composite target build\n" if ($build_point ne '') ;
 
 my $build_sequence = PBS::DefaultBuild::DefaultBuild
 							(
-							  $Pbsfile
-							, $package
-							, $load_package
-							, $pbs_config
-							, $rules_namespaces
-							, $rules
-							, $config_namespaces
-							, $config
-							, $targets
-							, $inserted_files
-							, $dependency_tree
-							, $build_point
-							, DEPEND_AND_CHECK
+							$Pbsfile,
+							$package,
+							$load_package,
+							$pbs_config,
+							$rules_namespaces,
+							$rules,
+							$config_namespaces,
+							$config,
+							$targets,
+							$inserted_files,
+							$dependency_tree,
+							$build_point,
+							DEPEND_AND_CHECK,
 							) ;
 							
 
@@ -67,9 +67,9 @@ return
 	(
 	PBS::Build::BuildSequence
 		(
-		  $package
-		, $pbs_config
-		, \@remaining_nodes
+		$package,
+		$pbs_config,
+		\@remaining_nodes,
 		)
 	) ;
 }

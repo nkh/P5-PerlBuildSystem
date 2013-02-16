@@ -39,20 +39,20 @@ my $watch_server_verbose ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	  'use_watch_server'
-	, \$use_watch_server
-	, 'Uses file watch server to speed up file verification.'
-	, ''
+	'use_watch_server',
+	\$use_watch_server,
+	'Uses file watch server to speed up file verification.',
+	'',
 	
-	, 'watch_server_double_check_with_md5'
-	, \$watch_server_double_check_with_md5 
-	, 'As use_watch_server but also does and md5 verification.'
-	, ''
+	'watch_server_double_check_with_md5',
+	\$watch_server_double_check_with_md5,
+	'As use_watch_server but also does and md5 verification.',
+	'',
 	
-	, 'watch_server_verbose'
-	, \$watch_server_verbose
-	, 'Will display what files the server has been notfied for.'
-	, ''
+	'watch_server_verbose',
+	\$watch_server_verbose,
+	'Will display what files the server has been notfied for.',
+	'',
 	) ;
 	
 

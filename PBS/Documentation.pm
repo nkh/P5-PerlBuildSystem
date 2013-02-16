@@ -469,8 +469,8 @@ for my $file_entry (keys %$index_by_file)
 		{
 		push @{$index_by_section->{$level_data->{TEXT}}},
 			{
-			  LEVEL => $level_data->{LEVEL}
-			, FILE  => $file_entry
+			LEVEL => $level_data->{LEVEL},
+			FILE  => $file_entry,
 			} ;
 		}
 	}

@@ -58,17 +58,17 @@ sub DefaultCreator
 
 my
 (
-  $dependent_to_check
-, $config
-, $tree
-, $inserted_nodes
-, $dependencies     # rule local
-, $builder_override # rule local
-, $rule_definition
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
+$dependencies,     # rule local
+$builder_override, # rule local
+$rule_definition,
 
 # added by GenerateCreator wrapper
-, $commands
-, $other_info_to_check
+$commands,
+$other_info_to_check,
 ) = @_ ;
 
 my $rule_info = "'$rule_definition->{NAME}' @ '$rule_definition->{FILE}:$rule_definition->{LINE}'" ;
@@ -83,10 +83,10 @@ if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$depen
 	
 	my $need_rebuild = CheckCreatorDigest
 				(
-				  $dependent_to_check
-				, $tree
-				, \@my_dependencies # MD5 will be generated for these
-				, $other_info_to_check
+				$dependent_to_check,
+				$tree,
+				\@my_dependencies, # MD5 will be generated for these
+				$other_info_to_check,
 				) ;
 	
 	if(NEED_REBUILD == $need_rebuild)
@@ -103,12 +103,12 @@ if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$depen
 		
 		my ($builder_sub) = GenerateBuilder # other elements returned by this sub are not valid at this point
 					(
-					  undef #shell
-					, $commands
-					, $tree->{__LOAD_PACKAGE}
-					, $rule_definition->{NAME}
-					, $rule_definition->{FILE}
-					, $rule_definition->{LINE}
+					undef, #shell
+					$commands,
+					$tree->{__LOAD_PACKAGE},
+					$rule_definition->{NAME},
+					$rule_definition->{FILE},
+					$rule_definition->{LINE},
 					) ;
 				
 		#TODO: missing debugger hooks here
@@ -123,12 +123,12 @@ if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$depen
 		
 		($build_result, $build_message) = $builder_sub->
 							(
-							  $tree->{__CONFIG}
-							, GetNodeBuildName($tree)
-							, \@located_dependencies
-							, \@located_triggered_dependencies #$triggered_dependencies
-							, $tree
-							, {} # not known at this time $inserted_nodes
+							$tree->{__CONFIG},
+							GetNodeBuildName($tree),
+							\@located_dependencies,
+							\@located_triggered_dependencies, #$triggered_dependencies
+							$tree,
+							{}, # not known at this time $inserted_nodes
 							) ;
 		} ;
 		
@@ -142,11 +142,11 @@ if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$depen
 		
 		WriteCreatorDigest
 			(
-			  $dependent_to_check
-			, $tree
-			, \@my_dependencies
-			, $other_info_to_check
-			, $rule_info
+			$dependent_to_check,
+			$tree,
+			\@my_dependencies,
+			$other_info_to_check,
+			$rule_info,
 			) ;
 		
 		push @$dependencies, PBS::Depend::FORCE_TRIGGER("$dependent_to_check digest rebuilt.") ;
@@ -352,11 +352,11 @@ my $source_directories = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 my ($dependency_file_name, $is_alternative_source, $other_source_index) 
 	= PBS::Check::LocateSource
 		(
-		  "$dependent.creator_md5"
-		, $build_directory
-		, $source_directories
-		, $tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO}
-		, $tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES}
+		"$dependent.creator_md5",
+		$build_directory,
+		$source_directories,
+		$tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO},
+		$tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES},
 		) ;
 		
 return(CollapsePath($dependency_file_name)) ;
@@ -374,11 +374,11 @@ my $source_directories = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 my ($build_name, $is_alternative_source, $other_source_index) 
 	= PBS::Check::LocateSource
 		(
-		  $node->{__NAME}
-		, $build_directory
-		, $source_directories
-		, $node->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO}
-		, $node->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES}
+		$node->{__NAME},
+		$build_directory,
+		$source_directories,
+		$node->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO},
+		$node->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES},
 		) ;
 
 return($build_name) ;
@@ -395,11 +395,11 @@ my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 my ($build_name, $is_alternative_source, $other_source_index) = 
 	PBS::Check::LocateSource
 		(
-		$name
-		, $build_directory
-		, $source_directories
- 		, $pbs_config->{DISPLAY_SEARCH_INFO}
-		, $pbs_config->{DISPLAY_SEARCH_ALTERNATES}
+		$name,
+		$build_directory,
+		$source_directories,
+ 		$pbs_config->{DISPLAY_SEARCH_INFO},
+		$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
 		) ;
 
 return($build_name) ;
@@ -440,15 +440,15 @@ my $package = shift ;
 
 my $rule = PBS::Rules::RegisterRule
 		(
-		  __FILE__
-		, __LINE__
-		, $package
-		, "__Creator"
-		, [META_SLAVE]  #$rule_types
-		, $name
-		, sub{die} # $depender_definition
-		, sub{return(1, "Creator generated builder '$name', always succeeds.") ;} #$builder_definition
-		#, $node_subs
+		__FILE__,
+		__LINE__,
+		$package,
+		"__Creator",
+		[META_SLAVE],  #$rule_types
+		$name,
+		sub{die}, # $depender_definition
+		sub{return(1, "Creator generated builder '$name', always succeeds.") ;}, #$builder_definition
+		# $node_subs,
 		) ;
 
 push @{$rule->{TYPE}}, CREATOR ;

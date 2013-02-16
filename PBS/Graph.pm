@@ -96,37 +96,37 @@ else
 	}
 	
 my $graph = PBS::GraphViz->new
-						(
-						 root => $root_name
-						#~ ,  sort => 1
-						#~ , concentrate => 1
-						#~ , pack => 1
-						#~ , fontname => 'Helvetica'
-						, color => 'grey88'
-						, style => 'filled'
-						, fillcolor => 'grey98'
-						, fontcolor => 'black'
-						, fontsize => 10
-						, ranksep => $config->{GENERATE_TREE_GRAPH_SPACING} * .75
-						, nodesep => $config->{GENERATE_TREE_GRAPH_SPACING} * .25
-						, URL => "http://www.khemir.net/projects/pbs/"
-						);
+		(
+		root => $root_name,
+		#~ sort => 1,
+		#~ concentrate => 1,
+		#~ pack => 1,
+		#~ fontname => 'Helvetica',
+		color => 'grey88',
+		style => 'filled',
+		fillcolor => 'grey98',
+		fontcolor => 'black',
+		fontsize => 10,
+		ranksep => $config->{GENERATE_TREE_GRAPH_SPACING} * .75,
+		nodesep => $config->{GENERATE_TREE_GRAPH_SPACING} * .25,
+		URL => "http://www.khemir.net/projects/pbs/",
+		);
 						
 my $tree_node = GenerateTreeGraph
 			(
-			$graph
-			, $primary_tree
-			, $root_name
-			, ''
-			, $config
-			, \%inserted_graph_nodes
-			, \%inserted_edges
-			, \%inserted_configs
-			, \%inserted_pbs_configs
-			, 'lightyellow' # fill color
-			, 0 # root rank 
-			, 0 # start rank
-			, $primary_group
+			$graph,
+			$primary_tree,
+			$root_name,
+			'',
+			$config,
+			\%inserted_graph_nodes,
+			\%inserted_edges,
+			\%inserted_configs,
+			\%inserted_pbs_configs,
+			'lightyellow', # fill color
+			0, # root rank 
+			0, # start rank
+			$primary_group,
 			);
 
 if($config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES})
@@ -142,19 +142,19 @@ if($config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES})
 		
 		GenerateTreeGraph
 					(
-					$graph
-					, $other_tree
-					, $other_tree->{__NAME}
-					, '' # clustering node name
-					, $config
-					, \%inserted_graph_nodes
-					, \%inserted_edges
-					, \%inserted_configs
-					, \%inserted_pbs_configs
-					, 'grey88' # fill color
-					, $other_trees_root_rank
-					, $start_rank
-					, $secondary_group
+					$graph,
+					$other_tree,
+					$other_tree->{__NAME},
+					'', # clustering node name
+					$config,
+					\%inserted_graph_nodes,
+					\%inserted_edges,
+					\%inserted_configs,
+					\%inserted_pbs_configs,
+					'grey88', # fill color
+					$other_trees_root_rank,
+					$start_rank,
+					$secondary_group,
 					);
 		}
 	}
@@ -172,13 +172,13 @@ $graph_name .= "Using package clusters.\n" if($config->{GENERATE_TREE_GRAPH_DISP
 $graph_name .= "Using source directory clusters.\n" if($config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES}) ;
 
 my $title_node = $graph->add_node
-									({
-									  shape => 'box'
-									, name => $graph_name
-									, color => 'white'
-									#~, fontname => 'arial'
-									, fontsize => 8
-									});
+			({
+			shape => 'box',
+			name => $graph_name,
+			color => 'white',
+			#~ fontname => 'arial',
+			fontsize => 8, 
+			});
 									
 $graph->add_edge({ style => 'invis', from => $title_node, to => $tree_node} );
 
@@ -248,13 +248,14 @@ if($config->{GENERATE_TREE_GRAPH_SNAPSHOTS})
 	use PBS::Graph::Snapshots ;
 	PBS::Graph::Snapshots::GenerateSnapshots
 		(
-		  [$primary_tree, @$trees], $inserted_nodes
-		, $graph
-		, $primary_tree->{__PBS_CONFIG}{GENERATE_TREE_GRAPH_SNAPSHOTS}
-		, \%inserted_graph_nodes # this and bellow contain name only
-		, \%inserted_edges
-		, \%inserted_configs
-		, \%inserted_pbs_configs
+		[$primary_tree, @$trees], 
+		$inserted_nodes,
+		$graph,
+		$primary_tree->{__PBS_CONFIG}{GENERATE_TREE_GRAPH_SNAPSHOTS},
+		\%inserted_graph_nodes, # this and bellow contain name only
+		\%inserted_edges,
+		\%inserted_configs,
+		\%inserted_pbs_configs,
 		) ;
 	}
 	
@@ -267,14 +268,16 @@ sub GenerateTreeGraph
 {
 my
 	(
-	  $graph
-	, $node, $name
-	, $clustering_node_name
-	, $config
-	, $inserted_graph_nodes, $inserted_edges, $inserted_configs, $inserted_pbs_configs
-	, $fill_color
-	, $root_rank, $rank
-	, $group
+	$graph,
+	$node,
+	$name,
+	$clustering_node_name,
+	$config,
+	$inserted_graph_nodes, $inserted_edges, $inserted_configs, $inserted_pbs_configs,
+	$fill_color,
+	$root_rank,
+	$rank,
+	$group,
 	) = @_ ;
 
 my $display_definition_package = $config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE} ;
@@ -359,11 +362,11 @@ if($node_type eq 'HASH')
 		
 	my @node_attributes = 
 		(
-		  height   => 0.2
-		, URL      => "$html_link"
-		, fontsize => 10
-		, name     => $name
-		, group    => $group
+		height   => 0.2,
+		URL      => "$html_link",
+		fontsize => 10,
+		name     => $name,
+		group    => $group,
 		) ;
 		
 	push @node_attributes, (fontname => 'arial') unless $config->{GENERATE_TREE_GRAPH_POSTSCRIPT} ;
@@ -460,9 +463,9 @@ if($node_type eq 'HASH')
 		{
 		push @node_attributes, 
 			(
-			  style => 'filled'
-			, fillcolor => 'red'
-			, fontcolor => 'white'
+			style => 'filled',
+			fillcolor => 'red',
+			fontcolor => 'white',
 			) ;
 		}
 		
@@ -533,15 +536,15 @@ if($node_type eq 'HASH')
 			
 			my @config_node_attributes =
 					(
-					  height => 0.2
-					, fontsize => 10
-					, group => $group
-					, shape => 'rect'
-					, style => 'bold'
-					, name  => $config_name
-					, label => $config_label
-					#~ "config #$free_config_index"
-					, URL   => $html_link
+					height => 0.2,
+					fontsize => 10,
+					group => $group,
+					shape => 'rect',
+					style => 'bold',
+					name  => $config_name,
+					label => $config_label,
+					#~ "config #$free_config_index",
+					URL   => $html_link,
 					) ;
 					
 			if(exists $node->{__CONFIG}{__LOCKED} && $node->{__CONFIG}{__LOCKED} == 1)
@@ -603,9 +606,9 @@ if($node_type eq 'HASH')
 					{
 					return
 						(
-						  'HASH'
-						, undef
-						, qw(
+						'HASH',
+						undef,
+						qw(
 							BUILD_DIRECTORY 
 							SOURCE_DIRECTORIES
 							COMMAND_LINE_DEFINITIONS
@@ -614,7 +617,7 @@ if($node_type eq 'HASH')
 							USER_OPTIONS
 							RULE_NAMESPACES
 							NO_EXTERNAL_LINK
-							)
+							),
 						) ;
 					}
 				
@@ -652,17 +655,17 @@ if($node_type eq 'HASH')
 			
 			my @pbs_config_node_attributes =
 					(
-					  height => 0.2
-					, fontsize => 10
-					, group => $group
-					, shape => 'trapezium'
-					#~ , style => 'bold'
-					, name  => $pbs_config_name
-					, label => $pbs_config_label
-					#~ "Pbs config # $free_pbs_config_index"
-					, color => 'blue'
-					, URL => $html_link
-					, tooltip  => "Pbs config"
+					height => 0.2,
+					fontsize => 10,
+					group => $group,
+					shape => 'trapezium',
+					#~ style => 'bold',
+					name  => $pbs_config_name,
+					label => $pbs_config_label,
+					#~ "Pbs config, # $free_pbs_config_index"
+					color => 'blue',
+					URL => $html_link,
+					tooltip  => "Pbs config",
 					) ;
 					
 				
@@ -724,12 +727,12 @@ if($node_type eq 'HASH')
 		{
 		$graph->add_edge
 			({
-			  arrowsize => 0.65
-			, color => 'orange'
-			, from => $graph_node
-			, to => $config_name
-			, URL => "config $config_name"
-			, tooltip  => "config edge"
+			arrowsize => 0.65,
+			color => 'orange',
+			from => $graph_node,
+			to => $config_name,
+			URL => "config $config_name",
+			tooltip  => "config edge",
 			});
 		}
 	if
@@ -740,12 +743,12 @@ if($node_type eq 'HASH')
 		{
 		$graph->add_edge
 			({
-			  arrowsize => 0.65
-			, color => 'orange'
-			, from => $graph_node
-			, to => $pbs_config_name
-			, URL => "Pbs config $pbs_config_name"
-			, tooltip  => "Pbs config edge"
+			arrowsize => 0.65,
+			color => 'orange',
+			from => $graph_node,
+			to => $pbs_config_name,
+			URL => "Pbs config $pbs_config_name",
+			tooltip  => "Pbs config edge",
 			});
 		}
 	#------------------------------------------------------
@@ -756,16 +759,16 @@ if($node_type eq 'HASH')
 		my $package = $node->{__PBS_CONFIG}{PACKAGE} ;
 		my @cycle_root_information_attributes =
 			(
-			  height => 0.2
-			#~, fontname => 'arial'
-			, fontsize => 10
-			, name => 'Cycle root'
-			, shape => 'rectangle'
-			, URL => "explaination of cyclic root"
-			, tooltip  => "cyclic root"
+			height => 0.2,
+			#~ fontname => 'arial',
+			fontsize => 10,
+			name => 'Cycle root',
+			shape => 'rectangle',
+			URL => "explaination of cyclic root",
+			tooltip  => "cyclic root",
 			) ;
 			
-		push @cycle_root_information_attributes , (cluster => $package . ':' . $Pbsfile)  if$display_definition_package ;
+		push @cycle_root_information_attributes, (cluster => $package . ':' . $Pbsfile)  if$display_definition_package ;
 		
 		my $information_node = $graph->add_node(@cycle_root_information_attributes) ;
 						
@@ -773,10 +776,10 @@ if($node_type eq 'HASH')
 			{
 			$graph->add_edge
 				({
-				  from     => $information_node
-				, to       => $graph_node
-				, color    => 'black'
-				, arrowhead => 'none'
+				from     => $information_node,
+				to       => $graph_node,
+				color    => 'black',
+				arrowhead => 'none',
 				}) ;
 				
 			$inserted_edges->{"cycle_root_information=>$graph_node"}++ ;
@@ -798,16 +801,17 @@ if($node_type eq 'HASH')
 			else
 				{
 				$graph_child_node = GenerateTreeGraph
-											(
-											  $graph
-											, $node->{$key_name}, $key_name
-											, $clustering_node_name
-											, $config
-											, $inserted_graph_nodes, $inserted_edges, $inserted_configs, $inserted_pbs_configs
-											, $fill_color
-											, -1, $rank
-											, $group
-											) ;
+							(
+							$graph,
+							$node->{$key_name}, $key_name,
+							$clustering_node_name,
+							$config,
+							$inserted_graph_nodes, $inserted_edges, $inserted_configs, $inserted_pbs_configs,
+							$fill_color,
+							-1,
+							 $rank,
+							$group,
+							) ;
 											
 				if(defined $graph_child_node)
 					{
@@ -858,16 +862,16 @@ if($node_type eq 'HASH')
 						{
 						$graph->add_edge
 							({
-							  color     => $edge_color
-							, from      => $graph_node
-							, to        => $graph_child_node
-							, arrowtail => $arrow_tail
-							#~ , fontname => 'arial'
-							#~ , fontsize => 8
-							#~ , label => ''
-							, URL => "edge"
-							, tooltip  => "edge"
-							, style => $edge_style
+							color     => $edge_color,
+							from      => $graph_node,
+							to        => $graph_child_node,
+							arrowtail => $arrow_tail,
+							#~ fontname => 'arial',
+							#~ fontsize => 8,
+							#~ label => '',
+							URL => "edge",
+							tooltip  => "edge",
+							style => $edge_style,
 							});
 						}
 						
@@ -879,16 +883,16 @@ if($node_type eq 'HASH')
 		
 	if(exists $node->{__TRIGGER_INSERTED} && $inserting_node_link == 0)
 		{
-		push @post_edge_insertion
-				,  {
-					  from       => $node->{__TRIGGER_INSERTED}
-					, to         => $name
-					, arrowhead  => 'empty'
-					, color      => 'blue'
-					, style      => 'dotted'
-					, URL        => "trigger edge"
-					, tooltip    => "trigger edge"
-					} ;
+		push @post_edge_insertion,
+				{
+				from       => $node->{__TRIGGER_INSERTED},
+				to         => $name,
+				arrowhead  => 'empty',
+				color      => 'blue',
+				style      => 'dotted',
+				URL        => "trigger edge",
+				tooltip    => "trigger edge",
+				} ;
 		}
 		
 	unless (exists $node->{__VIRTUAL} || exists $inserted_edges->{"$graph_node=>$graph_node"})
@@ -897,12 +901,12 @@ if($node_type eq 'HASH')
 			{
 			$graph->add_edge
 				({
-				  arrowsize => 0.65
-				, color     => 'gray'
-				, from      => $graph_node
-				, to        => $graph_node
-				#~ , URL       => "self"
-				#~ , name      => "self"
+				arrowsize => 0.65,
+				color     => 'gray',
+				from      => $graph_node,
+				to        => $graph_node,
+				#~ URL       => "self",
+				#~ name      => "self",
 				});
 				
 			$inserted_edges->{"$graph_node=>$graph_node"}++ ;
@@ -912,15 +916,15 @@ if($node_type eq 'HASH')
 			{
 			$graph->add_edge
 				({
-				  arrowsize => 0.65
-				, color     => 'blue'
-				, from      => $graph_node
-				, to        => $graph_node
-				#~ , URL       => "digest"
-				#~ , name      => "digest"
-				#~ , fontname => 'arial'
-				#~ , fontsize => 8
-				#~ , label => "Digest"
+				arrowsize => 0.65,
+				color     => 'blue',
+				from      => $graph_node,
+				to        => $graph_node,
+				#~ URL       => "digest",
+				#~ name      => "digest",
+				#~ fontname => 'arial',
+				#~ fontsize => 8,
+				#~ label => "Digest",
 				});
 				
 			$inserted_edges->{"$graph_node=>$graph_node"}++ ;

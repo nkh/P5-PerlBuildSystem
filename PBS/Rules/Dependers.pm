@@ -96,15 +96,15 @@ my $depender_sub =
 			my ($dependencies, $builder_override) ;
 			
 			($dependencies, $builder_override) = $code_reference->
-											(
-											  $dependent
-											, $config
-											, $tree
-											, $inserted_nodes
-											, undef # rule local
-											, undef # rule local
-											, $rule_definition
-											) ;
+									(
+									$dependent,
+									$config,
+									$tree,
+									$inserted_nodes,
+									undef, # rule local
+									undef, # rule local
+									$rule_definition,
+									) ;
 			return($dependencies, $builder_override) ;
 			} ;
 	
@@ -283,15 +283,15 @@ else
 				for my $depender (@dependers)
 					{
 					($dependencies, $builder_override) = $depender->
-											(
-											  $dependent
-											, $config
-											, $tree
-											, $inserted_nodes
-											, $dependencies
-											, $builder_override
-											, $rule_definition
-											) ;
+										(
+										$dependent,
+										$config,
+										$tree,
+										$inserted_nodes,
+										$dependencies,
+										$builder_override,
+										$rule_definition,
+										) ;
 					}
 					
 				return($dependencies, $builder_override) ;

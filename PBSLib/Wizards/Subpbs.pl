@@ -6,11 +6,11 @@
 print <<'EOP' ;
 AddRule 'subpbs_name',
 	{
-	  NODE_REGEX         => ''
-	, PBSFILE            => './Pbsfile.pl'
-	, PACKAGE            => ''
+	NODE_REGEX         => '',
+	PBSFILE            => './Pbsfile.pl',
+	PACKAGE            => '',
 	
-	#~ , IGNORE_LOCAL_RULES => 1
+	#~ IGNORE_LOCAL_RULES => 1,
 	} ;
 EOP
 

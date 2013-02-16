@@ -7,9 +7,9 @@ print <<'EOT' ;
 
 AddCommandLineSwitches
         (
-          '-sd .'
-        , "-sd $ENV{SOMETHING}"
-        , '-nh'
+        '-sd .',
+        "-sd $ENV{SOMETHING}",
+        '-nh',
         ) ;
 
 AddCommandLineDefinitions(PERL_TEST_MODULE => 1) ;

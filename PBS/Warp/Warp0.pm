@@ -45,14 +45,14 @@ eval
 	($build_result, $build_message, $dependency_tree, $inserted_nodes)
 		= PBS::PBS::Pbs
 			(
-			$pbs_config->{PBSFILE}
-			, ''    # parent package
-			, $pbs_config
-			, $parent_config
-			, $targets
-			, undef # inserted files
-			, "root_NO_WARP_pbs_$pbs_config->{PBSFILE}" # tree name
-			, DEPEND_CHECK_AND_BUILD
+			$pbs_config->{PBSFILE},
+			'',    # parent package
+			$pbs_config,
+			$parent_config,
+			$targets,
+			undef, # inserted files
+			"root_NO_WARP_pbs_$pbs_config->{PBSFILE}", # tree name
+			DEPEND_CHECK_AND_BUILD,
 			) ;
 	} ;
 

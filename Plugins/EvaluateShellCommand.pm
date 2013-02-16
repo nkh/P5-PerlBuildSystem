@@ -30,10 +30,10 @@ my $evaluate_shell_command_verbose ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	  'evaluate_shell_command_verbose'
-	, \$evaluate_shell_command_verbose
-	, "Will display the transformation this plugin does."
-	, ''
+	'evaluate_shell_command_verbose',
+	\$evaluate_shell_command_verbose,
+	"Will display the transformation this plugin does.",
+	'',
 	) ;
 	
 use PBS::Build::NodeBuilder ;

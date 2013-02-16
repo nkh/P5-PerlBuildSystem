@@ -10,13 +10,13 @@ sub Depender
 {
 my
 	(
-	  $dependent_to_check
-	, $config
-	, $tree
-	, $inserted_nodes
-	, $dependencies         # rule local
-	, $builder_override     # rule local
-	, $rule_definition  # for introspection
+	$dependent_to_check,
+	$config,
+	$tree,
+	$inserted_nodes,
+	$dependencies,         # rule local
+	$builder_override,     # rule local
+	$rule_definition,      # for introspection
 	) = @_ ;
 
 # Extra information for builders can be embedded in the node to build. Check "node subs"

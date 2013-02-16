@@ -28,25 +28,28 @@ AddRule 'a.out', ['a.out' => 'main.o', 'world.o']
 # add some node specific data, the node already matches another rule
 AddNodeConfigVariableDependencies(qr/world.o/, 'OPTIMIZE_CFLAGS') ;
 
-AddRule 'changing the node config', ['world.o'], undef
+AddRule 'changing the node config', 
+	['world.o'], # matcher and dependencies declaration
+	undef, # builder
 	# the job is done here
-	, [
-           \&ChangePbsConfig
-	  , \&ChangeConfig
-	  , \&CheckConfig
-	  #~, VerySpecialBuilderArguments('do this', 'do that')
-	  #~, SetOptimizationOption('-O2')
-	  #~, BuildShell($shell)
-	  #~, \&ForceLocalShell
-	  ] ;
+	[
+        \&ChangePbsConfig,
+	\&ChangeConfig,
+	\&CheckConfig,
+	#~ VerySpecialBuilderArguments('do this', 'do that'),
+	#~ SetOptimizationOption('-O2'),
+	#~ BuildShell($shell),
+	#~ \&ForceLocalShell,
+	] ;
 
 sub ForceLocalShell
 {
-my (
-  $dependent_to_check
-, $config
-, $tree
-, $inserted_nodes
+my 
+(
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
 ) = @_ ;
 
 $tree->{__SHELL_OVERRIDE} = new PBS::Shell(USER_INFO => 'Forced local shell')  ;
@@ -59,11 +62,12 @@ my $shell = shift || new PBS::Shell(USER_INFO => 'Test argument shell') ; # or f
 
 return sub
 	{
-        my (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
+        my 
+	(
+        $dependent_to_check,
+        $config,
+        $tree,
+        $inserted_nodes,
         ) = @_ ;
  	
 	$tree->{__SHELL_OVERRIDE} = $shell ;
@@ -77,11 +81,12 @@ my @definition_time_arguments = @_ ;
 
 return sub
 	{
-        my (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
+        my 
+	(
+        $dependent_to_check,
+        $config,
+        $tree,
+        $inserted_nodes,
         ) = @_ ;
 	
 	#set the arguments expected by our special builder
@@ -95,12 +100,12 @@ return sub
 sub ChangeConfig
 {
 my
-        (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
-        ) = @_ ;
+(
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
+) = @_ ;
 
 $tree->{__CONFIG} = {%{$tree->{__CONFIG}}} ; # config is share get our own copy (note! this is not deep)
 
@@ -108,10 +113,10 @@ $tree->{__CONFIG}{OPTIMIZE_CFLAGS} = '-O6' ;
 $tree->{__CONFIG}{CDEFINES} = '-Wall' ;
 $tree->{__CONFIG}{CFLAGS} = PBS::Config::EvalConfig
 				(
-				  '%OPTIMIZE_CFLAGS %WFLAGS'
-				, $tree->{__CONFIG}
-				, 'CFLAGS'
-				, "config override at " . __FILE__ . __LINE__
+				'%OPTIMIZE_CFLAGS %WFLAGS',
+				$tree->{__CONFIG},
+				'CFLAGS',
+				"config override at " . __FILE__ . __LINE__,
 				) ;
 }
 
@@ -119,12 +124,12 @@ $tree->{__CONFIG}{CFLAGS} = PBS::Config::EvalConfig
 sub CheckConfig
 {
 my
-        (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
-        ) = @_ ;
+(
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
+) = @_ ;
 
 use Data::TreeDumper ;
 PrintDebug DumpTree $tree->{__CONFIG} ;
@@ -135,12 +140,12 @@ PrintDebug DumpTree $tree->{__CONFIG} ;
 sub ChangePbsConfig
 {
 my
-        (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
-        ) = @_ ;
+(
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
+) = @_ ;
 
 $tree->{__PBS_CONFIG} = {%{$tree->{__PBS_CONFIG}}} ; # config is share get our own copy (note! this is not deep)
 

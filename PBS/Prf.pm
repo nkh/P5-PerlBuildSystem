@@ -97,9 +97,9 @@ of PBS functionality is available.
   
   AddCommandLineSwitches
   	(
-  	  '-dc'
-  	, '-dsd'
-	, '-ppp /devel/perl_modules/PerlBuildSystem/Plugins'
+  	'-dc',
+  	'-dsd',
+	'-ppp /devel/perl_modules/PerlBuildSystem/Plugins',
   	) ;
   
   AddCommandLineDefinitions(DEBUG => 1) ;
@@ -107,8 +107,8 @@ of PBS functionality is available.
   
   AddCommandLineDefinitions
   	(
-  	  DEBUG2 => 1
-  	, SOMETHING2 => 'a string with spaces again'
+  	DEBUG2 => 1,
+  	SOMETHING2 => 'a string with spaces again',
   	) ;
 
 =head1 AUTHOR

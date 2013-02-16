@@ -35,15 +35,15 @@ my @display_filter_regexes ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	  'tnonh'
-	, \$no_header_files_display
-	, "Do not display header files in the tree dump."
-	, ''
+	'tnonh',
+	\$no_header_files_display,
+	"Do not display header files in the tree dump.",
+	'',
 	
-	, 'tnonr=s'
-	, \@display_filter_regexes 
-	, "removes files matching the passed regex from the tree dump."
-	, ''
+	'tnonr=s',
+	\@display_filter_regexes ,
+	"removes files matching the passed regex from the tree dump.",
+	'',
 	) ;
 	
 sub PostDependAndCheck
@@ -70,13 +70,13 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					if(/^__/)
 						{
 						if
-							(
-							   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
-							|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
-							|| (/^__DEPENDED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_DEPENDED_AT})
-							|| (/^__INSERTED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_INSERTED_AT})
-							#~ || /^__VIRTUAL/
-							)
+						(
+						   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
+						|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
+						|| (/^__DEPENDED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_DEPENDED_AT})
+						|| (/^__INSERTED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_INSERTED_AT})
+						#~ || /^__VIRTUAL/
+						)
 							{
 							# display these
 							}
@@ -150,11 +150,11 @@ else
 					if(/^__/)
 						{
 						if
-							(
-							   (/^__PARENTS$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
-							#~ || (/^__DEPENDENCY_TO/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
-							    #~ $_ eq '__VIRTUAL'
-							)
+						(
+						   (/^__PARENTS$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
+						#~ || (/^__DEPENDENCY_TO/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
+						    #~ $_ eq '__VIRTUAL'
+						)
 							{
 							next ;
 							}
@@ -231,23 +231,23 @@ EOT
 	my $style ;
 	my $body = DumpTree
 			(
-			  $dependency_tree
-			, "Tree for $dependency_tree->{__NAME}:"
-			, DISPLAY_ROOT_ADDRESS => 1
-			#~ , DISPLAY_PERL_ADDRESS => 1
-			, DISPLAY_PERL_SIZE => 1
-			, FILTER =>$FilterDump
+			$dependency_tree,
+			"Tree for $dependency_tree->{__NAME}:",
+			DISPLAY_ROOT_ADDRESS => 1,
+			#~ DISPLAY_PERL_ADDRESS => 1,
+			DISPLAY_PERL_SIZE => 1,
+			FILTER =>$FilterDump,
 			
-			, RENDERER => 
+			RENDERER => 
 				{
-				  NAME => 'DHTML'
-				, STYLE => \$style
-				, BUTTON =>
+				NAME => 'DHTML',
+				STYLE => \$style,
+				BUTTON =>
 					{
-					  COLLAPSE_EXPAND => 1
-					, SEARCH => 1
-					}
-				}
+					COLLAPSE_EXPAND => 1,
+					SEARCH => 1,
+					},
+				},
 			) ;
 			
 	print DHTML <<EOT;

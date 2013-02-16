@@ -16,15 +16,15 @@ use Data::TreeDumper ;
 
 #~ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	#~ (
-	  #~ 'xxxxx|long_xxxxx'
-	#~ , \$my_flag
-	#~ , "short description."
-	#~ , 'documentation'
+	#~ 'xxxxx|long_xxxxx',
+	#~ \$my_flag,
+	#~ "short description.",
+	#~ 'documentation',
 	
-	#~ , 'xxxxx|long_xxxxx=s'
-	#~ , \@my_flag_list
-	#~ , "short description."
-	#~ , 'documentation'
+	#~ 'xxxxx|long_xxxxx=s',
+	#~ \@my_flag_list,
+	#~ "short description.",
+	#~ 'documentation',
 	#~ ) ;
 	
 

@@ -119,9 +119,9 @@ if(defined (my $lh = $pbs_config->{CREATE_LOG}))
 					(
 					DumpTree
 						(
-						  $build_sequence
-						, "\nBuildSequence:"
-						, FILTER => $GetBuildNames
+						$build_sequence,
+						"\nBuildSequence:",
+						FILTER => $GetBuildNames,
 						)
 					) ;
 	
@@ -191,9 +191,9 @@ if(defined (my $lh = $pbs_config->{CREATE_LOG}))
 					(
 					DumpTree
 						(
-						$dependency_tree
-						, "\nDependency tree:"
-						, FILTER => $MarkNodesToRebuild
+						$dependency_tree,
+						"\nDependency tree:",
+						FILTER => $MarkNodesToRebuild,
 						)
 					) ;
 	
@@ -206,11 +206,11 @@ if(defined (my $lh = $pbs_config->{CREATE_LOG}))
 				{
 				return
 					(
-					  'HASH'
-					, undef
-					, sort
-						 grep 
-						 	{ 
+					'HASH',
+					undef,
+					sort
+						grep 
+							{ 
 						 	/^[A-Z_]/ 
 						 	&& ($_ ne '__DEPENDENCY_TO') 
 						 	&& ($_ ne '__PARENTS')
@@ -230,15 +230,16 @@ if(defined (my $lh = $pbs_config->{CREATE_LOG}))
 					{
 					if($tree->{__NAME} !~ /^__/)
 						{
-						print $lh INFO
-										(
-										DumpTree
-											(
-											  $tree
-											, "$tree->{__NAME}:"
-											, FILTER => $GetAttributesOnly
-											)
-										) ;
+						print $lh 
+							INFO
+								(
+								DumpTree
+									(
+									$tree,
+									"$tree->{__NAME}:",
+									FILTER => $GetAttributesOnly,
+									)
+								) ;
 										
 						print $lh "\n\n" ;
 						}
@@ -318,25 +319,25 @@ print DUMP <<EOC ;
 use PBS::Graph ;
 PBS::Graph::GenerateTreeGraphFile
 	(
-	  [\$dependency_tree, \@trigger_inserted_roots], \$inserted_nodes
-	, '$pbs_config->{LOG_NAME}'
-	, '' #title
-	, {
-		\%\$pbs_config
-		, GENERATE_TREE_GRAPH => 1
-		, GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES => 1
-		, GENERATE_TREE_GRAPH_GROUP_MODE => 0
-		, GENERATE_TREE_GRAPH_SPACING => 1
-		, GENERATE_TREE_GRAPH_DISPLAY_CONFIG => 0
-		, GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE => 0
-		, GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG => 0
-		, GENERATE_TREE_GRAPH_DISPLAY_CPBS_ONFIG_EDGE => 0
-		, GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY => 0
-		, GENERATE_TREE_GRAPH_CANONICAL => 0
-		, GENERATE_TREE_GRAPH_POSTSCRIPT => 0
-		, GENERATE_TREE_GRAPH_HTML => undef # 'html_directory_name'
-		, GENERATE_TREE_GRAPH_SNAPSHOTS => undef # 'snapshots_directory_name'
-	}
+	[\$dependency_tree, \@trigger_inserted_roots], \$inserted_nodes,
+	'$pbs_config->{LOG_NAME}',
+	'' #title,
+	{
+		\%\$pbs_config,
+		GENERATE_TREE_GRAPH => 1,
+		GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES => 1,
+		GENERATE_TREE_GRAPH_GROUP_MODE => 0,
+		GENERATE_TREE_GRAPH_SPACING => 1,
+		GENERATE_TREE_GRAPH_DISPLAY_CONFIG => 0,
+		GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE => 0,
+		GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG => 0,
+		GENERATE_TREE_GRAPH_DISPLAY_CPBS_ONFIG_EDGE => 0,
+		GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY => 0,
+		GENERATE_TREE_GRAPH_CANONICAL => 0,
+		GENERATE_TREE_GRAPH_POSTSCRIPT => 0,
+		GENERATE_TREE_GRAPH_HTML => undef # 'html_directory_name',
+		GENERATE_TREE_GRAPH_SNAPSHOTS => undef # 'snapshots_directory_name',
+	},
 	) ;
 
 EOC

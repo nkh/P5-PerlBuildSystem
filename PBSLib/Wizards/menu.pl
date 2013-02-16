@@ -23,8 +23,8 @@ our $wizard_location ;
 my (%wizards, %wizard_names) ;
 File::Find::find
 	(
-	{wanted => \&ParseWizard, no_chdir => 1, follow => 1}
-	, map {"$_/Wizards"} @$lib_paths
+	{wanted => \&ParseWizard, no_chdir => 1, follow => 1},
+	map {"$_/Wizards"} @$lib_paths
 	) ;
 
 RunMenu() ;
@@ -139,11 +139,11 @@ if(keys %wizards)
 			
 			PBS::Wizard::RunWizard
 				(
-				  $lib_paths
-				, undef  
-				, $wizard_names{$wizard_name}
-				, undef
-				, $display_wizard_help
+				$lib_paths,
+				undef,
+				$wizard_names{$wizard_name},
+				undef,
+				$display_wizard_help,
 				) ;
 			}
 		else
@@ -157,7 +157,6 @@ if(keys %wizards)
 }
 
 #--------------------------------------------------------------------------------------------
+
 1 ;
-
-
 

@@ -53,13 +53,13 @@ none.
 AddRule 'lib',
 	[
 	'*.lib' =>
-		  '*.a'
-		, '[path]/a1.t'
-		, '[path]/a2.t'
-		, '*.b'
-		, '[path]/a3.t'
-		, '[path]/a4.t'
-		, '[path]/a5.t'
+		'*.a',
+		'[path]/a1.t',
+		'[path]/a2.t',
+		'*.b',
+		'[path]/a3.t',
+		'[path]/a4.t',
+		'[path]/a5.t',
 	], 
 	BuildOk("Library built.\n") ;
 
@@ -79,21 +79,25 @@ AddRule 't', ['*.t' => undef], BuildOk("'t' type file built.\n") ;
 
 sub Build
 {
-my $Pbsfile            = shift ;
-my $package_alias      = shift ;
-my $load_package       = shift ;
-my $pbs_config         = shift ;
-my $rules_namespaces   = shift ;
-my $rules              = shift ; 
-my $config_namespaces  = shift ;
-my $config_snapshot    = shift ;
+my 
+(
+$Pbsfile,
+$package_alias,
+$load_package,
+$pbs_config,
+$rules_namespaces,
+$rules,
+$config_namespaces,
+$config_snapshot,
+$targets,
+$inserted_nodes,
+$dependency_tree,
+$build_point,
+$build_type,
+) = @_ ;
+
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
-my $targets            = shift ; # a rule to build the targets exists in 'Builtin' this  argument is not used
-my $inserted_nodes     = shift ;
-my $dependency_tree    = shift ;
-my $build_point        = shift ;
-my $build_type         = shift ;
 
 die "Unsupported mode\n" unless DEPEND_CHECK_AND_BUILD == $build_type ;
 die "Unsupported composite target build\n" if ($build_point ne '') ;
@@ -107,21 +111,21 @@ die "Unsupported composite target build\n" if ($build_point ne '') ;
 =cut
 
 my $build_sequence = PBS::DefaultBuild::DefaultBuild
-							(
-							  $Pbsfile
-							, $package_alias
-							, $load_package
-							, $pbs_config
-							, $rules_namespaces
-							, $rules
-							, $config_namespaces
-							, $config_snapshot
-							, $targets
-							, $inserted_nodes
-							, $dependency_tree
-							, $build_point
-							, DEPEND_AND_CHECK
-							) ;
+			(
+			$Pbsfile,
+			$package_alias,
+			$load_package,
+			$pbs_config,
+			$rules_namespaces,
+			$rules,
+			$config_namespaces,
+			$config_snapshot,
+			$targets,
+			$inserted_nodes,
+			$dependency_tree,
+			$build_point,
+			DEPEND_AND_CHECK,
+			) ;
 							
 =over 2 
 
@@ -181,9 +185,9 @@ for my $node (@t_nodes)
 
 PBS::Build::BuildSequence
 	(
-	  $package_alias
-	, $pbs_config
-	, \@other_nodes
+	$package_alias,
+	$pbs_config,
+	\@other_nodes,
 	) ;
 
 PrintInfo("\n**Special Build Done**\n") ;

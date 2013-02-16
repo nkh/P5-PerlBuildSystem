@@ -27,11 +27,11 @@ RunShellCommands
 	(
 	PBS::Rules::Builders::EvaluateShellCommandForNode
 		(
-		  "touch  %FILE_TO_BUILD_PATH/A %FILE_TO_BUILD_PATH/A_B %FILE_TO_BUILD_PATH/A_C"
-		, "SingleRunBuilder called at '$file_name:$line'" #$shell_command_info
-		, $file_tree
-		, $dependencies
-		, $triggering_dependencies
+		"touch  %FILE_TO_BUILD_PATH/A %FILE_TO_BUILD_PATH/A_B %FILE_TO_BUILD_PATH/A_C",
+		"SingleRunBuilder called at '$file_name:$line'", #$shell_command_info
+		$file_tree,
+		$dependencies,
+		$triggering_dependencies,
 		)
 	) ;
 }

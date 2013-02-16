@@ -50,10 +50,10 @@ sub GeneratePrecompiledFlags
 	{
 		my
 			(
-			 $dependent_to_check
-			 , $config
-			 , $tree
-			 , $inserted_nodes
+			$dependent_to_check,
+			$config,
+			$tree,
+			$inserted_nodes,
 			) = @_ ;
 
 		$tree->{__CONFIG} = {%{$tree->{__CONFIG}}} ; # config is share get our own copy (note! this is not deep)
@@ -73,5 +73,6 @@ my $UsePrecompiledHeader = GeneratePrecompiledFlags(USE);
 sub AddFlagsToCreate_CL_PrecompiledHeader { return $CreatePrecompiledHeader };
 sub AddFlagsToUse_CL_PrecompiledHeader { return $UsePrecompiledHeader };
 
-
 1 ;
+
+

@@ -100,9 +100,9 @@ AddRule 'az', ['all' => 'lib.h', 'HERE'] ;
 
 AddRule 'sub_pbsfile',
 	{
-	  NODE_REGEX => 'lib.lib'
-	, PBSFILE => 'P2.pl'
-	, PACKAGE => 'LIB'
+	NODE_REGEX => 'lib.lib',
+	PBSFILE => 'P2.pl',
+	PACKAGE => 'LIB',
 	} ;
 
 RegisterUserCheckSub

@@ -19,15 +19,16 @@ my $src = 'http://10.19.9.2/Athena/_pbs.exe';
 my $cache_dir = '_pbs_cache';
 my $dst = File::Spec->catfile($cache_dir, '_pbs.exe');
 
-my @dirs_to_extract = map
-	{
+my @dirs_to_extract = 
+	map
+		{
 		$_->{path} = File::Spec->rel2abs($_->{name}, $cache_dir);
 		$_;
-	}
-	(
-		{ name => 'PBSLib', env_var => 'PBS_LIB_PATH' },
-		{ name => 'Plugins', env_var => 'PBS_PLUGIN_PATH' }
-	);
+		}	
+		(
+			{ name => 'PBSLib', env_var => 'PBS_LIB_PATH' },
+			{ name => 'Plugins', env_var => 'PBS_PLUGIN_PATH' }
+		);
 
 use constant UPDATED => 0;
 use constant UNCHANGED => 1;
@@ -36,9 +37,9 @@ use constant UNCHANGED => 1;
 CreateCacheDirectory($cache_dir);
 
 if (MirrorFile($src, $dst) == UPDATED)
-{
+	{
 	ExtractFiles($dst, @dirs_to_extract);
-}
+	}
 
 SetEnvVars(@dirs_to_extract);
 
@@ -54,68 +55,70 @@ $job->run(0);
 
 sub CreateCacheDirectory
 {
-	my $cache_dir = shift;
+my $cache_dir = shift;
 
-	mkdir $cache_dir, 0777;
-	if (! -d $cache_dir)
+mkdir $cache_dir, 0777;
+if (! -d $cache_dir)
 	{
-		die "Cannot create cache directory '$cache_dir'!";
+	die "Cannot create cache directory '$cache_dir'!";
 	}
 }
 
 sub MirrorFile
 {
-	use LWP::Simple qw(mirror is_success status_message $ua);
-	
-	my ($src, $dst) = @_;
+use LWP::Simple qw(mirror is_success status_message $ua);
 
-	$ua->timeout(5);
-	my $status = mirror($src, $dst);
+my ($src, $dst) = @_;
 
-	if ($status == LWP::Simple::RC_OK)
+$ua->timeout(5);
+my $status = mirror($src, $dst);
+
+if ($status == LWP::Simple::RC_OK)
 	{
-		print STDERR "Updated '$dst' from '$src'.\n";
-		return UPDATED;
+	print STDERR "Updated '$dst' from '$src'.\n";
+	return UPDATED;
 	}
-	elsif ($status == LWP::Simple::RC_NOT_MODIFIED)
+elsif ($status == LWP::Simple::RC_NOT_MODIFIED)
 	{
-		return UNCHANGED;
+	return UNCHANGED;
 	}
-	elsif (!is_success($status))
+elsif (!is_success($status))
 	{
-		die "Cannot mirror '$src' to '$dst', message: '" . status_message($status) . "'";
+	die "Cannot mirror '$src' to '$dst', message: '" . status_message($status) . "'";
 	}
 }
 
 sub ExtractFiles
 {
-	my ($zipfile, @dirs) = @_;
-	
-	use Archive::Zip qw(:ERROR_CODES);
-	my $zip = Archive::Zip->new();
+my ($zipfile, @dirs) = @_;
 
-	if ((my $status = $zip->read($zipfile)) != AZ_OK)
+use Archive::Zip qw(:ERROR_CODES);
+my $zip = Archive::Zip->new();
+
+if ((my $status = $zip->read($zipfile)) != AZ_OK)
 	{
-		die "Cannot read '$zipfile', error code: $status!";
+	die "Cannot read '$zipfile', error code: $status!";
 	}
 
-	for my $dir (@dirs)
+for my $dir (@dirs)
 	{
-		if ((my $status = $zip->extractTree($dir->{name}, $dir->{path})) != AZ_OK)
+	if ((my $status = $zip->extractTree($dir->{name}, $dir->{path})) != AZ_OK)
 		{
-			die "Cannot extract '$dir->{name}' from '$zipfile', error code: $status!";
+		die "Cannot extract '$dir->{name}' from '$zipfile', error code: $status!";
 		}
-		print STDERR "Extracted '$dir->{path}' from '$zipfile'\n";
+	print STDERR "Extracted '$dir->{path}' from '$zipfile'\n";
 	}
 }
 
 sub SetEnvVars
 {
-	my (@dirs) = @_;
+my (@dirs) = @_;
 	
-	for my $dir (@dirs)
+for my $dir (@dirs)
 	{
-		my $old = $ENV{$dir->{env_var}};
-		$ENV{$dir->{env_var}} = ($old ? "$old;" : '') . $dir->{path};
+	my $old = $ENV{$dir->{env_var}};
+	$ENV{$dir->{env_var}} = ($old ? "$old;" : '') . $dir->{path};
 	}
 }
+
+

@@ -133,7 +133,7 @@ else
 			#~ use PBS::ThreadedBuild ;
 			#~ return
 				#~ (
-				#~ PBS::ThreadedBuild::ThreadedBuild($package_alias , $pbs_config, $build_sequence, $inserted_nodes) 
+				#~ PBS::ThreadedBuild::ThreadedBuild($package_alias, $pbs_config, $build_sequence, $inserted_nodes) 
 				#~ ) ;
 				
 			if(defined $pbs_config->{LIGHT_WEIGHT_FORK})
@@ -196,10 +196,10 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR})
 	{
 	$progress_bar = PBS::ProgressBar->new
 			({
-			  count => $number_of_nodes_to_build 
-			, ETA   => "linear", 
-			#~ , pre_update_user_code => $PBS::Output::global_info_escape_code
-			#~ , post_update_user_code => $PBS::Output::global_reset_escape_code
+			count => $number_of_nodes_to_build,
+			ETA   => "linear", 
+			#~ pre_update_user_code => $PBS::Output::global_info_escape_code,
+			#~ post_update_user_code => $PBS::Output::global_reset_escape_code,
 			});
 	}
 	
@@ -219,7 +219,7 @@ for my $node (@$build_sequence)
 	
 	if(0 == @{$pbs_config->{DISPLAY_BUILD_INFO}})
 		{
-		$build_this_node++ ,
+		$build_this_node++;
 		}
 	else
 		{
@@ -227,7 +227,7 @@ for my $node (@$build_sequence)
 			{
 			if($name =~ /$bi_regex/)
 				{
-				$build_this_node++ ,
+				$build_this_node++ ;
 				}
 			}
 		}
@@ -239,10 +239,10 @@ for my $node (@$build_sequence)
 
 	($build_result, $build_message) = PBS::Build::NodeBuilder::BuildNode
 						(
-						  $node
-						, $node->{__PBS_CONFIG}
-						, $inserted_nodes
-						, "$node_build_index/$number_of_nodes_to_build, $percent_done%"
+						$node,
+						$node->{__PBS_CONFIG},
+						$inserted_nodes,
+						"$node_build_index/$number_of_nodes_to_build, $percent_done%",
 						) ;
 						
 	$builder_using_perl_time += tv_interval ($tn0, [gettimeofday]) if NodeBuilderUsesPerlSubs($node) ;

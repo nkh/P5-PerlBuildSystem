@@ -17,10 +17,10 @@ Test configuration correctness
 
 AddConfig 
 	(
-	  'NADIM' => 'hi'
-	, 'MULTIPLE_CC::LOCKED' => 'miner_multiple_cc'
-	, 'MULTIPLE_CC::FORCE::UNLOCKED' => 'miner_multiple_cc_12'
-	, 'MULTIPLE_CC::FORCE::UNLOCKED' => 'miner_multiple_cc-13'
+	'NADIM' => 'hi',
+	'MULTIPLE_CC::LOCKED' => 'miner_multiple_cc',
+	'MULTIPLE_CC::FORCE::UNLOCKED' => 'miner_multiple_cc_12',
+	'MULTIPLE_CC::FORCE::UNLOCKED' => 'miner_multiple_cc-13',
 	) ;
 
 #~ PbsUse('Configs/gcc') ;
@@ -32,10 +32,10 @@ PbsUse('Configs/Compilers/gcc') ;
 use Data::Dumper ;
 AddConfigTo
 	(
-	  'Project'
-	, 'USB' => 1
-	, 'BT'  => 1
-	, 'extra_something' => 1
+	'Project',
+	'USB' => 1,
+	'BT'  => 1,
+	'extra_something' => 1,
 	) ;
 # or
 # PbsUse('/projects/hugin/config.pm')

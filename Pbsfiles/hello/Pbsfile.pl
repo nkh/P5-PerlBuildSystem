@@ -27,6 +27,6 @@ AddRule 'a.out', ['a.out' => 'main.o', 'world.o']
 
 AddRule [VIRTUAL, FORCED], 'test', ['test' => 'a.out'],
 		[
-		sub {PrintUser("Running test\n") ;}
-		, "%DEPENDENCY_LIST"
+		sub {PrintUser("Running test\n") ;},
+		"%DEPENDENCY_LIST",
 		] ;

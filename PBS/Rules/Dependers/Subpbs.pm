@@ -93,15 +93,6 @@ if(exists $depender_definition->{BUILD_DIRECTORY} && !file_name_is_absolute($dep
 	$depender_definition->{BUILD_DIRECTORY} = $pbs_config->{BUILD_DIRECTORY} . '/' . $depender_definition->{BUILD_DIRECTORY} ;
 	}
 	
-#~ unless(file_name_is_absolute($depender_definition->{PBSFILE}))
-	#~ {
-	#~ # make pbsfile full path
-	#~ $depender_definition->{PBSFILE} =~ s/^\.\/// ;
-	#~ my ($basename, $path, $ext) = File::Basename::fileparse($pbs_config->{PBSFILE}, ('\..*')) ;
-	#~ $depender_definition->{PBSFILE} = $path. '/' . $depender_definition->{PBSFILE} ;
-	#~ $depender_definition->{PBSFILE} =~ s/\/\//\//g ;
-	#~ }
-	
 my $sub_pbs_dependent_regex ;
 
 if(ref $depender_definition->{NODE_REGEX} eq 'Regexp')
@@ -124,10 +115,6 @@ return
 		my $dependent_to_check = shift ; 
 		my $config             = shift ;
 		my $tree               = shift ;
-		
-		# not used
-		#~ my $inserted_nodes = shift ;
-		#~ my $depender_definition = shift ; #usefull to display error messages
 		
 		if(defined $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
 			{

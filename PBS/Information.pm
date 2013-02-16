@@ -253,8 +253,8 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 				
 				my $rule_info =
 					{
-					  INDEX => $rule_number
-					, DEFINITION => $builder_override
+					INDEX => $rule_number,
+					DEFINITION => $builder_override,
 					} ;
 					
 				$rule_info->{OVERRIDES_OWN_BUILDER}++ if($builder);
@@ -309,14 +309,14 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_CONFIG})
 	if(defined $file_tree->{__CONFIG})
 		{
 		$current_node_info = INFO 
-									(
-									DumpTree
-										(
-										$file_tree->{__CONFIG}
-										, "Build config"
-										, INDENTATION => '        '
-										)
-									) ;
+					(
+					DumpTree
+						(
+						$file_tree->{__CONFIG},
+						"Build config",
+						INDENTATION => '        ',
+						)
+					) ;
 									
 		}
 	else

@@ -82,15 +82,20 @@ my $check_c_files = GetConfig('CHECK_C_FILES:SILENT_NOT_EXISTS') || 0 ;
 
 if ($check_c_files)
   {
-    AddRuleTo 'BuiltIn', 'c_objects', [ '*/*.o' => '*.c' ]
-	, [ GetConfig('CC_SYNTAX'),
-	   "rsm %DEPENDENCY_LIST",
-	   "splint %CFLAGS_INCLUDE -I%PBS_REPOSITORIES %DEPENDENCY_LIST || true" ];
+    AddRuleTo 'BuiltIn', 'c_objects', 
+	#depender
+	[ '*/*.o' => '*.c' ],
+	#builder
+	[
+	GetConfig('CC_SYNTAX'),
+ 	"rsm %DEPENDENCY_LIST",
+   	"splint %CFLAGS_INCLUDE -I%PBS_REPOSITORIES %DEPENDENCY_LIST || true" 
+	];
   }
 else
   {
-    AddRuleTo 'BuiltIn', 'c_objects', [ '*/*.o' => '*.c' ]
-	, GetConfig('CC_SYNTAX') ;
+    AddRuleTo 'BuiltIn', 'c_objects', [ '*/*.o' => '*.c' ],
+	GetConfig('CC_SYNTAX') ;
   }
 
 	
@@ -98,15 +103,15 @@ else
 
 $c_compiler_host = $config{C_COMPILER_HOST} ;
 
-AddRuleTo 'BuiltIn', 'cpp_objects', [ '*/*.o' => '*.cpp' ]
-	, GetConfig('CXX_SYNTAX') ;
+AddRuleTo 'BuiltIn', 'cpp_objects', [ '*/*.o' => '*.cpp' ],
+	GetConfig('CXX_SYNTAX') ;
 
 #-------------------------------------------------------------------------------
 
 my $as_compiler_host = $config{AS_COMPILER_HOST} ;
 
-AddRuleTo 'BuiltIn', 's_objects', [ '*/*.o' => '*.s' ]
-	, GetConfig('AS_SYNTAX') ;
+AddRuleTo 'BuiltIn', 's_objects', [ '*/*.o' => '*.s' ],
+	GetConfig('AS_SYNTAX') ;
 
 #-------------------------------------------------------------------------------
 

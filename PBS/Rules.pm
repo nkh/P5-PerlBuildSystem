@@ -31,7 +31,7 @@ use PBS::Constants ;
 use PBS::Plugin ;
 use PBS::Rules::Creator ;
 
-use base qw(PBS::Attributes) ;
+#use base qw(PBS::Attributes) ;
 
 #-------------------------------------------------------------------------------
 
@@ -131,7 +131,7 @@ my $class = 'User' ;
 my @rule_definition = @_ ;
 
 my $pbs_config = GetPbsConfig($package) ;
-RunUniquePluginSub($pbs_config , 'AddRule', $file_name, $line, \@rule_definition) ;
+RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition ;
 my ($name, $rule_type) ;
@@ -160,11 +160,11 @@ my($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
-	  $file_name, $line
-	, $package, $class
-	, $rule_type
-	, $name
-	, $depender_definition, $builder_sub, $node_subs
+	$file_name, $line,
+	$package, $class,
+	$rule_type,
+	$name,
+	$depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -216,11 +216,11 @@ my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
-	  $file_name, $line
-	, $package,$class
-	, $rule_type
-	, $name
-	, $depender_definition, $builder_sub, $node_subs
+	$file_name, $line,
+	$package, $class,
+	$rule_type,
+	$name,
+	$depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -236,7 +236,7 @@ my $class = 'User' ;
 
 my @rule_definition = @_ ;
 my $pbs_config = GetPbsConfig($package) ;
-RunUniquePluginSub($pbs_config , 'AddRule', $file_name, $line, \@rule_definition) ;
+RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition ;
 
@@ -268,11 +268,11 @@ RemoveRule($package, $class, $name) ;
 
 RegisterRule
 	(
-	  $file_name, $line
-	, $package, $class
-	, $rule_type
-	, $name
-	, $depender_definition, $builder_sub, $node_subs
+	$file_name, $line,
+	$package, $class,
+	$rule_type,
+	$name,
+	$depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -325,11 +325,11 @@ my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 RemoveRule($package,$class, $name) ;
 RegisterRule
 	(
-	  $file_name, $line
-	, $package, $class
-	, $rule_type
-	, $name
-	, $depender_definition, $builder_sub, $node_subs
+	$file_name, $line,
+	$package, $class,
+	$rule_type,
+	$name,
+	$depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -435,15 +435,15 @@ if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
 	
 my $rule_definition = 
 	{
-	  TYPE                => $rule_types
-	, NAME                => $name
-	, ORIGIN              => $origin
-	, FILE                => $file_name
-	, LINE                => $line
-	, DEPENDER            => $depender_sub
-	, TEXTUAL_DESCRIPTION => $depender_definition # keep a visual on how the rule was defined
-	, BUILDER             => $builder_sub
-	, %$builder_generated_types
+	TYPE                => $rule_types,
+	NAME                => $name,
+	ORIGIN              => $origin,
+	FILE                => $file_name,
+	LINE                => $line,
+	DEPENDER            => $depender_sub,
+	TEXTUAL_DESCRIPTION => $depender_definition, # keep a visual on how the rule was defined,
+	BUILDER             => $builder_sub,
+	%$builder_generated_types,
 	} ;
 
 
@@ -567,7 +567,7 @@ sub BuildOk
 # defining a closure or giving a sub ref
 
 my $message = shift || 'no user message' ;
-my $print   = shift || 1 ;
+my $print   = shift || (! defined $PBS::Shell::silent_commands_output) ; 
 
 my ($package, $file_name, $line) = caller() ;
 
@@ -634,19 +634,19 @@ my ($rule_name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data)
 
 RegisterRule
 	(
-	$file_name, $line, $package
-	, 'User'
-	, [UNTYPED]
-	, $rule_name
-	, {
-	    NODE_REGEX         => $node_regex
-	  , PBSFILE            => $Pbsfile
-	  , PACKAGE            => $pbs_package
-	  #~ , IGNORE_LOCAL_RULES => 1
-	  , @other_setup_data
-	  }
-	, undef
-	, undef
+	$file_name, $line, $package,
+	'User',
+	[UNTYPED],
+	$rule_name,
+	{
+	  NODE_REGEX         => $node_regex,
+	  PBSFILE            => $Pbsfile,
+	  PACKAGE            => $pbs_package,
+	  #, IGNORE_LOCAL_RULES => 1,
+	  @other_setup_data,
+	  },
+	undef,
+	undef,
 	) ;
 }
 

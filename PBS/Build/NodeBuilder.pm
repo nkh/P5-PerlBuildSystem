@@ -86,8 +86,8 @@ for my $triggered_dependency (@$triggered_dependencies)
 	# triggered source dependencies always trigger even if they have the same md5
 	my $dependency_is_generated = PBS::Digest::IsDigestToBeGenerated
 					(
-					$node->{$triggered_dependency}{__LOAD_PACKAGE}
-					, $node->{$triggered_dependency}
+					$node->{$triggered_dependency}{__LOAD_PACKAGE},
+					$node->{$triggered_dependency}
 					) ;
 	
 	unless($dependency_is_generated)
@@ -142,7 +142,6 @@ return($rebuild) ;
 # test when apbs module has changed
 # test when config has changed
 # what if the builder is a perl sub that has changed?
-
 }
 
 #-------------------------------------------------------------------------------
@@ -178,7 +177,8 @@ my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
 if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! NodeNeedsRebuild($file_tree)))
 	{
-		
+	#todo: md5 for the shell commands and perl subs should be saved in the digest
+	
 	#todo: Need to regenerate the digest with the new pbsfile
 	
 	# nothing to do
@@ -208,12 +208,12 @@ else
 				($build_result, $build_message) 
 					= RunRuleBuilder
 						(
-						  $pbs_config
-						, $rule_used_to_build
-						, $file_tree
-						, $dependencies
-						, $triggered_dependencies
-						, $inserted_nodes
+						$pbs_config,
+						$rule_used_to_build,
+						$file_tree,
+						$dependencies,
+						$triggered_dependencies,
+						$inserted_nodes,
 						) ;
 				}
 			}
@@ -224,12 +224,10 @@ else
 		
 		if(@{$file_tree->{__MATCHING_RULES}})
 			{
-			#~ $reason .= "No Builder for '$file_tree->{__NAME}'.\n" ; 
 			$reason .= "No Builder.\n" ; 
 			}
 		else
 			{
-			#~ $reason .= "No matching rule for '$file_tree->{__NAME}'.\n"  ;
 			$reason .= "No matching rule.\n"  ;
 			}
 		
@@ -348,7 +346,6 @@ sub GetNodeDependencies
 {
 my $file_tree = shift ;
 
-#~ my @dependencies = map {$file_tree->{$_}{__BUILD_NAME} ;} grep { $_ !~ /^__/ ;}(keys %$file_tree) ;
 my @dependencies ;
 for my $dependency (grep { $_ !~ /^__/ ;}(keys %$file_tree))
 	{
@@ -414,13 +411,13 @@ eval # rules might throw an exception
 	#DEBUG HOOK (see PBS::Debug)
 	my %debug_data = 
 		(
-		  TYPE                   => 'BUILD'
-		, CONFIG                 => $file_tree->{__CONFIG}
-		, NODE_NAME              => $file_tree->{__NAME}
-		, NODE_BUILD_NAME        => $build_name
-		, DEPENDENCIES           => $dependencies
-		, TRIGGERED_DEPENDENCIES => $triggered_dependencies
-		, NODE                   => $file_tree
+		TYPE                   => 'BUILD',
+		CONFIG                 => $file_tree->{__CONFIG},
+		NODE_NAME              => $file_tree->{__NAME},
+		NODE_BUILD_NAME        => $build_name,
+		DEPENDENCIES           => $dependencies,
+		TRIGGERED_DEPENDENCIES => $triggered_dependencies,
+		NODE                   => $file_tree,
 		) ;
 		
 	#DEBUG HOOK, jump into perl debugger if so asked
@@ -428,12 +425,12 @@ eval # rules might throw an exception
 	
 	($build_result, $build_message) = $builder->
 						(
-						  $file_tree->{__CONFIG}
-						, $build_name
-						, $dependencies
-						, $triggered_dependencies
-						, $file_tree
-						, $inserted_nodes
+						$file_tree->{__CONFIG},
+						$build_name,
+						$dependencies,
+						$triggered_dependencies,
+						$file_tree,
+						$inserted_nodes,
 						) ;
 						
 	unless(defined $build_result || $build_result == BUILD_SUCCESS || $build_result == BUILD_FAILED)
@@ -459,16 +456,18 @@ if($@)
 		{
 		$build_result = BUILD_FAILED ;
 		
-		$build_message= "\n\t" . $@->{error} . "\n" ;
-		$build_message .= "\tCommand   : '" . $@->{command} . "'\n" if $PBS::Shell::silent_commands ;
-		$build_message .= "\tErrno     : " . $@->{errno} . "\n" ;
-		$build_message .= "\tErrno text: " . $@->{errno_string} . "\n" ;
+		$build_message = 
+			"\n\t" . $@->{error} . "\n"
+			. "\tCommand   : '" . $@->{command} . "'\n" if $PBS::Shell::silent_commands
+			. "\tErrno     : " . $@->{errno} . "\n"
+			. "\tErrno text: " . $@->{errno_string} . "\n" ;
 		}
 	else
 		{
 		$build_result = BUILD_FAILED ;
 		
-		my $rule_info = "'" . $rule_used_to_build->{DEFINITION}{NAME} . "' at '"
+		my $rule_info = 
+			"'" . $rule_used_to_build->{DEFINITION}{NAME} . "' at '"
 			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
 			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 		
@@ -518,13 +517,14 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 			{
 			push @rules_with_builders,
 				{
-				  INDEX => $rule_number
-				, DEFINITION => $builder_override
+				INDEX => $rule_number,
+				DEFINITION => $builder_override,
 				} ;
 			}
 		else
 			{
-			my $info = "'" . $builder_override->{NAME} . "' at  '"
+			my $info = 
+				"'" . $builder_override->{NAME} . "' at  '"
 				. $builder_override->{FILE}  . ":"
 				. $builder_override->{LINE}  . "'" ;
 				
@@ -562,14 +562,14 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		#DEBUG HOOK
 		my %debug_data = 
 			(
-			  TYPE                   => 'POST_BUILD'
-			, CONFIG                 => $file_tree->{__CONFIG}
-			, NODE_NAME              => $file_tree->{__NAME}
-			, NODE_BUILD_NAME        => $build_name
-			, DEPENDENCIES           => $dependencies
-			, TRIGGERED_DEPENDENCIES => $triggered_dependencies
-			, ARGUMENTS              => \$post_build_command->{BUILDER_ARGUMENTS}
-			, NODE                   => $file_tree
+			TYPE                   => 'POST_BUILD',
+			CONFIG                 => $file_tree->{__CONFIG},
+			NODE_NAME              => $file_tree->{__NAME},
+			NODE_BUILD_NAME        => $build_name,
+			DEPENDENCIES           => $dependencies,
+			TRIGGERED_DEPENDENCIES => $triggered_dependencies,
+			ARGUMENTS              => \$post_build_command->{BUILDER_ARGUMENTS},
+			NODE                   => $file_tree,
 			) ;
 		
 		#DEBUG HOOK
@@ -577,13 +577,13 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 		($build_result, $build_message) = $post_build_command->{BUILDER}
 							(
-							  $file_tree->{__CONFIG}
-							, [$name, $build_name]
-							, $dependencies
-							, $triggered_dependencies
-							, $post_build_command->{BUILDER_ARGUMENTS}
-							, $file_tree
-							, $inserted_nodes
+							$file_tree->{__CONFIG},
+							[$name, $build_name],
+							$dependencies,
+							$triggered_dependencies,
+							$post_build_command->{BUILDER_ARGUMENTS},
+							$file_tree,
+							$inserted_nodes,
 							) ;
 							
 		#DEBUG HOOK

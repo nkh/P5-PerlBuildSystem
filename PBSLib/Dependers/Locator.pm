@@ -15,12 +15,12 @@ sub
 	{ 
 	my
 		(
-		  $dependent_to_check
-		, $config
-		, $tree
-		, $inserted_nodes
-		, $dependencies
-		, $builder_override
+		$dependent_to_check,
+		$config,
+		$tree,
+		$inserted_nodes,
+		$dependencies,
+		$builder_override,
 		# it is possible to pass extra arguments to the depender from the rule
 		) = @_ ;
 		
@@ -125,12 +125,12 @@ sub
 	{ 
 	my
 		(
-		  $dependent_to_check
-		, $config
-		, $tree
-		, $inserted_nodes
-		, $dependencies
-		, $builder_override
+		$dependent_to_check,
+		$config,
+		$tree,
+		$inserted_nodes,
+		$dependencies,
+		$builder_override,
 		# it is possible to pass extra arguments to the depender from the rule
 		) = @_ ;
 		

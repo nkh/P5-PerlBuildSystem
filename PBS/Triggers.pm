@@ -71,10 +71,10 @@ my ($name, $triggered_and_triggering) = RunUniquePluginSub($pbs_config, 'AddTrig
 
 RegisterTrigger
 	(
-	  $file_name, $line
-	, $package
-	, $name
-	, $triggered_and_triggering
+	$file_name, $line,
+	$package,
+	$name,
+	$triggered_and_triggering,
 	) ;
 }
 
@@ -168,12 +168,12 @@ if($pbs_config->{ADD_ORIGIN})
 	
 my $trigger_rule = 
 	{
-	  NAME                => $name
-	, ORIGIN              => $origin
-	, FILE                => $file_name
-	, LINE                => $line
-	, DEPENDER            => $trigger_sub
-	, TEXTUAL_DESCRIPTION => $trigger_definition # keep a visual on how the rule was defined
+	NAME                => $name,
+	ORIGIN              => $origin,
+	FILE                => $file_name,
+	LINE                => $line,
+	DEPENDER            => $trigger_sub,
+	TEXTUAL_DESCRIPTION => $trigger_definition, # keep a visual on how the rule was defined
 	} ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES})
@@ -214,11 +214,11 @@ for my $Pbsfile (@_)
 		PrintWarning
 			(
 			"At $file_name:$line: Triggers from '$Pbsfile' have already been imported in package '$package'"
-			. "at "
-			. $imported_triggers{"$package=>$Pbsfile"}{FILE}
-			. ':'
-			. $imported_triggers{"$package=>$Pbsfile"}{LINE}
-			. ". Ignoring.\n"
+				. "at "
+				. $imported_triggers{"$package=>$Pbsfile"}{FILE}
+				. ':'
+				. $imported_triggers{"$package=>$Pbsfile"}{LINE}
+				. ". Ignoring.\n"
 			) ;
 			
 		PbsDisplayErrorWithContext($file_name, $line) ;

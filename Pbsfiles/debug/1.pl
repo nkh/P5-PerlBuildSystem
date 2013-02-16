@@ -15,9 +15,9 @@ AddRule '1>2', [ 1 => '2'] ;
 
 AddRule 'subpbs 2',
 	{
-	  NODE_REGEX => '2'
-	, PBSFILE => './2.pl'
-	, PACKAGE => '2'
+	NODE_REGEX => '2',
+	PBSFILE => './2.pl',
+	PACKAGE => '2',
 	} ;
 	
 	

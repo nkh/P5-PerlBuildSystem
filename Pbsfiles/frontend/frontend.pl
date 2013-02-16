@@ -8,17 +8,17 @@ AddRule 'all', ['all'], \&Builder ;
 # same dependency tree as all
 AddRule 'subpbs_name',
 	{
-	  NODE_REGEX         => 'b'
-	, PBSFILE            => './virtual_pbsfile'
-	, PACKAGE            => 'test'
-	, PBS_COMMAND        => DEPEND_CHECK_AND_BUILD
-	, PBSFILE_CONTENT => <<EOC
+	NODE_REGEX         => 'b',
+	PBSFILE            => './virtual_pbsfile',
+	PACKAGE            => 'test',
+	PBS_COMMAND        => DEPEND_CHECK_AND_BUILD,
+	PBSFILE_CONTENT => <<EOC,
 ExcludeFromDigestGeneration('source' => qr/b/) ;
 
 AddRule '', [b => undef],
 	[
-	  "echo Building '%FILE_TO_BUILD' with virtual subpbs"
-	#, "touch %FILE_TO_BUILD"
+	"echo Building '%FILE_TO_BUILD' with virtual subpbs",
+	#"touch %FILE_TO_BUILD"
 	] ;
 EOC
 	} ;
@@ -34,18 +34,18 @@ return
 	(
 	PBS::FrontEnd::Pbs
 		(
-		  COMMAND_LINE_ARGUMENTS => [qw(-p virtual_pbsfile2 target)]
+		COMMAND_LINE_ARGUMENTS => [qw(-p virtual_pbsfile2 target)],
 		  
-		, PBS_CONFIG =>
+		PBS_CONFIG =>
 			{
-			  #~ DISPLAY_NO_STEP_HEADER => 1
-			  DISPLAY_NO_PROGRESS_BAR => 1	
-			, CREATE_LOG => $pbs_config->{CREATE_LOG}
-			, LOG_NAME   => $pbs_config->{LOG_NAME} 
-			, DUMP       => $pbs_config->{DUMP} 
-			}
+			#~ DISPLAY_NO_STEP_HEADER => 1,
+			DISPLAY_NO_PROGRESS_BAR => 1,	
+			CREATE_LOG => $pbs_config->{CREATE_LOG},
+			LOG_NAME   => $pbs_config->{LOG_NAME},
+			DUMP       => $pbs_config->{DUMP},
+			},
 			
-		, PBSFILE_CONTENT => <<EOC
+		PBSFILE_CONTENT => <<EOC,
 AddRule '', [target => undef],
 	[
 	  sub{ PrintUser "Building target in separate PBS.\n" ;}

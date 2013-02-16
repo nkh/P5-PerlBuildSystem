@@ -42,11 +42,11 @@ if(@c_nodes)
 	{
 	PrintInfo("Found C files in the build sequence, attempting to build them.\n") ;
 	($build_result, $build_message) = PBS::Build::BuildSequence
-														(
-														  $package
-														, $pbs_config
-														, \@c_nodes
-														) ;
+						(
+						$package,
+						$pbs_config,
+						\@c_nodes,
+						) ;
 														
 	if($build_result == BUILD_FAILED)
 		{

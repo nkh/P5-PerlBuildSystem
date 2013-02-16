@@ -6,16 +6,18 @@
 print <<'EOT' ;
 sub NodeSub
 {
-my (
-  $dependent_to_check
-, $config
-, $tree
-, $inserted_nodes
+my 
+(
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
 ) = @_ ;
 
 }
 
 EOT
 
+# ------------------------------------------------------------------
 1;
 

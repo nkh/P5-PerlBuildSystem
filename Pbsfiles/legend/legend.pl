@@ -12,9 +12,9 @@ AddRule 'y', ['existing_dependency'], BuildOk("existing_dependency generated") ;
 
 AddRule 'subpbs',
 	{
-	  NODE_REGEX => 'subpbs'
-	, PBSFILE => 'subpbs.pl'
-	, PACKAGE => 'subpbs'
+	NODE_REGEX => 'subpbs',
+	PBSFILE => 'subpbs.pl',
+	PACKAGE => 'subpbs',
 	} ;
 
 ImportTriggers('trigger.pl') ;

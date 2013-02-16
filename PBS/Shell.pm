@@ -95,10 +95,10 @@ for my $shell_command (@_)
 				
 				die bless
 					{
-					  error        => 'Shell command failed!' 
-					, command      => $shell_command
-					, errno        => $?
-					, errno_string => $!
+					error        => 'Shell command failed!',
+					command      => $shell_command,
+					errno        => $?,
+					errno_string => $!,
 					}, __PACKAGE__ ;
 					
 				}
@@ -109,11 +109,11 @@ for my $shell_command (@_)
 				{
 				die bless
 					{
-					error => 'Shell command failed!' 
-						, command => $shell_command
-					, errno => $?
-					, errno_string => ''
-					#~ , errno_string => $!
+					error => 'Shell command failed!' ,
+					command => $shell_command,
+					errno => $?,
+					errno_string => '',
+					#~ errno_string => $!,
 					}, __PACKAGE__ ;
 				}
 			}

@@ -29,20 +29,20 @@ use IPC::Run qw(run binary);
 $VERSION = '2.02';
 
 
-my @nadims_graph_attributes = qw
-					(
-					clusterrank
-					color
-					fillcolor
-					fontcolor
-					fontname
-					fontsize
-					nodesep
-					pack
-					ranksep
-					root
-					style
-					) ;
+my @nadims_graph_attributes = 
+	qw(
+	clusterrank
+	color
+	fillcolor
+	fontcolor
+	fontname
+	fontsize
+	nodesep
+	pack
+	ranksep
+	root
+	style
+	) ;
 
 =head1 NAME
 

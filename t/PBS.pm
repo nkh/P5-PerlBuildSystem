@@ -649,7 +649,12 @@ sub generate_test_snapshot_and_exit {
 	my $here = $self->here;
     use File::Copy::Recursive qw(rcopy);
 	rcopy($here, "/tmp/pbs_test_snapshot");
+	
     print "!!! Generating snapshot to /tmp/pbs_test_snapshot and exiting !!!\n";
+    
+    diag "!!!\n";
+    diag "!!! Generating snapshot to /tmp/pbs_test_snapshot and exiting !!!\n";
+    diag "!!!\n";
     exit;
 }
 

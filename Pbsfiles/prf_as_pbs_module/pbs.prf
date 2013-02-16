@@ -19,8 +19,8 @@ AddCommandLineSwitches('-ndpb') ;
 
 AddCommandLineSwitches
 	(
-	  '-dc'
-	, '-dsd'
+	'-dc',
+	'-dsd',
 	) ;
 
 AddCommandLineDefinitions(DEBUG => 1) ;
@@ -28,8 +28,8 @@ AddCommandLineDefinitions(SOMETHING => 'a string with spaces') ;
 
 AddCommandLineDefinitions
 	(
-	  DEBUG2 => 1
-	, SOMETHING2 => 'a string with spaces again'
+	DEBUG2 => 1,
+	SOMETHING2 => 'a string with spaces again',
 	) ;
 
 #------------------------------------------------------------------------

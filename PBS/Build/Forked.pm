@@ -84,12 +84,12 @@ while(%$build_queue)
 		{
 		my $started_builders = StartEnqueuedNodesBuild
 					(
-					  $pbs_config
-					, $build_queue
-					, $builders
-					, $node_build_index
-					, $number_of_nodes_to_build
-					, \%builder_stats
+					$pbs_config,
+					$build_queue,
+					$builders,
+					$node_build_index,
+					$number_of_nodes_to_build,
+					\%builder_stats,
 					) ;
 					
 		$node_build_index += $started_builders ; 
@@ -103,7 +103,6 @@ while(%$build_queue)
 		
 	for my $built_node_name (@built_nodes)
 		{
-
 		my ($build_result, $build_time, $node_error_output) = CollectNodeBuildResult($pbs_config, $built_node_name, $build_queue) ;
 		
 		$number_of_already_build_node++ ;
@@ -235,11 +234,11 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	
 	my ($builder_channel) = StartBuilderProcess
 				(
-				  $pbs_config
-				, $build_sequence
-				, $inserted_nodes
-				, $shell
-				, "[$builder_index] " . __PACKAGE__ . ' ' . __FILE__ . ':' . __LINE__
+				$pbs_config,
+				$build_sequence,
+				$inserted_nodes,
+				$shell,
+				"[$builder_index] " . __PACKAGE__ . ' ' . __FILE__ . ':' . __LINE__,
 				) ;
 				
 	unless(defined $builder_channel)
@@ -260,10 +259,10 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	
 	$builders[$builder_index] = 
 		{
-		  PID              => $child_pid
-		, BUILDER_CHANNEL  => $builder_channel
-		, SHELL            => $shell
-		, BUILDING         => 0
+		PID              => $child_pid,
+		BUILDER_CHANNEL  => $builder_channel,
+		SHELL            => $shell,
+		BUILDING         => 0,
 		} ;
 	}
 
@@ -323,10 +322,8 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR})
 		(
 		PBS::ProgressBar->new
 			({
-			  count => $number_of_nodes_to_build 
-			, ETA   => "linear", 
-			#, pre_update_user_code => $PBS::Output::global_info_escape_code
-			#, post_update_user_code => $PBS::Output::global_reset_escape_code
+			count => $number_of_nodes_to_build,
+			ETA   => "linear", 
 			})
 		);
 	}
@@ -536,20 +533,6 @@ else
 		PrintError "#------------------------------------------------------------------------------\n"
 			  ."Error building node '$built_node_name'! Error will be reported bellow.\n" ;
 			  
-		#~ my $no_output = defined $PBS::Shell::silent_commands && defined $PBS::Shell::silent_commands_output ;
-		#~ $no_output = 0 if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || scalar(@{$pbs_config->{DISPLAY_NODE_INFO}})) ;
-		#~ $no_output = 1 if defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
-		
-		#~ if($no_output)
-			#~ {
-			#~ #add the missing header, the builder will add the output even if in the no_output mode
-			#~ my $node_name = "Node '$built_node_name':" ;
-			#~ my $columns = length($node_name) ;
-			#~ my $separator = '#' . ('-' x ($columns - 1)) . "\n"  ;
-			
-			#~ $error_output  .= ERROR($separator . $node_name . "\n" . $separator) ;
-			#~ }
-			
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)
 			{

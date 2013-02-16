@@ -37,10 +37,10 @@ for my $trigger (@triggers)
 		{
 		my 
 			(
-			  $build_ok, $build_message
-			, $trigger_path_regex
-			, $trigger_prefix_regex
-			, $trigger_regex
+			$build_ok, $build_message,
+			$trigger_path_regex,
+			$trigger_prefix_regex,
+			$trigger_regex,
 			) = BuildDependentRegex($trigger) ;
 			
 		unless($build_ok)
@@ -82,10 +82,10 @@ unless('Regexp' eq ref $node_regex)
 	
 	my 
 		(
-		  $build_ok, $build_message
-		, $dependent_path_regex
-		, $dependent_prefix_regex
-		, $dependent_regex
+		$build_ok, $build_message,
+		$dependent_path_regex,
+		$dependent_prefix_regex,
+		$dependent_regex,
 		) =  BuildDependentRegex($node_regex) ;
 		
 	if($build_ok)
@@ -137,10 +137,10 @@ if('' eq ref $dependent and !$is_meta_rule)
 	# compute new arguments to Addrule
 	my 
 		(
-		  $dependency_regex_ok, $dependency_regex_message
-		, $dependent_path_regex
-		, $dependent_prefix_regex
-		, $dependent_regex
+		$dependency_regex_ok, $dependency_regex_message,
+		$dependent_path_regex,
+		$dependent_prefix_regex,
+		$dependent_regex,
 		) =  BuildDependentRegex($dependent) ;
 		
 	unless($dependency_regex_ok)
@@ -327,11 +327,11 @@ $dependent_regex = quotemeta($dependent_regex) ;
 
 return
 	(
-	  $error_message eq ''
-	, $error_message
-	, $dependent_path_regex
-	, $dependent_prefix_regex
-	, $dependent_regex
+	$error_message eq '',
+	$error_message,
+	$dependent_path_regex,
+	$dependent_prefix_regex,
+	$dependent_regex,
 	) ;
 }
 

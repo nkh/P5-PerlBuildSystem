@@ -29,11 +29,11 @@ if(@_ == 1)
 				(
 				PBS::Rules::Builders::EvaluateShellCommandForNode
 					(
-					  $command
-					, "SingleRunBuilder called at '$file_name:$line'"
-					, $file_tree
-					, $dependencies
-					, $triggering_dependencies
+					$command,
+					"SingleRunBuilder called at '$file_name:$line'",
+					$file_tree,
+					$dependencies,
+					$triggering_dependencies,
 					)
 				) ;
 			}

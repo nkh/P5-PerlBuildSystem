@@ -13,11 +13,11 @@
 
 AddConfig
 	(
-	  LIST            => [ 'A', 'B']
-	, LIST_WITH_UNDEF => [ 'C', undef, 'E']
-	, SCALAR          => 'scalar'
-	, UNDEF_SCALAR    => undef
-	, HASH            => { key => 'value'}
+	LIST            => [ 'A', 'B'],
+	LIST_WITH_UNDEF => [ 'C', undef, 'E'],
+	SCALAR          => 'scalar',
+	UNDEF_SCALAR    => undef,
+	HASH            => { key => 'value'},
 	) ;
 	
 	

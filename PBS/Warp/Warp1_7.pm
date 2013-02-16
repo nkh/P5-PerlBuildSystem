@@ -200,14 +200,14 @@ if($run_in_warp_mode)
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
-					  $pbs_config->{PBSFILE}
-					, ''    # parent package
-					, $pbs_config
-					, $parent_config
-					, $targets
-					, $nodes
-					, "warp_tree"
-					, DEPEND_CHECK_AND_BUILD
+					$pbs_config->{PBSFILE},
+					'', # parent package
+					$pbs_config,
+					$parent_config,
+					$targets,
+					$nodes,
+					"warp_tree",
+					DEPEND_CHECK_AND_BUILD,
 					) ;
 			} ;
 			
@@ -218,8 +218,8 @@ if($run_in_warp_mode)
 				# this exception occures only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					  $targets, $new_dependency_tree, $nodes
-					, $pbs_config, $warp_configuration
+					$targets, $new_dependency_tree, $nodes,
+					$pbs_config, $warp_configuration,
 					) ;
 				}
 				
@@ -230,8 +230,8 @@ if($run_in_warp_mode)
 			{
 			GenerateWarpFile
 				(
-				  $targets, $new_dependency_tree, $nodes
-				, $pbs_config, $warp_configuration
+				$targets, $new_dependency_tree, $nodes,
+				$pbs_config, $warp_configuration,
 				) ;
 				
 				# force a refresh after we build files and generated events
@@ -264,10 +264,10 @@ else
 		
 		GenerateWarpFile
 			(
-			  $targets
-			, $dependency_tree
-			, $inserted_nodes
-			, $pbs_config
+			$targets,
+			$dependency_tree,
+			$inserted_nodes,
+			$pbs_config,
 			) ;
 		} ;
 		
@@ -277,14 +277,14 @@ else
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
-				$pbs_config->{PBSFILE}
-				, ''    # parent package
-				, $pbs_config
-				, $parent_config
-				, $targets
-				, undef # inserted files
-				, "root_WARP_1_7_NEEDS_REBUILD_pbs_$pbs_config->{PBSFILE}" # tree name
-				, DEPEND_CHECK_AND_BUILD
+				$pbs_config->{PBSFILE},
+				'', # parent package
+				$pbs_config,
+				$parent_config,
+				$targets,
+				undef, # inserted files
+				"root_WARP_1_7_NEEDS_REBUILD_pbs_$pbs_config->{PBSFILE}", # tree name
+				DEPEND_CHECK_AND_BUILD,
 				) ;
 		} ;
 		
@@ -295,10 +295,10 @@ else
 				# this exception occures only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					  $targets
-					, $dependency_tree_snapshot
-					, $inserted_nodes_snapshot
-					, $pbs_config
+					$targets,
+					$dependency_tree_snapshot,
+					$inserted_nodes_snapshot,
+					$pbs_config,
 					) ;
 				}
 				
@@ -308,10 +308,10 @@ else
 			{
 			GenerateWarpFile
 				(
-				  $targets
-				, $dependency_tree
-				, $inserted_nodes
-				, $pbs_config
+				$targets,
+				$dependency_tree,
+				$inserted_nodes,
+				$pbs_config,
 				) ;
 			}
 			
@@ -334,19 +334,6 @@ tie my %db, 'GDBM_File', $warp_file, &GDBM_WRCREAT, 0640;
 my $blob = thaw($db{__BLOB}) ;
 
 PrintInfo(sprintf("Loaded warp 1.7 Blob in: %0.2f s.\n", tv_interval($t0_warp_generate, [gettimeofday]))) ;
-
-#~ print DumpTree $value, 'all files md5:' ;
-
-#~ use Data::Compare ;
-
-#~ if(Compare($value, $nodes))
-	#~ {
-	#~ print "same data\n" ;
-	#~ }
-#~ else
-	#~ {
-	#~ print "different data\n" ;
-	#~ }
 
 return($blob) ;
 }
@@ -552,8 +539,8 @@ my $number_of_nodes_in_the_dependency_tree = keys %$inserted_nodes ;
 
 my $global_pbs_config = # cache to reduce warp file size
 	{
-	  BUILD_DIRECTORY    => $pbs_config->{BUILD_DIRECTORY}
-	, SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES}
+	BUILD_DIRECTORY    => $pbs_config->{BUILD_DIRECTORY},
+	SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES},
 	} ;
 	
 my ($nodes, $node_names, $insertion_file_names) = WarpifyTree($inserted_nodes, $global_pbs_config) ;

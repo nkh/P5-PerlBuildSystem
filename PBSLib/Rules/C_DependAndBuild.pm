@@ -175,11 +175,11 @@ else
 	
 my $command_to_run = PBS::Rules::Builders::EvaluateShellCommandForNode
 			(
-			  GetConfig($command_definition) #$shell_command
-			, 'hi there' # $shell_command_info
-			, $object_node # $tree
-			, [$file_to_depend] # $dependencies
-			, [$file_to_depend] # $triggered_dependencies
+			GetConfig($command_definition) #$shell_command,
+			'hi there', # $shell_command_info
+			$object_node, # $tree
+			[$file_to_depend], # $dependencies
+			[$file_to_depend], # $triggered_dependencies
 			) ;
 
 
@@ -188,14 +188,14 @@ $command_to_run .= ' -showIncludes ' ;
 
 my @results = Devel::Depend::Cl::RunAndParse
 		(
-		  $file_to_depend
-		, $command_to_run
-		, $include_system_includes
-		, $add_child_callback
-		, $display_cpp_output
+		$file_to_depend,
+		$command_to_run,
+		$include_system_includes,
+		$add_child_callback,
+		$display_cpp_output,
 		) ;
 
-# display timeing information
+# display timing information
 if($object_node->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 	{
 	my $done = "BuildingPreprocessor done." ;

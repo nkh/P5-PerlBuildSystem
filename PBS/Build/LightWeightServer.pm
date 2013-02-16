@@ -26,7 +26,6 @@ use PBS::Build::Forked ;
 
 use IO::Socket;
 use IO::Select ;
-#use PBS::ProgressBar ;
 
 #-------------------------------------------------------------------------------
 
@@ -69,12 +68,12 @@ while(%$build_queue)
 		{
 		my $started_builders = PBS::Build::Forked::StartEnqueuedNodesBuild
 					(
-					  $pbs_config
-					, $build_queue
-					, $builders
-					, $node_build_index
-					, $number_of_nodes_to_build
-					, \%builder_stats
+					$pbs_config,
+					$build_queue,
+					$builders,
+					$node_build_index,
+					$number_of_nodes_to_build,
+					\%builder_stats,
 					) ;
 					
 		$node_build_index += $started_builders ; 

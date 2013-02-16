@@ -21,10 +21,10 @@ AddTrigger 'T3', ['subdir/Y' => 't'] ;
 
 AddRule 'sub_trigger_Y',
 	{
-	  NODE_REGEX => '*/Y'
-	, PBSFILE => './trigger.pl'
-	, PACKAGE => 'Y'
-	, BUILD_DIRECTORY => '/somwhere/'
+	NODE_REGEX => '*/Y',
+	PBSFILE => './trigger.pl',
+	PACKAGE => 'Y',
+	BUILD_DIRECTORY => '/somwhere/',
 	} ;
 }
 

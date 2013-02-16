@@ -20,10 +20,10 @@ sub ExportTriggers
 AddTrigger 'T2', ['Y' => 'z2', 'z0'] ;
 AddRule 'sub_trigger_Y',
 	{
-	  NODE_REGEX => 'Y'
-	, PBSFILE => './trigger.pl'
-	, PACKAGE => 'Y'
-	, BUILD_DIRECTORY => 'somwhere/'
+	NODE_REGEX => 'Y',
+	PBSFILE => './trigger.pl',
+	PACKAGE => 'Y',
+	BUILD_DIRECTORY => 'somwhere/',
 	} ;
 }
 

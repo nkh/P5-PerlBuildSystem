@@ -20,20 +20,20 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(
-						AddPbsLibDependencies
-						AddFileDependencies           AddNodeFileDependencies
-						AddEnvironmentDependencies    AddNodeEnvironmentDependencies
-						AddVariableDependencies       AddNodeVariableDependencies
-						AddConfigVariableDependencies AddNodeConfigVariableDependencies
-						AddSwitchDependencies         AddNodeSwitchDependencies
-						
-						ExcludeFromDigestGeneration   ForceDigestGeneration 
-						GenerateNodeDigest
-						GetDigest
-						
-						GetFileMD5
-						CheckFilesMD5
-					) ;
+		AddPbsLibDependencies
+		AddFileDependencies           AddNodeFileDependencies
+		AddEnvironmentDependencies    AddNodeEnvironmentDependencies
+		AddVariableDependencies       AddNodeVariableDependencies
+		AddConfigVariableDependencies AddNodeConfigVariableDependencies
+		AddSwitchDependencies         AddNodeSwitchDependencies
+		
+		ExcludeFromDigestGeneration   ForceDigestGeneration 
+		GenerateNodeDigest
+		GetDigest
+		
+		GetFileMD5
+		CheckFilesMD5
+		) ;
 					
 our $VERSION = '0.05' ;
 
@@ -77,13 +77,13 @@ if($total_md5_requests)
 	
 return
 	({
-	  TOTAL_MD5_REQUESTS  => $total_md5_requests
-	, CACHED_REQUESTS     => $md5_request
-	, NON_CACHED_REQUESTS => $non_cached_md5_request
-	, CACHE_MISSES        => $cache_misses
-	, CACHE_HITS          => $cache_hits
-	, MD5_CACHE_HIT_RATIO => $md5_cache_hit_ratio
-	, MD5_TIME            => $md5_time
+	TOTAL_MD5_REQUESTS  => $total_md5_requests,
+	CACHED_REQUESTS     => $md5_request,
+	NON_CACHED_REQUESTS => $non_cached_md5_request,
+	CACHE_MISSES        => $cache_misses,
+	CACHE_HITS          => $cache_hits,
+	MD5_CACHE_HIT_RATIO => $md5_cache_hit_ratio,
+	MD5_TIME            => $md5_time,
 	});
 }
 
@@ -237,8 +237,8 @@ if (exists $package_config_variable_dependencies{$package})
 	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 	my %config = PBS::Config::ExtractConfig
 			(
-			  PBS::Config::GetPackageConfig($package)
-			, $pbs_config->{CONFIG_NAMESPACES}
+			PBS::Config::GetPackageConfig($package),
+			$pbs_config->{CONFIG_NAMESPACES},
 			) ;
 
 	#~ PrintDebug DumpTree(\%config, "config for package '$package':") ;
@@ -738,11 +738,11 @@ if(IsDigestToBeGenerated($package, $node))
 			
 		my $node_digest = 
 			{
-			  #~ %{GetPackageDigest($node->{__DEPENDING_PACKAGE})}
-			  %{GetPackageDigest($node->{__LOAD_PACKAGE})}
-			, %{GetNodeDigest($node)}
-			, $node->{__NAME} => $current_md5 
-			, __DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE}
+			#~ %{GetPackageDigest($node->{__DEPENDING_PACKAGE})},
+			%{GetPackageDigest($node->{__LOAD_PACKAGE})},
+			%{GetNodeDigest($node)},
+			$node->{__NAME} => $current_md5,
+			__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
 			} ;
 			
 		my $digest ;
@@ -756,11 +756,11 @@ if(IsDigestToBeGenerated($package, $node))
 			my ($digest_is_different, $why) =
 				$comparator->
 					(
-					  $node->{__BUILD_NAME}
-					, $node_digest
-					, $digest
-					, $pbs_config->{DISPLAY_DIGEST}
-					, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} 
+					$node->{__BUILD_NAME},
+					$node_digest,
+					$digest,
+					$pbs_config->{DISPLAY_DIGEST},
+					$pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
 					) ;
 					
 			if($digest_is_different)
@@ -1061,11 +1061,11 @@ if(IsDigestToBeGenerated($package, $node))
 	{
 	WriteDigest
 		(
-		  $digest_file_name
-		, "Pbsfile: $node->{__PBS_CONFIG}{PBSFILE}"
-		, GetDigest($node)
-		, '' # caller data to be added to digest
-		, 1 # create path
+		$digest_file_name,
+		"Pbsfile: $node->{__PBS_CONFIG}{PBSFILE}",
+		GetDigest($node),
+		'', # caller data to be added to digest
+		1, # create path
 		) ;
 	}
 }
@@ -1080,12 +1080,12 @@ my $package = $node->{__LOAD_PACKAGE} ;
 PrintDebug "$node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
 return
 	{
-	  %{GetPackageDigest($package)}
-	#TODO , map {$_ => GetCachedFileMD5($_)} PBS::Plugin::GetLoadedPlugins()
+	%{GetPackageDigest($package)},
+	#TODO map {$_ => GetCachedFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
 	# TODO: depend on pbs install
-	, %{GetNodeDigest($node)}
-	, $node->{__NAME} => GetCachedFileMD5($node->{__BUILD_NAME})
-	, __DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE}
+	%{GetNodeDigest($node)},
+	$node->{__NAME} => GetCachedFileMD5($node->{__BUILD_NAME}),
+	__DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE},
 	} ;
 }
 

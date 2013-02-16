@@ -63,7 +63,7 @@ for my \$subpbs_args
 	#  rule_name             node_regex                   Pbsfile              pbs_package
 	[''     , qr!!, '', ''     ] ,
 	[''     , qr!!, '', ''     ] ,
-	[''     , qr!!, '', ''     ] 
+	[''     , qr!!, '', ''     ] ,
 	)
 	{
 	AddSubpbsRule(\@\$subpbs_args) ;

@@ -24,20 +24,20 @@ AddRule 'rule_3',
 			#~ , NoMatch(qr/xx/)
 			#~ ) => # regex
 		 => AndMatch(qr<\.c$>, NoMatch(qr/xx/)) => # regex
-				  #normal dependency definition
-				  # available: $path $basename $name $ext
-				  '$path/$basename.h' 
+				#normal dependency definition
+				# available: $path $basename $name $ext
+				'$path/$basename.h',
 				  
-				, [ # post depender
-					sub
-						{
-						return([1, "hi_there2"], @_[5 .. 6])
-						}
-				  ]
-				, sub #depender
+				[ # post depender
+				sub
+					{
+					return([1, "hi_there2"], @_[5 .. 6])
+					}
+				],
+				sub #depender
 					{
 					return([1, "hi_there1"], @_[5 .. 6])
-					}
+					},
 	] ;
 
 

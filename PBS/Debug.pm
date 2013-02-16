@@ -16,22 +16,22 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(
-				pbs_jump_in_debugger p_j
-				pbs_no_jump_in_debugger p_nj
-				pbs_remove_breakpoints p_B
-				pbs_help p_h
-				pbs_list_breakpoints p_L
-				pbs_activate_breakpoints p_ab
-				pbs_deactivate_breakpoints p_db
-				pbs_tree p_t
-				pbs_dependencies p_d
-				pbs_node p_n
-				
-				EnableDebugger AddBreakpoint RemoveBreakpoints ListBreakpoints
-				ActivateBreakpoints DeactivateBreakpoints 
-				ActivatePerlDebugger DeactivatePerlDebugger 
-				CheckBreakpoint
-				) ;
+		pbs_jump_in_debugger p_j
+		pbs_no_jump_in_debugger p_nj
+		pbs_remove_breakpoints p_B
+		pbs_help p_h
+		pbs_list_breakpoints p_L
+		pbs_activate_breakpoints p_ab
+		pbs_deactivate_breakpoints p_db
+		pbs_tree p_t
+		pbs_dependencies p_d
+		pbs_node p_n
+		
+		EnableDebugger AddBreakpoint RemoveBreakpoints ListBreakpoints
+		ActivateBreakpoints DeactivateBreakpoints 
+		ActivatePerlDebugger DeactivatePerlDebugger 
+		CheckBreakpoint
+		) ;
 
 our $VERSION = '0.04' ;
 
@@ -108,24 +108,6 @@ EOH
 
 *p_h = \&pbs_help ;
 
-#----------------------------------------------------------------------
-
-#~ p_b                                 insert a Pbs breakpoint 
-#~ push @EXPORT, 'p_b' ;
-#~ *p_b = \&AddBreakpoint ;
-
-#~ sub p_b_wizard
-#~ {
-#~ PrintDebug "PBS - Not implemented!" ;
-
-#~ PrintDebug "PBS - input breakpoint data:" ;
-
-#~ my $data = <STDIN> ;
-#~ chomp $data ;
-#~ return if $data eq '' ;
-
-#~ PrintDebug "breakpoint set at '$data'" ;
-#~ }
 
 *p_list_breakpoints = \&ListBreakpoints ;
 
@@ -206,12 +188,7 @@ unless(ref $tree eq 'HASH')
 
 PrintDebug
 	(
-	DumpTree
-		(
-		$tree
-		, "Tree '$tree->{__NAME}': "
-		, INDENTATION => $indentation
-		)
+	DumpTree($tree, "Tree '$tree->{__NAME}': ", INDENTATION => $indentation	)
 	) ;
 }
 
@@ -230,8 +207,6 @@ my $GetDependenciesOnly = sub
 				{
 				return( 'HASH', undef, sort grep {! /^__/} keys %$tree) ;
 				}
-				
-			#~ return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 			} ;
 			
 p_tree($tree, $GetDependenciesOnly, '    ') ;
@@ -531,16 +506,16 @@ PBS::Debug  - debugger support for PBS
 	
 	AddBreakpoint
 		(
-		  'hi'
-		, DEPEND => 1
-		, PRE => 1
-		, ACTIONS =>
+		'breakpoint name',
+		DEPEND => 1,
+		PRE => 1,
+		ACTIONS =>
 			[
 			sub
 				{
 				PrintDebug "Hi there.\n" ;
-				}
-			]
+				},
+			],
 		) ;
 		
 	ActivateBreakpoints('hi') ;
@@ -585,16 +560,16 @@ and their aliases
 
 	AddBreakpoint
 		(
-		  'hi'
-		, DEPEND => 1
-		, PRE => 1
-		, ACTIONS =>
+		'brealpoint name',
+		DEPEND => 1,
+		PRE => 1,
+		ACTIONS =>
 			[
 			sub
 				{
 				PrintDebug "Hi there.\n" ;
-				}
-			]
+				},
+			],
 		) ;
 		
 

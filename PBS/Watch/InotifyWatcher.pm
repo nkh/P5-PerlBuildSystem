@@ -37,10 +37,10 @@ my $inotify_fd = $inotify->fileno() ;
 
 my $self = 
 	{
-	  INOTIFY        => $inotify
-	, INOTIFY_FD     => $inotify_fd
-	, MODIFIED_FILES => $modified_files
-	, DELETED_FILES  => $deleted_files
+	INOTIFY        => $inotify,
+	INOTIFY_FD     => $inotify_fd,
+	MODIFIED_FILES => $modified_files,
+	DELETED_FILES  => $deleted_files,
 	} ;
 
 $inotify_singleton = $self ;
@@ -56,9 +56,9 @@ my ($self, $file) = @_ ;
 
 my $watch_added = $self->{INOTIFY}->watch
 			(
-			$file
-			, IN_MODIFY | IN_DELETE_SELF
-			, \&RememberModifiedFiles
+			$file,
+			IN_MODIFY | IN_DELETE_SELF,
+			\&RememberModifiedFiles,
 			) ;
 
 return($watch_added) ;

@@ -19,13 +19,13 @@ sub AddProjectBreakpoints
 {
 AddBreakpoint
 	(
-	  'trigger_info'
-	, TYPE => 'DEPEND'
-	, TRIGGERED => 1
-	, POST => 1
-	, USE_DEBUGGER => 1
-	#~ , ACTIVE => 1
-	, ACTIONS =>
+	'trigger_info',
+	TYPE => 'DEPEND',
+	TRIGGERED => 1,
+	POST => 1,
+	USE_DEBUGGER => 1,
+	#~ ACTIVE => 1,
+	ACTIONS =>
 		[
 		sub
 			{
@@ -34,38 +34,38 @@ AddBreakpoint
 			
 			PrintDebug("Breakpoint 'trigger_info': rule '$data{RULE_NAME}' on node '$data{NODE_NAME}'.\n") ;
 			#~ PrintDebug(DumpTree(\@_)) ;
-			}
-		#~ , sub
+			},
+		#~ sub
 			#~ {
 			#~ PrintDebug("Breackpoint 1 action 2.\n") ;
-			#~ }
-		]
+			#~ },
+		],
 	) ;
 
 AddBreakpoint
 	(
-	  'hi'
-	, TYPE => 'DEPEND'
-	, PRE => 1
-	#~ , ACTIVE => 1
-	, ACTIONS =>
+	'hi',
+	TYPE => 'DEPEND',
+	PRE => 1,
+	#~ ACTIVE => 1,
+	ACTIONS =>
 		[
 		sub
 			{
 			PrintDebug("Breakpoint 'hi'.\n") ;
-			}
-		]
+			},
+		],
 	) ;
 
 AddBreakpoint
 	(
-	  'insert3'
-	, NODE_REGEX => '3'
-	, TYPE => 'INSERT'
-	, POST => 1
-	, USE_DEBUGGER => 1
-	#~ , ACTIVE => 1
-	, ACTIONS =>
+	'insert3',
+	NODE_REGEX => '3',
+	TYPE => 'INSERT',
+	POST => 1,
+	USE_DEBUGGER => 1,
+	#~ ACTIVE => 1,
+	ACTIONS =>
 		[
 		sub
 			{
@@ -77,18 +77,18 @@ AddBreakpoint
 			local $Data::TreeDumper::maxdepth = 1 ;
 			#~ PrintDebug(DumpTree(\%data)) ;
 			PrintDebug(DumpTree(\$data{NODE_NAME})) ;
-			}
-		]
+			},
+		],
 	) ;
 
 AddBreakpoint
 	(
-	  'build'
-	, TYPE => 'BUILD'
-	, USE_DEBUGGER => 1
-	, ACTIVE => 1
-	, PRE => 1
-	, ACTIONS =>
+	'build',
+	TYPE => 'BUILD',
+	USE_DEBUGGER => 1,
+	ACTIVE => 1,
+	PRE => 1,
+	ACTIONS =>
 		[
 		sub
 			{
@@ -101,17 +101,17 @@ AddBreakpoint
 			
 			local $Data::TreeDumper::Maxdepth = 1 ;
 			PrintDebug(DumpTree({@_})) ;
-			}
-		]
+			},
+		],
 	) ;
 
 AddBreakpoint
 	(
-	  'snapshot'
-	, TYPE => 'TREE'
-	, POST => 1
-	#~ , USE_DEBUGGER => 1
-	, ACTIONS =>
+	'snapshot',
+	TYPE => 'TREE',
+	POST => 1,
+	#~ USE_DEBUGGER => 1,
+	ACTIONS =>,
 		[
 		sub
 			{
@@ -126,8 +126,8 @@ AddBreakpoint
 			
 			PrintDebug(DumpTree($data{TREE}, "created tree:'$data{TREE}{__NAME}'.\n")) ;
 			PrintDebug("\n") ;
-			}
-		]
+			},
+		],
 	) ;
 }
 

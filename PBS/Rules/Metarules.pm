@@ -114,10 +114,7 @@ if(exists $PBS::Rules::package_rules{$package}{$class})
 	my $meta_sub = # this is a depender
 		sub
 		{
-		my $dependent      = shift ;
-		my $config         = shift ;
-		my $tree           = shift ;
-		my $inserted_nodes = shift ;
+		my ($dependent, $config, $tree, $inserted_nodes) = @_ ;
 		
 		# call the meta rule sub passed as argument
 		return

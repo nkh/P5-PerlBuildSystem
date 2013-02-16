@@ -42,12 +42,12 @@ sub Creator
 
 my
 (
-  $dependent_to_check
-, $config
-, $tree
-, $inserted_nodes
-, $dependencies         # rule local
-, $builder_override     # rule local
+$dependent_to_check,
+$config,
+$tree,
+$inserted_nodes,
+$dependencies,         # rule local
+$builder_override,     # rule local
 ) = @_ ;
 
 my ($triggered, @my_dependencies) ;
@@ -236,11 +236,11 @@ my $source_directories = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 my ($dependency_file_name, $is_alternative_source, $other_source_index) 
 	= PBS::Check::LocateSource
 		(
-		  "$dependent.creator_md5"
-		, $build_directory
-		, $source_directories
-		, $tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO}
-		, $tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES}
+		"$dependent.creator_md5",
+		$build_directory,
+		$source_directories,
+		$tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO},
+		$tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES},
 		) ;
 		
 return(CollapsePath($dependency_file_name)) ;
@@ -285,15 +285,15 @@ my $package = shift ;
 
 my $rule = PBS::Rules::RegisterRule
 		(
-		  __FILE__
-		, __LINE__
-		, $package
-		, "__Creator"
-		, [META_SLAVE]  #$rule_types
-		, $name
-		, sub{die} # $depender_definition
-		, sub{return(1, $name) ;} #$builder_definition
-		#, $node_subs
+		__FILE__,
+		__LINE__,
+		$package,
+		"__Creator",
+		[META_SLAVE],  #$rule_types
+		$name,
+		sub{die}, # $depender_definition
+		sub{return(1, $name) ;}, #$builder_definition
+		#$node_subs,
 		) ;
 
 return($rule) ;

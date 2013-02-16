@@ -38,9 +38,9 @@ die "SYNCHRONIZE expected 3 arguments" unless 3 == @_ ;
 
 my
 (
-  $unsynchronized_dependency_file_name
-, $dependency_file_name
-, $message_format
+$unsynchronized_dependency_file_name,
+$dependency_file_name,
+$message_format,
 ) = @_ ;
 
 return
@@ -48,11 +48,11 @@ return
 	bless 
 		(
 		{
-		  SOURCE_FILE      => $unsynchronized_dependency_file_name
-		, DESTINATION_FILE => $dependency_file_name
-		, MESSAGE_FORMAT   => $message_format
-		}
-		, "PBS_SYNCHRONIZE"
+		SOURCE_FILE      => $unsynchronized_dependency_file_name,
+		DESTINATION_FILE => $dependency_file_name,
+		MESSAGE_FORMAT   => $message_format,
+		},
+		"PBS_SYNCHRONIZE",
 		)
 	) ;
 }
@@ -63,11 +63,7 @@ my $reason = shift || die "Forced trigger must have a reason\n" ;
 
 return
 	(
-	bless
-		(
-		  { MESSAGE => $reason }
-		, "PBS_FORCE_TRIGGER"
-		)
+	bless ( { MESSAGE => $reason }, "PBS_FORCE_TRIGGER" ) 
 	) ;
 }
 
@@ -102,7 +98,7 @@ for my $dependency_name (keys %$node)
 			for my $file_to_synchronize (keys %$synch_list)
 				{
 				my $message_format = $synch_list->{$file_to_synchronize}{MESSAGE_FORMAT} ;
-				PrintWarning sprintf($message_format , $dependency_name) unless $PBS::Shell::silent_commands ;
+				PrintWarning sprintf($message_format, $dependency_name) unless $PBS::Shell::silent_commands ;
 				
 				unless(rename($file_to_synchronize, $synch_list->{$file_to_synchronize}{TO_FILE}))
 					{
@@ -198,14 +194,14 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		{
 		%debug_data = 
 			(
-			  TYPE           => 'DEPEND'
-			, RULE_NAME      => $rule_name
-			, NODE_NAME      => $node_name
-			, PACKAGE_NAME   => $package_alias
-			, PBSFILE        => $Pbsfile
-			, TREE           => $tree
-			, INSERTED_FILES => $inserted_nodes
-			, CONFIG         => $config
+			TYPE           => 'DEPEND',
+			RULE_NAME      => $rule_name,
+			NODE_NAME      => $node_name,
+			PACKAGE_NAME   => $package_alias,
+			PBSFILE        => $Pbsfile,
+			TREE           => $tree,
+			INSERTED_FILES => $inserted_nodes,
+			CONFIG         => $config,
 			) ;
 			
 		$DB::single = 1 if(PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
@@ -284,8 +280,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			$dependencies[0]{__RULE_NAME} = $dependency_rules->[$rule_index]{NAME} ;
 			push @sub_pbs, 
 				{
-				  SUBPBS => $dependencies[0]
-				, RULE   => $dependency_rules->[$rule_index]
+				SUBPBS => $dependencies[0],
+				RULE   => $dependency_rules->[$rule_index],
 				} ;
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
@@ -313,17 +309,17 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						
 						# return a hash
 							{
-							  NAME => $1
-							, RULE_INDEX => $rule_index
-							, USER_ATTRIBUTE => $2
+							NAME => $1,
+							RULE_INDEX => $rule_index,
+							USER_ATTRIBUTE => $2,
 							}
 						}
 					else
 						{
 						# return a hash
 							{
-							  NAME => $_
-							, RULE_INDEX => $rule_index
+							NAME => $_,
+							RULE_INDEX => $rule_index,
 							}
 						}
 					}
@@ -331,8 +327,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					# return a hash
 						{
-						  NAME => $_
-						, RULE_INDEX => $rule_index
+						NAME => $_,
+						RULE_INDEX => $rule_index,
 						}
 					}
 				} @dependencies ;
@@ -397,10 +393,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				PrintWithContext
 					(
-					  $dependency_rules->[$rule_index]{FILE}
-					, 1, 2 #context  size
-					, $dependency_rules->[$rule_index]{LINE}
-					, \&INFO
+					$dependency_rules->[$rule_index]{FILE},
+					1, 2, #context  size
+					$dependency_rules->[$rule_index]{LINE},
+					\&INFO,
 					) if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 				}
 			}
@@ -421,15 +417,15 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				{
 				my 
 				(
-				  $unsynchronized_dependency_file_name
-				, $dependency_file_name
-				, $message_format
+				$unsynchronized_dependency_file_name,
+				$dependency_file_name,
+				$message_format,
 				) = @$dependency_name{'SOURCE_FILE', 'DESTINATION_FILE', 'MESSAGE_FORMAT'} ;
 				
 				$tree->{__SYNCHRONIZE}{$unsynchronized_dependency_file_name} = 
 					{
-					  TO_FILE        => $dependency_file_name
-					, MESSAGE_FORMAT => $message_format
+					TO_FILE        => $dependency_file_name,
+					MESSAGE_FORMAT => $message_format,
 					} ;
 					
 				next ;
@@ -487,11 +483,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			{
 			  RULE => 
 				{
-				  INDEX             => $rule_index
-				, DEFINITIONS       => $dependency_rules
-				, BUILDER_OVERRIDE  => $builder_override
-				}
-			, DEPENDENCIES => \@dependencies
+				INDEX             => $rule_index,
+				DEFINITIONS       => $dependency_rules,
+				BUILDER_OVERRIDE  => $builder_override,
+				},
+			DEPENDENCIES => \@dependencies,
 			};
 		}
 	else
@@ -633,7 +629,7 @@ for my $triggered_node_data (values %triggered_nodes)
 	{
 	my $triggered_node_name  = $triggered_node_data->[TRIGGERED_NODE_NAME] ;
 	my $triggering_node_name = $triggered_node_data->[TRIGGERING_NODE_NAME] ;
-	my $rule_info            = $triggered_node_data->[TRIGGER_INFO] ,
+	my $rule_info            = $triggered_node_data->[TRIGGER_INFO],
 	
 	my $time = Time::HiRes::time() ;
 	
@@ -641,37 +637,37 @@ for my $triggered_node_data (values %triggered_nodes)
 	
 	%triggered_node_tree = 
 		(
-		  __NAME             => $triggered_node_name
-		, __DEPENDENCY_TO    => {PBS => 'Perl Build System'}
-		, __INSERTED_AT      => {
-					  INSERTION_FILE         => $Pbsfile
-					, INSERTION_PACKAGE      => $package_alias
-					, INSERTION_LOAD_PACKAGE => $load_package
-					, INSERTION_RULE         => $rule_info
-					, INSERTION_TIME         => $time
-					, INSERTING_NODE         => $triggering_node_name
-					} 
-		, __CONFIG           => $config
-		, __PACKAGE          => $package_alias
-		, __LOAD_PACKAGE     => $load_package
-		, __PBS_CONFIG       => $pbs_config
-		, __TRIGGER_INSERTED => $triggering_node_name
-		, __MATCHING_RULES   => []
-		#~, __USER_ATTRIBUTE   => $dependency->[DEPENDENCY_USER_ATTRIBUTE]
+		__NAME               => $triggered_node_name,
+		__DEPENDENCY_TO      => {PBS => 'Perl Build System'},
+		__INSERTED_AT        => {
+					INSERTION_FILE         => $Pbsfile,
+					INSERTION_PACKAGE      => $package_alias,
+					INSERTION_LOAD_PACKAGE => $load_package,
+					INSERTION_RULE         => $rule_info,
+					INSERTION_TIME         => $time,
+					INSERTING_NODE         => $triggering_node_name,
+					},
+		__CONFIG           => $config,
+		__PACKAGE          => $package_alias,
+		__LOAD_PACKAGE     => $load_package,
+		__PBS_CONFIG       => $pbs_config,
+		__TRIGGER_INSERTED => $triggering_node_name,
+		__MATCHING_RULES   => [],
+		#~__USER_ATTRIBUTE   => $dependency->[DEPENDENCY_USER_ATTRIBUTE],
 		) ;
 		
 	$inserted_nodes->{$triggered_node_name} = \%triggered_node_tree ;
 	
 	CreateDependencyTree
 		(
-		  $Pbsfile
-		, $package_alias 
-		, $load_package
-		, $pbs_config             
-		, \%triggered_node_tree                       
-		, $config                     
-		, $inserted_nodes             
-		, $dependency_rules           
+		$Pbsfile,
+		$package_alias,
+		$load_package,
+		$pbs_config,
+		\%triggered_node_tree,
+		$config,
+		$inserted_nodes,
+		$dependency_rules,
 		) ;
 	}
 # handle node triggers finished
@@ -754,14 +750,14 @@ for my $dependency (@dependencies)
 			{
 			%debug_data = 
 				(
-				  TYPE           => 'INSERT'
-				, PARENT_NAME    => $node_name
-				, NODE_NAME      => $dependency_name
-				, PACKAGE_NAME   => $package_alias
-				, PBSFILE        => $Pbsfile
-				, TREE           => $tree
-				, INSERTED_FILES => $inserted_nodes
-				, CONFIG         => $config
+				TYPE           => 'INSERT',
+				PARENT_NAME    => $node_name,
+				NODE_NAME      => $dependency_name,
+				PACKAGE_NAME   => $package_alias,
+				PBSFILE        => $Pbsfile,
+				TREE           => $tree,
+				INSERTED_FILES => $inserted_nodes,
+				CONFIG         => $config,
 				) ;
 			
 			#DEBUG	
@@ -781,12 +777,12 @@ for my $dependency (@dependencies)
 		$tree->{$dependency_name}{__PBS_CONFIG}       = $pbs_config ;
 		
 		$tree->{$dependency_name}{__INSERTED_AT}      = {
-								  INSERTION_FILE         => $Pbsfile
-								, INSERTION_PACKAGE      => $package_alias
-								, INSERTION_LOAD_PACKAGE => $load_package
-								, INSERTION_RULE         => $rule_info
-								, INSERTION_TIME         => $time
-								, INSERTING_NODE         => $tree->{__NAME}
+								INSERTION_FILE         => $Pbsfile,
+								INSERTION_PACKAGE      => $package_alias,
+								INSERTION_LOAD_PACKAGE => $load_package,
+								INSERTION_RULE         => $rule_info,
+								INSERTION_TIME         => $time,
+								INSERTING_NODE         => $tree->{__NAME},
 								} ;
 								
 		$inserted_nodes->{$dependency_name} = $tree->{$dependency_name} ;
@@ -956,14 +952,14 @@ else
 		my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
 			= PBS::PBS::Pbs
 				(
-				  $sub_pbs_name
-				, $load_package
-				, $sub_pbs_config
-				, $sub_config
-				, [$sub_node_name]
-				, $already_inserted_nodes
-				, $tree_name
-				, $sub_pbs_config->{PBS_COMMAND}
+				$sub_pbs_name,
+				$load_package,
+				$sub_pbs_config,
+				$sub_config,
+				[$sub_node_name],
+				$already_inserted_nodes,
+				$tree_name,
+				$sub_pbs_config->{PBS_COMMAND},
 				) ;
 			
 		# keep this node insertion info
@@ -1021,14 +1017,14 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	my $nodes_checker ;
 	PBS::Check::CheckDependencyTree
 		(
-		  $tree
-		, $inserted_nodes
-		, $pbs_config
-		, $config
-		, $nodes_checker
-		, undef # single node checker
-		, \@build_sequence
-		, \%trigged_files
+		$tree,
+		$inserted_nodes,
+		$pbs_config,
+		$config,
+		$nodes_checker,
+		undef, # single node checker
+		\@build_sequence,
+		\%trigged_files,
 		) ;
 		
 	RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
@@ -1036,11 +1032,11 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	if($pbs_config->{DO_BUILD})
 		{
 		my ($build_result, $build_message) = PBS::Build::BuildSequence
-															(
-															  $pbs_config
-															, \@build_sequence
-															, $inserted_nodes
-															) ;
+							(
+							$pbs_config,
+							\@build_sequence,
+							$inserted_nodes,
+							) ;
 			
 		if($build_result == BUILD_SUCCESS)
 			{
@@ -1063,11 +1059,11 @@ if($PBS::Debug::debug_enabled)
 	{
 	my %debug_data = 
 		(
-		  TYPE           => 'TREE'
-		, PACKAGE_NAME   => $package_alias
-		, PBSFILE        => $Pbsfile
-		, TREE           => $tree
-		, INSERTED_FILES => $inserted_nodes
+		TYPE           => 'TREE',
+		PACKAGE_NAME   => $package_alias,
+		PBSFILE        => $Pbsfile,
+		TREE           => $tree,
+		INSERTED_FILES => $inserted_nodes,
 		) ;
 		
 	$DB::single = 1 if (PBS::Debug::CheckBreakpoint(%debug_data)) ;
@@ -1078,10 +1074,7 @@ if($PBS::Debug::debug_enabled)
 
 sub LocatePbsfile
 {
-my $pbs_config   = shift ;
-my $Pbsfile      = shift ;
-my $sub_pbs_name = shift ;
-my $rule         = shift ;
+my ($pbs_config, $Pbsfile, $sub_pbs_name, $rule) = @_ ;
 
 my $info = $pbs_config->{ADD_ORIGIN} ? "rule '$rule->{NAME}' at '$rule->{FILE}\:$rule->{LINE}'" : '' ;
 

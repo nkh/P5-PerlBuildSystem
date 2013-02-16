@@ -31,21 +31,25 @@ use PBS::Plugin ;
 
 sub DefaultBuild
 {
-my $Pbsfile            = shift ;
-my $package_alias      = shift ;
-my $load_package       = shift ;
-my $pbs_config         = shift ;
-my $rules_namespaces   = shift ;
-my $rules              = shift ; 
-my $config_namespaces  = shift ;
-my $config_snapshot    = shift ;
+my
+	(
+	$Pbsfile,
+	$package_alias,
+	$load_package,
+	$pbs_config,
+	$rules_namespaces,
+	$rules,
+	$config_namespaces,
+	$config_snapshot,
+	$targets,
+	$inserted_nodes,
+	$dependency_tree,
+	$build_point,
+	$build_type,
+	) = @_ ;
+
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
-my $targets            = shift ; # a rule to build the targets exists in 'Builtin' this  argument is not used
-my $inserted_nodes     = shift ;
-my $dependency_tree    = shift ;
-my $build_point        = shift ;
-my $build_type         = shift ;
 
 my ($package, $file_name, $line) = caller() ;
 
@@ -61,14 +65,14 @@ PrintInfo("=> Creating dependency tree for $dependency_tree->{__NAME} [$package_
 
 PBS::Depend::CreateDependencyTree
 	(
-	  $Pbsfile
-	, $package_alias
-	, $load_package
-	, $pbs_config
-	, $dependency_tree
-	, $config
-	, $inserted_nodes
-	, $dependency_rules
+	$Pbsfile,
+	$package_alias,
+	$load_package,
+	$pbs_config,
+	$dependency_tree,
+	$config,
+	$inserted_nodes,
+	$dependency_rules,
 	) ;
 
 PrintInfo("<= Depend done [$package_alias/$PBS::PBS::Pbs_call_depth/$PBS::Depend::BuildDependencyTree_calls]\n") if $pbs_config->{DISPLAY_DEPEND_START} ;
@@ -139,17 +143,17 @@ eval
 	my $nodes_checker = RunUniquePluginSub($pbs_config, 'GetNodeChecker') ;
 	PBS::Check::CheckDependencyTree
 		(
-		  $build_node # start of the tree
-		, $inserted_nodes
-		, $pbs_config
-		, $config
-		, $nodes_checker
-		, undef # single node checker
-		, \@build_sequence
-		, \%trigged_nodes
+		$build_node, # start of the tree
+		$inserted_nodes,
+		$pbs_config,
+		$config,
+		$nodes_checker,
+		undef, # single node checker
+		\@build_sequence,
+		\%trigged_nodes,
 		) ;
 	
-	print "       \r" ;
+	print "               \r" ;
 	
 	# check if any triggered top node has been left outside the build
 	for my $node_name (keys %$inserted_nodes)
@@ -167,14 +171,14 @@ eval
 				
 				PBS::Check::CheckDependencyTree
 					(
-					  $inserted_nodes->{$node_name}
-					, $inserted_nodes
-					, $pbs_config
-					, $config
-					, $nodes_checker
-					, undef # single node checker
-					, \@triggered_build_sequence
-					, \%trigged_nodes
+					$inserted_nodes->{$node_name},
+					$inserted_nodes,
+					$pbs_config,
+					$config,
+					$nodes_checker,
+					undef, # single node checker
+					\@triggered_build_sequence,
+					\%trigged_nodes,
 					) ;
 				
 				push @build_sequence, @triggered_build_sequence ;
@@ -247,12 +251,9 @@ my ($build_result, $build_message) ;
 
 if($pbs_config->{DO_BUILD})
 	{
-	($build_result, $build_message) = PBS::Build::BuildSequence
-										(
-										  $pbs_config
-										, \@build_sequence
-										, $inserted_nodes
-										) ;
+	($build_result, $build_message) 
+		= PBS::Build::BuildSequence($pbs_config, \@build_sequence, $inserted_nodes) ;
+
 	if($build_result == BUILD_SUCCESS)
 		{
 		PrintInfo("Build Done.\n") ;

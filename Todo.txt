@@ -1,8 +1,10 @@
 Perl Build System
 =================
 
+Keep a list of triggered nodes and why, not an option, always do it.
+
 AddNodeFileDependency
-	the dependency must exist or it's MD5 cqn't be computed
+	the dependency must exist or it's MD5 can't be computed
 	=> should wait till the depending node is build to compute dependent md5
 	!!! why wouldn't we just add a rule? why does the file dependency have to be in the digest but not in the graph?
 

@@ -68,41 +68,46 @@ _EOF_
     $t->test_file_exist($log_file);
 }
 
-sub flag_kpbb : Test(2) {
-    # Write files
-    $t->write_pbsfile(<<'_EOF_');
-    ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
-    AddRule 'target', ['file.target' => 'file1.immediate',
-                                        'file2.immediate'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
-    AddRule 'imm1', ['file1.immediate' => 'file.in'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
-    AddRule 'imm2', ['file2.immediate' => 'file2.in'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
-_EOF_
-    $t->write('file.in', 'file contents');
-    $t->write('file2.in', 'file2 contents');
+sub flag_kpbb : Test(2) 
+{
+$t->write_pbsfile(<<'_EOF_');
+ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
 
-    # Build
-    $t->command_line_flags($t->command_line_flags . ' --kpbb -j=1');
-	 
-	 use Digest::MD5 qw(md5_hex) ;
-	 my $buffer_name = 'PBS_BUILD_BUFFERS/' . md5_hex('PBS::Shell_node_./file.target') ;
-	 
-    if ($^O eq 'MSWin32')
+AddRule 'target', ['file.target' => 'file1.immediate', 'file2.immediate']
+	=> 'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
+
+AddRule 'imm1', ['file1.immediate' => 'file.in'] 
+	=> 'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
+
+AddRule 'imm2', ['file2.immediate' => 'file2.in']
+	=> 'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
+_EOF_
+
+$t->write('file.in', 'file contents');
+$t->write('file2.in', 'file2 contents');
+
+$t->command_line_flags($t->command_line_flags . ' --kpbb -j=1');
+ 
+use Digest::MD5 qw(md5_hex) ;
+my $buffer_name = 'PBS_BUILD_BUFFERS/' . md5_hex('PBS::Shell_node_./file.target') ;
+#~ diag "Expecting file  $buffer_name\n" ;
+# Build
+if($^O eq 'MSWin32')
 	{
-		TODO: {
-			local $TODO = '-j does not work on Windows';
-			#			$t->build_test();
-			ok(0, 'Building would produce an access violation');
-			$t->test_file_exist_in_build_dir($buffer_name);
+	TODO: {
+		local $TODO = '-j does not work on Windows';
+		#			$t->build_test();
+		ok(0, 'Building would produce an access violation');
+		$t->test_file_exist_in_build_dir($buffer_name);
 		}
 	}
-    else
+else
 	{
-		$t->build_test();
+	#~ $t->generate_test_snapshot_and_exit() ;
 
-		$t->test_file_exist_in_build_dir($buffer_name);
+	$t->build_test();
+
+	$t->test_file_exist_in_build_dir($buffer_name);
 	}
 }
 
@@ -110,8 +115,9 @@ sub flag_dd : Test(3) {
     # Write files
     $t->write_pbsfile(<<'_EOF_');
     ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
-    AddRule 'target', ['file.target' => 'file.in'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
+    
+    AddRule 'target', ['file.target' => 'file.in']
+	=> 'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
 _EOF_
 
     # Build

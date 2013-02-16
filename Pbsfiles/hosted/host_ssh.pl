@@ -3,10 +3,10 @@ use PBS::Shell::SSH ;
 
 my $shell =  new PBS::Shell::SSH
 		(
-		  HOST_NAME        => '192.168.1.99'
-		, USER_NAME        => 'nadim'
-		#~ , PROTOCOL         => 1 # default is SSH2
-		#~ , REUSE_CONNECTION => 1
+		HOST_NAME        => '192.168.1.99',
+		USER_NAME        => 'nadim',
+		#~ PROTOCOL         => 1, # default is SSH2
+		#~ REUSE_CONNECTION => 1,
 		) ;
 
 AddConfig  C_COMPILER_HOST => $shell ;
@@ -25,11 +25,12 @@ my $shell = shift || new PBS::Shell(USER_INFO => 'Test argument shell') ; # or f
 
 return sub
 	{
-        my (
-          $dependent_to_check
-        , $config
-        , $tree
-        , $inserted_nodes
+        my 
+	(
+        $dependent_to_check,
+        $config,
+        $tree,
+        $inserted_nodes,
         ) = @_ ;
  	
 	$tree->{__SHELL_OVERRIDE} = $shell ;

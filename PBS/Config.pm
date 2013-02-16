@@ -20,18 +20,18 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(
-					AddConfig       AddConfigTo
-					GetConfig       GetConfigFrom
-					GetConfigAsList GetConfigFromAsList
-					
-					AddCompositeDefine
-					
-					AddConditionalConfig
-					AddConditionalConfigTo
-						ConfigVariableNotDefined
-						ConfigVariableEmpty
-						ConfigVariableNotDefinedOrEmpty
-					) ;
+		AddConfig       AddConfigTo
+		GetConfig       GetConfigFrom
+		GetConfigAsList GetConfigFromAsList
+		
+		AddCompositeDefine
+		
+		AddConditionalConfig
+		AddConditionalConfigTo
+			ConfigVariableNotDefined
+			ConfigVariableEmpty
+			ConfigVariableNotDefinedOrEmpty
+		) ;
 					
 our $VERSION = '0.03' ;
 
@@ -84,10 +84,10 @@ return
 	(
 	__GetConfig
 		(
-		  $package, $file_name, $line
-		, wantarray
-		, \%user_config
-		, @_
+		$package, $file_name, $line,
+		wantarray,
+		\%user_config,
+		@_,
 		)
 	) ;
 }
@@ -116,10 +116,10 @@ return
 	(
 	__GetConfig
 		(
-		  $package, $file_name, $line
-		, wantarray
-		, \%user_config
-		, @_
+		$package, $file_name, $line,
+		wantarray,
+		\%user_config,
+		@_,
 		)
 	) ;
 }
@@ -130,10 +130,10 @@ sub __GetConfig
 {
 my 
 	(
-	  $package, $file_name, $line
-	, $wantarray
-	, $user_config
-	, @config_variables
+	$package, $file_name, $line,
+	$wantarray,
+	$user_config,
+	@config_variables,
 	) = @_ ;
 	
 $file_name =~ s/^'// ; $file_name =~ s/'$// ;
@@ -207,10 +207,10 @@ return
 	(
 	__GetConfigAsList
 		(
-		  $package, $file_name, $line
-		, wantarray
-		, \%user_config
-		, @_
+		$package, $file_name, $line,
+		wantarray,
+		\%user_config,
+		@_,
 		)
 	) ;
 }
@@ -229,10 +229,10 @@ return
 	(
 	__GetConfigAsList
 		(
-		  $package, $file_name, $line
-		, wantarray
-		, \%user_config
-		, @_
+		$package, $file_name, $line,
+		wantarray,
+		\%user_config,
+		@_,
 		)
 	) ;
 }
@@ -243,10 +243,10 @@ sub __GetConfigAsList
 {
 my 
 	(
-	 $package, $file_name, $line
-	, $wantarray
-	, $user_config
-	, @config_variables
+	$package, $file_name, $line,
+	$wantarray,
+	$user_config,
+	@config_variables,
 	) = @_ ;
 
 my $caller_location = "at '$file_name:$line'" ;
@@ -567,10 +567,10 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		# PARENT variables was evaluated while adding them, we don't want to re-evaluate it 
 		$value = EvalConfig
 				(
-				  $value
-				, $config_to_merge_to_cache
-				, $key
-				, "Config at $origin"
+				$value,
+				$config_to_merge_to_cache,
+				$key,
+				"Config at $origin",
 				) ;
 		}
 		
@@ -588,7 +588,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 					override_parent => $override_parent, 
 					local => $local,
 					silent_override => $silent_override,
-					} , 
+					}, 
 					"$key => $value, attributes $flags",
 					INDENTATION => $indent ;
 			}
@@ -601,21 +601,21 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 	#DEBUG	
 	my %debug_data = 
 		(
-		  TYPE                => 'VARIABLE'
+		TYPE                => 'VARIABLE',
 		  
-		, VARIABLE_NAME       => $key
-		, VARIABLE_VALUE      => $value
-		, VARIABLE_ATTRIBUTES => \%attributes 
+		VARIABLE_NAME       => $key,
+		VARIABLE_VALUE      => $value,
+		VARIABLE_ATTRIBUTES => \%attributes,
 		
-		, CONFIG_TO_MERGE_TO  => $config_to_merge_to
-		, MERGE_TYPE          => $type
-		, CLASS               => $class
-		, ORIGIN              => $origin
+		CONFIG_TO_MERGE_TO  => $config_to_merge_to,
+		MERGE_TYPE          => $type,
+		CLASS               => $class,
+		ORIGIN              => $origin,
 		
-		, PACKAGE_NAME        => $package
-		, NODE_NAME           => 'not available'
-		, PBSFILE             => 'not available'
-		, RULE_NAME           => 'not available'
+		PACKAGE_NAME        => $package,
+		NODE_NAME           => 'not available',
+		PBSFILE             => 'not available',
+		RULE_NAME           => 'not available',
 		) ;
 	
 	#DEBUG	
@@ -653,9 +653,9 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 				(
 				DumpTree
 					(
-					  $config_to_merge_to->{$type}{$class}{$key}
-					, "Configuration variable '$key' => '$value' defined at $origin, wants to override locked variable:\n"
-					  . "${package}::${type}::${class}::$key:"
+					$config_to_merge_to->{$type}{$class}{$key},
+					"Configuration variable '$key' => '$value' defined at $origin, wants to override locked variable:\n"
+						. "${package}::${type}::${class}::$key:",
 					)
 				) ;
 			die ;
@@ -694,10 +694,10 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 					(
 					DumpTree
 						(
-						$config_to_merge_to->{$type}{$class}{$key}
-						#~ , "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:"
-						, "Overriding ${locked_message}config\n\tpackage: '${package}'\n\ttype: '${type}'"
-							."\n\tclass '${class}'\n\tkey: '$key' it is now:"
+						$config_to_merge_to->{$type}{$class}{$key},
+						#~ "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:",
+						"Overriding ${locked_message}config\n\tpackage: '${package}'\n\ttype: '${type}'"
+							."\n\tclass '${class}'\n\tkey: '$key' it is now:",
 						)
 					) 
 				}
@@ -731,39 +731,6 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		}
 		
 	# let the user know if it's configuration will not be used because of higer order classes
-=comment
-note that anytype that is override parent becomes a parent
-but even a parent type can't override the command line =>
-does it mean that command line cna't be overriden at all even by LOCAL
-
-
-	if($type eq 'LOCAL')
-		{
-		CURRENT
-		PARENT
-		COMMAND_LINE
-		
-		if
-		   exists $config_to_merge_to->{PARENT}
-		&& exists $config_to_merge_to->{PARENT}{__PBS}{$key} 
-		#~ && $value ne $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE}
-		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
-		)
-			{
-			PrintWarning2
-				(
-				DumpTree
-					(
-					  {
-					    'Parent\'s value' => $config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}
-					  , 'Current value' => $value
-					  }
-					, "Ignoring '$key' defined at '$origin': Already defined in the subpbs'parent:"
-					)
-				) ;
-			}
-		}
-=cut		
 	if($type eq 'CURRENT')
 		{
 		if
@@ -778,11 +745,11 @@ does it mean that command line cna't be overriden at all even by LOCAL
 				(
 				DumpTree
 					(
-					  {
-					    'Parent\'s value' => $config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}
-					  , 'Current value' => $value
-					  }
-					, "Ignoring '$key' defined at '$origin': Already defined in the subpbs'parent:"
+					{
+					'Parent\'s value' => $config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE},
+					'Current value' => $value,
+					},
+					"Ignoring '$key' defined at '$origin': Already defined in the subpbs'parent:",
 					)
 				) ;
 			}
@@ -799,11 +766,11 @@ does it mean that command line cna't be overriden at all even by LOCAL
 				(
 				DumpTree
 					(
-					  {
-					    'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}
-					  , 'Current value' => $value
-					  }
-					, "Ignoring '$key' defined at '$origin': Already defined on the command line:"
+					{
+					'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE},
+					'Current value' => $value,
+					},
+					"Ignoring '$key' defined at '$origin': Already defined on the command line:",
 					)
 				) ;
 			}
@@ -823,11 +790,11 @@ does it mean that command line cna't be overriden at all even by LOCAL
 				(
 				DumpTree
 					(
-					  {
-					    'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}
-					  , Parent => $value
-					  }
-					, "Ignoring '$key' defined at '$origin': Already defined on the command line:"
+					{
+					'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE},
+					Parent => $value,
+					},
+					"Ignoring '$key' defined at '$origin': Already defined on the command line:",
 					)
 				) ;
 			}
@@ -969,9 +936,9 @@ else
 	{
 	%sub_config = PBS::Config::ExtractConfig
 			(
-			PBS::Config::GetPackageConfig($load_package)
-			, $tree->{__PBS_CONFIG}{CONFIG_NAMESPACES}
-			, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+			PBS::Config::GetPackageConfig($load_package),
+			$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
+			['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
 			) ;
 	}
 	
@@ -1034,9 +1001,9 @@ die $@ if $@ ;
 return 
 	PBS::Config::ExtractConfig
 		(
-		PBS::Config::GetPackageConfig($subpbs_package_node_config)
-		, $config_namespaces
-		, ['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'] # LOCAL REMOVED!
+		PBS::Config::GetPackageConfig($subpbs_package_node_config),
+		$config_namespaces,
+		['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
 		) ;
 } ;
 

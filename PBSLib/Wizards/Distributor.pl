@@ -41,17 +41,17 @@ new PBS::Shell::Telnet
 	REUSE_CONNECTION       => 1,
 	USER_INFO              => " [1GHz]",
 	COMMAND_COLOR          => \&PrintUser
-	)
+	),
 		
 # for SSH conection, you must setup up an SSH agent
-, new PBS::Shell::SSH
+new PBS::Shell::SSH
 	(
-	  HOST_NAME => 'localhost'
-	, USER_NAME => 'nadim'
-	, USER_INFO => " [3GHz]"
-	)
+	HOST_NAME => 'localhost',
+	USER_NAME => 'nadim',
+	USER_INFO => " [3GHz]",
+	),
 
-, new PBS::Shell(USER_INFO => " [3GHz]")
+new PBS::Shell(USER_INFO => " [3GHz]"),
 ]
 
 # it is also possible to return a distributor object that implements the same

@@ -175,17 +175,18 @@ $dependency_tree_name = "__PBS_" . $dependency_tree_name ;
 tie my %tree_hash, "Tie::Hash::Indexed" ;
 %tree_hash = 
 	(
-	  __NAME          => $dependency_tree_name
-	, __DEPENDENCY_TO => {PBS => "Perl Build System [$Pbs_call_depth]"}
-	, __INSERTED_AT   => {
-				  INSERTION_FILE         => $Pbsfile
-				, INSERTION_PACKAGE      => 'PBS::PBS::Pbs'
-				, INSERTION_LOAD_PACKAGE => 'Root load'
-				, INSERTION_RULE         => 'Root load'
-				, INSERTION_TIME         => 0
-				, INSERTING_NODE         => 'Root load'
-				}
-	, __PBS_CONFIG    => $pbs_config
+	__NAME          => $dependency_tree_name,
+	__DEPENDENCY_TO => {PBS => "Perl Build System [$Pbs_call_depth]"},
+	__INSERTED_AT   => 
+				{
+				INSERTION_FILE         => $Pbsfile,
+				INSERTION_PACKAGE      => 'PBS::PBS::Pbs',
+				INSERTION_LOAD_PACKAGE => 'Root load',
+				INSERTION_RULE         => 'Root load',
+				INSERTION_TIME         => 0,
+				INSERTING_NODE         => 'Root load',
+				},
+	__PBS_CONFIG    => $pbs_config,
 	) ;
 
 my $dependency_tree = \%tree_hash ;
@@ -258,11 +259,11 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		
 	LoadFileInPackage
 		(
-		  'Pbsfile'
-		, $Pbsfile
-		, $load_package
-		, $pbs_config
-		,   "use strict ;\n"
+		'Pbsfile',
+		$Pbsfile,
+		$load_package,
+		$pbs_config,
+		"use strict ;\n"
 		  . "use warnings ;\n"
 		  . "use base qw(PBS::Attributes);\n"
 		  . "use PBS::Constants ;\n"
@@ -277,20 +278,20 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		  . "use PBS::PBS ;\n"
 		  . "use PBS::Digest;\n"
 		  . "use PBS::Rules::Creator;\n"
-		  . $add_pbsfile_digest
+		  . $add_pbsfile_digest,
 		  
-		, "\n# load OK\n1 ;\n"
+		"\n# load OK\n1 ;\n",
 		) ;
 		
 	PBS::Rules::RegisterRule
 		(
-		'PBS_INTERNAL_' . __FILE__
-		, __LINE__
-		, $load_package
-		, 'BuiltIn'
-		, [VIRTUAL, '__INTERNAL']
-		, '__ROOT'
-		, sub
+		'PBS_INTERNAL_' . __FILE__,
+		__LINE__,
+		$load_package,
+		'BuiltIn',
+		[VIRTUAL, '__INTERNAL'],
+		'__ROOT',
+		sub
 			{
 			my $dependent = shift ;
 			
@@ -315,7 +316,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 				{
 				return([0]) ;
 				}
-			}
+			},
 		) ;
 		
 	{
@@ -339,19 +340,19 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		($build_result, $build_message)
 			= $user_build->
 				(
-				  $Pbsfile
-				, $package
-				, $load_package
-				, $pbs_config
-				, \@rule_namespaces
-				, $rules
-				, \@config_namespaces
-				, $sub_config
-				, $targets # automatically build in rule 'BuiltIn::__ROOT', given as information only
-				, $inserted_nodes
-				, $dependency_tree # rule 0 dependent name is in $dependency_tree ->{__NAME}
-				, $build_point
-				, $depend_and_build
+				$Pbsfile,
+				$package,
+				$load_package,
+				$pbs_config,
+				\@rule_namespaces,
+				$rules,
+				\@config_namespaces,
+				$sub_config,
+				$targets, # automatically build in rule 'BuiltIn::__ROOT', given as information only
+				$inserted_nodes,
+				$dependency_tree, # rule 0 dependent name is in $dependency_tree ->{__NAME}
+				$build_point,
+				$depend_and_build,
 				) ;
 			
 		}
@@ -366,19 +367,19 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		($build_result, $build_message)
 			= PBS::DefaultBuild::DefaultBuild
 				(
-				  $Pbsfile
-				, $package
-				, $load_package
-				, $pbs_config
-				, \@rule_namespaces
-				, $rules
-				, \@config_namespaces
-				, $sub_config
-				, $targets # automatically build in rule 'BuiltIn::__ROOT', given as information only
-				, $inserted_nodes
-				, $dependency_tree
-				, $build_point
-				, $depend_and_build
+				$Pbsfile,
+				$package,
+				$load_package,
+				$pbs_config,
+				\@rule_namespaces,
+				$rules,
+				\@config_namespaces,
+				$sub_config,
+				$targets, # automatically build in rule 'BuiltIn::__ROOT', given as information only
+				$inserted_nodes,
+				$dependency_tree,
+				$build_point,
+				$depend_and_build,
 				) ;
 		
 		}
@@ -540,11 +541,11 @@ for my $source_name (@{[@_]})
 			
 		LoadFileInPackage
 			(
-			''
-			, $located_source_name
-			, $package
-			, $pbs_config
-			, "use PBS::Constants ;\n" . $add_as_package_dependency
+			'',
+			$located_source_name,
+			$package,
+			$pbs_config,
+			"use PBS::Constants ;\n" . $add_as_package_dependency,
 			) ;
 			
 		$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
@@ -687,14 +688,14 @@ PBS::PBS - Perl Build System.
 	use PBS::PBS ;
 	PBS::PBS::Pbs
 		(
-		$pbs_config->{PBSFILE}
-		, ''    # parent package
-		, $pbs_config
-		, {}    # parent config
-		, $targets
-		, undef # inserted files
-		, "root_pbs_$pbs_config->{PBSFILE}" # tree name
-		, DEPEND_CHECK_AND_BUILD
+		$pbs_config->{PBSFILE},
+		'',    # parent package
+		$pbs_config,
+		{},    # parent config
+		$targets,
+		undef, # inserted files
+		"root_pbs_$pbs_config->{PBSFILE}", # tree name
+		DEPEND_CHECK_AND_BUILD,
 		) ;
 
 =head1 DESCRIPTION

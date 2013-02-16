@@ -43,20 +43,21 @@ for my $rule (@$rule_references)
 		#~ print Dumper($pbs_config) ;
 		
 		my ($full_name) = PBS::Check::LocateSource
-									(
-									  $dependencies[0]
-									, $build_directory
-									, \@source_directories
-									, $pbs_config->{DISPLAY_SEARCH_INFO} || 0
-									, $pbs_config->{DISPLAY_SEARCH_ALTERNATES} || 0
-									) ;
+					(
+					$dependencies[0],
+					$build_directory,
+					\@source_directories,
+					$pbs_config->{DISPLAY_SEARCH_INFO} || 0,
+					$pbs_config->{DISPLAY_SEARCH_ALTERNATES} || 0,
+					) ;
 		
-		my $current_rule_definition = {
-												  NAME => $dependencies[0]
-												, FULL_NAME => $full_name
-												, RULE => $rule
-												, BUILDER_OVERRIDE => $builder_override
-												} ;
+		my $current_rule_definition = 
+			{
+			NAME => $dependencies[0],
+			FULL_NAME => $full_name,
+			RULE => $rule,
+			BUILDER_OVERRIDE => $builder_override,
+			} ;
 											
 		if(-e $full_name)
 			{
@@ -86,8 +87,8 @@ if(defined $rule_definition)
 	{
 	return
 		(
-		  [1, $rule_definition->{NAME}] 
-		, $rule_definition->{BUILDER_OVERRIDE} || $rule_definition->{RULE}
+		[1, $rule_definition->{NAME}],
+		$rule_definition->{BUILDER_OVERRIDE} || $rule_definition->{RULE},
 		) ;	
 	}
 else

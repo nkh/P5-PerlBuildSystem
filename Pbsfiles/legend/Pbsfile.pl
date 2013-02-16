@@ -3,15 +3,15 @@ ExcludeFromDigestGeneration('Legend Pbsfiles' => qr/\.pl$/) ;
 #AddFileDependencies('/usr/local/lib/perl5/site_perl/5.8.0/PBS/Graph.pm') ;
 
 
-AddRule [VIRTUAL], 'all'
-	, 	[ 
-		'all' => 
-		  'graphs/legend.png'
-		, 'graphs/config_legend_1.png'
-		, 'graphs/config_legend_2.png'
-		, 'graphs/config_legend_3.png'
-		, 'graphs/cyclic_legend.png'
-		]
+AddRule [VIRTUAL], 'all',
+	[ 
+	'all' => 
+		'graphs/legend.png',
+		'graphs/config_legend_1.png',
+		'graphs/config_legend_2.png',
+		'graphs/config_legend_3.png',
+		'graphs/cyclic_legend.png',
+	]
 	, BuildOk("Done") ;
 
 

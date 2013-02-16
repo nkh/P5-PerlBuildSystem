@@ -27,13 +27,14 @@ our $VERSION = '0.02' ;
 sub GenerateSnapshots
 {
 my (
-	  $trees, $inserted_nodes
-	, $graph
-	, $pbs_shapshots_directory
-	, $inserted_graph_nodes
-	, $inserted_edges
-	, $inserted_configs
-	, $inserted_pbs_configs
+	$trees, 
+	$inserted_nodes,
+	$graph,
+	$pbs_shapshots_directory,
+	$inserted_graph_nodes,
+	$inserted_edges,
+	$inserted_configs,
+	$inserted_pbs_configs,
 	) = @_ ;
 	
 PrintInfo("PBS Snapshots Maker $VERSION\n") ;
@@ -41,11 +42,11 @@ PrintInfo("PBS Snapshots Maker $VERSION\n") ;
 
 $graph->add_node
 	({
-	  shape => 'box'
-	, name => '__NODE_INFORMATION'
-	, label => 'PBS'
-	, color => 'blue'
-	, fontsize => 10
+	shape => 'box',
+	name => '__NODE_INFORMATION',
+	label => 'PBS',
+	color => 'blue',
+	fontsize => 10,
 	}) ;
 	
 
@@ -159,28 +160,27 @@ for my $time (@times)
 				
 				if(exists $inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA})
 					{
-					$inserting_rule = $inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE} ;
-					$inserting_rule .= ' (' ;
-					$inserting_rule .= $inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE};
-					$inserting_rule .= ')' ;
+					$inserting_rule = 
+						$inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
+						. ' (' 
+						. $inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}
+						. ')' ;
 					
 					$inserting_node = $inserted_nodes->{$node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} ;
 					}
 				else
 					{
-					$inserting_rule = $inserted_nodes->{$node_name}{__INSERTED_AT}{INSERTION_RULE} ;
-					$inserting_rule .= ' (' ;
-					$inserting_rule .= $inserted_nodes->{$node_name}{__INSERTED_AT}{INSERTION_FILE} ;
-					$inserting_rule .= ')' ;
+					$inserting_rule = 
+						$inserted_nodes->{$node_name}{__INSERTED_AT}{INSERTION_RULE}
+						. ' ('
+						. $inserted_nodes->{$node_name}{__INSERTED_AT}{INSERTION_FILE}
+						. ')' ;
 					
 					$inserting_node = $inserted_nodes->{$node_name}{__INSERTED_AT}{INSERTING_NODE} ;
 					}
 					
 				my $current_node_information .= "$inserting_node => $inserting_rule => $node_name.\n" ;
-				if($current_node_information =~ /^__/)
-					{
-					$current_node_information = 'PBS' ;
-					}
+				$current_node_information = 'PBS' if($current_node_information =~ /^__/) ;
 				
 				$node_information .= "[$time_index/$time_frames] $current_node_information" ;
 				}

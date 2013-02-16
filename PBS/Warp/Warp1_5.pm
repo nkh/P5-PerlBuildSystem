@@ -60,7 +60,6 @@ my $t0_warp = [gettimeofday];
 
 if(-e $warp_file)
 	{
-#	do $warp_file or die ERROR("Couldn't evaluate warp file '$warp_file'\nFile error: $!\nCompilation error: $@\n") ;
 	($nodes, $node_names, $global_pbs_config, $insertion_file_names,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration)
 		= do $warp_file or die ERROR("Couldn't evaluate warp file '$warp_file'\nFile error: $!\nCompilation error: $@\n") ;
@@ -303,8 +302,6 @@ if($run_in_warp_mode)
 		
 		eval
 			{
-			#~ PBS::Digest::FlushMd5Cache() ;
-			
 			# PBS will link to the  warp nodes instead for regenerating them
 			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
 			
@@ -312,14 +309,14 @@ if($run_in_warp_mode)
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
-					  $pbs_config->{PBSFILE}
-					, ''    # parent package
-					, $pbs_config
-					, $parent_config
-					, $targets
-					, $nodes
-					, "warp_tree"
-					, DEPEND_CHECK_AND_BUILD
+					$pbs_config->{PBSFILE},
+					'', # parent package
+					$pbs_config,
+					$parent_config,
+					$targets,
+					$nodes,
+					"warp_tree",
+					DEPEND_CHECK_AND_BUILD,
 					) ;
 			} ;
 			
@@ -330,8 +327,8 @@ if($run_in_warp_mode)
 				# this exception occures only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					  $targets, $new_dependency_tree, $nodes
-					, $pbs_config, $warp_configuration
+					$targets, $new_dependency_tree, $nodes,
+					$pbs_config, $warp_configuration,
 					) ;
 				}
 				
@@ -342,8 +339,8 @@ if($run_in_warp_mode)
 			{
 			GenerateWarpFile
 				(
-				  $targets, $new_dependency_tree, $nodes
-				, $pbs_config, $warp_configuration
+				$targets, $new_dependency_tree, $nodes,
+				$pbs_config, $warp_configuration,
 				) ;
 				
 			# force a refresh after we build files and generated events
@@ -376,10 +373,10 @@ else
 		
 		GenerateWarpFile
 			(
-			  $targets
-			, $dependency_tree
-			, $inserted_nodes
-			, $pbs_config
+			$targets,
+			$dependency_tree,
+			$inserted_nodes,
+			$pbs_config,
 			) ;
 		} ;
 		
@@ -389,14 +386,14 @@ else
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
-				$pbs_config->{PBSFILE}
-				, ''    # parent package
-				, $pbs_config
-				, $parent_config
-				, $targets
-				, undef # inserted files
-				, "root_NEEDS_REBUILD_pbs_$pbs_config->{PBSFILE}" # tree name
-				, DEPEND_CHECK_AND_BUILD
+				$pbs_config->{PBSFILE},
+				'', # parent package
+				$pbs_config,
+				$parent_config,
+				$targets,
+				undef, # inserted files
+				"root_NEEDS_REBUILD_pbs_$pbs_config->{PBSFILE}", # tree name
+				DEPEND_CHECK_AND_BUILD,
 				) ;
 		} ;
 		
@@ -407,10 +404,10 @@ else
 				# this exception occures only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					  $targets
-					, $dependency_tree_snapshot
-					, $inserted_nodes_snapshot
-					, $pbs_config
+					$targets,
+					$dependency_tree_snapshot,
+					$inserted_nodes_snapshot,
+					$pbs_config,
 					) ;
 				}
 				
@@ -420,10 +417,10 @@ else
 			{
 			GenerateWarpFile
 				(
-				  $targets
-				, $dependency_tree
-				, $inserted_nodes
-				, $pbs_config
+				$targets,
+				$dependency_tree,
+				$inserted_nodes,
+				$pbs_config,
 				) ;
 			}
 			
@@ -444,7 +441,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("Generating warp file.               \n") ;
+PrintInfo("Generating warp file.                   \n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -460,8 +457,8 @@ my $warp_file= "$warp_path/Pbsfile_$warp_signature.pl" ;
 
 my $global_pbs_config = # cache to reduce warp file size
 	{
-	  BUILD_DIRECTORY    => $pbs_config->{BUILD_DIRECTORY}
-	, SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES}
+	BUILD_DIRECTORY    => $pbs_config->{BUILD_DIRECTORY},
+	SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES},
 	} ;
 	
 my $number_of_nodes_in_the_dependency_tree = keys %$inserted_nodes ;

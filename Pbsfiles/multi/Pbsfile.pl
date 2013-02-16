@@ -1,20 +1,20 @@
 
 my %versions = 
 	(
-	  gcc =>
+	gcc =>
 		{
-		COMPILER => 'gcc'
-		}
+		COMPILER => 'gcc',
+		},
 		
-	, arm =>
+	arm =>
 		{
-		COMPILER => 'arm'
-		}
-	, cl =>
+		COMPILER => 'arm',
+		},
+	cl =>
 		{
-		  COMPILER => 'gcc'
-		, EXTRA_OBJECT_FILES => 1 
-		}
+		COMPILER => 'gcc',
+		EXTRA_OBJECT_FILES => 1 ,
+		},
 	) ;
 
 #----------------------------------------------------------------------------------------------------
@@ -27,13 +27,13 @@ for my $version (keys %versions)
 	
 	AddRule "sub_pbsfile_$version",
 		{
-		  NODE_REGEX      => "${version}_A"
-		, ALIAS           => "A.lib"
-		, PBSFILE         => 'sub.pl'
-		, PACKAGE         => 'LIB'
-		, BUILD_DIRECTORY => $version
-		, LOCAL_NODES     => 1 # Allows us to  have multiple nodes with the same name
-		, COMMAND_LINE_DEFINITIONS => $versions{$version}
+		NODE_REGEX      => "${version}_A",
+		ALIAS           => "A.lib",
+		PBSFILE         => 'sub.pl',
+		PACKAGE         => 'LIB',
+		BUILD_DIRECTORY => $version,
+		LOCAL_NODES     => 1, # Allows us to  have multiple nodes with the same name
+		COMMAND_LINE_DEFINITIONS => $versions{$version},
 		} ;
 	}
 	

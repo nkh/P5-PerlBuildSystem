@@ -36,12 +36,14 @@ unless(ref $distributor_data eq 'ARRAY')
 
 return
 	(
-	bless 
+	bless
+		(
 		{
-		  DATA => $distributor_data
-		, DEFINITION => $distributor_definition
-		}
-		, $class
+		DATA => $distributor_data,
+		DEFINITION => $distributor_definition,
+		},
+		$class
+		) ,
 	) ;
 }
 

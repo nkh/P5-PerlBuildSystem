@@ -157,11 +157,11 @@ else
 	($dependency_file_name, $is_alternative_source, $other_source_index) 
 		= PBS::Check::LocateSource
 			(
-			  "$dependent.depend"
-			, $build_directory
-			, $source_directories
-			, $file_tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO}
-			, $file_tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES}
+			"$dependent.depend",
+			$build_directory,
+			$source_directories,
+			$file_tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO},
+			$file_tree->{__PBS_CONFIG}{DISPLAY_SEARCH_ALTERNATES},
 			) ;
 			
 	$dependency_file_name = CollapsePath($dependency_file_name) ;
@@ -182,15 +182,15 @@ else
 		
 		@dependencies = VerifyAndGenerateDependencies
 					(
-					  $c_file_config
-					, $dependent
-					, $full_name
-					, $dependency_file_name
-					, $source_directory
-					, $source_directories
-					, $file_tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCIES}
-					, $file_tree
-					, $inserted_nodes
+					$c_file_config,
+					$dependent,
+					$full_name,
+					$dependency_file_name,
+					$source_directory,
+					$source_directories,
+					$file_tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCIES},
+					$file_tree,
+					$inserted_nodes,
 					) ;
 					
 		#~ PrintDebug "VerifyAndGenerateDependencies time: " . tv_interval ($t0_VerifyAndGenerateDependencies, [gettimeofday]) . "\n" ;
@@ -289,16 +289,16 @@ if($dependency_file_needs_update)
 				(
 				GenerateDependencyFile
 						(
-						  $config
-						, $dependent
-						, $file_to_depend
-						, $unsynchronized_dependency_file_name # regenerate
-						, $source_directory
-						, $source_directories
-						, $display_c_dependencies
-						, $tree
-						, $inserted_nodes
-						, $unsynched_changed_dependencies
+						$config,
+						$dependent,
+						$file_to_depend,
+						$unsynchronized_dependency_file_name, # regenerate
+						$source_directory,
+						$source_directories,
+						$display_c_dependencies,
+						$tree,
+						$inserted_nodes,
+						$unsynched_changed_dependencies,
 						)
 						
 				, PBS::Depend::FORCE_TRIGGER
@@ -308,9 +308,9 @@ if($dependency_file_needs_update)
 					})
 				, PBS::Depend::SYNCHRONIZE
 					(
-					  $unsynchronized_dependency_file_name
-					, $dependency_file_name
-					, "Synchronized C cache file for '%s'\n"
+					$unsynchronized_dependency_file_name,
+					$dependency_file_name,
+					"Synchronized C cache file for '%s'\n",
 					)
 				) ;
 			}
@@ -325,12 +325,12 @@ if($dependency_file_needs_update)
 				(
 				MergeDependencyCache
 					(
-					  $file_to_depend
-					, $dependent
-					, $display_c_dependencies
-					, $tree
-					, $inserted_nodes
-					, $unsynched_pbs_include_tree
+					$file_to_depend,
+					$dependent,
+					$display_c_dependencies,
+					$tree,
+					$inserted_nodes,
+					$unsynched_pbs_include_tree,
 					)
 				, PBS::Depend::FORCE_TRIGGER
 					({
@@ -339,9 +339,9 @@ if($dependency_file_needs_update)
 					})
 				, PBS::Depend::SYNCHRONIZE
 					(
-					  $unsynchronized_dependency_file_name
-					, $dependency_file_name
-					, "Synchronized C cache file for '%s'\n"
+					$unsynchronized_dependency_file_name,
+					$dependency_file_name,
+					"Synchronized C cache file for '%s'\n",
 					)
 				) ;
 			}
@@ -352,16 +352,16 @@ if($dependency_file_needs_update)
 			(
 			GenerateDependencyFile
 				(
-				  $config
-				, $dependent
-				, $file_to_depend
-				, $unsynchronized_dependency_file_name
-				, $source_directory
-				, $source_directories
-				, $display_c_dependencies
-				, $tree
-				, $inserted_nodes
-				, $changed_dependencies
+				$config,
+				$dependent,
+				$file_to_depend,
+				$unsynchronized_dependency_file_name,
+				$source_directory,
+				$source_directories,
+				$display_c_dependencies,
+				$tree,
+				$inserted_nodes,
+				$changed_dependencies,
 				)
 			, PBS::Depend::FORCE_TRIGGER
 				({
@@ -370,9 +370,9 @@ if($dependency_file_needs_update)
 				})
 			, PBS::Depend::SYNCHRONIZE
 				(
-				  $unsynchronized_dependency_file_name
-				, $dependency_file_name
-				, "Synchronized C cache file for '%s'\n"
+				$unsynchronized_dependency_file_name,
+				$dependency_file_name,
+				"Synchronized C cache file for '%s'\n",
 				)
 			) ;
 		}
@@ -381,12 +381,12 @@ else
 	{
 	@first_level_dependencies = MergeDependencyCache
 					(
-					  $file_to_depend
-					, $dependent
-					, $display_c_dependencies
-					, $tree
-					, $inserted_nodes
-					, $pbs_include_tree
+					$file_to_depend,
+					$dependent,
+					$display_c_dependencies,
+					$tree,
+					$inserted_nodes,
+					$pbs_include_tree,
 					) ;
 					
 	if(-e $unsynchronized_dependency_file_name)
@@ -404,12 +404,12 @@ sub MergeDependencyCache
 {
 my
 (
-  $file_to_depend
-, $dependent
-, $display_c_dependencies
-, $tree
-, $inserted_nodes
-, $pbs_include_tree
+$file_to_depend,
+$dependent,
+$display_c_dependencies,
+$tree,
+$inserted_nodes,
+$pbs_include_tree,
 ) = @_ ;
 
 $PBS::C_DEPENDER::c_files_cached++ ;
@@ -765,17 +765,17 @@ $depend_nodes{$file_to_depend} =
 	
 	__INSERTED_AT =>
 		{
-		  INSERTING_NODE => '__C_DEPENDER'
-		, INSERTION_RULE => 'NO CACHE'
-		, INSERTION_FILE => '__C_DEPENDER'
-		, INSERTION_PACKAGE=> '__C_DEPENDER'
+		INSERTING_NODE => '__C_DEPENDER',
+		INSERTION_RULE => 'NO CACHE',
+		INSERTION_FILE => '__C_DEPENDER',
+		INSERTION_PACKAGE=> '__C_DEPENDER',
 		},
 		
 	__PBS_CONFIG =>
 		{
-		  BUILD_DIRECTORY    => $source_directory
-		, SOURCE_DIRECTORIES => $source_directories
-		}
+		BUILD_DIRECTORY    => $source_directory,
+		SOURCE_DIRECTORIES => $source_directories,
+		},
 	} ;
 	
 my $ParentChild = sub
@@ -795,25 +795,25 @@ my $ParentChild = sub
 		
 		%new_node = 
 			(
-			__NAME => $child
-			, __BUILD_NAME => $child
+			__NAME => $child,
+			__BUILD_NAME => $child,
 			
-			, __INSERTED_AT =>
+			__INSERTED_AT =>
 				{
-				  INSERTING_NODE => $parent
-				, INSERTION_RULE => 'NO_CACHE'
-				, INSERTION_FILE => '__C_DEPENDER'
-				, INSERTION_TIME => 0
-				}
+				INSERTING_NODE => $parent,
+				INSERTION_RULE => 'NO_CACHE',
+				INSERTION_FILE => '__C_DEPENDER',
+				INSERTION_TIME => 0,
+				},
 				
-			, __PBS_CONFIG =>
+			__PBS_CONFIG =>
 				{
-				  BUILD_DIRECTORY    => $source_directory
-				, SOURCE_DIRECTORIES => $source_directories
-				}
+				BUILD_DIRECTORY    => $source_directory,
+				SOURCE_DIRECTORIES => $source_directories,
+				},
 				
-			, __DEPENDED => 1
-			, __BUILD_DONE => "in C depender (2)"
+			__DEPENDED => 1,
+			__BUILD_DONE => "in C depender (2)",
 			) ;
 			
 		$new_node{__TRIGGERED} ++ if exists $changed_dependencies->{$child} ;
@@ -846,12 +846,12 @@ my $ParentChild = sub
 my ($depended, $include_levels, $include_nodes, $include_tree, $errors) 
 	= $C_Depender_PreprocessorDepend->
 		(
-		  $config->{'CPP'}
-		, $file_to_depend
-		, $depend_switches 
-		, $config->{'C_DEPENDER_SYSTEM_INCLUDES'}
-		, $ParentChild
-		, $tree->{__PBS_CONFIG}{DISPLAY_CPP_OUTPUT} # display gcc output
+		$config->{'CPP'},
+		$file_to_depend,
+		$depend_switches,
+		$config->{'C_DEPENDER_SYSTEM_INCLUDES'},
+		$ParentChild,
+		$tree->{__PBS_CONFIG}{DISPLAY_CPP_OUTPUT}, # display gcc output
 		) ;
 		
 if($depended)
@@ -890,8 +890,8 @@ if($depended)
 	
 	my $global_pbs_config = # cache to reduce warp file size
 		{
-		  BUILD_DIRECTORY    => $tree->{__PBS_CONFIG}{BUILD_DIRECTORY}
-		, SOURCE_DIRECTORIES => $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES}
+		BUILD_DIRECTORY    => $tree->{__PBS_CONFIG}{BUILD_DIRECTORY},
+		SOURCE_DIRECTORIES => $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES},
 		} ;
 	
 	my ($nodes, $node_names, $insertion_file_names) = PBS::Warp::Warp1_5::WarpifyTree1_5(\%depend_nodes, $global_pbs_config) ;
@@ -919,10 +919,10 @@ if($depended)
 	
 	PBS::Digest::WriteDigest
 		(
-		  $dependency_file_name
-		, "Generated by C_depender $VERSION using warp 1.5"
-		, $dependency_file_digest
-		, $include_tree_dump
+		$dependency_file_name,
+		"Generated by C_depender $VERSION using warp 1.5",
+		$dependency_file_digest,
+		$include_tree_dump,
 		) ;
 
 	if($display_c_dependencies)
@@ -1044,12 +1044,12 @@ my $c_file_md5 = shift or confess "Missing argument!" ;
 return
 	(
 		{
-		  '__VARIABLE:CC'                         => $config->{CC}
-		, '__VARIABLE:CFLAGS_INCLUDE'             => $config->{CFLAGS_INCLUDE}
-		#~ , '__VARIABLE:CFLAGS'                     => $config->{CFLAGS}
-		, '__VARIABLE:CDEFINES'                   => $config->{CDEFINES}
-		, '__VARIABLE:C_DEPENDER_SYSTEM_INCLUDES' => $config->{C_DEPENDER_SYSTEM_INCLUDES} || 0
-		, '__VARIABLE:C_FILE'                     => $c_file_md5
+		'__VARIABLE:CC'                         => $config->{CC},
+		'__VARIABLE:CFLAGS_INCLUDE'             => $config->{CFLAGS_INCLUDE},
+		#~ '__VARIABLE:CFLAGS'                     => $config->{CFLAGS},
+		'__VARIABLE:CDEFINES'                   => $config->{CDEFINES},
+		'__VARIABLE:C_DEPENDER_SYSTEM_INCLUDES' => $config->{C_DEPENDER_SYSTEM_INCLUDES} || 0,
+		'__VARIABLE:C_FILE'                     => $c_file_md5,
 		} 
 	) ;
 }

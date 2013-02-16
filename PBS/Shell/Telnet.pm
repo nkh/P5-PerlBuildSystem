@@ -27,10 +27,10 @@ my $package = shift ;
 my %config  = @_ ;
 
 my $telnet_connection = new Net::Telnet
-										(
-										  Timeout => $config{TIMEOUT}
-										, Prompt => $config{PROMPT}
-										) ;
+				(
+				Timeout => $config{TIMEOUT},
+				Prompt => $config{PROMPT},
+				) ;
 
 my $self = bless {TELNET_CONNECTION => $telnet_connection, %config}, __PACKAGE__ ;
 
@@ -84,11 +84,7 @@ $colorizer->("$command (Telnet:$host_info)\n") unless defined $PBS::Shell::silen
 my $error_string = "Error running Telnet command" ;
 my $catch_error = "|| echo $error_string." ;
 
-my @output  = $self->{TELNET_CONNECTION}->cmd
-														(
-														  String => $command . $catch_error
-														, Prompt => $new_prompt
-														);
+my @output  = $self->{TELNET_CONNECTION}->cmd(String => $command . $catch_error, Prompt => $new_prompt);
    
 $self->{PROMPT} = $new_prompt ;
 $self->{TELNET_CONNECTION}->prompt($new_prompt) ;
@@ -101,10 +97,10 @@ if(@output >= 2 && $output[-2] =~ $error_string)
 	
 	die bless
 		{
-		error => 'Shell command failed!' 
-		, command => $command
-		, errno => -1
-		, errno_string => $error_string
+		error => 'Shell command failed!',
+		command => $command,
+		errno => -1,
+		errno_string => $error_string,
 		}, 'PBS::Shell' ;
 	}
 else

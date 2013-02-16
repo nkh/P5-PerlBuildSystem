@@ -96,15 +96,17 @@ exit ;
 
 sub BuildNode
 {
-my $parent_channel = shift ;
-my $node_name = shift ;
-my $node_build_sequencer_info = shift ;
-
-my $pbs_config     = shift ;
-my $build_sequence = shift ;
-my $inserted_nodes = shift ;
-my $shell          = shift ;
-my $shell_origin   = shift ;
+my 
+	(
+	$parent_channel,
+	$node_name,
+	$node_build_sequencer_info,
+	$pbs_config,
+	$build_sequence,
+	$inserted_nodes,
+	$shell,
+	$shell_origin,
+	) = @_ ;
 
 my $t0 = [gettimeofday] ;
 
@@ -181,14 +183,6 @@ if(defined $node)
 		print ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		}
 	
-	# no use to write the name of the buffer in the buffer!!!
-	#if($pbs_config->{KEEP_PBS_BUILD_BUFFERS})
-	#	{
-	#	print STDOUT "Node: $node_name\n" ;
-	#	print STDOUT INFO "Shell Info: " . $shell->GetInfo() . "\n" ;
-	#	print STDOUT INFO "Build buffer: $redirection_file\n" ;
-	#	}
-		
 	# status
 	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 	
@@ -204,9 +198,7 @@ else
 
 sub SendFile
 {
-my $channel     = shift ;
-my $file        = shift ;
-my $remove_file = shift ;
+my ($channel,$file, $remove_file) =  @_ ;
 
 open FILE_TO_SEND, '<', $file or die "Can't open '$file': $!" ;
 while(<FILE_TO_SEND>)

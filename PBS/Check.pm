@@ -325,67 +325,10 @@ for my $dependency (keys %$tree)
 	next if $dependency =~ /^__/ ; # eliminate private data
 	
 	my $t0 = [gettimeofday];
-=comment
-	my ($full_dependency, undef) = LocateSource
-												(
-												$dependency
-												, $tree->{$dependency}{__PBS_CONFIG}{BUILD_DIRECTORY}
-												, $tree->{$dependency}{__PBS_CONFIG}{SOURCE_DIRECTORIES}
-		 										, $pbs_config->{DISPLAY_SEARCH_INFO} || 0
-												, $pbs_config->{DISPLAY_SEARCH_ALTERNATES} || 0
-												) ;
-=cut
 	my $time_l = tv_interval ($t0, [gettimeofday]) ;
 	$total_time_l += $time_l ;
 	
 	$t0 = [gettimeofday];
-=comment
-
-# dependencies are in the digest, no need to check them
-
-	if(-e $full_dependency)
-		{
-		unless(exists $tree->{__VIRTUAL})
-			{
-			# check via user defined sub
-			if(defined $trigger_rule)
-				{
-				my ($must_build, $why) = $trigger_rule->($tree, $full_name, $tree->{$dependency}, $full_dependency) ;
-				
-				if($must_build)
-					{
-					push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => $why} ;
-					PrintInfo("$name: trigged on '$dependency' [$why]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-					$triggered++ ;
-					}
-				else
-					{
-					if($pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES})
-						{
-						push @{$tree->{__NOT_TRIGGERED}}, [$dependency, 'user defined check was OK'] ;
-						PrintInfo("$name: NOT trigged on '$dependency'\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-						}
-					}
-				}
-			}
-		}
-	else
-		{
-		unless(exists $tree->{$dependency}{__VIRTUAL})
-			{
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => "Doesn't exist"} ;
-			PrintInfo("$name: trigged on '$dependency' (doesn't exist)\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-			$triggered++ ;
-			
-			my $digest_file_name = $full_dependency . 'pbs_md5' ;
-			if(-e $digest_file_name)
-					{
-					PrintWarning("Removing digest '$digest_file_name': node '$dependency->{__NAME}' doesn't exist.") ;
-					unlink($digest_file_name) ;
-					}
-			}
-		}
-=cut
 	my $time_e2 = tv_interval ($t0, [gettimeofday]) ;
 	$total_time_e2 += $time_e2 ;
 		
@@ -405,18 +348,18 @@ for my $dependency (keys %$tree)
 	else
 		{
 		my ($subdependency_triggered) = CheckDependencyTree
-														(
-														  $tree->{$dependency}
-														, $inserted_nodes
-														, $pbs_config
-														, $config
-														, $trigger_rule
-														, $node_checker_rule
-														, $build_sequence
-														, $files_in_build_sequence
-														, $build_directory
-														, $source_directories
-														) ;
+							(
+							$tree->{$dependency},
+							$inserted_nodes,
+							$pbs_config,
+							$config,
+							$trigger_rule,
+							$node_checker_rule,
+							$build_sequence,
+							$files_in_build_sequence,
+							$build_directory,
+							$source_directories,
+							) ;
 		
 		if($subdependency_triggered)
 			{
@@ -527,13 +470,13 @@ else
 			my $localizer =
 				[
 					{
-					  TYPE => ['__LOCAL']
-					, NAME => '__LOCAL:Internal rule' # name, package, ...
-					, FILE => 'Internal'
-					, LINE => 0
-					, ORIGIN => ''
-					, DEPENDER => undef
-					, BUILDER  => sub 
+					TYPE => ['__LOCAL'],
+					NAME => '__LOCAL:Internal rule', # name, package, ...
+					FILE => 'Internal',
+					LINE => 0,
+					ORIGIN => '',
+					DEPENDER => undef,
+					BUILDER  => sub 
 							{
 							use File::Copy ;
 							
@@ -558,7 +501,7 @@ else
 							
 							if($@)
 								{
-								return(0 , "Copy '$repository_name' -> '$build_directory_name' failed! $@\n") ;
+								return(0, "Copy '$repository_name' -> '$build_directory_name' failed! $@\n") ;
 								}
 								
 							if($result)
@@ -567,22 +510,23 @@ else
 								}
 							else
 								{
-								return(0 , "Copy '$repository_name' -> '$build_directory_name' failed! $!\n") ;
+								return(0, "Copy '$repository_name' -> '$build_directory_name' failed! $!\n") ;
 								}
-							}
-					, TEXTUAL_DESCRIPTION => 'Rule to localize a file from the repository.'
+							},
+					TEXTUAL_DESCRIPTION => 'Rule to localize a file from the repository.',
 					}
 				] ;
 				
 			# localizer will be called as it is the last rule
 			push @{$tree->{__MATCHING_RULES}}, 
 				{
-				  RULE => 
+				RULE => 
 					{
-					  INDEX             => -1
-					, DEFINITIONS       => $localizer
-					}
-				, DEPENDENCIES => []
+					INDEX        => -1,
+					DEFINITIONS  => $localizer,
+					},
+
+				DEPENDENCIES => [],
 				};
 			
 			push @{$tree->{__TRIGGERED}}, {NAME => '__LOCAL', REASON => 'Local file'};
@@ -749,16 +693,16 @@ PBS::Check  -
 
 	use PBS::Check ;
 	my $triggered = CheckDependencyTree
-							(
-							  $tree
-							, $inserted_nodes
-							, $pbs_config
-							, $config
-							, $trigger_rule
-							, $node_checker_rule
-							, $build_sequence # output
-							, $files_in_build_sequence # output
-							) ;
+				(
+				$tree,
+				$inserted_nodes,
+				$pbs_config,
+				$config,
+				$trigger_rule,
+				$node_checker_rule,
+				$build_sequence, # output
+				$files_in_build_sequence, # output
+				) ;
 
 =head1 DESCRIPTION
 

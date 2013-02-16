@@ -195,19 +195,6 @@ for my $command (@commands)
 		print OLDOUT "[$$] Done: '$command'\n" ;
 		print STDOUT $output ; # if not silent
 		}
-	
-	#~ if(system($command))
-		#~ {
-		#~ print OLDOUT "[$$] Error: '$command'\n" ;
-		#~ print STDOUT "Error: $! $?\n" ;
-		
-		#~ ($build_result, $build_message) = (0, "Error running command '$command' [$!]") ;
-		#~ last ;
-		#~ }
-	#~ else
-		#~ {
-		#~ print OLDOUT "[$$] Done: '$command'\n" ;
-		#~ }
 	}
 
 #stop redirecting to a file

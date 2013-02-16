@@ -112,8 +112,8 @@ unless($builder_uses_perl_sub)
 			(
 			ShellCommandGenerator
 				(
-				$shell_commands, $name, $file_name, $line
-				, @_
+				$shell_commands, $name, $file_name, $line,
+				@_,
 				)
 			) ;
 		} ;
@@ -123,20 +123,13 @@ unless($builder_uses_perl_sub)
 	push @node_subs_from_builder_generator,
 		sub # node_sub
 		{
-		my (
-		  $dependent_to_check
-		, $config
-		, $tree
-		, $inserted_nodes
-		) = @_ ;
+		my ($dependent_to_check, $config, $tree, $inserted_nodes) = @_ ;
 		
 		$tree->{__SHELL_COMMANDS_GENERATOR} = $shell_command_generator ;
 		push @{$tree->{__SHELL_COMMANDS_GENERATOR_HISTORY}}, "rule '$name' @ '$file_name:$line'";
 		} ;
 	}
 	
-# nadim 12 june 2005, let's try to minimize  memory consumption
-# more can be done but this was an easy test
 my $generated_builder = 
 	sub 
 	{
@@ -155,25 +148,18 @@ return($generated_builder, \@node_subs_from_builder_generator, \%rule_type) ;
 
 #-------------------------------------------------------------------------------
 
-# nadim 12 june 2005, let's try to minimize  memory consumption
 sub ShellCommandGenerator
 {
-my (
-# these could be computed from the tree (if the information is pushed before this sub is called)
-$shell_commands, $name, $file_name, $line
-
-# this is passed by pbs when inserting nodes
-, $tree
-) = @_;
+my ($shell_commands, $name, $file_name, $line, $tree) = @_;
 
 my @evaluated_shell_commands ;
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
 	push @evaluated_shell_commands, EvaluateShellCommandForNode
 						(
-						$shell_command
-						, "rule '$name' at '$file_name:$line'"
-						, $tree
+						$shell_command,
+						"rule '$name' at '$file_name:$line'",
+						$tree,
 						) ;
 	}
 	
@@ -182,13 +168,10 @@ return(@evaluated_shell_commands) ;
 
 #-------------------------------------------------------------------------------
 
-# nadim 12 june 2005, let's try to minimize  memory consumption
 sub BuilderFromStringOrArray
 {
-#this is generated but it should be possible to generate it at node build  time
 my($shell_commands, $shell, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
 
-# the rest is generic and we should generate a sub for each rule  but reuse
 my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
 
 my $node_shell = $shell ;
@@ -246,11 +229,11 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		{
 		my $command = EvaluateShellCommandForNode
 						(
-						$shell_command
-						, "rule '$name' at '$file_name:$line'"
-						, $tree
-						, $dependencies
-						, $triggering_dependencies
+						$shell_command,
+						"rule '$name' at '$file_name:$line'",
+						$tree,
+						$dependencies,
+						$triggering_dependencies,
 						) ;
 						
 		PrintInfo2 $command_information . " (shell command. $shell_command)\n" if $display_command_information ;
@@ -285,12 +268,8 @@ return($generated_builder, undef, \%rule_type) ;
 
 #-------------------------------------------------------------------------------
 
-# nadim 12 june 2005, let's try to minimize  memory consumption
 sub BuilderFromSub
 {
-# note that this sub does very little. it only does some display to finally call the suplied sub
-
-# could be computed at node build time
 my ($shell, $builder, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
 
 my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
@@ -351,7 +330,6 @@ unless(defined $dependencies)
 	}
 else
 	{
-	#~ @dependencies = grep {defined $_} @$dependencies ;
 	@dependencies = @$dependencies ;
 	}
 
@@ -430,6 +408,23 @@ PBS::Rules::Builders -
 =head1 DESCRIPTION
 
 This package provides support function for B<PBS::Rules::Rules>
+
+EvaluateShellCommandForNode:
+
+	calls plugin 'EvaluateShellCommand'
+
+	substitutes:
+		%BUILD_DIRECTORY
+
+		%FILE_TO_BUILD_PATH
+		%FILE_TO_BUILD_NAME
+		%FILE_TO_BUILD_BASENAME
+		%FILE_TO_BUILD_NO_EXT
+		%FILE_TO_BUILD
+
+		%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY
+		%TRIGGERED_DEPENDENCY_LIST
+		%DEPENDENCY_LIST
 
 =head2 EXPORT
 

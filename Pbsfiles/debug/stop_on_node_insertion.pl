@@ -18,7 +18,7 @@ AddBreakpoint
 			
 			PrintUser "Inserted node '$data{NODE_NAME}'." ;
 			my $answer = <STDIN> ;
-			}
+			},
 		],
 	) ;
  

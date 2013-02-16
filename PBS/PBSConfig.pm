@@ -113,14 +113,14 @@ $pbs_config ||= {} ;
 my $success_message = '' ;
 
 local @ARGV = ( # default colors
-		  '-ci'  => 'green'
-		, '-ci2' => 'bold blue'
-		, '-cw'  => 'yellow'
-		, '-cw2' => 'bold yellow'
-		, '-ce'  => 'red'
-		, '-cd'  => 'magenta'
-		, '-cs'  => 'bold green'
-		, '-cu'  => 'cyan'
+		'-ci'  => 'green',
+		'-ci2' => 'bold blue',
+		'-cw'  => 'yellow',
+		'-cw2' => 'bold yellow',
+		'-ce'  => 'red',
+		'-cd'  => 'magenta',
+		'-cs'  => 'bold green',
+		'-cu'  => 'cyan',
 		) ;
 		
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
@@ -526,13 +526,13 @@ if($pbs_response_file)
 	use PBS::PBS;
 	PBS::PBS::LoadFileInPackage
 		(
-		  'Pbsfile' # $type
-		, $pbs_response_file
-		, $prf_load_package
-		, {} #$pbs_config
-		, "use PBS::Prf ;\n" #$pre_code
-		 ."use PBS::Output ;\n"
-		, '' #$post_code
+		'Pbsfile', # $type
+		$pbs_response_file,
+		$prf_load_package,
+		{}, #$pbs_config
+		"use PBS::Prf ;\n" #$pre_code
+		 ."use PBS::Output ;\n",
+		'', #$post_code
 		) ;
 
 	my $pbs_config = GetPbsConfig($prf_load_package) ;

@@ -21,11 +21,11 @@ AddRule 'b', {NODE_REGEX =>'b', PBSFILE => './Pbsfiles/s/s_b2.pl', PACKAGE => 'B
 
 AddRule 'c', 
 	{
-	  NODE_REGEX =>'*/c'
-	, PBSFILE => './Pbsfiles/s/s_b3.pl'
-	, PACKAGE => 'B3'
-	, BUILD_DIRECTORY => '/xxx/'
-	#~ , DEBUG_DISPLAY_DEPENDENCIES => 1
+	NODE_REGEX =>'*/c',
+	PBSFILE => './Pbsfiles/s/s_b3.pl',
+	PACKAGE => 'B3',
+	BUILD_DIRECTORY => '/xxx/',
+	#~ DEBUG_DISPLAY_DEPENDENCIES => 1,
 	} ;
 
 

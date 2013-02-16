@@ -182,15 +182,15 @@ EOH
 	if($node->{__TRIGGERED})
 		{
 		$triggers = Data::TreeDumper::TreeDumper
-						(
-						$node->{__TRIGGERED}
-						,	{
-							Data::TreeDumper::GetPackageSetup()
-							,  START_LEVEL => 1
-							, USE_ASCII   => 1
-							, TITLE       => "Triggered   :"
-							}
-						) ;
+				(
+				$node->{__TRIGGERED}
+				,	{
+					Data::TreeDumper::GetPackageSetup()
+					,  START_LEVEL => 1
+					, USE_ASCII   => 1
+					, TITLE       => "Triggered   :"
+					}
+				) ;
 		}
 	else
 		{

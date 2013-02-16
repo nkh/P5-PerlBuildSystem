@@ -61,10 +61,10 @@ $file_name =~ s/'$// ;
 
 RegisterPostBuildCommand
 	(
-	$file_name, $line
-	, $package
-	, $name
-	, $switch, $builder_sub, $build_arguments
+	$file_name, $line,
+	$package,
+	$name,
+	$switch, $builder_sub, $build_arguments,
 	) ;
 }
 
@@ -132,10 +132,10 @@ if('ARRAY' eq ref $switch)
 			
 		my 
 			(
-			  $build_ok, $build_message
-			, $post_build_path_regex
-			, $post_build_prefix_regex
-			, $post_build_regex
+			$build_ok, $build_message,
+			$post_build_path_regex,
+			$post_build_prefix_regex,
+			$post_build_regex,
 			) = PBS::Rules::BuildDependentRegex($post_build_regex_definition) ;
 		
 		unless($build_ok)
@@ -148,7 +148,7 @@ if('ARRAY' eq ref $switch)
 		push @post_build_regexes, [$post_build_path_regex, $post_build_prefix_regex, $post_build_regex];
 		}
 		
-	$post_build_depender_sub = sub 
+		$post_build_depender_sub = sub 
 						{
 						my $name_to_check = shift ; 
 						my $index = -1 ;
@@ -192,15 +192,15 @@ if($pbs_config->{ADD_ORIGIN})
 	
 my $post_build_definition = 
 	{
-	  TYPE                => 'unused field' #unused type field
-	, NAME                => $name
-	, ORIGIN              => $origin
-	, FILE                => $file_name
-	, LINE                => $line
-	, DEPENDER            => $post_build_depender_sub
-	, BUILDER             => $builder_sub
-	, BUILDER_ARGUMENTS   => $build_arguments
-	, TEXTUAL_DESCRIPTION => $switch # keep a visual on how the rule was defined
+	TYPE                => 'unused field', #unused type field
+	NAME                => $name,
+	ORIGIN              => $origin,
+	FILE                => $file_name,
+	LINE                => $line,
+	DEPENDER            => $post_build_depender_sub,
+	BUILDER             => $builder_sub,
+	BUILDER_ARGUMENTS   => $build_arguments,
+	TEXTUAL_DESCRIPTION => $switch, # keep a visual on how the rule was defined
 	} ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION})

@@ -18,10 +18,10 @@ my $display_simplified_rule_transformation ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	  'display_simplified_rule_transformation'
-	, \$display_simplified_rule_transformation
-	, "Display debugging data about simplified rule transformation to pure perl rule."
-	, ''
+	'display_simplified_rule_transformation',
+	\$display_simplified_rule_transformation,
+	"Display debugging data about simplified rule transformation to pure perl rule.",
+	'',
 	) ;
 
 #-------------------------------------------------------------------------------
@@ -44,10 +44,10 @@ if('ARRAY' eq ref $triggered_and_triggering)
 		{
 		my 
 			(
-			  $build_ok, $build_message
-			, $trigger_path_regex
-			, $trigger_prefix_regex
-			, $trigger_regex
+			$build_ok, $build_message,
+			$trigger_path_regex,
+			$trigger_prefix_regex,
+			$trigger_regex,
 			) = BuildDependentRegex($trigger) ;
 			
 		unless($build_ok)
@@ -102,10 +102,10 @@ unless('Regexp' eq ref $node_regex)
 	PrintDebug DumpTree(\@_, "Plugin AddSubpsRule") if $display_simplified_rule_transformation ;
 	my 
 		(
-		  $build_ok, $build_message
-		, $dependent_path_regex
-		, $dependent_prefix_regex
-		, $dependent_regex
+		$build_ok, $build_message,
+		$dependent_path_regex,
+		$dependent_prefix_regex,
+		$dependent_regex,
 		) =  BuildDependentRegex($node_regex) ;
 		
 	if($build_ok)
@@ -152,10 +152,10 @@ if(defined $dependent && '' eq ref $dependent && !$is_meta_rule)
 	# compute new arguments to Addrule
 	my 
 		(
-		  $dependency_regex_ok, $dependency_regex_message
-		, $dependent_path_regex
-		, $dependent_prefix_regex
-		, $dependent_regex
+		$dependency_regex_ok, $dependency_regex_message,
+		$dependent_path_regex,
+		$dependent_prefix_regex,
+		$dependent_regex,
 		) =  BuildDependentRegex($dependent) ;
 		
 	unless($dependency_regex_ok)
@@ -187,10 +187,10 @@ elsif (defined $dependent && 'HASH' eq ref $dependent)
 		{
 		my 
 			(
-			  $build_ok, $build_message
-			, $dependent_path_regex
-			, $dependent_prefix_regex
-			, $dependent_regex
+			$build_ok, $build_message,
+			$dependent_path_regex,
+			$dependent_prefix_regex,
+			$dependent_regex,
 			) =  BuildDependentRegex($dependent->{NODE_REGEX}) ;
 			
 		if($build_ok)
@@ -325,11 +325,11 @@ $dependent_regex = quotemeta($dependent_regex) ;
 
 return
 	(
-	  $error_message eq ''
-	, $error_message
-	, $dependent_path_regex
-	, $dependent_prefix_regex
-	, $dependent_regex
+	$error_message eq '',
+	$error_message,
+	$dependent_path_regex,
+	$dependent_prefix_regex,
+	$dependent_regex,
 	) ;
 }
 

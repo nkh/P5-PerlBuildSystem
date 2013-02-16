@@ -104,11 +104,11 @@ if(defined $pbs_config->{WIZARD})
 
 	PBS::Wizard::RunWizard
 		(
-		  $pbs_config->{LIB_PATH}
-		, undef
-		, $pbs_config->{WIZARD}
-		, $pbs_config->{DISPLAY_WIZARD_INFO}
-		, $pbs_config->{DISPLAY_WIZARD_HELP}
+		$pbs_config->{LIB_PATH},
+		undef,
+		$pbs_config->{WIZARD},
+		$pbs_config->{DISPLAY_WIZARD_INFO},
+		$pbs_config->{DISPLAY_WIZARD_HELP},
 		) ;
 		
 	return(1) ;
@@ -122,7 +122,7 @@ if($display_user_help || $extract_pod_from_pbsfile)
 	my ($pbsfile, $error_message) = PBS::PBSConfig::GetPbsfileName($pbs_config) ;
 	PrintError $error_message unless defined $pbsfile && $pbsfile ne '' ;
 	
-	PBS::PBSConfigSwitches::DisplayUserHelp($pbsfile , $display_user_help, $pbs_config->{RAW_POD}) ;
+	PBS::PBSConfigSwitches::DisplayUserHelp($pbsfile, $display_user_help, $pbs_config->{RAW_POD}) ;
 	return(1) ;
 	}
 
@@ -275,17 +275,17 @@ for my $post_pbs (@{$pbs_config->{POST_PBS}})
 		{
 		PBS::PBS::LoadFileInPackage
 			(
-			''
-			, $post_pbs
-			, "PBS::POST_PBS_$run"
-			, $pbs_config
-			, "use strict ;\nuse warnings ;\n"
+			'',
+			$post_pbs,
+			"PBS::POST_PBS_$run",
+			$pbs_config,
+			"use strict ;\nuse warnings ;\n"
 			  . "use PBS::Output ;\n"
 			  . "my \$pbs_config = \$pbs_config ;\n"
 			  . "my \$build_success = \$PBS::FrontEnd::build_success ;\n"
 			  . "my \$dependency_tree = \$PBS::FrontEnd::dependency_tree ;\n"
 			  . "my \$inserted_nodes = \$PBS::FrontEnd::inserted_nodes ; \n"
-			  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n"
+			  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n",
 			) ;
 		} ;
 
@@ -328,10 +328,10 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 	my ($pbs_response_file, $prf_config) 
 		= PBS::PBSConfig::ParsePrfSwitches
 			(
-			  $command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE}
-			, $command_line_config->{PBS_RESPONSE_FILE}
-			, undef # run prf in separate namespace
-			, PARSE_PRF_SWITCHES_IGNORE_ERROR
+			$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+			$command_line_config->{PBS_RESPONSE_FILE},
+			undef, # run prf in separate namespace
+			PARSE_PRF_SWITCHES_IGNORE_ERROR,
 			) ;
 			
 	$prf_config->{PLUGIN_PATH} ||= [] ;
@@ -344,19 +344,6 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 	
 	push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
 	}
-
-# broken
-#~ use PAR ;
-#~ my $zip = PAR::par_handle($0); # an Archive::Zip object
-#~ my $src = $zip->memberNamed('lib/Hello.pm')->contents;
-
-#~ use Archive::Zip ;
-#~ my $zip = new Archive::Zip(__FILE__);
-#=> error: member not found at /usr/bin/par.pl line 171
-
-#~ PrintDebug "the file => $0  " . __FILE__ . "\n" ;
-#~ PrintDebug $zip->members() ;
-#~ PrintDebug "****************************\n" ;
 
 # nothing defined on the command line and in a prf, last resort, use the distribution files
 my $plugin_path_is_default ;
@@ -425,9 +412,9 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 	my ($pbs_response_file, $prf_config) 
 		= PBS::PBSConfig::ParsePrfSwitches
 			(
-			  $pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE}
-			, $pbs_config->{PBS_RESPONSE_FILE}
-			, undef # package to run prf in
+			$pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+			$pbs_config->{PBS_RESPONSE_FILE},
+			undef, # package to run prf in
 			) ;
 			
 	#merging to PBS config, CLI has higher priority

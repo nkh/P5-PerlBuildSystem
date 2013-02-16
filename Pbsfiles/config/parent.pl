@@ -21,8 +21,8 @@ AddRule '1', [ 'parent' => 'child'] ;
 
 AddRule 'child',
 	{
-	  NODE_REGEX => 'child'
-	, PBSFILE => './child.pl'
-	, PACKAGE => 'child'
-	#~ , COMMAND_LINE_DEFINITIONS => { OPTIMIZE_FLAG_3 => 'zzz'}
+	NODE_REGEX => 'child',
+	PBSFILE => './child.pl',
+	PACKAGE => 'child',
+	#~ COMMAND_LINE_DEFINITIONS => { OPTIMIZE_FLAG_3 => 'zzz'},
 	} ;

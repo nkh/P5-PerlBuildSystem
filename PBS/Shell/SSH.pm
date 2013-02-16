@@ -33,8 +33,8 @@ die ERROR "USER_NAME && HOST_NAME must be defined at '$file:$line'\n" unless (de
 
 my %args =
 	(
-	  protocol => $config{PROTOCOL} || 2 # use SSH2 by default
-	#~ ,   debug => 1
+	protocol => $config{PROTOCOL} || 2 # use SSH2 by default,
+	#~ debug => 1,
 	) ;
 
 my $ssh_connection ;
@@ -103,10 +103,10 @@ unless(defined $self->{LOGGED_IN})
 		{
 		die bless
 			{
-			error => "SSH login failed! for '$host_info'." 
-			, command => 'SSH login'
-			, errno => -1
-			, errno_string => $@
+			error => "SSH login failed! for '$host_info'.",
+			command => 'SSH login',
+			errno => -1,
+			errno_string => $@,
 			}, 'PBS::Shell' ;
 		}
 		
@@ -137,10 +137,10 @@ else
 	
 	die bless
 		{
-		error => "SSH command failed! $host_info." 
-		, command => $command
-		, errno => $exit
-		, errno_string => "SSH command failed! $host_info."
+		error => "SSH command failed! $host_info.", 
+		command => $command,
+		errno => $exit,
+		errno_string => "SSH command failed! $host_info.",
 		}, 'PBS::Shell' ;
 	}
 }

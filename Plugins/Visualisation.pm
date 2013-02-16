@@ -45,16 +45,16 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 	$local_child = "./$local_child" unless $local_child =~ /^[.\/]/ ;
 	
 	my $DependenciesOnly = sub
-							{
-							my $tree = shift ;
-							
-							if('HASH' eq ref $tree)
-								{
-								return( 'HASH', undef, sort grep {! /^__/} keys %$tree) ;
-								}
-							
-							return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-							} ;
+				{
+				my $tree = shift ;
+				
+				if('HASH' eq ref $tree)
+					{
+					return( 'HASH', undef, sort grep {! /^__/} keys %$tree) ;
+					}
+				
+				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+				} ;
 							
 	if(exists $inserted_nodes->{$local_child})
 		{
@@ -62,9 +62,9 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 			(
 			DumpTree
 				(
-				$inserted_nodes->{$local_child}{__DEPENDENCY_TO}
-				, "\n'$local_child' ancestors:"
-				, FILTER => $DependenciesOnly
+				$inserted_nodes->{$local_child}{__DEPENDENCY_TO},
+				"\n'$local_child' ancestors:",
+				FILTER => $DependenciesOnly,
 				)
 			) ;
 		}
@@ -118,35 +118,21 @@ if(defined $pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE})
 
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE_EXTRA})
 	{
-	PrintInfo
-		(
-		DumpTree
-			(
-			  $inserted_nodes
-			, "Files in dependency tree:"
-			)
-		) ;
+	PrintInfo(DumpTree($inserted_nodes, "Files in dependency tree:")) ;
 	}
 
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	{
 	# Build sequence.
-	my $GetBuildNames = sub
-				{
-				my $tree = shift ;
-				return ('HASH', undef, sort grep { /^(__NAME|__BUILD_NAME)/} keys %$tree) if('HASH' eq ref $tree) ;	
-				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-				} ;
+	my $GetBuildNames = 
+		sub
+		{
+		my $tree = shift ;
+		return ('HASH', undef, sort grep { /^(__NAME|__BUILD_NAME)/} keys %$tree) if('HASH' eq ref $tree) ;	
+		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+		} ;
 	
-	PrintInfo
-		(
-		DumpTree
-			(
-			$build_sequence
-			, "\nBuildSequence:"
-			, FILTER => $GetBuildNames
-			)
-		) ;
+	PrintInfo(DumpTree($build_sequence, "\nBuildSequence:", FILTER => $GetBuildNames)) ;
 	}
 
 }

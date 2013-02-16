@@ -70,12 +70,12 @@ eval
 	{
 	PBS::PBS::LoadFileInPackage
 		(
-		''
-		, $plugin
-		, "PBS::PLUGIN_$plugin_load_package"
-		, {}
-		, "use strict ;\nuse warnings ;\n"
-		  . "use PBS::Output ;\n"
+		'',
+		$plugin,
+		"PBS::PLUGIN_$plugin_load_package",
+		{},
+		"use strict ;\nuse warnings ;\n"
+		  . "use PBS::Output ;\n",
 		) ;
 	} ;
 	

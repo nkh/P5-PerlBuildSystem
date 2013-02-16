@@ -40,10 +40,10 @@ my ($class, $modified_files, $deleted_files) = @_ ;
 
 my $self = 
 	{
-	  WATCHED_DIRECTORIES => {} # {directory_name => watch}
-	, WATCHED_FILES       => {} # {directory_name => {file1 => 1, file2 => 1}, directory_name2 => {}}
-	, MODIFIED_FILES      => $modified_files
-	, DELETED_FILES       => $deleted_files
+	WATCHED_DIRECTORIES => {} # {directory_name => watch},
+	WATCHED_FILES       => {} # {directory_name => {file1 => 1, file2 => 1}, directory_name2 => {}},
+	MODIFIED_FILES      => $modified_files,
+	DELETED_FILES       => $deleted_files,
 	} ;
 
 $watcher_singleton = $self ;
