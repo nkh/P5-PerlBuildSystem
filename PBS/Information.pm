@@ -64,13 +64,13 @@ if($pbs_config->{DISPLAY_BUILDER_INFORMATION})
 		}
 	}
 	
-use Term::Size ;
+use Term::Size::Any qw(chars) ;
 my $terminal_width = 10_000 ;
 
 if($^O ne 'MSWin32')
 	{
 	# overkill to run an eval each time we display a file name	
-	eval "(\$terminal_width) = Term::Size::chars *STDOUT{IO} ;" ;
+	eval "(\$terminal_width) = chars *STDOUT{IO} ;" ;
 	}
 
 my $columns = length("Node $type'$name':") ;

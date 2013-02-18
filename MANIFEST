@@ -33,7 +33,6 @@ Plugins/ExpandObjects.pm
 Plugins/CheckNodeName.pm
 Plugins/SimplifyRule.pm
 
-PBS/Attributes.pm
 PBS/Build.pm
 PBS/Build/NodeBuilder.pm
 PBS/Build/Threaded.pm
