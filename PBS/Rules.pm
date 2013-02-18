@@ -31,8 +31,6 @@ use PBS::Constants ;
 use PBS::Plugin ;
 use PBS::Rules::Creator ;
 
-#use base qw(PBS::Attributes) ;
-
 #-------------------------------------------------------------------------------
 
 our %package_rules ;

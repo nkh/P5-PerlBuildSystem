@@ -8,7 +8,6 @@ my %all_modules ;
 my @split_modules ;
 
 my @pm_files = qw(
-PBS/Attributes.pm
 PBS/Build.pm
 PBS/Build/NodeBuilder.pm
 PBS/Build/Threaded.pm

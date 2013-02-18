@@ -31,9 +31,6 @@ requires:
   Test::Cmd: 0
   Tie::Hash::Indexed: 0.03
 provides:
-  PBS::Attributes:
-    file: PBS/Attributes.pm
-    version: 0.01
   PBS::Build:
     file: PBS/Build.pm
     version: 0.04

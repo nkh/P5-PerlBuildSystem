@@ -265,7 +265,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		$pbs_config,
 		"use strict ;\n"
 		  . "use warnings ;\n"
-		  . "use base qw(PBS::Attributes);\n"
 		  . "use PBS::Constants ;\n"
 		  . "use PBS::Shell ;\n"
 		  . "use PBS::Output ;\n"
