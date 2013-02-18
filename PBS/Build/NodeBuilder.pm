@@ -456,11 +456,9 @@ if($@)
 		{
 		$build_result = BUILD_FAILED ;
 		
-		$build_message = 
-			"\n\t" . $@->{error} . "\n"
-			. "\tCommand   : '" . $@->{command} . "'\n" if $PBS::Shell::silent_commands
-			. "\tErrno     : " . $@->{errno} . "\n"
-			. "\tErrno text: " . $@->{errno_string} . "\n" ;
+		$build_message = "\n\t" . $@->{error} . "\n" ;
+		$build_message .= "\tCommand   : '" . $@->{command} . "'\n" if defined $PBS::Shell::silent_commands ;
+		$build_message .=  "\tErrno     : " . $@->{errno} . "\n\tErrno text: " . $@->{errno_string} . "\n" ;
 		}
 	else
 		{

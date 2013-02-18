@@ -18,7 +18,7 @@ my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
 #~ PrintDebug "$$shell_command_ref\n" ;
 
-if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_EXPANDED/)
+if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_OBJECTS_EXPANDED/)
 	{
 	my $expanded_dependency_list = '' ;
 	
@@ -34,7 +34,7 @@ if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_EXPANDED/)
 			}
 		}
 	
-	$$shell_command_ref =~ s/\%DEPENDENCY_LIST_EXPANDED/$expanded_dependency_list/g ;
+	$$shell_command_ref =~ s/\%DEPENDENCY_LIST_OBJECTS_EXPANDED/$expanded_dependency_list/g ;
 	}
 	
 

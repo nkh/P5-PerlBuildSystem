@@ -26,7 +26,8 @@ use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 
-my $evaluate_shell_command_verbose ;
+
+our $evaluate_shell_command_verbose ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -46,7 +47,7 @@ my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
 if($evaluate_shell_command_verbose)
 	{
-	PrintDebug "'EvaluateShellCommand' plugin handling '$tree->{__NAME}' shell command:\n      $$shell_command_ref\n" ;
+	PrintDebug "'EvaluateShellCommand' plugin handling '$tree->{__NAME}' shell command:\n\t$$shell_command_ref\n" ;
 	}
 
 my @repository_paths = PBS::Build::NodeBuilder::GetNodeRepositories($tree) ;

@@ -14,6 +14,11 @@ $tree,
 $inserted_nodes,
 ) = @_ ;
 
+tree->{__PBS_CONFIG} = {%{$tree->{__PBS_CONFIG}}} ; # config is share get our own copy (note! this is not deep)
+
+use Data::TreeDumper ;
+PrintDebug DumpTree $tree->{__CONFIG} ;
+
 }
 
 EOT
