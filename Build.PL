@@ -382,7 +382,7 @@ my $build = $class->new
 		#GDBM::File' => 0 ,
 
 		'Devel::Depend::Cpp'  => '0.10',
-		'Devel::Depend::Cl'   => '0.05',
+		'Devel::Depend::Cl'   => '0.06',
 		},
 		
 	pm_files     => \%all_modules,
