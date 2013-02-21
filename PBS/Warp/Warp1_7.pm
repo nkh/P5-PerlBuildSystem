@@ -526,10 +526,7 @@ my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targ
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_7';
 mkpath($warp_path) unless(-e $warp_path) ;
 
-(my $original_arguments = $pbs_config->{ORIGINAL_ARGV}) =~ s/[^0-9a-zA-Z_-]/_/g ;
-my $warp_info_file= "$warp_path/Pbsfile_${warp_signature}_${original_arguments}" ;
-open(WARP_INFO, ">", $warp_info_file) or die qq[Can't open $warp_info_file: $!] ;
-close(WARP_INFO) ;
+PBS::Warp::GenerateWarpInfoFile('1.7', $warp_path, $warp_signature, $targets, $pbs_config) ;
 
 my $warp_file= "$warp_path/Pbsfile_$warp_signature.blob" ;
 

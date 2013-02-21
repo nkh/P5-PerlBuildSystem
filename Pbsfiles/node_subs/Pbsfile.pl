@@ -28,6 +28,14 @@ AddRule 'a.out', ['a.out' => 'main.o', 'world.o']
 # add some node specific data, the node already matches another rule
 AddNodeConfigVariableDependencies(qr/world.o/, 'OPTIMIZE_CFLAGS') ;
 
+AddRule 'changing the C node config', 
+	['world.c'], # matcher and dependencies declaration
+	undef, # builder
+	# the job is done here
+	[
+	\&ChangeConfig,
+	] ;
+
 AddRule 'changing the node config', 
 	['world.o'], # matcher and dependencies declaration
 	undef, # builder

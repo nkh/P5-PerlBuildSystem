@@ -116,6 +116,45 @@ unless(defined $warp_configuration)
 return($warp_configuration) ;
 }
 
+#--------------------------------------------------------------------------------------------------
+
+sub GenerateWarpInfoFile
+{
+my ($warp_type, $warp_path, $warp_signature, $targets, $pbs_config) = @_ ;
+
+(my $original_arguments = $pbs_config->{ORIGINAL_ARGV}) =~ s/[^0-9a-zA-Z_-]/_/g ;
+my $warp_info_file= "$warp_path/Pbsfile_${warp_signature}_${original_arguments}" ;
+
+# limit length
+if(length($warp_info_file) > 240)
+	{
+	$warp_info_file = substr $warp_info_file, 0, 239 ;
+	$warp_info_file .= '_continued' ;
+	}
+
+open(WARP_INFO, ">", $warp_info_file) or die qq[Can't open $warp_info_file: $!] ;
+
+my $header = PBS::Log::GetHeader('Warp information', $pbs_config) ;
+my $target_text = join ' ', @{$targets} ;
+my $pbs_config_text = DumpTree $pbs_config, 'pbs_config:', USE_ASCII => 1 ;
+
+print WARP_INFO <<EOWI ;
+
+$header 
+warp_type: $warp_type
+warp_path: $warp_path
+warp signature: $warp_signature
+
+targets: $target_text
+
+
+$pbs_config_text
+
+EOWI
+
+close(WARP_INFO) ;
+}
+
 #-------------------------------------------------------------------------------
 
 1;
