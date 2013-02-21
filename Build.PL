@@ -84,6 +84,7 @@ Plugins/PostPbs.pm
 Plugins/SimplifyRule.pm
 Plugins/TreeVisualisation.pm
 Plugins/Visualisation.pm
+Plugins/MyOptions.pm
 ) ;
 
 for(@extra_modules)
@@ -151,80 +152,76 @@ for(@PBSLib)
 	$all_modules{$_} = "lib/PBS/$_" ;
 	}
 
-
-sub GetVersionandRevisionFrom
+sub GetVersionAndRevisionFrom
 {
 my ($file) = @_ ;
 
 my $version_from = File::Spec->catfile( split '/', $file );
 my $version      = Module::Build->version_from_file($version_from);
 
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
-	{
-	my @svk_log = `svk log -r HEAD -q` ;
-	if(@svk_log)
-		{
-		my ($revision) = $svk_log[1] =~ m/^r([0-9]+):/ ;
-		print "using SVK revision $revision.\n" ;
-		return("${version}.${revision}") ;
-		}
-	else
-		{
-		print "Couldn't get SVK revision, using version from '$file'!\n" ;
-		return($version) ;
-		}
-	}
+if(-d '.git')
+        {
+        my $number_of_commits = `git log --format="%H" | wc -l` ;
+        chomp $number_of_commits ;
+
+        if($number_of_commits)
+                {
+                #print "number of git revision: $number_of_commits.\n" ;
+                return("${version}.${number_of_commits}") ;
+                }
+        else
+                {
+                print "Couldn't get git revision, using version from '$file'!\n" ;
+                return($version) ;
+                }
+        }
 else
-	{
-	return($version) ;
-	}
+        {
+        return($version) ;
+        }
 }
 
-my $code = <<'EOC'
+
+my $code = <<'EOC' ;
 #~ use Data::TreeDumper ;
 #~ print DumpTree \@_, 'args:' ;
 
-sub GetVersionandRevisionFrom
+sub GetVersionAndRevisionFrom
 {
 my ($file) = @_ ;
 
 my $version_from = File::Spec->catfile( split '/', $file );
 my $version      = Module::Build->version_from_file($version_from);
 
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
-	{
-	my @svk_log = `svk log -r HEAD -q` ;
-	if(@svk_log)
-		{
-		my ($revision) = $svk_log[1] =~ m/^r([0-9]+):/ ;
-		print "using SVK revision $revision.\n" ;
-		return("${version}.${revision}") ;
-		}
-	else
-		{
-		print "Couldn't get SVK revision, using version from '$file'!\n" ;
-		return($version) ;
-		}
-	}
-else
-	{
-	return($version) ;
-	}
-}
+if(-d '.git')
+        {
+        my $number_of_commits = `git log --format="%H" | wc -l` ;
+        chomp $number_of_commits ;
 
-#~ sub ACTION_
-#~ {
-#~ my $self = shift;
-#~ print "\n";
-#~ }
+        if($number_of_commits)
+                {
+                #print "number of git revision: $number_of_commits.\n" ;
+                return("${version}.${number_of_commits}") ;
+                }
+        else
+                {
+                print "Couldn't get git revision, using version from '$file'!\n" ;
+                return($version) ;
+                }
+        }
+else
+        {
+        return($version) ;
+        }
+}
 
 sub ACTION_build 
 {
 my $self = shift;
 
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
+if(-d '.git')
 	{
-	my ($pbs_version) = GetVersionandRevisionFrom('PBS/FrontEnd.pm') ;
+	my ($pbs_version) = GetVersionAndRevisionFrom('PBS/FrontEnd.pm') ;
 	
 	print "Generating version module ($pbs_version)\n" ;
 	
@@ -249,86 +246,8 @@ EOV
 $self->SUPER::ACTION_build(@_);
 }
 
-sub ACTION_latest
-{
-ACTION_dist(@_) ;
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
-	{
-	my ($pbs_version) = GetVersionandRevisionFrom('PBS/FrontEnd.pm') ;
-	
-	my $source = "PerlBuildSystem-$pbs_version.tar.gz" ;
-	my $destination = "PerlBuildSystem-latest.tar.gz" ;
-	
-	use Net::SCP qw(scp iscp);
-	iscp($source, "nadim\@firewall:/var/www/localhost/htdocs/files_for_download/$destination");
-	}
-}
-
-sub ACTION_dist
-{
-my $self = shift;
-
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
-	{
-	my $have_svk = $self->do_system('svk --version');
-	
-	if($have_svk)
-		{
-		if($self->do_system('svk log -x -v > SVK_Changes'))
-			{
-			use File::Copy;
-			move('SVK_Changes', 'Changes') ;
-			}
-		else
-			{
-			print "Couldn't get SVK log, 'Changes' will not be generated from SVK log!\n" ;
-			}
-		}
-	else
-		{
-		print "SVK not found, 'Changes' will not be generated from SVK log!\n" ;
-		}
-	}
-	
-$self->SUPER::ACTION_dist();
-
-if($ENV{PBS_USE_SVK_VERSION_FOR_DIST})
-	{
-	my ($pbs_version) = GetVersionandRevisionFrom('PBS/FrontEnd.pm') ;
-	
-	my $source = "PerlBuildSystem-$pbs_version.tar.gz" ;
-	my $destination = "PerlBuildSystem-bleed.tar.gz" ;
-	
-	use Net::SCP qw(scp iscp);
-	iscp($source, "nadim\@firewall:/var/www/localhost/htdocs/files_for_download/$destination");
-	}
-};
-
-sub ACTION_inject
-{
-#~ my $self = shift;
-
-# check cpan if mini inject is installed
-# build
-# from $self find how to update 02packages.details.txt.gz
-
-die "'inject' not implemented yet!\n";
-}
-
-#~ sub ACTION_
-#~ {
-#~ my $self = shift;
-#~ print "\n";
-#~ }
-
-sub ACTION_update_cpan_mini
-{
-# build test and make a dist
-die "'update_mini_cpan' not implemented yet!\n";
-}
-
 EOC
-;
+
 
 my $class = Module::Build->subclass(class => 'PBS::Builder', code => $code) ;
 
@@ -336,7 +255,7 @@ my $build = $class->new
 	(
 	module_name => 'PerlBuildSystem',
 	
-	dist_version => GetVersionandRevisionFrom('PBS/FrontEnd.pm'),
+	dist_version => GetVersionAndRevisionFrom('PBS/FrontEnd.pm'),
 	
 	license => 'perl',
 	configure_requires => 

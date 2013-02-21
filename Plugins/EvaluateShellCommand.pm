@@ -32,7 +32,7 @@ our $evaluate_shell_command_verbose ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'evaluate_shell_command_verbose',
-	\$evaluate_shell_command_verbose,
+	'EVALUATE_SHELL_COMMAND_VERBOSE',
 	"Will display the transformation this plugin does.",
 	'',
 	) ;
@@ -44,6 +44,8 @@ use PBS::Build::NodeBuilder ;
 sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
+
+my $evaluate_shell_command_verbose = $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 if($evaluate_shell_command_verbose)
 	{
@@ -66,7 +68,7 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 		{
 		if($evaluate_shell_command_verbose)
 			{
-			PrintDebug "      repository: $repository_path\n" ;
+			PrintDebug "\t\trepository: $repository_path\n" ;
 			}
 			
 		$replacement .= "$prefix$repository_path ";
@@ -80,10 +82,7 @@ for my $field_to_replace (keys %pbs_repositories_replacements)
 	$$shell_command_ref =~ s/$field_to_replace/$pbs_repositories_replacements{$field_to_replace}/g ;
 	}
 
-if($evaluate_shell_command_verbose)
-	{
-	PrintDebug "   => $$shell_command_ref\n\n" ;
-	}
+PrintDebug "\t=> $$shell_command_ref\n\n" if($evaluate_shell_command_verbose) ; 
 }
 
 #-------------------------------------------------------------------------------

@@ -1128,8 +1128,18 @@ EOT
 		
 	) ;
 
+my @registred_flags_and_help_pointing_to_pbs_config ;
+while( my ($switch, $variable, $help1, $help2) = splice(@registred_flags_and_help, 0, 4))
+	{
+	if('' eq ref $variable)
+		{
+		$variable = \$pbs_config->{$variable} ;
+		}
+		
+	push @registred_flags_and_help_pointing_to_pbs_config, $switch, $variable, $help1, $help2 ;
+	}
 
-return(@flags_and_help, @registred_flags_and_help) ;
+return(@flags_and_help, @registred_flags_and_help_pointing_to_pbs_config) ;
 }
 
 #-------------------------------------------------------------------------------

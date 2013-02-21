@@ -1,35 +1,30 @@
 ---
-name: PerlBuildSystem
-version: 0.44
+abstract: 'Build utility/modules in the same spirit as gmake'
 author:
   - 'Khemir Nadim ibn Hamouda. <nadim@khemir.net>'
-abstract: Build utility/modules in the same spirit as gmake
-license: perl
-resources:
-  license: http://dev.perl.org/licenses/
-requires:
-  Class::MethodMaker: 0
-  Cwd: 2.06
-  Data::Compare: 0
-  Data::Dumper: 2.12
-  Data::TreeDumper: 0.24
-  Devel::Cycle: 0
-  Devel::Depend::Cl: 0.04
-  Devel::Depend::Cpp: 0.08
-  File::Basename: 2.71
+build_requires:
   File::Copy::Recursive: 0
-  File::MkTemp: 0
   File::Slurp: 0
   File::Spec: 0
-  Getopt::Long: 2.32
   IO::String: 0
-  Module::Build: 0.2611
-  Module::Util: 0.2611
-  Pod::Simple::Search: 0
-  Term::ReadKey: 0
+  Net::SCP: 0
+  Test::Block: 0
   Test::Class: 0
   Test::Cmd: 0
-  Tie::Hash::Indexed: 0.03
+  Test::Exception: 0
+  Test::NoWarnings: 0
+  Test::Warn: 0
+  Text::Diff: 0
+configure_requires:
+  Module::Build: 0.4
+  Net::SCP: 0
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4, CPAN::Meta::Converter version 2.112150'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: PerlBuildSystem
 provides:
   PBS::Build:
     file: PBS/Build.pm
@@ -63,7 +58,7 @@ provides:
     version: 0.03
   PBS::Debug:
     file: PBS/Debug.pm
-    version: 0.03
+    version: 0.04
   PBS::DefaultBuild:
     file: PBS/DefaultBuild.pm
     version: 0.04
@@ -162,6 +157,7 @@ provides:
     version: 0.01
   PBS::Version:
     file: PBS/Version.pm
+    version: 0
   PBS::Warp:
     file: PBS/Warp.pm
     version: 0.02
@@ -191,7 +187,27 @@ provides:
     version: 0.02
   VisualStudioProjectFile:
     file: PBSLib/Utils/VisualStudioProjectFile.pm
-generated_by: Module::Build version 0.2808
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+    version: 0
+requires:
+  Class::MethodMaker: 0
+  Cwd: 2.06
+  Data::Compare: 0
+  Data::Dumper: 2.12
+  Data::TreeDumper: 0.35
+  Devel::Cycle: 0
+  Devel::Depend::Cl: 0.06
+  Devel::Depend::Cpp: 0.10
+  File::Basename: 2.71
+  File::MkTemp: 0
+  Getopt::Long: 2.32
+  Module::Build: 0.2611
+  Module::Util: 0.2611
+  PadWalker: 0
+  Pod::Simple::Search: 0
+  Term::Bash::Completion::Generator: 0
+  Term::ReadKey: 0
+  Term::Size::Any: 0
+  Tie::Hash::Indexed: 0.03
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.44

@@ -32,6 +32,7 @@ Plugins/EvaluateShellCommand.pm
 Plugins/ExpandObjects.pm
 Plugins/CheckNodeName.pm
 Plugins/SimplifyRule.pm
+Plugins/MyOptions.pm
 
 PBS/Build.pm
 PBS/Build/NodeBuilder.pm
@@ -202,6 +203,7 @@ Pbsfiles/hello2/world/header/reverse.h
 Pbsfiles/frontend/frontend.pl
 Pbsfiles/color/pbsfile.pl
 Pbsfiles/error_messages/Pbsfile.pl
+Pbsfiles/my_switches/pbsfile.pl
 
 Pbsfiles/test1/Pbsfile.pl
 Pbsfiles/test1/P2.pl
@@ -405,3 +407,4 @@ Pbsfiles/emil_subpbs_locate/sd2/b/a.h
 
 
 
+META.json

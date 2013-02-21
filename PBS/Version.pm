@@ -3,7 +3,7 @@
 	
 	package PBS::Version ;
 	
-	sub GetVersion {return '0.43.294'} ;
+	sub GetVersion {return '0.45.40'} ;
 	
 	1 ;
 	

@@ -16,7 +16,12 @@ sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
-#~ PrintDebug "$$shell_command_ref\n" ;
+my $evaluate_shell_command_verbose = $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+
+if($evaluate_shell_command_verbose)
+	{
+	PrintDebug "'ExpandObjects' plugin handling '$tree->{__NAME}' shell command:\n\t$$shell_command_ref\n" ;
+	}
 
 if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_OBJECTS_EXPANDED/)
 	{
@@ -37,8 +42,7 @@ if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_OBJECTS_EXPANDED/)
 	$$shell_command_ref =~ s/\%DEPENDENCY_LIST_OBJECTS_EXPANDED/$expanded_dependency_list/g ;
 	}
 	
-
-#~ PrintDebug "   => $$shell_command_ref\n\n" ;
+PrintDebug "\t=> $$shell_command_ref\n\n" if($evaluate_shell_command_verbose) ; 
 }
 
 sub GetFiles
