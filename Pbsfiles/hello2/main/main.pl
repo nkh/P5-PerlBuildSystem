@@ -1,3 +1,4 @@
+
 =head1 PBSFILE USER HELP
 
 To be used as a subpbs only!
@@ -15,5 +16,6 @@ To be used as a subpbs only!
 PbsUse('Configs/Compilers/gcc') ;
 PbsUse('Rules/C') ;
 
+#SetConfig 'CFLAGS'
 AddVariableDependencies(CFLAGS => GetConfig('CFLAGS')) ;
 

@@ -79,7 +79,7 @@ provides:
     version: 0.02
   PBS::FrontEnd:
     file: PBS/FrontEnd.pm
-    version: 0.44
+    version: 0.45
   PBS::Graph:
     file: PBS/Graph.pm
     version: 0.04
@@ -210,4 +210,4 @@ requires:
   Tie::Hash::Indexed: 0.03
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.44
+version: v0.45.41

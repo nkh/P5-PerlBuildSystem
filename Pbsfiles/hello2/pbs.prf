@@ -1,6 +1,6 @@
 
 AddTargets('all') ;
-AddCommandLineSwitches('-nh', '--no_default_path_warning') ;
+AddCommandLineSwitches('--no_default_path_warning') ;
 
 #------------------------------------------------------------------------
 

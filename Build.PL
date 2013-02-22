@@ -241,8 +241,11 @@ if(-d '.git')
 EOV
 	
 	close VERSION ;
+
 	}
 	
+`git log > Changes` ;
+
 $self->SUPER::ACTION_build(@_);
 }
 

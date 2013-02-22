@@ -69,11 +69,15 @@ my ($rebuild, $reason,$number_of_differences) = PBS::Digest::IsNodeDigestDiffere
 # otherwise all the nodes in a pbsfile get rebuild even if the change has no impact on it
 # note that rebuilding the graph still has to be done! The changes to the pbsfiles may not 
 # have an impact on the node to build but it may have on its position in the graph
+
+# the right way to check this is not by checking if the pbsfile only has changed
+# as some changes in the pbsfile may not have impact on the node to be build
+# but by comparing all the  contents of  digest, minus the pbsfile
 if($number_of_differences == 1 &&  $reason =~ q{key '__DEPENDING_PBSFILE' is different} )
 	{
 	if((! $PBS::Shell::silent_commands))
 		{
-		PrintWarning "\tNode doesn't need to be build. Only Pbsfile difference\n" ;
+		PrintWarning "\tNode doesn't need to be build. Only Pbsfile difference.\n" ;
 		}
 		
 	return(0, 'only pbsfile difference, regenerate_digest') ;
@@ -175,12 +179,12 @@ if
 my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly built.") ;	
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
-if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! NodeNeedsRebuild($file_tree)))
+my ($node_needs_rebuild, $why) = NodeNeedsRebuild($file_tree) ;
+
+if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! $node_needs_rebuild))
 	{
 	#todo: md5 for the shell commands and perl subs should be saved in the digest
-	
 	#todo: Need to regenerate the digest with the new pbsfile
-	
 	# nothing to do
 	($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
 	}
