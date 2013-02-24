@@ -460,12 +460,9 @@ print <<EOH ;
 
 This is the Perl Build System, PBS, version $version
 
-Copyright 2002-2008, Nadim Khemir and Anders Lindgren.
+Copyright 2002-2013, Nadim Khemir
 
-PBS comes with NO warranty. If you need a warranty, a completely
-unafordable licencing fee can be arranged.
-
-Send all suggestions and inqueries to <nadim\@khemir.net>.
+Send all suggestions and inqueries to <nadim.khemir\@gmail.com>.
 
 EOH
 }

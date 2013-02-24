@@ -219,9 +219,14 @@ sub force_digest_generation : Test(10) {
     AddRule 'file2', ['file2.in' => 'file.in'] =>
 	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
 _EOF_
+   $t->write_pbsfile(<<'_EOF_');
+_EOF_
+ 
     $t->write('file.in', 'file contents');
 
     # Build
+    #~ $t->generate_test_snapshot_and_exit() ;
+    
     $t->build_test();
     $t->test_target_contents('file contents');
 

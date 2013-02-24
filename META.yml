@@ -210,4 +210,4 @@ requires:
   Tie::Hash::Indexed: 0.03
 resources:
   license: http://dev.perl.org/licenses/
-version: v0.45.41
+version: v0.45.42
