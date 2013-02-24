@@ -220,7 +220,10 @@ sub force_digest_generation : Test(10) {
 	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
 _EOF_
     $t->write('file.in', 'file contents');
+    $t->write('file2.in', 'file contents');
 
+    #~ $t->generate_test_snapshot_and_exit() ;
+    
     # Build
     $t->build_test();
     $t->test_target_contents('file contents');

@@ -62,7 +62,7 @@ $check_dependencies_at_build_time_node_checked++ ;
 # virtual node have no digests so we can't check it
 return(0) if exists $node->{__VIRTUAL} ;
 
-my ($rebuild, $reason,$number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
+my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
 
 #todo: with a well build digest, if the only difference is the pbsfile itself, and all other variables 
 # identical, we can skip the build

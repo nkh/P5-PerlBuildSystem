@@ -274,6 +274,10 @@ sub build {
     my $target = $args{'targets'};
     $target = $self->{'target'} unless $target;
     $target = '' unless $target;
+    
+    #~ use Data::TreeDumper ;
+    #~ diag DumpTree [$self, \@_, "$flags $flags_global $build_dir $target"], 'build arguments:' ;
+    
     $self->SUPER::run(@_, args => "$flags $flags_global $build_dir $target");
 }
 
