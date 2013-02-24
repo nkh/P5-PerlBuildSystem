@@ -141,8 +141,8 @@ sub new {
     my $test = $class->SUPER::new(prog => $full_pbs_path_global,
 				  workdir => '',
 				  @_);
-#    die if $test;
-#    die if chdir($test->workdir);
+
+	$test->preserve();
 	chdir($test->workdir);
 
     bless($test, $class);

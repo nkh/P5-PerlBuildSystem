@@ -152,8 +152,8 @@ else
 						if
 						(
 						   (/^__PARENTS$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
-						#~ || (/^__DEPENDENCY_TO/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES})
-						    #~ $_ eq '__VIRTUAL'
+						||   
+						   (defined $pbs_config->{DISPLAY_TREE_FILTER} && ! exists $pbs_config->{DISPLAY_TREE_FILTER}{$_})
 						)
 							{
 							next ;

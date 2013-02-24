@@ -143,6 +143,7 @@ $pbs_config->{GENERATE_TREE_GRAPH_INCLUDE} ||= [] ;
 $pbs_config->{DISPLAY_PBS_CONFIGURATION} ||= [] ;
 $pbs_config->{VERBOSITY} ||= [] ;
 $pbs_config->{POST_PBS} ||= [] ;
+$pbs_config->{DISPLAY_TREE_FILTER} ||= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $pbs_config) ;} ;
 
@@ -839,7 +840,11 @@ EOT
 		'',
 		
 	'tt|text_tree:s'                  => \$pbs_config->{DEBUG_DISPLAY_TEXT_TREE},
-		'(DF) Display the dependency tree using a text dumper. A string argument can be given to narrow the tree.',
+		'(DF) Display the dependency tree using a text dumper. A string argument can be given to point at a specific node.',
+		'',
+		
+	'ttf|text_tree_filter=s'          => $pbs_config->{DISPLAY_TREE_FILTER},
+		'(DF) List the fields that are to be displayed when -tt is active. The switch can be used multiple times.',
 		'',
 		
 	'tta|text_tree_use_ascii'         => \$pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII},

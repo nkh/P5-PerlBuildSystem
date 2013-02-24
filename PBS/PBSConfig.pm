@@ -400,6 +400,15 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE} = '' unless $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
 	}
 	
+if(@{$pbs_config->{DISPLAY_TREE_FILTER}})
+	{
+	$pbs_config->{DISPLAY_TREE_FILTER} =  {map {$_ => 1} @{$pbs_config->{DISPLAY_TREE_FILTER}}} ;
+	}
+else
+	{
+	undef $pbs_config->{DISPLAY_TREE_FILTER} ;
+	}
+
 if(defined $pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII})
 	{
 	$pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII} = 1 ;
