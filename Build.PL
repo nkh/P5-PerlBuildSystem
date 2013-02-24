@@ -164,15 +164,18 @@ if(-d '.git')
         my $number_of_commits = `git log --format="%H" | wc -l` ;
         chomp $number_of_commits ;
 
+	my $latest_commit = `git log --format="%H" -1` ;
+	chomp $latest_commit ;
+	
         if($number_of_commits)
                 {
                 #print "number of git revision: $number_of_commits.\n" ;
-                return("${version}.${number_of_commits}") ;
+                return("${version}.${number_of_commits}", $latest_commit) ;
                 }
         else
                 {
                 print "Couldn't get git revision, using version from '$file'!\n" ;
-                return($version) ;
+                return($version, '') ;
                 }
         }
 else
@@ -180,7 +183,6 @@ else
         return($version) ;
         }
 }
-
 
 my $code = <<'EOC' ;
 #~ use Data::TreeDumper ;
@@ -198,15 +200,18 @@ if(-d '.git')
         my $number_of_commits = `git log --format="%H" | wc -l` ;
         chomp $number_of_commits ;
 
+	my $latest_commit = `git log --format="%H" -1` ;
+	chomp $latest_commit ;
+	
         if($number_of_commits)
                 {
                 #print "number of git revision: $number_of_commits.\n" ;
-                return("${version}.${number_of_commits}") ;
+                return("${version}.${number_of_commits}", $latest_commit) ;
                 }
         else
                 {
                 print "Couldn't get git revision, using version from '$file'!\n" ;
-                return($version) ;
+                return($version, '') ;
                 }
         }
 else
@@ -221,7 +226,7 @@ my $self = shift;
 
 if(-d '.git')
 	{
-	my ($pbs_version) = GetVersionAndRevisionFrom('PBS/FrontEnd.pm') ;
+	my ($pbs_version, $commit) = GetVersionAndRevisionFrom('PBS/FrontEnd.pm') ;
 	
 	print "Generating version module ($pbs_version)\n" ;
 	
@@ -234,6 +239,8 @@ if(-d '.git')
 	package PBS::Version ;
 	
 	sub GetVersion {return '$pbs_version'} ;
+	
+	# generated from commit $commit
 	
 	1 ;
 	
@@ -258,7 +265,7 @@ my $build = $class->new
 	(
 	module_name => 'PerlBuildSystem',
 	
-	dist_version => GetVersionAndRevisionFrom('PBS/FrontEnd.pm'),
+	dist_version => (GetVersionAndRevisionFrom('PBS/FrontEnd.pm'))[0],
 	
 	license => 'perl',
 	configure_requires => 

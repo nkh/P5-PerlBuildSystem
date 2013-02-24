@@ -651,13 +651,26 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			{
 			PrintError
 				(
+				<<EOH .
+You want to override a locked configuration variable!
+	Your failed override:
+		key: '$key'
+		attempted new value: '$value'
+		at: '$origin'
+		class '$class'
+		type: '$type'
+		package: '$package'
+	
+	The locked variable
+EOH
 				DumpTree
 					(
-					$config_to_merge_to->{$type}{$class}{$key},
-					"Configuration variable '$key' => '$value' defined at $origin, wants to override locked variable:\n"
-						. "${package}::${type}::${class}::$key:",
+					$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},
+					'Origin:',
+					INDENTATION => "\t\t",
 					)
 				) ;
+				
 			die ;
 			}
 		
@@ -674,7 +687,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			my $value_txt = defined $value ? $value : 'undef' ;
 			
 			# just show where the override happens to avoid cluttering the display
-			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "Setting new value at $origin" ;
+			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "Overriding at '$origin'" ;
 			
 			unless($silent_override)
 				{
@@ -692,12 +705,19 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 				
 				$warn_sub ->
 					(
+					<<EOH .
+Overriding a ${locked_message}configuration variable
+	key: '$key'
+	new value: '$value'
+	class '$class'
+	type: '$type'
+	package: '$package'
+EOH
 					DumpTree
 						(
-						$config_to_merge_to->{$type}{$class}{$key},
-						#~ "Overriding ${locked_message}config '${package}::${type}::${class}::$key' it is now:",
-						"Overriding ${locked_message}config\n\tpackage: '${package}'\n\ttype: '${type}'"
-							."\n\tclass '${class}'\n\tkey: '$key' it is now:",
+						$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},
+						'Origin:',
+						INDENTATION => "\t",
 						)
 					) 
 				}
@@ -737,20 +757,20 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		(
 		   exists $config_to_merge_to->{PARENT}
 		&& exists $config_to_merge_to->{PARENT}{__PBS}{$key} 
-		#~ && $value ne $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE}
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
 			PrintWarning2
 				(
-				DumpTree
-					(
-					{
-					'Parent\'s value' => $config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE},
-					'Current value' => $value,
-					},
-					"Ignoring '$key' defined at '$origin': Already defined in the subpbs'parent:",
-					)
+				<<EOH
+Configuration variable will be ignored as type 'PARENT' has higher precedence
+	key: '$key'
+	attempted new value: '$value'
+	type: 'CURRENT'
+	at: '$origin'
+	
+	using value from parent: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
+EOH
 				) ;
 			}
 		
@@ -758,20 +778,20 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		(
 		   exists $config_to_merge_to->{COMMAND_LINE}
 		&& exists $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key} 
-		#~ && $value ne $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE}
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
 			PrintWarning2
 				(
-				DumpTree
-					(
-					{
-					'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE},
-					'Current value' => $value,
-					},
-					"Ignoring '$key' defined at '$origin': Already defined on the command line:",
-					)
+				<<EOH
+Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+	key: '$key'
+	attempted new value: '$value'
+	type: 'CURRENT'
+	at: '$origin'
+	
+	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+EOH
 				) ;
 			}
 		}
@@ -782,20 +802,20 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		(
 		   exists $config_to_merge_to->{COMMAND_LINE}
 		&& exists $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key} 
-		#~ && $value ne $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE}
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
 			PrintWarning2
 				(
-				DumpTree
-					(
-					{
-					'Command line' => $config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE},
-					Parent => $value,
-					},
-					"Ignoring '$key' defined at '$origin': Already defined on the command line:",
-					)
+				<<EOH
+Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+	key: '$key'
+	attempted new value: '$value'
+	type: 'PARENT'
+	at: '$origin'
+	
+	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+EOH
 				) ;
 			}
 		}
@@ -827,14 +847,14 @@ while($entry =~/\$config->{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning("While evaling '$key': \$config->{$1} doesn't exist at $origin.\n") ;
+		PrintWarning("While evaluating '$key': \$config->{$1} doesn't exist at $origin.\n") ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("While evaling '$key': \$config->{$1} isn't defined at $origin.\n") ;
+		PrintWarning("While evaluating '$key': \$config->{$1} isn't defined at $origin.\n") ;
 		$undefined_config++ ;
 		}
 	}
@@ -854,13 +874,13 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 	unless(exists $config->{$element})
 		{
 		#~ PrintDebug DumpTree($config, "Config") ;
-		PrintWarning("While evaling '$key': configuration variable '$element' doesn't exist at $origin.\n") ;
+		PrintWarning("While evaluating '$key': configuration variable '$element' doesn't exist at $origin.\n") ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("While evaling '$key': configuration variable '$element' isn't defined at $origin.\n") ;
+		PrintWarning("While evaluating '$key': configuration variable '$element' isn't defined at $origin.\n") ;
 		}
 	}
 	

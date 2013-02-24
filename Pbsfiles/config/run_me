@@ -1,0 +1,2 @@
+pbs -p parent.pl parent -dpl -dc -D OPTIMIZE_FLAG_1='from_command_line' $*
+

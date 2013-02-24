@@ -1,6 +1,6 @@
-AddConfig 'OPTIMIZE_FLAG_1::OVERRIDE_PARENT' => 'O2' ;
-AddConfig 'OPTIMIZE_FLAG_2::LOCAL' => 'O2' ;
-AddConfig 'OPTIMIZE_FLAG_3' => 'O2' ;
+AddConfig 'OPTIMIZE_FLAG_1::OVERRIDE_PARENT' => 'child_override' ;
+AddConfig 'OPTIMIZE_FLAG_2::LOCAL' => 'child_local' ;
+AddConfig 'OPTIMIZE_FLAG_3' => 'child_no_override' ;
 AddConfig UNDEF_FLAG => undef ;
 
 AddRule '1', [ 'child' => qw(childs_wife grand_daughter grand_son)] ;

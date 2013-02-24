@@ -117,7 +117,7 @@ sub config_override_parent : Test(3) {
     # Build
     $t->build_test;
     my $stdout = $t->stdout;
-    like($stdout, qr|Overriding config|, 'Message about overridden config');
+    like($stdout, qr|Overriding a configuration variable|, 'Message about overridden config');
     $t->test_target_contents('file2 contentsfile2 contents');
 }
 
@@ -151,7 +151,7 @@ _EOF_
     # Build
 	$t->build_test_fail;
     my $stderr = $t->stderr;
-    like($stderr, qr|wants to override locked variable|,
+    like($stderr, qr|want to override a locked configuration variable|,
 	 'Message about overriding a locked config variable');
 }
     
@@ -169,8 +169,8 @@ _EOF_
     # Build
     $t->build_test;
     my $stdout = $t->stdout;
-    like($stdout, qr|Overriding locked config|,
-	 'Message about overriding a config variable');
+    like($stdout, qr|Overriding a locked configuration variable|,
+	 'Message about overriding a locked config variable');
     $t->test_target_contents('file2 contents');
 }
 

@@ -234,11 +234,19 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	push my @config_namespaces, @{$pbs_config->{CONFIG_NAMESPACES}} ;
 	
 	my $user_build ;
-	my $sub_config ;	
 	PBS::PBSConfig::RegisterPbsConfig($load_package, $pbs_config) ;
 	
 	#Command defines
 	PBS::Config::AddConfigEntry($load_package, 'COMMAND_LINE', '__PBS', 'Command line', %{$pbs_config->{COMMAND_LINE_DEFINITIONS}}) ;
+	
+	my $sub_config = PBS::Config::GetPackageConfig($load_package) ; 
+	
+	if($pbs_config->{DISPLAY_CONFIGURATION})
+			{
+			PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Config for '$package':")) ;
+			}
+					
+	
 	PBS::Config::AddConfigEntry($load_package, 'PBS_FORCED', '__PBS_FORCED', 'PBS', 'TARGET_PATH' => $pbs_config->{TARGET_PATH}) ;
 	
 	# merge parent config
@@ -323,7 +331,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	eval "\$user_build = *${load_package}::Build{CODE} ;" ;
 	}
 		
-	$sub_config = PBS::Config::GetPackageConfig($load_package) ; 
 	my $rules   = PBS::Rules::GetPackageRules($load_package) ; 
 	
         my $rules_namespaces = join ', ', @rule_namespaces ;
@@ -657,7 +664,7 @@ my $result = eval $source ;
 
 if($@)
 	{
-	PrintError "LoadFileInPackage:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
+	PrintError "\nCaught exception:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
 	#~confess "$@ ." if $@ ;
 	die ;
 	}
