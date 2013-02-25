@@ -353,7 +353,8 @@ for my $include_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_INCLUDE}})
 # build or not switches
 if($pbs_config->{NO_BUILD} && $pbs_config->{FORCE_BUILD})
 	{
-	return(0, "-force_build and -no_build switch can't be given simulteanously\n") ;
+	PrintWarning "Both --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
+	$pbs_config->{FORCE_BUILD} = 0 ;
 	}
 	
 $pbs_config->{DO_BUILD} = 0 if $pbs_config->{NO_BUILD} ;

@@ -29,16 +29,17 @@ use vars qw($VERSION @ISA @EXPORT) ;
 require Exporter;
 
 @ISA     = qw(Exporter AutoLoader) ;
-@EXPORT  = qw(
-					ERROR WARNING WARNING2 INFO INFO2 USER SHELL DEBUG
-					PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintUser PrintShell PrintDebug
-					GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
-				) ;
-				
+@EXPORT  = qw
+		(
+		ERROR WARNING WARNING2 INFO INFO2 USER SHELL DEBUG
+		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintUser PrintShell PrintDebug
+		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
+		) ;
+		
 $VERSION = '0.05' ;
 
 our $colorize ;
-our $indentation = '   ' ;
+our $indentation = '    ' ;
 our $query_on_warning ;
 our $display_error_context ;
 
@@ -190,9 +191,29 @@ return $global_debug_escape_code . $string . $global_reset_escape_code if (defin
 return($string) ;
 }
 
+#-------------------------------------------------------------------------------
+sub _print
+{
+my ($glob, $color_and_depth, @data) = @_ ;
+
+for (@data)
+	{
+	#~ print "\n$_\n" ;
+	
+	s/^(\t+)/$indentation x length($1)/gsme ;
+	
+	#~ print "\n$_\n" ;
+	
+	print $glob $color_and_depth->($_) ;
+	
+	}
+}
+
+#-------------------------------------------------------------------------------
+
 sub PrintError 
 {
-print STDERR ERROR(@_) ;
+_print(\*STDERR, \&ERROR, @_ );
 }
 
 sub PrintWarning 
@@ -200,7 +221,7 @@ sub PrintWarning
 #~ my ($package, undef, $line) = caller() ;
 #~ print "Warning from $package:$line\n" ;
 
-print WARNING(@_) ;
+_print(\*STDOUT, \&WARNING, @_) ;
 
 if(defined $PBS::Output::query_on_warning)
 	{
@@ -214,7 +235,7 @@ if(defined $PBS::Output::query_on_warning)
 
 sub PrintWarning2
 {
-print WARNING2(@_) ;
+_print(\*STDOUT, \&WARNING2, @_) ;
 
 if(defined $PBS::Output::query_on_warning)
 	{
@@ -228,27 +249,27 @@ if(defined $PBS::Output::query_on_warning)
 
 sub PrintInfo
 {
-print STDOUT INFO(@_) ;
+_print(\*STDOUT, \&INFO, @_ );
 }
 
 sub PrintInfo2
 {
-print STDOUT INFO2(@_) ;
+_print(\*STDOUT, \&INFO2, @_) ;
 }
 
 sub PrintUser
 {
-print STDOUT USER(@_) ;
+_print(\*STDOUT, \&USER, @_) ;
 }
 
 sub PrintShell 
 {
-print STDOUT SHELL(@_) ;
+_print(\*STDOUT, \&SHELL, @_) ;
 }
 
 sub PrintDebug
 {
-print STDERR DEBUG(@_) ;
+_print(\*STDERR, \&DEBUG,@_) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -307,7 +328,7 @@ return($line_with_context) ;
 #-------------------------------------------------------------------------------
 sub PrintWithContext
 {
-print GetLineWithContext(@_) ;
+_print(GetLineWithContext(@_)) ;
 }
 
 #-------------------------------------------------------------------------------

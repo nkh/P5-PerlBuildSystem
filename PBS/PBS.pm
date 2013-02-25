@@ -12,6 +12,7 @@ use Carp ;
 use Tie::Hash::Indexed ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Spec::Functions qw(:ALL) ;
+#$Data::TreeDumper::Displaycallerlocation++ ;
 
 require Exporter ;
 use AutoLoader qw(AUTOLOAD) ;
@@ -241,16 +242,12 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	
 	my $sub_config = PBS::Config::GetPackageConfig($load_package) ; 
 	
-	if($pbs_config->{DISPLAY_CONFIGURATION})
-			{
-			PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Config for '$package':")) ;
-			}
-					
-	
 	PBS::Config::AddConfigEntry($load_package, 'PBS_FORCED', '__PBS_FORCED', 'PBS', 'TARGET_PATH' => $pbs_config->{TARGET_PATH}) ;
 	
 	# merge parent config
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
+	
+	PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Start configuration for '$package':")) if($pbs_config->{DISPLAY_CONFIGURATION_START}) ;
 	
 	my $add_pbsfile_digest = '' ;
 	
@@ -367,7 +364,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 			{
 			my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-			PrintInfo("PBS depend run '$pbs_runs' at depth '$Pbs_call_depth' [$number_of_nodes].            \r", 0) ;
+			print INFO("PBS depend run '$pbs_runs' at depth '$Pbs_call_depth' [$number_of_nodes].            \r", 0) ;
 			}
 		
 		($build_result, $build_message)

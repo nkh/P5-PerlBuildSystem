@@ -639,6 +639,10 @@ EOT
 		'Display the config used during a Pbs run (simplified and from the used config namespaces only).',
 		'',
 		
+	'dcs|display_config_start'        => \$pbs_config->{DISPLAY_CONFIGURATION_START},
+		'Display the config to be used in a Pbs run before loading the Pbsfile',
+		'',
+		
         'display_config_delta'            => \$pbs_config->{DISPLAY_CONFIGURATION_DELTA},
 		'Display the delta between the parent config and the config after the Pbsfile is run.',
 		'',
