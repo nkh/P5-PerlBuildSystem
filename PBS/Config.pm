@@ -820,7 +820,50 @@ EOH
 			}
 		}
 		
-	# TODO: add warning for local override
+	if($type eq 'LOCAL')
+		{
+		if
+		(
+		   exists $config_to_merge_to->{COMMAND_LINE}
+		&& exists $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key} 
+		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
+		)
+			{
+			PrintWarning2
+				(
+				<<EOH
+Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+	key: '$key'
+	attempted new value: '$value'
+	type: 'PARENT'
+	at: '$origin'
+	
+	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+EOH
+				) ;
+			}
+
+		if
+		(
+		   exists $config_to_merge_to->{PARENT}
+		&& exists $config_to_merge_to->{PARENT}{__PBS}{$key} 
+		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
+		)
+			{
+			PrintWarning2
+				(
+				<<EOH
+Configuration variable of type 'LOCAL' has higher precedence than 'PARENT'
+	key: '$key'
+	new value: '$value'
+	type: 'LOCAL'
+	at: '$origin'
+	
+	Overridden value from PARENT: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
+EOH
+				) ;
+			}
+		}
 	}
 }
 
