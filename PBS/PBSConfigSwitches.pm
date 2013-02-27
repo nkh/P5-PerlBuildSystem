@@ -619,8 +619,8 @@ EOT
 		'Display sub pbs definition.',
 		'',
 		
-	'dds|display_depend_start'        => \$pbs_config->{DISPLAY_DEPEND_START},
-		'Display when a depend starts and ends. Display the head of the depend tree.',
+	'dds|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
+		'Display when a depend ends.',
 		'',
 		
 	'dur|display_used_rules'          => \$pbs_config->{DISPLAY_USED_RULES},

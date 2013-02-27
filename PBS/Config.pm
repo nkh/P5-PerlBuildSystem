@@ -23,7 +23,8 @@ our @EXPORT = qw(
 		AddConfig       AddConfigTo
 		GetConfig       GetConfigFrom
 		GetConfigAsList GetConfigFromAsList
-		
+		GetConfigKeys
+
 		AddCompositeDefine
 		
 		AddConditionalConfig
@@ -110,7 +111,7 @@ sub GetConfig
 my ($package, $file_name, $line) = caller() ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}, undef) ;
+my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
 return
 	(
@@ -122,6 +123,18 @@ return
 		@_,
 		)
 	) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetConfigKeys
+{
+my ($package, $file_name, $line) = caller() ;
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
+
+return keys %user_config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -969,42 +982,52 @@ my
 	
 my %sub_config ;
 
-if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 	{
-	my $subpbs_package_node_config = "__SUBPS_CONFIG_FOR_NODE_$sub_node_name" ;
-	$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;
-	
-	my $code_string = <<"EOE" ;
-		package $subpbs_package_node_config
+	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
 		{
-		use PBS::Output ;
-		use Data::TreeDumper ;
-		
-		PBS::Config::create_subpbs_node_config
-			(
-			\$sub_pbs,
-			\$subpbs_package_node_config,
-			\$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
-			\$sub_node_name,
-			\$pbs_config,
-			\$load_package,
-			) ;
-		} ;
-EOE
-	#~ print $code_string ;
-	%sub_config = eval $code_string ;
-	die $@ if $@ ;
+		%sub_config = %{$sub_pbs_hash->{PACKAGE_CONFIG}} ;
+		}
 	}
 else
 	{
-	%sub_config = PBS::Config::ExtractConfig
-			(
-			PBS::Config::GetPackageConfig($load_package),
-			$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
-			['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
-			) ;
+	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+		{
+		my $subpbs_package_node_config = "__SUBPS_CONFIG_FOR_NODE_$sub_node_name" ;
+		$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;
+		
+		my $code_string = <<"EOE" ;
+			package $subpbs_package_node_config
+			{
+			use PBS::Output ;
+			use Data::TreeDumper ;
+			
+			PBS::Config::create_subpbs_node_config
+				(
+				\$sub_pbs,
+				\$subpbs_package_node_config,
+				\$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
+				\$sub_node_name,
+				\$pbs_config,
+				\$load_package,
+				) ;
+			} ;
+EOE
+		#~ print $code_string ;
+		%sub_config = eval $code_string ;
+		die $@ if $@ ;
+		}
+	else
+		{
+		%sub_config = PBS::Config::ExtractConfig
+				(
+				PBS::Config::GetPackageConfig($load_package),
+				$tree->{__PBS_CONFIG}{CONFIG_NAMESPACES},
+				['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
+				) ;
+		}
 	}
-	
+
 return \%sub_config ;
 }
 

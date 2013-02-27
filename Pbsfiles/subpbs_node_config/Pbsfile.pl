@@ -63,7 +63,7 @@ Check xx.pl for an *important* explaination for how to be dependent of the confi
 
 =cut
 
-AddRule [VIRTUAL], 'all', ['all' => 'xx', 'yy'], BuildOk ;
+AddRule [VIRTUAL], 'all', ['all' => 'xx', 'yy', 'zz'], BuildOk ;
 
 AddConfig 
 	AR => 'ABC',
@@ -94,6 +94,19 @@ AddRule 'yy',
 		{
 		# AR would is inherited from this package
 		AR2 => 'from_package_config_yy',
+		},
+	} ;
+
+AddRule 'zz',
+	{
+	NODE_REGEX => 'zz',
+	PBSFILE  => './zz.pl',
+	PACKAGE => 'zz',
+	PACKAGE_CONFIG_NO_INHERITANCE => 1,
+	PACKAGE_CONFIG =>
+		{
+		# the only configuration variable present at the begining of the pbsfile run
+		AR2 => 'the_only_configuration_variable',
 		},
 	} ;
 

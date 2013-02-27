@@ -36,7 +36,7 @@ if(defined $pbs_config->{DISPLAY_SOURCE_DIRECTORIES})
 	}
 if($pbs_config->{DISPLAY_CONFIGURATION})
 		{
-		PrintInfo(DumpTree($config, "Config for '$package_alias':")) ;
+		PrintInfo(DumpTree($config, "Config for package '$package_alias' before rules are run:")) ;
 		}
 		
 if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})

@@ -181,7 +181,7 @@ _EOF_
 	
 	AddConfigVariableDependencies('ar' => 'AR') ;
 	
-	AddRule 'name', ['xx'], "echo %AR >> %FILE_TO_BUILD";
+	AddRule 'name', ['xx'], "echo %AR> %FILE_TO_BUILD";
 	
 _EOF_
 
@@ -191,6 +191,48 @@ _EOF_
     $t->target('all');
     $t->build_test();
     $t->test_file_contents($t->catfile($t->build_dir, 'xx'), "from_package_config_xx\n");
+}
+
+sub PACKAGE_CONFIG_NO_INHERITANCE : Test(2) {
+# Write files
+    $t->write_pbsfile(<<'_EOF_');
+	AddConfig 
+		AR => 'ABC',
+		CONFIG_1 => 1,
+		CONFIG_2 => 2 ;
+
+	AddRule [VIRTUAL], 'all', ['all' => 'xx',], BuildOk ;
+
+	AddRule 'xx',
+		{
+		NODE_REGEX => 'xx',
+		PBSFILE  => './xx.pl',
+		PACKAGE => 'xx',
+		PACKAGE_CONFIG_NO_INHERITANCE => 1,
+		PACKAGE_CONFIG =>
+			{
+			AR => 'from_package_config_xx',
+			},
+		} ;
+			
+_EOF_
+    $t->write('xx.pl', <<'_EOF_');
+	
+	my @config_keys = GetConfigKeys() ;
+	my $number_of_keys = @config_keys ;
+
+	AddConfigVariableDependencies('ar' => 'AR') ;
+	
+	AddRule 'name', ['xx'], "echo $number_of_keys %AR> %FILE_TO_BUILD";
+	
+_EOF_
+
+#$t->generate_test_snapshot_and_exit() ;
+
+# Build
+    $t->target('all');
+    $t->build_test();
+    $t->test_file_contents($t->catfile($t->build_dir, 'xx'), "2 from_package_config_xx\n");
 }
 
 unless (caller()) {

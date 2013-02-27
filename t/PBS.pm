@@ -495,7 +495,7 @@ sub test_file_contents {
     open(FILE, $file) || die;
     my @lines = <FILE>;
     _inc_level;
-    is("@lines", $expected, 'File content matches');
+    is("@lines", $expected, 'File content matches') or diag "@lines\n=>$expected";
     _dec_level;
 }
 
