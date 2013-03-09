@@ -619,7 +619,7 @@ EOT
 		'Display sub pbs definition.',
 		'',
 		
-	'dds|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
+	'dde|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
 		'Display when a depend ends.',
 		'',
 		

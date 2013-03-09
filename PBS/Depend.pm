@@ -286,7 +286,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
 				{
-				PrintInfo("  [$PBS::PBS::Pbs_call_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
+				PrintInfo("[$PBS::PBS::Pbs_call_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -389,7 +389,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$dependency_info = "[$PBS::PBS::Pbs_call_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
 					}
 					
-				PrintInfo("   $dependency_info\n") ;
+				PrintInfo("$dependency_info\n") ;
 					
 				PrintWithContext
 					(
@@ -997,11 +997,11 @@ else
 			
 			if(@{$tree->{__MATCHING_RULES}})
 				{
-				$dependency_info = "   '$node_name' has no locally defined dependencies" ;
+				$dependency_info = "'$node_name' has no locally defined dependencies" ;
 				}
 			else
 				{
-				$dependency_info = "   '$node_name' wasn't depended" ;
+				$dependency_info = "'$node_name' wasn't depended" ;
 				}
 				
 			PrintWarning "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;

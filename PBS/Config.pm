@@ -980,13 +980,33 @@ my
 	$load_package,
 	) = @_ ;
 	
+# although the creation of the subpbs configuration is done in the parent, it is easier
+# for the user to see it indented at the same level as the subpbs
+	
+local $PBS::PBS::Pbs_call_depth ;
+$PBS::PBS::Pbs_call_depth++ ;
+
 my %sub_config ;
 
 if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 	{
+	my $title = "PACKAGE_CONFIG_NO_INHERITANCE for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+        PrintWarning "$title\n" ;
+
 	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
 		{
 		%sub_config = %{$sub_pbs_hash->{PACKAGE_CONFIG}} ;
+
+		my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+
+		if($pbs_config->{DISPLAY_CONFIGURATION})
+	        	{
+        		PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
+		        }
+		else
+        		{
+		        PrintWarning "$title\n" ;
+		        }
 		}
 	}
 else
@@ -1046,9 +1066,6 @@ my $sub_pbs_package_config = $rule->{TEXTUAL_DESCRIPTION}{PACKAGE_CONFIG} ;
 
 my $subpbd_definition_location = "#line " . $sub_pbs->[0]{RULE}{LINE} . " " . $sub_pbs->[0]{RULE}{FILE} ;
 	
-local $PBS::PBS::Pbs_call_depth ;
-$PBS::PBS::Pbs_call_depth++ ;
-
 PBS::PBSConfig::RegisterPbsConfig($subpbs_package_node_config, $pbs_config) ;
 PBS::Config::ClonePackageConfig($load_package, $subpbs_package_node_config) ;
 
@@ -1066,7 +1083,7 @@ if('HASH' ne ref $sub_pbs_package_config)
 	die ;
 	}
 	
-my $title = "Node '$sub_node_name' to be dependended in subpbs has extra configuration" ;
+my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
 if($pbs_config->{DISPLAY_CONFIGURATION})
 	{

@@ -36,7 +36,7 @@ if(defined $pbs_config->{DISPLAY_SOURCE_DIRECTORIES})
 	}
 if($pbs_config->{DISPLAY_CONFIGURATION})
 		{
-		PrintInfo(DumpTree($config, "Config for package '$package_alias' before rules are run:")) ;
+		PrintInfo(DumpTree($config, "Config for package '$package_alias' before depending rules are run (see --durno --dur):"));
 		}
 		
 if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
@@ -46,17 +46,15 @@ if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
 		
 if(defined $pbs_config->{DISPLAY_USED_RULES}) #only the rules configured in
 	{
+	my $title =  "Dependency rules used to depend package '$package_alias':" ;
+
 	if(defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY})
 		{
-		PrintInfo "Used dependency rules:\n" ;
-		for my $rule (@$dependency_rules)
-			{
-			PrintInfo "\t$rule->{NAME} $rule->{ORIGIN}\n" ;
-			}
+		PrintInfo(DumpTree([map{"'$_->{NAME}'$_->{ORIGIN}"} @{$dependency_rules}], $title)) ;
 		}
 	else
 		{
-		PrintInfo(DumpTree($dependency_rules, "Used dependency rules:")) ;
+		PrintInfo(DumpTree($dependency_rules, $title)) ;
 		}
 	}
 }
