@@ -999,7 +999,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 
 		my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
-		if($pbs_config->{DISPLAY_CONFIGURATION})
+		if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 	        	{
         		PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
 		        }
@@ -1011,7 +1011,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 	}
 else
 	{
-	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
+	if(defined $sub_pbs_hash->{PACKAGE_CONFIG}  ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 		{
 		my $subpbs_package_node_config = "__SUBPS_CONFIG_FOR_NODE_$sub_node_name" ;
 		$subpbs_package_node_config =~ s/[^[:alnum:]]/_/g ;

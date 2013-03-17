@@ -659,6 +659,10 @@ EOT
 		'(DF). Display how configurations are merged.',
 		'',
 		
+	'display_package_configuration'   => \$pbs_config->{DISPLAY_PACKAGE_CONFIGURATION},
+		'If PACKAGE_CONFIGURATION for a subpbs exists, it will be displayed if this option is set (also displayed when --dc is set)',
+		'',
+		
 	'no_silent_override'         => \$pbs_config->{NO_SILENT_OVERRIDE},
 		'Makes all SILENT_OVERRIDE configuration visible.',
 		'',

@@ -663,7 +663,7 @@ if($@)
 	{
 	PrintError "\nCaught exception:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
 	#~confess "$@ ." if $@ ;
-	die ;
+	die "\n";
 	}
 	
 $type .= ': ' unless $type eq '' ;

@@ -3,9 +3,9 @@
 	
 	package PBS::Version ;
 	
-	sub GetVersion {return '0.45.50'} ;
+	sub GetVersion {return '0.45.51'} ;
 	
-	# generated from commit e05a2a27fca670a56ff2348f54e4fa04520f3186
+	# generated from commit 7689537df27a73d7c3bef4acb18fcdc23b3fe8ce
 	
 	1 ;
 	
