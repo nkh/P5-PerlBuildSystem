@@ -845,7 +845,7 @@ if(@has_matching_non_subpbs_rules)
 
 			PrintWarning
 				(
-				  "Node '$node_name' has dependency '$dependency' which was inserted at rule: "
+				  "'$node_name' has dependency '$dependency' which was inserted at rule: "
 				. "$tree->{$dependency}{__INSERTED_AT}{INSERTION_RULE} "
 				. " [Pbsfile: $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE}]"
 				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules\n"

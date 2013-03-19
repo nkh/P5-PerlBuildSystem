@@ -60,11 +60,11 @@ _EOF_
 	, 'linked node dependency is not depended locally');
 
 	like($t->stdout
-	, qr|\QNode './late' inserted at rule: all  [Pbsfile: ./Pbsfile.pl] has been depended in Pbsfile: '/\E.*/subpbs.pl'.|
+	, qr|\Q'./late' inserted at rule: all  [Pbsfile: ./Pbsfile.pl] has been depended in Pbsfile: '/\E.*/subpbs.pl'.|
 	, 'warn for node depended elsewhere');
 	
     like($t->stdout
-	, qr|\QNode './late_dependency' was not depended! Node wa inserted at|
+	, qr|\Q'./late_dependency' was not depended! Node wa inserted at|
 	, 'warn for undepended node');
 }
 
