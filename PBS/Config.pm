@@ -991,7 +991,7 @@ my %sub_config ;
 if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 	{
 	my $title = "PACKAGE_CONFIG_NO_INHERITANCE for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
-        PrintWarning "$title\n" ;
+        PrintWarning "$title\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
 
 	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
 		{
@@ -1002,10 +1002,6 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
 		if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 	        	{
         		PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
-		        }
-		else
-        		{
-		        PrintWarning "$title\n" ;
 		        }
 		}
 	}
