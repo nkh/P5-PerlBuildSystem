@@ -210,7 +210,7 @@ my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
 use IO::File ;
 my $fh = new IO::File ;
 
-if($fh->open($file_name))
+if(-f $file_name && $fh->open($file_name))
 	{
 	$fh->binmode();
 	my $md5sum = Digest::MD5->new->addfile($fh)->hexdigest ;
@@ -220,6 +220,7 @@ if($fh->open($file_name))
 	}
 else
 	{
+	#PrintWarning  "Warning: can't read file '$file_name' to generate MD5\n";
 	return ;
 	}
 }
