@@ -64,7 +64,7 @@ _EOF_
 	, 'warn for node depended elsewhere');
 	
     like($t->stdout
-	, qr|\Q'./late_dependency' was not depended! Node wa inserted at|
+	, qr|\Q'./late_dependency' wasn't depended! Node wa inserted at|
 	, 'warn for undepended node');
 }
 
