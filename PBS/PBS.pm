@@ -410,25 +410,27 @@ sub SaveConfig
 my ($targets, $pbsfile, $pbs_config, $parent_config) = @_ ;
 
 my $first_target = $targets->[0] ;
+
 my ($first_target_name, $first_target_path, $sufix) = File::Basename::fileparse($targets->[0], ('\..*')) ;
 $first_target_name .= $sufix ;
+$first_target_path =~ s [./][];
 
-(my $pbsfile_canonized = $pbsfile) =~ s/[^a-zA-Z0-9]/_/g ;
 my $path             = $pbs_config->{BUILD_DIRECTORY} . '/' . $first_target_path ;
 
-my $config_file_name = $path . 'config_' . $pbsfile_canonized . '___' . $first_target_name . '_' . $pbs_config->{SAVE_CONFIG} . '.pl' ;
-$config_file_name =~ s/[^a-zA-Z0-9\/.]/_/g ;
+my $config_file_name = "${path}parent_config___$pbs_config->{SAVE_CONFIG}.pl" ;
+$config_file_name =~ s/[^a-zA-Z0-9\/.\-_]/_/g ;
 
 use File::Path ;
+mkpath($pbs_config->{BUILD_DIRECTORY}) unless(-e $pbs_config->{BUILD_DIRECTORY}) ;
 mkpath($path) unless(-e $path) ;
 
-PrintDebug "Saving Config in $config_file_name\n" ;
+PrintInfo "Saving Parent Config in '$config_file_name'\n" ;
 
 open(CONFIG, ">", $config_file_name) or die qq[Can't open '$config_file_name': $!] ;
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = undef ;
+local $Data::Dumper::Sortkeys = 1 ;
 
 local $SIG{'__WARN__'} = sub 
 	{
@@ -448,10 +450,10 @@ print CONFIG <<EOI ;
 # target: $first_target
 
 EOI
-print CONFIG Data::Dumper->Dump([$parent_config], ['config']) ;
 print CONFIG Data::Dumper->Dump([$pbs_config], ['pbs_config']) ;
+print CONFIG Data::Dumper->Dump([$parent_config], ['parent_config']) ;
 
-print CONFIG 'return($pbs_config, $config);';
+print CONFIG 'return($pbs_config, $parent_config);';
 
 close(CONFIG) ;
 }
