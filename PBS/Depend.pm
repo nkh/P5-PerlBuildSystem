@@ -286,7 +286,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
 				{
-				PrintInfo("[$PBS::PBS::Pbs_call_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
+				PrintInfo("[$PBS::Output::indentation_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -381,12 +381,12 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $dependency_info ;
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					$dependency_info = "[$PBS::PBS::Pbs_call_depth] '$node_name' ${node_type}${forced_trigger} rule $rule_index:$rule_info:$rule_type has dependencies:\n"
+					$dependency_info = "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger} rule $rule_index:$rule_info:$rule_type has dependencies:\n"
 								. "      " . join("\n      ", map {"'$_'"} @dependency_names) ;
 					}
 				else
 					{
-					$dependency_info = "[$PBS::PBS::Pbs_call_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
+					$dependency_info = "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
 					}
 					
 				PrintInfo("$dependency_info\n") ;
@@ -905,7 +905,7 @@ else
 			if(defined $pbs_config->{SUBPBS_FILE_INFO})
 				{
 				my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
-				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::PBS::Pbs_call_depth] Depending '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
+				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depending '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
 				}
 			else
 				{

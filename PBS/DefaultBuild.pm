@@ -60,7 +60,7 @@ my $dependency_rules = [PBS::Rules::ExtractRules($rules, @$rules_namespaces)];
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-PrintInfo("=> Depending [$package_alias/$PBS::PBS::Pbs_call_depth] **          \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+PrintInfo("=> Depending [$package_alias/$PBS::Output::indentation_depth] **          \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -74,7 +74,7 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
-PrintInfo("<= Depend done [$package_alias/$PBS::PBS::Pbs_call_depth/$PBS::Depend::BuildDependencyTree_calls]\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+PrintInfo("<= Depend done [$package_alias/$PBS::Output::indentation_depth/$PBS::Depend::BuildDependencyTree_calls]\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

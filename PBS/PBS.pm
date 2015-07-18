@@ -54,7 +54,6 @@ our $pbs_run_information =
 
 #-------------------------------------------------------------------------------
 
-our $Pbs_call_depth = -1 ;
 our $pbs_runs ;
 my %Pbs_runs ;
 
@@ -66,7 +65,7 @@ return($pbs_runs) ;
 sub Pbs
 {
 my $t0 = [gettimeofday];
-$Pbs_call_depth++ ;
+$PBS::Output::indentation_depth++ ;
 $pbs_runs++ ;
 
 my $Pbsfile              = shift ;
@@ -177,7 +176,7 @@ tie my %tree_hash, "Tie::Hash::Indexed" ;
 %tree_hash = 
 	(
 	__NAME          => $dependency_tree_name,
-	__DEPENDENCY_TO => {PBS => "Perl Build System [$Pbs_call_depth]"},
+	__DEPENDENCY_TO => {PBS => "Perl Build System [$PBS::Output::indentation_depth]"},
 	__INSERTED_AT   => 
 				{
 				INSERTION_FILE         => $Pbsfile,
@@ -364,7 +363,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 			{
 			my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-			print INFO("PBS depend run '$pbs_runs' at depth '$Pbs_call_depth' [$number_of_nodes].                \r", 0) ;
+			print INFO("PBS depend run '$pbs_runs' at depth '$PBS::Output::indentation_depth' [$number_of_nodes].                \r", 0) ;
 			}
 		
 		($build_result, $build_message)
@@ -393,7 +392,7 @@ else
 	die ;
 	}
 	
-$Pbs_call_depth-- ;
+$PBS::Output::indentation_depth-- ;
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	{
@@ -430,7 +429,12 @@ open(CONFIG, ">", $config_file_name) or die qq[Can't open '$config_file_name': $
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = 1 ;
+local $Data::Dumper::Sortkeys = 
+	sub
+	{
+	my $hash = shift ;
+	return [sort keys %{$hash}] ;
+	} ;
 
 local $SIG{'__WARN__'} = sub 
 	{

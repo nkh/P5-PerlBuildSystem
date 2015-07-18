@@ -591,7 +591,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		if($flags ne '')
 			{
-			my $indent = "\t" x ($PBS::PBS::Pbs_call_depth + 1) ;
+			my $indent = "\t" x ($PBS::Output::indentation_depth + 1) ;
 				
 			PrintInfo DumpTree
 					{
@@ -897,7 +897,7 @@ my $undefined_config = 0 ;
 $entry =~ s/\%\%/__PBS__PERCENT__/g ;
 
 # replace config names with their values
-while($entry =~/\$config->{('*[^}]+)'*}/g)
+while($entry =~/\$config->\{('*[^}]+)'*}/g)
 	{
 	my $element = $1 ; $element =~ s/^'// ; $element =~ s/'$// ;
 
@@ -983,8 +983,8 @@ my
 # although the creation of the subpbs configuration is done in the parent, it is easier
 # for the user to see it indented at the same level as the subpbs
 	
-local $PBS::PBS::Pbs_call_depth ;
-$PBS::PBS::Pbs_call_depth++ ;
+local $PBS::Output::indentation_depth ;
+$PBS::Output::indentation_depth++ ;
 
 my %sub_config ;
 

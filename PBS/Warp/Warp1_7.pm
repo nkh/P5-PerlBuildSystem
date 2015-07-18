@@ -197,6 +197,9 @@ if($run_in_warp_mode)
 			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
 			
 			PrintInfo "Running PBS in warp mode. $number_of_removed_nodes node$node_plural to rebuild.\n" ;
+			
+			local $PBS::Output::indentation_depth = -1 ;
+			
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
@@ -274,6 +277,8 @@ else
 	my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	eval
 		{
+		local $PBS::Output::indentation_depth = -1 ;
+		
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(

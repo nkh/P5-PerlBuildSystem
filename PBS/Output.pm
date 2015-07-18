@@ -40,6 +40,7 @@ $VERSION = '0.05' ;
 
 our $colorize ;
 our $indentation = '    ' ;
+our $indentation_depth = 0 ;
 our $query_on_warning ;
 our $display_error_context ;
 
@@ -97,7 +98,7 @@ else
 sub ERROR
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -109,7 +110,7 @@ return($string) ;
 sub WARNING
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -121,7 +122,7 @@ return($string) ;
 sub WARNING2
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -133,7 +134,7 @@ return($string) ;
 sub INFO
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 
@@ -146,7 +147,7 @@ return($string) ;
 sub INFO2
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -158,7 +159,7 @@ return($string) ;
 sub USER
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -170,7 +171,7 @@ return($string) ;
 sub SHELL
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -182,7 +183,7 @@ return($string) ;
 sub DEBUG
 {
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::PBS::Pbs_call_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;

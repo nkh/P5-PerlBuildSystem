@@ -313,8 +313,13 @@ open(FILE, ">", $file_name) or die qq[Can't open $file_name: $!] ;
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = undef ;
-
+local $Data::Dumper::Sortkeys = 
+	sub
+	{
+	my $hash = shift ;
+	return [sort keys %{$hash}] ;
+	} ;
+	
 print FILE Data::Dumper->Dump([$VERSION], ['version']) ;
 print FILE "\n" ;
 print FILE Data::Dumper->Dump([$this], ['result']) ;

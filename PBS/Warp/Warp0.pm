@@ -42,6 +42,8 @@ my ($targets, $pbs_config, $parent_config) = @_ ;
 my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 eval
 	{
+	local $PBS::Output::indentation_depth = -1 ;
+
 	($build_result, $build_message, $dependency_tree, $inserted_nodes)
 		= PBS::PBS::Pbs
 			(

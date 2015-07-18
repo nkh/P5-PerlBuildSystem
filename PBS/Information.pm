@@ -66,8 +66,7 @@ if($pbs_config->{DISPLAY_BUILDER_INFORMATION})
 	
 use Term::Size::Any qw(chars) ;
 
-my $terminal_width = 10_000 ;
-($terminal_width) = chars() ;
+my $terminal_width = chars() || 10_000 ;
 
 my $columns = length("Node $type'$name':") ;
 $columns = $columns < $terminal_width ? $columns : $terminal_width ;

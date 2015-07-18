@@ -105,6 +105,9 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
 			
 			PrintInfo "Running PBS in warp mode. $number_of_removed_nodes node$node_plural to rebuild.\n" ;
+			
+			local $PBS::Output::indentation_depth = -1 ;
+			
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
@@ -185,6 +188,8 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 	my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	eval
 		{
+		local $PBS::Output::indentation_depth = -1 ;
+
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
@@ -333,7 +338,12 @@ for my $node_name (keys %$inserted_nodes)
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = undef ;
+local $Data::Dumper::Sortkeys = 
+	sub
+	{
+	my $hash = shift ;
+	return [sort keys %{$hash}] ;
+	} ;
 
 print MD5 Data::Dumper->Dump([\%pbsfile_md5s], ['pbsfile_md5s']) ;
 print MD5 Data::Dumper->Dump([\%node_md5s], ['node_md5s']) ;
