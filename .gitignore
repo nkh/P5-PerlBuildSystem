@@ -3,7 +3,7 @@ Build
 Changes
 _build/
 blib/
-pbs_bash_completion
+pbs_completion_script
 MYMETA.json
 MYMETA.yml
 out_nadim

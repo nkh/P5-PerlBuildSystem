@@ -1,6 +1,6 @@
-#!/usr/bin/perl5.8.8 
+#!/usr/bin/env perl 
 
-eval 'exec /usr/bin/perl5.8.8  -S $0 ${1+"$@"}'
+eval 'exec /usr/bin/env perl -S $0 ${1+"$@"}'
     if 0; # not running under some shell
 
 package PerlBuildSystem ;
