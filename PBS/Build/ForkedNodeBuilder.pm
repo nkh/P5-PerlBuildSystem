@@ -11,7 +11,6 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use Digest::MD5 qw(md5_hex) ;
 
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;

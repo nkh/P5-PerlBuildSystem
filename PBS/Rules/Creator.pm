@@ -8,7 +8,6 @@ use warnings ;
 use Carp ;
  
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;

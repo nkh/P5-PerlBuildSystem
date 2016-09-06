@@ -112,7 +112,6 @@ file where the archive was replaced with a list of file links.
 
 require Exporter ;
 
-#~ don't "use AutoLoader;" we define our own
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;

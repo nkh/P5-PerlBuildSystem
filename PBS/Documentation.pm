@@ -5,7 +5,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 use Pod::Parser;
 use PBS::ProgressBar ;
@@ -102,7 +101,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 

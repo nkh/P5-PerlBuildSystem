@@ -7,7 +7,6 @@ use warnings ;
 use 5.006 ;
 
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;

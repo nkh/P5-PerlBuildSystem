@@ -5,7 +5,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
@@ -28,7 +27,7 @@ use vars qw($VERSION @ISA @EXPORT) ;
 
 require Exporter;
 
-@ISA     = qw(Exporter AutoLoader) ;
+@ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
 		ERROR WARNING WARNING2 INFO INFO2 USER SHELL DEBUG

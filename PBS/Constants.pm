@@ -5,14 +5,13 @@ use strict ;
 use warnings ;
  
 require Exporter ;
-use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 use vars qw($VERSION @ISA @EXPORT) ;
 
-@ISA     = qw(Exporter AutoLoader) ;
+@ISA     = qw(Exporter) ;
 @EXPORT  = qw(
 		PBSFILE
 		USER_BUILD_FUNCTION
