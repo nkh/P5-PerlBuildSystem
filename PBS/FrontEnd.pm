@@ -459,7 +459,7 @@ print <<EOH ;
 
 This is the Perl Build System, PBS, version $version
 
-Copyright 2002-2013, Nadim Khemir
+Copyright 2002-2016, Nadim Khemir
 
 Send all suggestions and inqueries to <nadim.khemir\@gmail.com>.
 

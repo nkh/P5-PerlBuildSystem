@@ -1141,7 +1141,9 @@ EOT
 	) ;
 
 my @registred_flags_and_help_pointing_to_pbs_config ;
-while( my ($switch, $variable, $help1, $help2) = splice(@registred_flags_and_help, 0, 4))
+my @rfh = @registred_flags_and_help ;
+
+while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
 	{
 	if('' eq ref $variable)
 		{

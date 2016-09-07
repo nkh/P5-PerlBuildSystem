@@ -26,6 +26,7 @@ use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 
+my $comment = <<EOF ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -59,4 +60,5 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	'',
 	'',
 	) ;
+EOF
 	

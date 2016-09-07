@@ -7,3 +7,4 @@ pbs_completion_script
 MYMETA.json
 MYMETA.yml
 out_nadim
+PBS/Version.pm
