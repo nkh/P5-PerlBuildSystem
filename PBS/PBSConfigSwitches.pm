@@ -1288,7 +1288,7 @@ my @flags_and_help = GetSwitches() ;
 PrintInfo <<EOH ;
 PerlBuildSystem:
 	
-	PBS [-p Pbsfile[.pl]] [[-switch]...] target [target ...]
+	pbs [-p Pbsfile[.pl]] [[-switch]...] target [target ...]
 	
 switches:
 EOH

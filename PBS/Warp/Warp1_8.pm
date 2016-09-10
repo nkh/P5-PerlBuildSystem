@@ -541,7 +541,7 @@ my $md5_time = tv_interval($t0, [gettimeofday]) ;
 
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
-	PrintInfo(sprintf("md5 check time: %0.2f s. [$number_of_files/$number_of_md5_mismatch/$number_of_removed_nodes]\n", $md5_time)) ;
+	PrintInfo(sprintf("md5 check time: %0.2f s. [$number_of_files/missmatch:$number_of_md5_mismatch/removed:$number_of_removed_nodes]\n", $md5_time)) ;
 	}
 
 return($run_in_warp_mode, $nodes, $number_of_removed_nodes, $pbsfile_md5s) ;

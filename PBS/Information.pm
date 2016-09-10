@@ -72,7 +72,7 @@ $columns = $columns < $terminal_width ? $columns : $terminal_width ;
 
 my $separator = INFO ('#' . ('-' x ($columns - 1)) . "\n")  ;
 
-my $node_header = $separator ;
+my $node_header = "\n" . $separator ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{

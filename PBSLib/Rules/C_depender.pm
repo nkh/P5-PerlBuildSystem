@@ -135,8 +135,14 @@ else
 	{
 	my $t0_depend = [gettimeofday];
 	
-	Check_C_DependerConfig($c_file_config) ; #dies on error
-	
+	my @errors = Check_C_DependerConfig($c_file_config) ; 
+	if (@errors)
+		{
+		print ERROR "Error: Can't depend '$dependent'\n" ;
+		print ERROR "\tUndefined configuration variable '$_'\n" for @errors ;
+		die ;
+		}
+
 	my $build_directory    = $file_tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
 	my $source_directories = $file_tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 	
@@ -440,11 +446,18 @@ return(@dependencies) ;
 
 sub Is_C_FileDigestOk
 {
+die  ; # oops, not used anywhere
 my $c_file          = shift ; 
 my $config          = shift ; # for C flags
 my $dependency_tree = shift ;
 
-Check_C_DependerConfig($config) ; #dies on error
+my @errors = Check_C_DependerConfig($config) ; 
+if (@errors)
+	{
+	print ERROR "Error: Can't depend '$c_file', in digest file\n" ;
+	print ERROR "\tUndefined configuration variable '$_'\n" for @errors ;
+	die ;
+	}
 
 my $build_directory    = $dependency_tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
 my $source_directories = $dependency_tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
@@ -507,6 +520,20 @@ if(-e $dependency_file_name)
 			
 		my $expected_digest = GetStandard_C_Digest($config, $c_file_md5) ;
 
+		# make sure all the expected keys are in the generated digest
+		
+		my @missing_keys = grep {exists $digest->{$_} ? () : $_ } keys %$expected_digest ;
+		if (@missing_keys) 
+			{
+			if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
+				{
+				print INFO "Error: Missing keys in dependency cache for '$file_to_depend'\n" ;
+				print INFO "\tKey '$_'\n" for @missing_keys ;
+				}
+			$dependency_file_needs_update++ ;
+			}
+
+
 		for my $dependency (keys %$digest)
 			{
 			last if($dependency_file_needs_update && ! defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO}) ;
@@ -568,7 +595,10 @@ if(-e $dependency_file_name)
 						last unless defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO} ;
 						}
 						
-					if($digest->{$dependency} ne $C_dependencies_cache::dependency_md5{$dependency})
+					if	(
+						! exists  $C_dependencies_cache::dependency_md5{$dependency}
+						|| $digest->{$dependency} ne $C_dependencies_cache::dependency_md5{$dependency}
+						)
 						{
 						if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
 							{
@@ -728,7 +758,13 @@ my
 	$changed_dependencies,
 	) = @_ ;
 
-Check_C_DependerConfig($config) ;
+my @errors = Check_C_DependerConfig($config) ; 
+if (@errors)
+	{
+	print ERROR "Error: Can't depend '$dependent', generating dependency file\n" ;
+	print ERROR "\tUndefined configuration variable '$_'\n" for @errors ;
+	die ;
+	}
 
 # Create the path for the dependency file if necessary
 File::Path::mkpath((File::Basename::fileparse($dependency_file_name))[1]) ;
@@ -1004,49 +1040,30 @@ for my $dependency (grep{! /^__/} keys %$node)
 
 sub Check_C_DependerConfig
 {
+# must be synchronized with GetStandard_C_Digest
+
 my $config = shift ;
 
-unless(defined $config->{CC})
-	{
-	PrintError("Configuration variable 'CC' doesn't exist. Aborting.\n") ;
-	use Carp ;
-	confess ;
-	die ;
-	}
-
-unless (defined $config->{CFLAGS_INCLUDE})
-	{
-	PrintError("Configuration variable 'CFLAGS_INCLUDE' doesn't exist. Aborting.\n") ;
-	die ;
-	}
-
-#~ unless (defined $config->{CFLAGS})
-	#~ {
-	#~ PrintError("Configuration variable 'CFLAGS' doesn't exist. Aborting.\n") ;
-	#~ die ;
-	#~ }
-	
-unless (defined $config->{CDEFINES})
-	{
-	PrintError("Configuration variable 'CDEFINES' doesn't exist. Aborting.\n") ;
-	die ;
-	}
-
+return 
+	grep { defined $config->{$_} ? () : $_} 
+		( 'CPP', 'CFLAGS', 'CDEFINES', 'CFLAGS_INCLUDE' ) 
 }
 
 #-------------------------------------------------------------------------------
 
 sub GetStandard_C_Digest
 {
+#must be synchronized with Check_C_Depender_config
+
 my $config = shift or confess "Missing argument!" ;
 my $c_file_md5 = shift or confess "Missing argument!" ;
 
 return
 	(
 		{
-		'__VARIABLE:CC'                         => $config->{CC},
+		'__VARIABLE:CCP'                        => $config->{CCP},
 		'__VARIABLE:CFLAGS_INCLUDE'             => $config->{CFLAGS_INCLUDE},
-		#~ '__VARIABLE:CFLAGS'                     => $config->{CFLAGS},
+		'__VARIABLE:CFLAGS'                     => $config->{CFLAGS},
 		'__VARIABLE:CDEFINES'                   => $config->{CDEFINES},
 		'__VARIABLE:C_DEPENDER_SYSTEM_INCLUDES' => $config->{C_DEPENDER_SYSTEM_INCLUDES} || 0,
 		'__VARIABLE:C_FILE'                     => $c_file_md5,

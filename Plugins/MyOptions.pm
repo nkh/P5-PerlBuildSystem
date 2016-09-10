@@ -26,7 +26,7 @@ use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 
-my $comment = <<EOF ;
+my $comment = <<'EOF' ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
