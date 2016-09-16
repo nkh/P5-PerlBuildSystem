@@ -1,0 +1,4 @@
+
+AddRule 'a', ['a' => 'b', 'c'], "touch %FILE_TO_BUILD" ;
+
+ExcludeFromDigestGeneration('source' => qr/b|c/);

@@ -1,0 +1,81 @@
+Save/Load config
+
+Use cases:
+    run a specific subpbs, aka node@root target.
+    run a subpbs with a different configuration, IE: tests, debug info, …
+
+run from:
+    from build root and give extra agument to tell pbs what to run
+    from subpbs directory but setup the pbs run to share the repository, out_dir, …
+
+
+node@root, how does it work?
+PBS creates a full dependency graph but generates the build from the node to build. The limitation of one node@root was because the multiple node@root don’t have a common root to start building at.
+
+multiple node@root
+    Given that the config for a subpbs is saved, that the target for a subpbs is also known, it is possible to reconstruct the dependency graph of the target as if it was being depended as part of a bigger project.
+
+    given that multiple subpbs can be depended separately, having a pbs that supports multiple node@root targets is a just a question of having a virtual node that depends on all the multiple node@root.
+
+    what if in a global build nodes are generated and later linked to by sbpbs. if the subpbs do not have the rules necessary to generate the dependency of the nodes linked to, then the build would fail. This is of course good and adding the rules fix the problem. Still it would be good to know before hand if the nodes linked to have matching local rules or not.
+
+    the situation gets more complicated when the node linked to is not the target of a subpbs. a global build has visibility on all nodes in the graph, maybe something that should be limited, another mechanism is triggers which merged another build tree just for the sake of finding such nodes that are not targets. The trigger mechanism has the added advantage to be declarative.
+
+? shall all the nodes of a subpbs run be cached, that is a micro warp!
+? should it be only possible to build the target of a subpbs
+    if not how do we point at the node to be build in a subpbs run (with specific config)
+
+? how do we define node@suppbs_root
+
+goal is to avoid building dependency graphs for nothing, even with the help of warp and micro-warp
+
+secondary goal is to build with different configurations.
+
+Build directory should contain different subpbs output directory, one for each configuration used in the subpbs
+
+    the build directories, per subpbs,should contain the warp data, build buffers, ….
+
+    re-use:
+    if possible artefacts build with a configuration and that do not change with the configuration are re-used
+
+        ? does that mean a global artefacts repository
+            p2p synch
+            circular hash
+            batch download (instead for single files)
+                how is it synched with the build without waiting
+            reverse load compile
+
+reverse load compile:
+    if local node depends on many remote nodes, the local node is send to the remote server for build rather than moving all the artefacts localy 
+
+
+
+Node local config
+    AddRule
+        Regex
+        Config => {CC = …} # config for nde only (warn if not as the package config)
+
+
+    Add Rule
+        PbsUse => file name # load config and REH from file (list, warn, …)
+
+
+By default node should not have access to package config
+    can use a match all rule to make all the node access to the package config
+    can add config to a specific node with specialized REH
+
+package config can be named so, eg, all the C specific configurations (rules too?) as set in a named group so all the rules needing them can access them by name. Missing configuration generates an error.
+
+The Rules/C pbs lib can also use the named categories.
+
+REH should follow verbosity setting, or a specific RH verbosity for information/debug
+
+Can Config hierarchical handle name groups? dynamically?
+
+Configuration caching 
+    if configuration only files existed , their loading could be cached and subsequent pbs runs would not need the load/compile
+
+    pbuse loads the files in the package context thus previous configurations are active, mabe we should control pbsuse context, EG, name what config is available to code within the pbsuse. The other solution is to take a snapshot of the config at the moment of pbsuse call.
+
+
+

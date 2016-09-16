@@ -1,0 +1,399 @@
+
+virtual nodes without dependencies ALWAYS trigger
+	a virtual node without dependencies would always trigger
+	there is no way we can know if a virtual node without dependencies "succeeded"
+	we can know that it failed because the commands it runs fail but if they all succeed
+	 we don't have a node we can make a md5 on so we must re build the virtual node each  time
+
+	OHHH this is soooo frustrating. All those years talking about virtual node digests in complex setup (subpbs linked nodes, warp graphs, ...) when we should have kept it simple and see what the problem is with VIRTUAL, it's simple, we didn't know where to write its digest (that's sooo hard to decide) and that it didn't trigger. So rather than do the right thing we introduced FORCED, Do I hate make and all the make files that other morons like me wrote that forced things.
+	FORCED must die and than everything will be fine because we must do the right thing.
+	a virtual node, whatever the context, as it has no digest will ONLY trigger if one of its dependencies also triggers. This means that you can add a virtual node rule and it will never trigger, you can modify a virtual node rule and it will never trigger, virtual nodes don't trigger, they have no control over their triggering, it's the dependencies that trigger them, and the dependencies may trigger for various reasons none of them related to the virtual node rule.
+	You can even write a virtual node rule that has dependencies on source nodes, EG document the source nodes, and it will never trigger.
+	vIRTUAL nodes don't trigger, so rather than make them trigger properly we FORCED them to trigger, I hate make.
+	if virtual nodes have triggers, they will trigger on a dependency that trigger, as before, on source files, and on the pbsfile that where the virtual node rule is defined. 
+	Why did we need a virtual node digest? For everything!
+	Where to put the virtual node digest is obvious, in the out directory, as everything else. What if they match a directory name, no problem, the directory and the digest don't have the same name.
+	It's easy to be smart after the fact but it is pretty obvious that if you don't handle nodes the same way, there are going to be differences, why didn't we handle VIRTUAL  as a normal node? why didn't we handle VIRTUAL as we defined in the documentation " a node that has no physical representation in the file system", a 2 lines check, but instead make a monster out of it.
+	Next PBS will be better, VIRTUAL will have a digest. 
+	PS: there's a requirement to have 2 dependens share dependencies. I don't think it will be in the form t1, t2 -> d1, ....
+	but rather t1 -> d1, ... ; t2 -> get_deps(t1).
+	that allows a tx -> get_deps(t1, t2, whatnot) picking up dependencies other nodes have without having to change t1, t2 pbsfiles. probably late_depend will work on them too so tx cn be dependent on t1 dependencies even if t1 is not in the graph yet
+
+
+NAME => 'any generated data is exportable to another format',
+
+NAME => 'defining_subpbs_with_a_sub',
+LONG_DESCRIPTION => <<'EOD',
+	give a sub that checks the type of the node to generate and create
+	a virtual subpbs if non exists in the sub directory (for known types)
+ 
+	show a message if a subpbs is generated
+	use pbsfile if it exists
+	if given --generate_missing_pbsfile, ask if a real
+		pbsfile should be generated. practical if the virtual
+		generated pbsfile doesn't fit (ex directories or files to ignore, more configs)
+
+
+REH to match configurations
+	AddRule
+		MATCH => $regex
+		MATCH_CONFIG => ...
+
+
+REH to match steps in the pbs run
+	this is already done in the registration of the REH which doesn't look like rules
+		and REH can not be registered to multiple steps 
+
+	it also need to match a node and pbssteps are not nodes (yet)
+
+	a good example is -gtg, we generate a graph at specific moment
+		gtg is implementd as a plugin in pbs1, thus pbs calls it
+
+All output is done via a registrable sub to allw P2 to be embeded in another
+	system, EG: neo
+
+	display system can be setup to display information in specific cases only
+		node
+		pbsfile
+		pbs run
+		...
+
+
+REH  NAMED_CONFIG AND NAMED_CONFIG_GROUP
+	no problem adding the REH but how does one get to the config
+	by name later?
+
+command line options and wizards
+	can a rule match a command line option as if it was a target
+		MATCH_CLI => /dd/
+		
+		how do we define our command line options
+			some global place plus in the plugins
+	
+	wizard is just a target 
+		how do we add all the targets?
+			just load a library with the rules
+
+plugins
+	some are just targets, ie generate_graph, which need to be run at specific
+	pbs time
+
+	Rule 'generate_graph'
+		MATCH_CLI => /-gtg/
+		GENERATE_GRAPH_REH => ....  # knows when to be run
+
+
+	other are called during the pbs run, eg they register subs that pbs calls
+		EvaluateShellCommand
+		CheckNodeName
+		
+		The problem being is that they are not node specific
+		we can eliminate global plugins and query the nodes for the 
+		plugins to run. A global plugin simply matches all nodes
+
+	AddRule
+		MATCH => $regex
+		EVALUATE_SHELL_COMMAND_specific => 1
+
+	We can't audit plugins as we did with pbs1, finding the plugins becomes more
+	difficult as they can be inlined 
+
+prefix all the REH that have an impact on internal implementation
+	DISPLAY_DEPENDENCIES => 1
+	PBS_DISPLAY_DEPENDENCIES => 1
+
+	except if it is the DIAPLY_DEPENDENCIES REH itself that does the displaying
+
+generalize the C depender
+	- what config variables must be in the config should not be in the code but arguments
+	- the same code can be used for other types of files
+		- creators use an equivalent mechanism, could be merged
+
+	AddRuleTo 'BuiltIn', [POST_DEPEND], 'C_dependencies', \&C_SourceDepender, \&C_Builder ;
+
+	Rule 
+		NAME =>  'C_Depender'
+		REGEX => '*.cpp'
+		C_DEPENDER => { ........ }
+
+	Rule 
+		NAME =>  'C_config'
+		REGEX => '*.cpp'
+		CONFIG => { ........ }
+
+		C_DEPENDER_VARIABLES => named list
+
+
+
+
+-bni ,which show a node header, makes it clear which node is being build, there is no such system
+	for -dd, the display is very compact
+
+NODE_LINKING is a PBS step with potentialy matching REH
+	what config to check
+	allowed or not
+
+configuration dependency for node
+	knowing what config is used to build a node makes it possible to check
+	if a linked node uses the same config as the current pbsconfig  build node
+		maybe the linked node, with a different confid and dependencies is OK!
+			need a mechanism to allow that.
+
+	extract all the config variables from the build commands
+	force declarative style for linked node checking
+		note that this can still check the build commands
+
+	addrule
+		name xxx
+		rege '*all*'
+		NODE_LINKING_ENABLE => 0 # current pbsfile run must provide one
+
+		NODE_LINKING_ENABLE => 1
+		NODE_LINKING_CHECK_VARIABLES => ['name', 'name2', ..]
+		NODE_LINKING_CHECK_VARIABLES => {'name' => \&checker, ..}
+		NODE_LINKING_CHECK_COMMAND_LINE => 1
+
+		
+	knowing which config is used also allows to not rebuild some nodes declared in
+		the same pbsfile because of a configuration change that has no impact
+		on the node
+
+if a rule uses sub rules, EG lib uses object rules, when the rules for obj
+	are used, the user can easilly trace it back to the lib rule and to where it was used
+	
+	IE. inserted_at is not enough as all libs are inserted at the same place, the lib rule
+
+move statistic display to plugin (or plugins)
+	add a plugin display point in pbs
+
+console
+	possibility to query between steps
+
+	starts build or loads a graph dump
+
+	loads warp and checks
+		query about warp and 	
+	
+	depend
+		can stop
+		can add breakpoints
+		can query about graph or node
+		can generate graphs
+
+	check
+
+	build
+		
+optionso warp information display is mutted
+
+ExcludeFromDigest may not make sense
+	use to say that a node is a source node, better call it that
+	why not give a digest to a source node
+		win time generating and checking it
+		forces the node to be treated differently
+
+
+EvaluateShellCommand REH
+
+Pbs creators generqte mini build systems
+	mechqnism used to generqte and check the creator digest
+	pbs commqnd line switches (-bni, -conf, ...) are also used
+	
+Use file type "matchers"
+	rather than use regex use a file type (which still can be implemented as a regex for simple cases)
+	the "matcher" can match depending on a configuration (eg the current OS, tool chain, ...)
+	
+multiple GetBuildName subs defined in the code
+
+example in Pbsfile/Creqtor do not work
+
+Merge STE PBS
+
+Create template/example for STE like data driven pbsfile (neo)
+
+option to filter out/in nodes when displaying tree
+	generate list of files that are displayed qnd not displayed, their amount, ...
+	
+	
+possibility to generate multiple trees with different roots
+	to display only the relevant nodes
+	can still filter nodes in and out
+	
+generate DHTML tree
+
+
+Multiple node builders
+	default is linear, builders run in the order of rule matching
+		option to display the builders and their order
+		
+	builders declare if they are singletons, an error is generated if builders exists before or are added after
+	
+	
+build phases
+	a node with multiple builders has its builders run in a specific order
+	a builder declares which phase it belongs to
+	a rule can declare the phases a builder can belong to 
+		check is done for multiple rules declaring different orders
+		check is done to verify that each phase has a builder
+			should it fail?
+	
+	
+Mechanism, at a higher level, to declare in which order REH are run
+	similar to build phases
+	
+	
+Builders chaining
+	get all previous builders results
+	get information pointer to the previous builder
+	get the last builder build buffer
+		can request the build buffers of all the previous builders
+		
+	builder can make variables available after build
+		eg: tell the rest of the build chain what files are created, ...
+		
+
+Build buffers 
+	switch to keep build buffers
+		filter which ones are kept
+
+failed build buffer
+	always keep the buffer
+		garbage collect the filters after successful build
+			rule matching all the files
+			do we want to garbage collect at the global level or after each node, after each subpbs, ...
+				object_files can collect the names of the buffers to garbage collect
+		
+		
+	keep information about the builder
+	create a mini build system
+		config
+		possibility to run just that builder/ builders for a node
+		
+	
+possibility to display the tree in warp mode
+	global tree, warp tree
+	filters should still apply
+	
+File not found for MD5 computation
+	most probably a node that is not declared as virtual (altthoughwe have defined somewhere that virtual nodes should have a digest)
+	builder failed
+	=> display as much information as possible
+		mioni build system for just that error
+		
+generation of mini build systems
+	in big systems, the developer does not want to re-run the build system just to find out what the problem is but wants a small build to debug the problem
+	
+Post pbs 
+	can be implemented with a rule that matches the pbs run virtual node
+		better than a rule that matches a target in case there are multiple runs of the pbsfile with different targets
+		REH_POST_PBS => \&post_pbs_sub
+		REH_POST_PBS => GetPBSConfig('POST_PBS_FILE')
+		
+	can be used for post pbs per pbsfile rather than global pbs run
+		we need to name the virtual node for easy match
+		
+PBS switch handling with rules
+	many of the pbs switch are handled in code when they could be run as actions on pbs virtual nodes
+		we need to make sure the rules run even if nodes or sub nodes fail to build
+			we need to have an exception mechanism at the build level not at the perl level
+			
+	note that many switches are handled in plugins already
+	
+
+IDL support
+	any tool with multiple output that must be post processed
+	some tools have a variable output
+		output can vary per run
+		
+		
+	
+pbs run statistics
+	number of run run/matching
+	number of nodes inserted local/subpbs
+	number of subpbs
+	
+	rule on virtual node 
+		usser can match node and do her own display
+		
+
+match global pbsfile
+	can a run, a type of virtual node, match
+	is the PBS config check a type of rule match
+		in case the user changes things in a wrong way
+	
+	user can add own option	is the PBS config check a type of rule match
+		in case the user changes things in a wrong way
+ 
+	user can change display options
+	
+	warn when using user defined pbs run matchers
+	
+Node configuration
+	decide if config is from package or from parent node
+		what if the node has different parents?
+			REH_ON_LINK => pbs_default_link_check  
+			REH_ON_LINK => user check or asomething that can check the configs without having to write code
+			
+				How does one replace a REH?
+					default REH can do nothing if it knows there are other REHs in the same phase
+					
+					
+move C flags out fro, C depender
+	C depender should use the flags defined by the user rather than force flags on the user
+	
+	
+override after **------ -dpl
+	don't know what I meant
+	if subpbs run (two extra phases here prepare to run subpbs and run subpbs, plus subpbs ran) matches a rule, it can display something else
+	
+	
+Make clear how build command line parameters (%FILE_TO_BUILD, ...) are defined and handles
+	also defined in plugins or rules
+	
+	
+plugin to generate report on configuration usage
+	a post pbs part of the examples in the distribution 
+	
+	config in, defined, used, delta with parent, delta with children (available after the subpbs runs)
+	knowing how many config variables (along with rules, targets) can be used to automatically find what pbsfiles should be split
+	
+give example of C code generation
+	or anything that needs to be depended
+	explanation and example of IMMEDIATE_BUILD or creators
+	
+Creator, IMMEDIATE_BUILD, VIRTUAL, FORCED
+	all can be REH!
+	
+rethink/document IMMEDIATE_BUILD FORCED, LOCAL_RULES and other exceptional mechanisms
+
+REH_TRIGGER rather than pbs functionality
+	starts a subpbs before the REH_LINK_TO
+	
+C_FILE_SYNCH
+	it's a post build REH
+	Make it visible
+	
+ON_ERROR REH
+	for un interesting parts of the build just ignore the failures
+		need to make it very clear
+		
+		
+Express complicated dependencies
+	references to dependency lists, but still locally defined
+	depender subs are all mighty already
+	simple interface to the dependers, better wizard
+	
+user defined wizards
+	possibility to have multiple wizard directories 
+		no need to put user wizards where pbs wizards are
+		
+		
+
+	
+		
+	
+
+	
+
+		
+		

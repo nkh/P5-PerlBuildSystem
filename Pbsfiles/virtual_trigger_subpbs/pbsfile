@@ -1,0 +1,12 @@
+# why virtual nodes need digest
+
+# if a virtual node dependencies are changed and the new dependencies 
+# do not trigger, because they are linked from a non triggering pbsrun
+# the virtual node is not rebuild
+ 
+AddRule [VIRTUAL], 'all', ['all' => 'a', 'other_virtual'], BuildOk('') ;
+
+AddSubpbsRule 'a' => 'other_pbsfile' ;
+
+AddRule [VIRTUAL], 'other virtual', ['other_virtual' => 'a'], BuildOk('other virtual') ;
+

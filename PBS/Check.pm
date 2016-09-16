@@ -181,7 +181,7 @@ if(defined $tree->{__USER_ATTRIBUTE})
 	
 	if(defined $user_check)
 		{
-		# we allow the the user check to change the location of the file
+		# we allow the user check to change the location of the file
 		my ($user_full_name) = $user_check->($full_name, $user_attribute, $tree) ;
 		
 		my ($user_name, $user_path, $user_ext) = File::Basename::fileparse($user_full_name,('\..*')) ;

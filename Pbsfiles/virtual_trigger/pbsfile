@@ -1,0 +1,22 @@
+# why virtual nodes need digest
+
+# if a virtual node dependencies are changed and the new dependencies 
+# do not trigger, because they are source in this case
+# the virtual node is not rebuild, to rebuild the dependencies must trigger
+# the rule change doesn't matter
+
+# note that all the nodes that have a builder, and are defined in the pbsfile,
+# will rebuild, in this pbsrun, changing the pbsfile will rebuild node a
+# because it has a digest but node 'other virtual' will not
+
+# actually, 'other virtual' will never trigger
+ 
+
+AddRule [VIRTUAL], 'all', ['all' => 'a', 'other_virtual'], BuildOk('') ;
+
+AddRule 'a', ['a' => 'b', 'b'], "touch %FILE_TO_BUILD" ;
+ExcludeFromDigestGeneration('source' => qr/b|c/);
+
+
+AddRule [VIRTUAL], 'other virtual', ['other_virtual' => 'b', 'c'], BuildOk('other virtual') ;
+

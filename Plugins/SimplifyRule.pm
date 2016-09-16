@@ -1,5 +1,5 @@
 
-=head1 SimplifyRuke
+=head1 SimplifyRule
 
 PBS only accepts pure perl rules since 0.29. It is possible to write a plugin to allow
 user to defined rule syntax. This plugin defines a simplified format.
