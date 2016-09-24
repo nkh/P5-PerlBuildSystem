@@ -1,21 +1,212 @@
+node name completion can be done with the help of nodes listed in the warp file
+	we still need to know which warp file
+
+log all builds
+	every command line that builds should be save in a log
+
+keep statistics about what is the most often build
+	gives us an idea about what has most impact on the system to build and
+	what part of the build system is most often used
+
+time cursor
+	a history of the build is kept so that a cursor can be placed at a user chosen
+	time when she can look at what the graph looks like, what will happen next, what rules
+	inserted a node, ...
+
+C depender generates digests in mini warp format (because it is exactly that) and the 
+	linking of the mini warp nodes for the C depender is no different from other
+	mini warp
+
+document why, when using warp, the C dependency files are neither used nor verified
+	=> they are merged in the warp graph and warp doesn't care about them, but the 
+	dependencies are still verified
+
+Output from Hashes must be sorted as Perl randomized the key order
+
+shell build nodes can receive tools, commands and the code to work on from master
+	reduce the need for a shared filesystem
+
+shell build nodes can share code with other nodes
+	when the master starts a build, it also starts the sharing of the code, while the
+	master works to find what is going to be build, the build nodes share the code.
+
+shel build nodes keep a repository of shared code
+
+shell build nodes can update their repository
+ 
+build system has startup rules that install tools and checkout code
+	although checking out the code with the build system (e.g. in the same commit) makes more sense
+
+parallel depend
+	Ok to have multiple instances (in each process doing the depend) if the common nodes have the
+	same digest, including the configuration. if the digests are different we need a mechanism to
+	let the user decide what happens next.
+
+documentation is part of every release
+
+REH instead for named dependencies or as a complement
+		rule
+			named => (c-dependencies => a, b, c), 
+			c-dependencies => (a, b, c), 
+
+	this also allows the REH to 'type' the dependencies and itself
+
+
+REH user defined type
+	allow visualization of the REH in a user specified manner
+	e.g. also when the dependencies are listed, the dependencies from a specific REH could be in red color
+
+
+display dependency list 
+
+	Node [V] './objects':
+		Inserted at ./pbsfile [PBS]:__ROOT.
+		dependencies:
+			./1.objects
+		rebuild because of:
+			./1.objects (Subdependency or self)
+		matching rule: #2[B] 'objects'
+			=> ./1.objects
+	  
+
+	displays the REH that matched and uses the color from the REH type
+
+
+always save the subpbs config
+	possible to query the config for a specific node
+	history of configuration is also displayed
+
+build subset
+	a better way than node@root and save/load config
+
+			  .---------------------.
+			  | .---.               |
+	       .------------| A |--------.      |
+	       |          | '---'        |      |   wait for B to build 
+	       v          |              v      |   correctly to build  
+	 .-----------.    |            .---.    |
+	 | subsystem |    |            | C |    |
+	 '-----------'    |            '---'    |
+			  |              |      |
+			  '--------------|------'
+					 |
+			  .--------------|------------.
+			  |              |            |
+			  |              v            |
+			  |            .---.          |
+			  |        .---| D |---.      |
+			  |        |   '---'   |      |  Only build this till OK 
+			  |        v           v      |
+			  |      .---.       .---.    |
+			  |      | E |       | F |    |
+			  |      '---'       '---'    |
+			  |                           |
+			  '---------------------------'
+
+
+	When building A, if an error occurs, find which subsystem the error occurs in and
+	give all the necessary information to build that subset from the command line, see
+	setup subset build for a manual setup
+
+	building a subset is like building a specific subpbs with a saved config, there is no
+	need to build the parents of the subset
+
+	it is possible to limit the build to the first level of the subset even if configuration
+	or graph changes are made at the subset level
+
+	when building a subset, make it clear to the user that it is only a subset build so that 
+	it is clear that a top build needs to be made, retutn an error code and the warnings
+
+
+setup a subset build
+	the user can ask the build system to generate the command line to build a specific file or
+	subsystem.
+
+	say that a subsystem build a library
+		the user can ask for the closes pbsfile to build that library
+		the build system
+			creates a (universal based) command line
+			creates a configuration file copy for the subsystem
+	
+	the creation is done 
+		based on data in the warp file
+			if no pbs related files trigger (libs, pbs, pbsfiles) 
+
+		by running the system in depend only mode to generate the necessary data
+
+user defined node type
+	subsystem, debug, ui, ..
+
+	the user can give attributes to nodes
+
+	those attributes can be used to 
+		display nodes differently
+		match rules
+		search for the nodes 
+
+universal root for build
+	it is possible to build from any location
+		a cwd not the root of the system to build
+			finding the files under . (virtual root)
+
+		a cwd root of the system to build
+			normal build
+
+		a cwd under the root of the system to build
+			subset build			
+
+subpbs rule should not care about the path of node
+	rules now have to match */regex as the start node has a path
+	but the path doesn't make sense in the local environment of the subpbs, the nodes
+	should get their path based on their parent's path. this would simplify the run of 
+	pbs -load_config as we can give the local node name instead.
+
+	some node have path information ./lib/xxx gets under the pbs root under ./lib (late depend)
+	some nodes may be related to the root (/)
+
+	before starting a subpbs, the node to depend could get an alias without the path
+		
+
+ 	this would allow moving whole subsets of the system and still be able to use the warp file
+	as is since there is no path recorded anymore
+
+
+
+
+All display code is a plugin, allowing the user to change how the display looks like
+	without changing the core code
+
+	use a templating system or subs
+
+			
+
+H files are dependencies of the object file
+	if two object files use the same C file, the dependencies may be different because of the
+	object file configuration. Linking the C file with a configuration that is wong, when
+	depending the second object file, is an error.
+
+
 
 virtual nodes without dependencies ALWAYS trigger
-	a virtual node without dependencies would always trigger
+	a virtual node without dependencies always trigger
 	there is no way we can know if a virtual node without dependencies "succeeded"
 	we can know that it failed because the commands it runs fail but if they all succeed
-	 we don't have a node we can make a md5 on so we must re build the virtual node each  time
+	we don't have a node we can make a md5 on so we must re build the virtual node each  time
 
 	OHHH this is soooo frustrating. All those years talking about virtual node digests in complex setup (subpbs linked nodes, warp graphs, ...) when we should have kept it simple and see what the problem is with VIRTUAL, it's simple, we didn't know where to write its digest (that's sooo hard to decide) and that it didn't trigger. So rather than do the right thing we introduced FORCED, Do I hate make and all the make files that other morons like me wrote that forced things.
 	FORCED must die and than everything will be fine because we must do the right thing.
 	a virtual node, whatever the context, as it has no digest will ONLY trigger if one of its dependencies also triggers. This means that you can add a virtual node rule and it will never trigger, you can modify a virtual node rule and it will never trigger, virtual nodes don't trigger, they have no control over their triggering, it's the dependencies that trigger them, and the dependencies may trigger for various reasons none of them related to the virtual node rule.
 	You can even write a virtual node rule that has dependencies on source nodes, EG document the source nodes, and it will never trigger.
-	vIRTUAL nodes don't trigger, so rather than make them trigger properly we FORCED them to trigger, I hate make.
+	VIRTUAL nodes don't trigger, so rather than make them trigger properly we FORCED them to trigger, I hate make.
 	if virtual nodes have triggers, they will trigger on a dependency that trigger, as before, on source files, and on the pbsfile that where the virtual node rule is defined. 
 	Why did we need a virtual node digest? For everything!
 	Where to put the virtual node digest is obvious, in the out directory, as everything else. What if they match a directory name, no problem, the directory and the digest don't have the same name.
 	It's easy to be smart after the fact but it is pretty obvious that if you don't handle nodes the same way, there are going to be differences, why didn't we handle VIRTUAL  as a normal node? why didn't we handle VIRTUAL as we defined in the documentation " a node that has no physical representation in the file system", a 2 lines check, but instead make a monster out of it.
 	Next PBS will be better, VIRTUAL will have a digest. 
-	PS: there's a requirement to have 2 dependens share dependencies. I don't think it will be in the form t1, t2 -> d1, ....
+
+	what if the dependency is a virtual node itself, what do we write in the digest?
+
+2 dependens share dependencies. I don't think it will be in the form t1, t2 -> d1, ....
 	but rather t1 -> d1, ... ; t2 -> get_deps(t1).
 	that allows a tx -> get_deps(t1, t2, whatnot) picking up dependencies other nodes have without having to change t1, t2 pbsfiles. probably late_depend will work on them too so tx cn be dependent on t1 dependencies even if t1 is not in the graph yet
 
