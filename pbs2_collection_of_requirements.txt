@@ -1,3 +1,73 @@
+warp does not need normal digest
+	when running in warp mode and something need to be rebuild
+	the no-warp mode building is run; it generates digest files
+	and c dependency files. those files are not used by the warp 
+	mode. the warp mode should apply to normal build too to avoid
+	generating the digests. normal mode data normally ready from 
+	digest files can be obtained from the warp file.
+	Note that this is not a big problem as digest file generation 
+	is trivial and that most of the time is spend conputing md5
+	which are also needed for the warp file. It does have an 
+	"advantage" if the warp data is deleted or a different warp
+	mode is selected, the normal mode is fast.
+
+warp 1.8
+	can we reduce the format of the warp files, textual amount as
+	well as fields in the warp files
+
+	there is ROOT directory in the warp 1.8 dta that should not be there!
+
+	single node warp file take the longest to process, is there a way to 
+	optimize the process by collating related nodes in the same file?
+
+	node regeneration should not need to set BUILD_NAME
+	try to make node regeneration more light weight
+		if some rarely used plugins need more data, it is better
+		to do more regenerration in the plugins
+
+parallel depend
+	done on the subpbs level
+	can generate a mini warp
+		who merges back
+		merging should be distributed too
+
+	merging is mini warp is no necessity, we can follow the chain
+	and read multiple mini warp files
+
+	mini warp must merge very quickly
+		two data sets
+			one with comlpete data
+			one lightweight to merge quickly
+				see warp 1.8 node regeneration
+			keep a md5 between them
+		mini warp have warp 1.8 format
+		merging 
+			merge checks link errors
+			adding node md5 to list
+			single node warp files need parent dependent added
+			 
+	a set of hierarachical mini warp can be merged at multiple levels
+		only merge the quick data and keep reference to the complete data
+
+	
+
+warp nodes can be formatted as a the reconstructed nodes to speed up loading
+	
+nodes that are the deepest trigger the most files
+	verify them first as they re-vivify the most nodes and we cache those
+
+nodes that trigger often are more likely to trigger again
+
+sample data digest generation for big files
+	md5 on a 5 Mb file takes longer than on a 4 kb file
+	compute md5 on a few well chosen sections  rather than the wole file
+
+option to generate digests for source files only
+	less secure but much faster
+
+check optimization in Ag
+	https://github.com/ggreer/the_silver_searcher
+
 node name completion can be done with the help of nodes listed in the warp file
 	we still need to know which warp file
 

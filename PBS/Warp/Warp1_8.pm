@@ -422,7 +422,7 @@ for my $node_name (keys %$node_md5s)
 	# rebuild the data PBS needs from the warp file
 	
 	#TODO: do not regenerate. pbs is interrested in knowing if the node exists to link to it
-	# onl y regenerate if the data needs to be accessed (and even then, just compute the data without regenerating)
+	# only regenerate if the data needs to be accessed (and even then, just compute the data without regenerating)
 	
 	# TODO: would the format below be fast enough to load?
 	$nodes->{$node_name}{__NAME} = $node_name ;
