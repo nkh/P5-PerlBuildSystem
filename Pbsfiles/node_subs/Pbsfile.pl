@@ -44,7 +44,7 @@ AddRule 'changing the node config',
         \&ChangePbsConfig,
 	\&ChangeConfig,
 	\&CheckConfig,
-	#~ VerySpecialBuilderArguments('do this', 'do that'),
+	VerySpecialBuilderArguments('do this', 'do that'),
 	#~ SetOptimizationOption('-O2'),
 	#~ BuildShell($shell),
 	#~ \&ForceLocalShell,
@@ -101,7 +101,7 @@ return sub
 	$tree->{__VERY_SPECIAL_BUILDER_ARGUMENTS} = [@definition_time_arguments] ;
 	
 	use Data::TreeDumper ;
-	#~ PrintDebug DumpTree($tree, "configuration for $tree->{name}") ;
+	PrintDebug DumpTree($tree, "configuration for $tree->{__NAME}") ;
 	}
 }
 

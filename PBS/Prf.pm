@@ -25,8 +25,27 @@ use PBS::Output ;
 
 sub AddTargets
 {
+my ($package, $file_name, $line) = caller() ;
 my $pbs_config = GetPbsConfig(caller) ;
 push @{$pbs_config->{TARGETS}}, @_ ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub AddCommandLineDefinitions
+{
+my ($package, $file_name, $line) = caller() ;
+
+die ERROR "Error Adding command line definitions, odd number of entries @ '$file_name:$line'" if @_ % 2 ;
+
+my %definitions = @_ ;
+
+my $pbs_config = GetPbsConfig($package) ;
+
+for my $key (keys %definitions)
+	{
+	$pbs_config->{COMMAND_LINE_DEFINITIONS}{$key} = $definitions{$key} ;
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -34,7 +53,7 @@ push @{$pbs_config->{TARGETS}}, @_ ;
 
 sub AddCommandLineSwitches
 {
-my $caller = caller() ;
+my ($package, $file_name, $line) = caller() ;
 my @switches = @_ ;
 
 local @ARGV = map
@@ -52,7 +71,7 @@ local @ARGV = map
 			}
 		} @switches ;
 
-my $pbs_config = GetPbsConfig($caller) ;
+my $pbs_config = GetPbsConfig($package) ;
 my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($pbs_config) ;
 
 my $ignore_error = $pbs_config->{'PRF_IGNORE_ERROR'} ;
@@ -67,7 +86,7 @@ use Getopt::Long ;
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
 unless(GetOptions(@flags))
 	{
-	die ERROR "Error parsing switches" unless $ignore_error ;
+	die ERROR "Error parsing switches @ '$file_name:$line'" unless $ignore_error ;
 	}
 }
 

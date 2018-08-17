@@ -1,3 +1,178 @@
+keep logs, output, ... for every run of pbs
+	one often reruns pbs just to get more information with an extra switch
+	if the information is not to be displayed, keep it in a separate file
+
+	we need a system to cleanup periodically the unnecessary data, an option
+	--run_data_limit/-rdl (and --no_run_data) which is set by default to, say 5, and that can be
+	changed in the configuration.
+
+	--nrd 		don't keep this run's data
+	--rdl 0		never keep run data and remove the data found on disk
+
+
+	node data should be in the node's digest and only tree data kept in log
+		we can reconstruct on the fly
+
+		node digest's name should contain the md5 to ease its localization
+		with command line tools
+
+
+tree display additive fields
+	--tt is the bare tree, one can add elements to the tree via switches
+	switches are automatically generated from tree contents
+	completion, with help, is available
+
+tree display color
+	node name should be made clear
+	additive fields switches could have a related _color sibling switch
+
+
+HTML output
+	terminal that is HTML aware to allow DHTL tree dumps
+
+	fast output
+		revert to pure text without html
+		display html with max depth set
+			user can still open data structure dump further
+		load data on demand
+			trees are just links
+
+		filters
+			show only some of the pbs phases
+			show specific node
+			show specific subsystem
+
+
+	pbs shell should support HTML
+
+
+continuous integration
+	keep logs of builds and html interface
+		builds are not started via interface nor via commit hooks
+
+	check everything is commited
+		commit in a CI repo
+
+	builds when local machine is not powerful enough
+		
+	start remote build on local machine
+
+	check and reuse environement if possible
+		
+
+
+IPFS as synchronized build cache
+	a node to be build can request itself from some other build-node cache
+
+	caches can  synchronize as long as they have disk space so if a node is 
+	requested, it can be delivered in parallel from multiple build-nodes
+Tmux
+	like gnu parallel, in a specific session for the pbs run
+		output  in a window or in a pane
+		do not keep parts of the builds that succeed by default
+
+	controlled by REH
+
+Build distribution
+	the build system can clone itself (and all deppendencies) to another computer
+	if a node is changed
+		if it impacts many other nodes, the node is synchronized and all the 
+		build nodes co-operate to the build
+
+		if it impacts little, we can know that from warp 1.8 data, the build is
+		made locally and nodes are synchronized after the build
+
+debugging
+	when node fails to build, setup a miniature environment with copies
+	of the failing node, the necessary dependencies (a warp tree for the nodes that only be
+	present but not used), ... 
+
+
+	use rules and REH
+		ca setup an environment specific to the node type
+
+		Rule
+			MATCH
+			REH_ON_FAIL => \&setup debug environemtn
+
+Tmux test environment
+	keep only failing tests
+	stop after x number of failing tests
+	
+
+
+debugger
+	trace: shows how we got to the point where we are
+
+	"next": show the rules that match, this should also show in the graphical browser
+
+	in case of error show all the relevant data, including the results of the command, and the
+	possible output, graphical browser shows what other rules would fail
+
+	break point show type of breakpoint, pre-depend, ...
+
+	set/unset debug point easily and quickly
+		set and unset based on some code returned value
+			ie, as long as number of nodes in graph < 50 continue
+			have a rich data set the functions can work with
+			data set is per module, level, range of levels, ...
+
+environment variables
+	pbs removes all the environment variables
+		this helps but when a sub command fails or produces an unexpected output
+		(because it did not check properly) this helps the user very little
+
+	pbs removes all the environment variables if option is set
+
+	pbs replaces all the environment variables with "SET BY PBS" to make it clear
+
+	find a system to "break" the commands that use environment variables
+
+	removal of environment variables should be per node/level
+		node/level can set variables
+
+	warnings if environment variables are set or not set
+
+ 
+	
+debugger watches
+	extracted by code snippets from the available data set, they don't have 
+	to represent a variable, they can represent whatever, a bit like an element in
+	a bash prompt
+		
+	doesn't have to be perl code or an element of the graph
+		ex. a service is available on a remote server
+		ex. cpu load, free disk space, ...
+	
+
+warp does not need normal digest
+	when running in warp mode and something need to be rebuild
+		this helps but when a sub command fails or produces an unexpected output
+		(because it did not check properly) this helps the user very little
+
+	pbs removes all the environment variables if option is set
+
+	pbs replaces all the environment variables with "SET BY PBS" to make it clear
+
+	find a system to "break" the commands that use environment variables
+
+	removal of environment variables should be per node/level
+		node/level can set variables
+
+	warnings if environment variables are set or not set
+
+ 
+	
+debugger watches
+	extracted by code snippets from the available data set, they don't have 
+	to represent a variable, they can represent whatever, a bit like an element in
+	a bash prompt
+		
+	doesn't have to be perl code or an element of the graph
+		ex. a service is available on a remote server
+		ex. cpu load, free disk space, ...
+	
+
 warp does not need normal digest
 	when running in warp mode and something need to be rebuild
 	the no-warp mode building is run; it generates digest files
@@ -6,7 +181,7 @@ warp does not need normal digest
 	generating the digests. normal mode data normally ready from 
 	digest files can be obtained from the warp file.
 	Note that this is not a big problem as digest file generation 
-	is trivial and that most of the time is spend conputing md5
+	is trivial and that most of the time is spend computing md5
 	which are also needed for the warp file. It does have an 
 	"advantage" if the warp data is deleted or a different warp
 	mode is selected, the normal mode is fast.
@@ -15,7 +190,7 @@ warp 1.8
 	can we reduce the format of the warp files, textual amount as
 	well as fields in the warp files
 
-	there is ROOT directory in the warp 1.8 dta that should not be there!
+	there is ROOT directory in the warp 1.8 data that should not be there!
 
 	single node warp file take the longest to process, is there a way to 
 	optimize the process by collating related nodes in the same file?
@@ -23,7 +198,7 @@ warp 1.8
 	node regeneration should not need to set BUILD_NAME
 	try to make node regeneration more light weight
 		if some rarely used plugins need more data, it is better
-		to do more regenerration in the plugins
+		to do more re-generation in the plugins
 
 parallel depend
 	done on the subpbs level
@@ -36,7 +211,7 @@ parallel depend
 
 	mini warp must merge very quickly
 		two data sets
-			one with comlpete data
+			one with complete data
 			one lightweight to merge quickly
 				see warp 1.8 node regeneration
 			keep a md5 between them
@@ -46,12 +221,12 @@ parallel depend
 			adding node md5 to list
 			single node warp files need parent dependent added
 			 
-	a set of hierarachical mini warp can be merged at multiple levels
+	a set of hierarchical mini warp can be merged at multiple levels
 		only merge the quick data and keep reference to the complete data
 
 	
 
-warp nodes can be formatted as a the reconstructed nodes to speed up loading
+warp nodes can be formatted as the reconstructed nodes to speed up loading
 	
 nodes that are the deepest trigger the most files
 	verify them first as they re-vivify the most nodes and we cache those
@@ -60,7 +235,7 @@ nodes that trigger often are more likely to trigger again
 
 sample data digest generation for big files
 	md5 on a 5 Mb file takes longer than on a 4 kb file
-	compute md5 on a few well chosen sections  rather than the wole file
+	compute md5 on a few well chosen sections  rather than the whole file
 
 option to generate digests for source files only
 	less secure but much faster
@@ -94,7 +269,7 @@ document why, when using warp, the C dependency files are neither used nor verif
 Output from Hashes must be sorted as Perl randomized the key order
 
 shell build nodes can receive tools, commands and the code to work on from master
-	reduce the need for a shared filesystem
+	reduce the need for a shared file system
 
 shell build nodes can share code with other nodes
 	when the master starts a build, it also starts the sharing of the code, while the
@@ -108,7 +283,7 @@ build system has startup rules that install tools and checkout code
 	although checking out the code with the build system (e.g. in the same commit) makes more sense
 
 parallel depend
-	Ok to have multiple instances (in each process doing the depend) if the common nodes have the
+	OK to have multiple instances (in each process doing the depend) if the common nodes have the
 	same digest, including the configuration. if the digests are different we need a mechanism to
 	let the user decide what happens next.
 
@@ -142,12 +317,16 @@ display dependency list
 	displays the REH that matched and uses the color from the REH type
 
 
-always save the subpbs config
-	possible to query the config for a specific node
+rebuild because of: ./1.objects (Subdependency or self)
+	be precise, dependency or self, or both, and which dependencies
+
+
+always save the subpbs configuration
+	possible to query the configuration for a specific node
 	history of configuration is also displayed
 
 build subset
-	a better way than node@root and save/load config
+	a better way than node@root and save/load configuration
 
 			  .---------------------.
 			  | .---.               |
@@ -178,14 +357,14 @@ build subset
 	give all the necessary information to build that subset from the command line, see
 	setup subset build for a manual setup
 
-	building a subset is like building a specific subpbs with a saved config, there is no
+	building a subset is like building a specific subpbs with a saved configuration, there is no
 	need to build the parents of the subset
 
 	it is possible to limit the build to the first level of the subset even if configuration
 	or graph changes are made at the subset level
 
 	when building a subset, make it clear to the user that it is only a subset build so that 
-	it is clear that a top build needs to be made, retutn an error code and the warnings
+	it is clear that a top build needs to be made, return an error code and the warnings
 
 
 setup a subset build
@@ -205,14 +384,17 @@ setup a subset build
 		by running the system in depend only mode to generate the necessary data
 
 user defined node type
-	subsystem, debug, ui, ..
+	subsystem, debug, UI, ..
 
 	the user can give attributes to nodes
 
 	those attributes can be used to 
 		display nodes differently
+		display the attributes in a --tt
 		match rules
 		search for the nodes 
+
+	queries can use node type
 
 universal root for build
 	it is possible to build from any location
@@ -248,11 +430,11 @@ All display code is a plugin, allowing the user to change how the display looks 
 
 	use a templating system or subs
 
-			
+	can the display code be triggered by injected rules?
 
 H files are dependencies of the object file
 	if two object files use the same C file, the dependencies may be different because of the
-	object file configuration. Linking the C file with a configuration that is wong, when
+	object file configuration. Linking the C file with a configuration that is wrong, when
 	depending the second object file, is an error.
 
 
@@ -263,7 +445,9 @@ virtual nodes without dependencies ALWAYS trigger
 	we can know that it failed because the commands it runs fail but if they all succeed
 	we don't have a node we can make a md5 on so we must re build the virtual node each  time
 
-	OHHH this is soooo frustrating. All those years talking about virtual node digests in complex setup (subpbs linked nodes, warp graphs, ...) when we should have kept it simple and see what the problem is with VIRTUAL, it's simple, we didn't know where to write its digest (that's sooo hard to decide) and that it didn't trigger. So rather than do the right thing we introduced FORCED, Do I hate make and all the make files that other morons like me wrote that forced things.
+	need example of virtual node without dependencies
+
+	this is so frustrating. All those years talking about virtual node digests in complex setup (subpbs linked nodes, warp graphs, ...) when we should have kept it simple and see what the problem is with VIRTUAL, it's simple, we didn't know where to write its digest (that's so hard to decide) and that it didn't trigger. So rather than do the right thing we introduced FORCED, Do I hate make and all the make files that other morons like me wrote that forced things.
 	FORCED must die and than everything will be fine because we must do the right thing.
 	a virtual node, whatever the context, as it has no digest will ONLY trigger if one of its dependencies also triggers. This means that you can add a virtual node rule and it will never trigger, you can modify a virtual node rule and it will never trigger, virtual nodes don't trigger, they have no control over their triggering, it's the dependencies that trigger them, and the dependencies may trigger for various reasons none of them related to the virtual node rule.
 	You can even write a virtual node rule that has dependencies on source nodes, EG document the source nodes, and it will never trigger.
@@ -275,10 +459,11 @@ virtual nodes without dependencies ALWAYS trigger
 	Next PBS will be better, VIRTUAL will have a digest. 
 
 	what if the dependency is a virtual node itself, what do we write in the digest?
+		the virtual dependency digest!
 
-2 dependens share dependencies. I don't think it will be in the form t1, t2 -> d1, ....
+2 dependents share dependencies. I don't think it will be in the form t1, t2 -> d1, ....
 	but rather t1 -> d1, ... ; t2 -> get_deps(t1).
-	that allows a tx -> get_deps(t1, t2, whatnot) picking up dependencies other nodes have without having to change t1, t2 pbsfiles. probably late_depend will work on them too so tx cn be dependent on t1 dependencies even if t1 is not in the graph yet
+	that allows a tx -> get_deps(t1, t2, whatnot) picking up dependencies other nodes have without having to change t1, t2 pbsfiles. probably late_depend will work on them too so t2 can be dependent on t1 dependencies even if t1 is not in the graph yet
 
 
 NAME => 'any generated data is exportable to another format',
@@ -292,7 +477,7 @@ LONG_DESCRIPTION => <<'EOD',
 	use pbsfile if it exists
 	if given --generate_missing_pbsfile, ask if a real
 		pbsfile should be generated. practical if the virtual
-		generated pbsfile doesn't fit (ex directories or files to ignore, more configs)
+		generated pbsfile doesn't fit (ex directories or files to ignore, more configurations)
 
 
 REH to match configurations
@@ -300,6 +485,7 @@ REH to match configurations
 		MATCH => $regex
 		MATCH_CONFIG => ...
 
+	this is related to REH_IF
 
 REH to match steps in the pbs run
 	this is already done in the registration of the REH which doesn't look like rules
@@ -308,9 +494,9 @@ REH to match steps in the pbs run
 	it also need to match a node and pbssteps are not nodes (yet)
 
 	a good example is -gtg, we generate a graph at specific moment
-		gtg is implementd as a plugin in pbs1, thus pbs calls it
+		gtg is implemented as a plugin in pbs1, thus pbs calls it
 
-All output is done via a registrable sub to allw P2 to be embeded in another
+All output is done via a registrable sub to allow PBS2 to be embedded in another
 	system, EG: neo
 
 	display system can be setup to display information in specific cases only
@@ -344,7 +530,14 @@ plugins
 		GENERATE_GRAPH_REH => ....  # knows when to be run
 
 
-	other are called during the pbs run, eg they register subs that pbs calls
+	bleah! make the target a virtual node!
+		Rule 'generate_graph'
+			MATCH => '__pbs_graph'
+			AND_MATCH_CLI => /-gtg/
+			BUILD => ...
+		
+plugins
+	some are called during the pbs run, eg they register subs that pbs calls
 		EvaluateShellCommand
 		CheckNodeName
 		
@@ -363,10 +556,10 @@ prefix all the REH that have an impact on internal implementation
 	DISPLAY_DEPENDENCIES => 1
 	PBS_DISPLAY_DEPENDENCIES => 1
 
-	except if it is the DIAPLY_DEPENDENCIES REH itself that does the displaying
+	except if it is the DISPLAY_DEPENDENCIES REH itself that does the displaying
 
 generalize the C depender
-	- what config variables must be in the config should not be in the code but arguments
+	- what configuration variables must be in the configuration should not be in the code but arguments
 	- the same code can be used for other types of files
 		- creators use an equivalent mechanism, could be merged
 
@@ -390,23 +583,23 @@ generalize the C depender
 -bni ,which show a node header, makes it clear which node is being build, there is no such system
 	for -dd, the display is very compact
 
-NODE_LINKING is a PBS step with potentialy matching REH
-	what config to check
+NODE_LINKING is a PBS step with potentially matching REH
+	what configuration to check
 	allowed or not
 
 configuration dependency for node
-	knowing what config is used to build a node makes it possible to check
-	if a linked node uses the same config as the current pbsconfig  build node
-		maybe the linked node, with a different confid and dependencies is OK!
+	knowing what configuration is used to build a node makes it possible to check
+	if a linked node uses the same configuration as the current pbsconfig  build node
+		maybe the linked node, with a different configuration and dependencies is OK!
 			need a mechanism to allow that.
 
-	extract all the config variables from the build commands
+	extract all the configuration variables from the build commands
 	force declarative style for linked node checking
 		note that this can still check the build commands
 
 	addrule
 		name xxx
-		rege '*all*'
+		regex '*all*'
 		NODE_LINKING_ENABLE => 0 # current pbsfile run must provide one
 
 		NODE_LINKING_ENABLE => 1
@@ -415,12 +608,12 @@ configuration dependency for node
 		NODE_LINKING_CHECK_COMMAND_LINE => 1
 
 		
-	knowing which config is used also allows to not rebuild some nodes declared in
+	knowing which configuration is used also allows to not rebuild some nodes declared in
 		the same pbsfile because of a configuration change that has no impact
 		on the node
 
 if a rule uses sub rules, EG lib uses object rules, when the rules for obj
-	are used, the user can easilly trace it back to the lib rule and to where it was used
+	are used, the user can easily trace it back to the lib rule and to where it was used
 	
 	IE. inserted_at is not enough as all libs are inserted at the same place, the lib rule
 
@@ -445,7 +638,7 @@ console
 
 	build
 		
-optionso warp information display is mutted
+option so warp information display is mutted
 
 ExcludeFromDigest may not make sense
 	use to say that a node is a source node, better call it that
@@ -456,9 +649,9 @@ ExcludeFromDigest may not make sense
 
 EvaluateShellCommand REH
 
-Pbs creators generqte mini build systems
-	mechqnism used to generqte and check the creator digest
-	pbs commqnd line switches (-bni, -conf, ...) are also used
+Pbs creators generate mini build systems
+	mechanism used to generate and check the creator digest
+	pbs command line switches (-bni, -conf, ...) are also used
 	
 Use file type "matchers"
 	rather than use regex use a file type (which still can be implemented as a regex for simple cases)
@@ -466,16 +659,17 @@ Use file type "matchers"
 	
 multiple GetBuildName subs defined in the code
 
-example in Pbsfile/Creqtor do not work
+example in Pbsfile/Creator do not work
 
 Merge STE PBS
 
 Create template/example for STE like data driven pbsfile (neo)
 
 option to filter out/in nodes when displaying tree
-	generate list of files that are displayed qnd not displayed, their amount, ...
+	generate list of files that are displayed and not displayed, their amount, ...
 	
-	
+	if options are pbsconfig variables, the REH an use them
+
 possibility to generate multiple trees with different roots
 	to display only the relevant nodes
 	can still filter nodes in and out
@@ -484,7 +678,7 @@ generate DHTML tree
 
 
 Multiple node builders
-	default is linear, builders run in the order of rule matching
+	builders run in the order of rule matching
 		option to display the builders and their order
 		
 	builders declare if they are singletons, an error is generated if builders exists before or are added after
@@ -516,6 +710,7 @@ Builders chaining
 Build buffers 
 	switch to keep build buffers
 		filter which ones are kept
+			faild ones always kept
 
 failed build buffer
 	always keep the buffer
@@ -523,11 +718,13 @@ failed build buffer
 			rule matching all the files
 			do we want to garbage collect at the global level or after each node, after each subpbs, ...
 				object_files can collect the names of the buffers to garbage collect
+
+			do we keep the build buffers in case of multiple failures?
 		
 		
 	keep information about the builder
 	create a mini build system
-		config
+		configuration
 		possibility to run just that builder/ builders for a node
 		
 	
@@ -536,10 +733,10 @@ possibility to display the tree in warp mode
 	filters should still apply
 	
 File not found for MD5 computation
-	most probably a node that is not declared as virtual (altthoughwe have defined somewhere that virtual nodes should have a digest)
+	most probably a node that is not declared as virtual (although we have defined somewhere that virtual nodes should have a digest)
 	builder failed
 	=> display as much information as possible
-		mioni build system for just that error
+		mini build system for just that error
 		
 generation of mini build systems
 	in big systems, the developer does not want to re-run the build system just to find out what the problem is but wants a small build to debug the problem
@@ -550,56 +747,6 @@ Post pbs
 		REH_POST_PBS => \&post_pbs_sub
 		REH_POST_PBS => GetPBSConfig('POST_PBS_FILE')
 		
-	can be used for post pbs per pbsfile rather than global pbs run
-		we need to name the virtual node for easy match
-		
-PBS switch handling with rules
-	many of the pbs switch are handled in code when they could be run as actions on pbs virtual nodes
-		we need to make sure the rules run even if nodes or sub nodes fail to build
-			we need to have an exception mechanism at the build level not at the perl level
-			
-	note that many switches are handled in plugins already
-	
-
-IDL support
-	any tool with multiple output that must be post processed
-	some tools have a variable output
-		output can vary per run
-		
-		
-	
-pbs run statistics
-	number of run run/matching
-	number of nodes inserted local/subpbs
-	number of subpbs
-	
-	rule on virtual node 
-		usser can match node and do her own display
-		
-
-match global pbsfile
-	can a run, a type of virtual node, match
-	is the PBS config check a type of rule match
-		in case the user changes things in a wrong way
-	
-	user can add own option	is the PBS config check a type of rule match
-		in case the user changes things in a wrong way
- 
-	user can change display options
-	
-	warn when using user defined pbs run matchers
-	
-Node configuration
-	decide if config is from package or from parent node
-		what if the node has different parents?
-			REH_ON_LINK => pbs_default_link_check  
-			REH_ON_LINK => user check or asomething that can check the configs without having to write code
-			
-				How does one replace a REH?
-					default REH can do nothing if it knows there are other REHs in the same phase
-					
-					
-move C flags out fro, C depender
 	C depender should use the flags defined by the user rather than force flags on the user
 	
 	
@@ -615,8 +762,8 @@ Make clear how build command line parameters (%FILE_TO_BUILD, ...) are defined a
 plugin to generate report on configuration usage
 	a post pbs part of the examples in the distribution 
 	
-	config in, defined, used, delta with parent, delta with children (available after the subpbs runs)
-	knowing how many config variables (along with rules, targets) can be used to automatically find what pbsfiles should be split
+	configuration in, defined, used, delta with parent, delta with children (available after the subpbs runs)
+	knowing how many configuration variables (along with rules, targets) can be used to automatically find what pbsfiles should be split
 	
 give example of C code generation
 	or anything that needs to be depended
@@ -647,14 +794,4 @@ Express complicated dependencies
 user defined wizards
 	possibility to have multiple wizard directories 
 		no need to put user wizards where pbs wizards are
-		
-		
 
-	
-		
-	
-
-	
-
-		
-		

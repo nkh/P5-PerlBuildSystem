@@ -308,6 +308,7 @@ my $build = $class->new
 		'Term::Size::Any'     => '0',
 	        'Term::Bash::Completion::Generator' => 0,
 		'PadWalker' => '0',
+		'Net::SCP' => 0,
 		#GDBM::File' => 0 ,
 
 		'Devel::Depend::Cpp'  => '0.10',

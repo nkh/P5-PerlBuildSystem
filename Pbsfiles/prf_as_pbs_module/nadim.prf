@@ -12,7 +12,7 @@ PrintDebug "Using Nadim's perl prf\n" ;
 
 AddTargets('1', '2') ;
 
-#~ AddCommandLineSwitches('-unknown_switch') ;
+#AddCommandLineSwitches('-unknown_switch') ;
 AddCommandLineSwitches('-sd /') ;
 AddCommandLineSwitches('-ndpb') ;
 
@@ -22,12 +22,13 @@ AddCommandLineSwitches
 	'-dsd',
 	) ;
 
+#AddCommandLineDefinitions(DEBUG) ; #error must be tuple
 AddCommandLineDefinitions(DEBUG => 1) ;
 AddCommandLineDefinitions(SOMETHING => 'a string with spaces') ;
 
 AddCommandLineDefinitions
 	(
-	DEBUG2 => 1,
+	DEBUG2 => 2,
 	SOMETHING2 => 'a string with spaces again',
 	) ;
 

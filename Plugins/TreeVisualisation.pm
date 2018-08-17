@@ -228,7 +228,8 @@ if(defined $pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML})
 <html>
 EOT
 
-	my $style ;
+	my $style = '' ;
+
 	my $body = DumpTree
 			(
 			$dependency_tree,
@@ -236,9 +237,9 @@ EOT
 			DISPLAY_ROOT_ADDRESS => 1,
 			#~ DISPLAY_PERL_ADDRESS => 1,
 			DISPLAY_PERL_SIZE => 1,
-			FILTER =>$FilterDump,
+			#FILTER =>$FilterDump,
 			
-			RENDERER => 
+			xxxRENDERER => 
 				{
 				NAME => 'DHTML',
 				STYLE => \$style,

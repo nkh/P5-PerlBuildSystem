@@ -1,3 +1,5 @@
+add warning when conflicting defines are given on the cli and/or prf
+
 Save/Load config
 
 Use cases:
