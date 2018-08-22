@@ -80,4 +80,8 @@ Configuration caching
     pbuse loads the files in the package context thus previous configurations are active, mabe we should control pbsuse context, EG, name what config is available to code within the pbsuse. The other solution is to take a snapshot of the config at the moment of pbsuse call.
 
 
+Neo like config
+	control what is passed down to subpbs runs, by default nothing
+	control what's taken in by subpbs
+		even better if we control what the nodes use rather than the pbs run
 

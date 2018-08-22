@@ -138,10 +138,11 @@ pbsfile_distribution:
 $pbsfile_distribution
 
 Try command:  
-       pbs -p pbsfile_1.pl 1.objects -dcdi -dpt
+	pbs
 or
-       pbs -p pbsfile_1.pl all -dcdi -dpt
-
+	pbs -p pbsfile_1.pl 1.objects -dcdi -dpt
+or
+	pbs -p pbsfile_1.pl all -dcdi -dpt
 EOI
 }
 
@@ -238,7 +239,7 @@ my $prf_path = "$subpbs->{DIRECTORY}/pbs.prf";
 open (PRF_FILE, ">", $prf_path) || die "Error writing '$prf_path': $!\n";
 print PRF_FILE <<EOP ;
 AddTargets('objects') ;
-AddCommandLineSwitches('-dpt', '-j 3', '-nh') ;
+AddCommandLineSwitches('-dpt', '-j 3', '-nh', '-no_default_path_warning' ) ;
 EOP
 close PRF_FILE;
 

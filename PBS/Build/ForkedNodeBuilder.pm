@@ -155,7 +155,7 @@ if(defined $pbs_config->{CREATE_LOG})
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo "Building node '$node_name' ($node_build_sequencer_info).\n" ;
+	PrintInfo2 "Building with parallel builder, node: '$node_name' ($node_build_sequencer_info).\n" ;
 	}
 
 if(defined $node)

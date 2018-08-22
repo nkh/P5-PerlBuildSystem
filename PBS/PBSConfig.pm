@@ -132,7 +132,7 @@ unless(GetOptions(@flags))
 
 @ARGV = @$switches_to_parse ;
 
-# tweek option parsing so we can mix switches with targets
+# tweak option parsing so we can mix switches with targets
 my $contains_switch ;
 my @targets ;
 

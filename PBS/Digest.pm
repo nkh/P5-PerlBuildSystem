@@ -204,6 +204,20 @@ return(1) ; # all files ok.
 
 sub NonCached_GetFileMD5
 {
+
+if($ENV{PBS_USE_XX_HASH})
+	{
+	xx_NonCached_GetFileMD5(@_) ;
+	}
+else
+	{
+	md5_NonCached_GetFileMD5(@_) ;
+	}
+}
+
+
+sub md5_NonCached_GetFileMD5
+{
 my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
 
 use IO::File ;
@@ -214,6 +228,31 @@ if(-f $file_name && $fh->open($file_name))
 	$fh->binmode();
 	my $md5sum = Digest::MD5->new->addfile($fh)->hexdigest ;
 	undef $fh ;
+	
+	return($md5sum) ;
+	}
+else
+	{
+	#PrintWarning  "Warning: can't read file '$file_name' to generate MD5\n";
+	return ;
+	}
+}
+
+#-------------------------------------------------------------------------------
+
+use Digest::xxHash qw[xxhash32 xxhash32_hex xxhash64 xxhash64_hex];
+use File::Slurp ;
+
+sub xx_NonCached_GetFileMD5
+{
+my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
+
+
+if(-f $file_name)
+	{
+	my $bin = read_file( $file_name, { binmode => ':raw' } ) ;
+
+	my $md5sum = xxhash32_hex($bin, 'PBS_xxHash') ;
 	
 	return($md5sum) ;
 	}

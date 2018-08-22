@@ -123,7 +123,6 @@ if(defined $pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE_EXTRA})
 
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	{
-	# Build sequence.
 	my $GetBuildNames = 
 		sub
 		{
@@ -135,6 +134,15 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	PrintInfo(DumpTree($build_sequence, "\nBuildSequence:", FILTER => $GetBuildNames)) ;
 	}
 
+if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
+	{
+	PrintInfo "\nBuildSequence:\n" ;
+	for (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)
+		{	
+		PrintInfo "$_\n" ;
+		}
+	print "\n" ;
+	}
 }
 
 #-------------------------------------------------------------------------------

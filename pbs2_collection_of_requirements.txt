@@ -1,14 +1,105 @@
+
+bash completion should be done by pbs as some options are loaded at run time
+
+warp, on pbsfile different => need to rebuild
+	because warp doesn't have pbsfile-nodes dependency?
+
+
+Add a mode to depend as little as possible, IE no C dependencies, no  checking sub nodes if top node needs to be rebuild, ...
+	generate the dependency graph after building if the infomation is avilable
+
+--no_warp creates warp file even if it doesn't use it
+
+how much more time does it take to create a warp 1.5 and 1.8 compared to only warp file 
+
+
+declare possible top target in pbsfile
+	allows us to scan all pbsfiles (what files?! pbsfiles can be called anything) to find targets
+		 - can help the user decide what target to build or where a target is build
+
+	we can cache the target names in warp
+
+	target can be  pbsfile tag or a reh
+		1/ Target(something)
+		2/ Rule :NameMatch(/xxx/), :IsTarget ;
+
+
+
+work out the user help vs the pbsfile help
+	=for PBS 
+
+
+sub options set the parent option
+	IE: --ttno needs --tt on the cli or it will have no effect
+
+	writing --ttno will automatically set -tt
+
+	if parent option needs an argument, display error message and stop
+
+display options as a tree when -h is used
+	category
+		sub category
+			top option
+				sub options
+	options
+	├─ help
+	│  ├─ -h|help = Displays this help.
+	│  ├─ -hs|help_switch=s = Displays help for the given switch.
+	│  ├─ -hnd|help_narrow_display = Writes the flag name and its explanation on separate lines.
+	│  ├─ -generate_bash_completion_script = Output a bash completion script and exits.
+	│  ├─ -pp|pbsfile_pod =
+	│  │  Pod declared with "=for PBS =pod_formating title" is extracted when option is set
+	│  │
+	│  │  =for PBS =head1 Targets\n"
+	│  │
+	│  │  =item * all
+	│  │
+	│  │  =item * debug
+	│  │
+	│  │  =cut
+	│  ├─ pod
+	│  │  ├─ -d|display_pod_documenation:s = Interactive PBS documentation display and search.
+	│  │  ├─ -pbs2pod = Extracts the pod contained in the Pbsfile (except user documentation POD).
+	│  │  └─ -raw_pod = -pbsfile_pod or -pbs2pod is dumped in raw pod format.
+	│  └─ wizards
+	│     ├─ -wh|display_wizard_help = Tell the choosen wizards to show help.
+	│     ├─ -w|wizard:s = Starts a wizard.
+	│     └─ -wi|display_wizard_info = Shows Informatin about the found wizards.
+	└─ colors
+	   ├─ -no_colorization = Removes colors from output. Usefull when redirecting to a file.
+	   ├─ -c|colorize =
+	   │  If Term::AnsiColor is installed on your system, use this switch to
+	   │  colorize PBS output.
+	   │
+	   │  PBS has default colors but colorization is not turned on by default.
+	   │
+	   │  Colors can be defined through switches (try pbs -h | grep color) or
+	   │  by setting you colors in the environement variable 'PBS_FLAGS', ex:
+	   │          export PBS_FLAGS='-c -ci green -ci2 blink green -cw yellow'
+	   │
+	   │  Recognized colors are :
+	   │          'bold'
+	   │          'dark'
+	   │          ...
+	   │  Check 'Term::AnsiColor' for more information.
+	   └─ element colors
+	      ├─ -cw|color_warning=s = Set the warning color.
+	      └─ -ce|color_error=s = Set the error color.
+	  
 keep logs, output, ... for every run of pbs
+	so we have something to look at when somethingg builds, or doesn't, when we expected it not to, even if pbs is most probably right
+
 	one often reruns pbs just to get more information with an extra switch
-	if the information is not to be displayed, keep it in a separate file
+	if the information is not to be displayed, keep its data in a separate file
 
 	we need a system to cleanup periodically the unnecessary data, an option
 	--run_data_limit/-rdl (and --no_run_data) which is set by default to, say 5, and that can be
 	changed in the configuration.
 
-	--nrd 		don't keep this run's data
-	--rdl 0		never keep run data and remove the data found on disk
+		--nrd 		don't keep this run's data
+		--rdl 0		never keep run data and remove the data found on disk
 
+		if we keep multiple logs, we will need to keep multiple node data for nodes that are rebuild
 
 	node data should be in the node's digest and only tree data kept in log
 		we can reconstruct on the fly
@@ -16,16 +107,30 @@ keep logs, output, ... for every run of pbs
 		node digest's name should contain the md5 to ease its localization
 		with command line tools
 
+		node data should be kept as string to avoid compiling it when loading the digest
+			in comments that we can "uncomment"
+			in strings that we can ask the digest to return to us
 
+		the node object could itself be the digest, eg: the node is serialized and it can
+		be queried for its digest or data
+
+		node data contains the build output
+
+	* support --jobs
+		builder creates node's data files
+
+		master creates 
+			warp file
+			build sequence (linear, although it can be recreated from the graph if we have a list of triggered nodes)
+			build event (queuing, starting, ending) which can be used to create a timeline
+		
 tree display additive fields
 	--tt is the bare tree, one can add elements to the tree via switches
-	switches are automatically generated from tree contents
-	completion, with help, is available
+	completion and help are available
 
 tree display color
 	node name should be made clear
-	additive fields switches could have a related _color sibling switch
-
+	additive fields are color like command line switch
 
 HTML output
 	terminal that is HTML aware to allow DHTL tree dumps
@@ -45,7 +150,6 @@ HTML output
 
 	pbs shell should support HTML
 
-
 continuous integration
 	keep logs of builds and html interface
 		builds are not started via interface nor via commit hooks
@@ -59,7 +163,6 @@ continuous integration
 
 	check and reuse environement if possible
 		
-
 
 IPFS as synchronized build cache
 	a node to be build can request itself from some other build-node cache
@@ -93,13 +196,16 @@ debugging
 
 		Rule
 			MATCH
-			REH_ON_FAIL => \&setup debug environemtn
+			REH_ON_FAIL => \&setup debug environment
 
 Tmux test environment
 	keep only failing tests
 	stop after x number of failing tests
 	
 
+three pane debugger with preview
+	a ranger like display parents (can be multiple parents), this, children
+	preview shows rules, config, ...
 
 debugger
 	trace: shows how we got to the point where we are
@@ -115,7 +221,9 @@ debugger
 		set and unset based on some code returned value
 			ie, as long as number of nodes in graph < 50 continue
 			have a rich data set the functions can work with
-			data set is per module, level, range of levels, ...
+			data set is per node, module, level, range of levels, ...
+
+	REH_DEBUG_SET_BREAKPOINT
 
 environment variables
 	pbs removes all the environment variables
@@ -134,7 +242,6 @@ environment variables
 	warnings if environment variables are set or not set
 
  
-	
 debugger watches
 	extracted by code snippets from the available data set, they don't have 
 	to represent a variable, they can represent whatever, a bit like an element in
@@ -144,34 +251,13 @@ debugger watches
 		ex. a service is available on a remote server
 		ex. cpu load, free disk space, ...
 	
+	good if implemented as debugging REH in a rule
 
 warp does not need normal digest
 	when running in warp mode and something need to be rebuild
 		this helps but when a sub command fails or produces an unexpected output
 		(because it did not check properly) this helps the user very little
 
-	pbs removes all the environment variables if option is set
-
-	pbs replaces all the environment variables with "SET BY PBS" to make it clear
-
-	find a system to "break" the commands that use environment variables
-
-	removal of environment variables should be per node/level
-		node/level can set variables
-
-	warnings if environment variables are set or not set
-
- 
-	
-debugger watches
-	extracted by code snippets from the available data set, they don't have 
-	to represent a variable, they can represent whatever, a bit like an element in
-	a bash prompt
-		
-	doesn't have to be perl code or an element of the graph
-		ex. a service is available on a remote server
-		ex. cpu load, free disk space, ...
-	
 
 warp does not need normal digest
 	when running in warp mode and something need to be rebuild
@@ -238,7 +324,11 @@ sample data digest generation for big files
 	compute md5 on a few well chosen sections  rather than the whole file
 
 option to generate digests for source files only
-	less secure but much faster
+	MUCH less secure but much faster
+
+	we should actually CHECK the digests for source only, we can still generate digests
+	for generated files, that would give the possibility to run with checking or do an
+	external check if needed.  
 
 check optimization in Ag
 	https://github.com/ggreer/the_silver_searcher
@@ -253,14 +343,27 @@ keep statistics about what is the most often build
 	gives us an idea about what has most impact on the system to build and
 	what part of the build system is most often used
 
-time cursor
+	let a user specific post pbs handle that (we can give an example)
+
+time cursor (see Log)
+
 	a history of the build is kept so that a cursor can be placed at a user chosen
 	time when she can look at what the graph looks like, what will happen next, what rules
 	inserted a node, ...
 
+	keep a history of the graph generation, a history of the  build makes no sense as we can build in parallel
+	and the order changes. It makes more sense to get the build for a specific node and select
+	its children or parents to look at their build.
+
+C depender triggering
+	if dependency file does not exist, trigger and post generate the file instead for an immediate generation 
+	this should be the default but an --option may be added for people that want an analysis not a build
+
 C depender generates digests in mini warp format (because it is exactly that) and the 
 	linking of the mini warp nodes for the C depender is no different from other
 	mini warp
+
+mini warp does not contain node data, just enough for regeneration
 
 document why, when using warp, the C dependency files are neither used nor verified
 	=> they are merged in the warp graph and warp doesn't care about them, but the 
@@ -648,11 +751,32 @@ ExcludeFromDigest may not make sense
 
 
 EvaluateShellCommand REH
+	pre-build REH
 
+	does not evaluate the shell command but createa node specific configuration to match %Whaetever
+	
+	this allows us to define the REH in a user lib and it can be reused
+
+	a better name is REH_EVAL_CONFIG for a generic sub declaration 
+
+REH can be argument less
+	they are more like sub calls then
+
+	this allows a more declarative style for the REH tha do not need arguments
+		Rule
+			Name => 'declarative rule'
+			DECLARATIVE_REH,
+			...
+			;
+		
 Pbs creators generate mini build systems
 	mechanism used to generate and check the creator digest
 	pbs command line switches (-bni, -conf, ...) are also used
 	
+Mini warp are mini build systems
+	getting into a sub directory the user shouldn't hav eto do more than "pbs" on the command line
+	to build that sub system again, with the top config!
+
 Use file type "matchers"
 	rather than use regex use a file type (which still can be implemented as a regex for simple cases)
 	the "matcher" can match depending on a configuration (eg the current OS, tool chain, ...)
@@ -794,4 +918,176 @@ Express complicated dependencies
 user defined wizards
 	possibility to have multiple wizard directories 
 		no need to put user wizards where pbs wizards are
+
+replace plugins with rules
+	CheckNodeName, rule matching all nodes
+	CreateDump, rule matching top node, what if the build fails
+	CreateLog, rule matching top node, what if the build fails
+	EvaluateShellCommand, replace with EVAL_CONFIG, there is no reason to evaluate the shell command just
+		to handle %SOMETHING. Adding SOMETHING to the config as the side effect to be self documenting
+			- SOMETHING stays visible rather than transient during EvaluateShellCommand
+			- the rule doing the evaluation is logged
+	ExpandObjects, just a specific EvaluateShellCommand that should only define a configuration variable
+		can be used directly as a REH (pre build) in specific rule:
+			Rule
+				Name => 'some_lib'.
+				Match ...
+				...
+				ExpandObject,
+				Build => "linker %DEPENDENCY_LIST_OBJECTS_EXPANDED"
+				EndRule
+
+			or as a REH global in the pbs run
+			
+			use 'Lib/ExpandObjects' ;
+			# which contains
+				Rule
+					Name => 'expand object'.
+					MatchAll,
+					ExpandObject,
+					EndRule
+
+			or use the top rule injection mechanism at the top and have the rule available everywhere
+			
+	FileWatchClient, REH CHECK
+		advantage, 
+			nodes checked individually, maybe some optimization can come from it
+				IE: node does not have to check itself if dependency has triggered already
+
+		disadvantage:
+			
+	GraphGeneration, rule matching top, or any node if sub graph is wanted
+	PackageVisualisation, rule matching all nodes
+	PostPbs, rule matching top node, what if build fails?, can we have nodes representing PBS steps?
+	SimplifyRule, a simplified, named, REH
+	TreeVisualisation, rule matching top or any node
+	Visualisation (-dc and other node visualisation switches), rule matching any node
+
+
+	making the plugin match nodes means that we can run some functionality at any level we want
+		IE: sub graph, sub tree, ....
+
+		timing REH
+			today we get timing for the whole build or a pbsfile run, we could get information
+			per node or sub system
+
+		most display options, especially if we have pbs, pbs step, config, ... nodes
+
+
+plugins cli switches handling
+	today:
+		so they are called, ie: --generate_tree_graph
+		so they get arguments, ie: --tree_graph_file xyz.png
+		so they get options , ie: -- tree_graph_no_configuration
+	
+	call plugins/plugin-directory like switches?
+
+	=> scan directory for switches?
+		call a registration sub, let it register itself, return registration data
+			cache the registration if libs are unchanged
+				could be useful to cache the rules
+					cache them in memory if server is used
+	
+	=> solution
+		remove possibility to set path in prf, instead have a pbs_set.prf, this removes the need
+		to run pbs.prf.
+		
+		pbs can scan the cli itself, as it already does, for cli path options
+
+		
+	defining "plugin" switches
+		plugins are replaced by pbsfiles, libs really), so any pbsfile can ad switches
+			the switches are scanned at start time, the pbsfile is loaded and registration
+			sub is called in the pbsfile, the registration sub is replaced by a NOP sub, or
+			a verification sub to catch non scan-registrated pbsfile which call the sub.
+
+		the pbsfiles that define switches need to be declared in pbs_set.prf
+			pbs can scan a single file, a directory, a directory with sub directories, use
+			regex to select or deselect specific files when scanning a directory
+
+		the options can take arguments, be called multiple times (array), ...
+
+		option definition contains a help text
+
+	user can define it's own switches via sub in a pbsfile (lib) where options are defined
+		define aliases for pbs switches, eg: for switches that do not have short versions or simpler names
+		switch grouping, eg: --debug for "-dd -dur -post_pbs ..."
+		alias for -D, eg: --user_defined 1 => goes into the config as -D special=1 would do
+			a nicer looking integration of the user's process
+
+	we can verify which user defined switch that was put on the command line was not used during the run
+		and warn user!
+
+	option can add target
+		also good for pbs so we can make some pbs options rules
+			-h, -v, -gtg, -tt, ...
+
+	user options can be cached so the pbsfiles defining them do not need to be reloaded
+		"generating user options cache ..." # no cache
+			--display_option_cach_generation
+				shows what files are scanned and what options are added
+
+			--no_user_option_override makes the optionsimmutable 
+
+		"" # silent if cache is valid
+		"regenerating user option cache", same options as above apply
+		
+help is a target
+	option -h still exists but it adds a target to the top pbs
+
+	let -h display user help rather than pbs help, user decides by renaming rules if they want
+
+	possibility to tailor the pbs help by removing or reordering entries which is not easy when the
+	help is part of PBS distribution.
+
+
+wizards are rules and started with targets
+	wizards target and normal target can be mixed, which is surprising and maybe should be warned for
+
+	wizards are still defined in the wizard directory for pbs but user wizards could be anywhere as long
+		as the rules are included in the pbsfile
+
+	option -w can add the targets
+
+keep a list of all the files loaded
+	libs, pbs modules, prf, plugins, ...
+
+	keep in warp file (today we have prf data entries but it's not set properly!)
+
+
+warp file is a pbs run file
+	it contains information about a build
+	some of the information is warp speedup information
+	warp 0 has a warp file
+
+
+if a hierarchical display is requested (IE pbs config for all pbs runs, config, ...)
+	display a delta between the level
+	if no delta, display changed values in different colors
+	if config is local, display it in special color
+
+	use two color scheme for levels
+		eg: level % 2 in green, level !% 2 in bright green or cyan ...
+		it's easy to miss the level change in large data amounts
+
+256 color mode if the terminal supports it
+	not 256 color but different colors for different elements, user defines colors sequences they want
+		we stop using Terminal::AnsiColor
+			or recognize "red on blue" otherwise use the user code
+
+Immutable rule set
+	pbsfiles that always generate the same rules 
+		no if-else or REH_IF used to decide which rules are added
+		they can use configuration variables in the builders
+
+	can be cached in memory
+		pbsuse should be faster
+		in server memory in between pbs tool runs
+
+	may be serialized in a more efficient format than the pbsfile
+
+	cache is invalidated when pbsfile is changed (clearly!)
+
+
+
 
