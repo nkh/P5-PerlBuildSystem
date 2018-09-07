@@ -1,12 +1,36 @@
 
+Warp verification message
+	display some statistics about the types of nodes in the cache in verification message
+	make display single line
+
+		Warp load time: 0.06 s.
+		Verifying warp: 3801 nodes ...
+		Warp verification time: 0.14 s.
+		Warp total time: 0.20 s.
+		Warp: Up to date.
+		Total time in PBS: 0.23 s.
+
+		Warp: UP TO DATE. 3801 nodes (1400s, 1600g, 801p), load: 0.06 s. verification: 0.14 s
+		Total time in PBS: 0.23 s.
+
+
+wrapper to check test result
+	AddRule :Name(test)
+		Is("any_command arg %arg", regex)	
+
+
+
 bash completion should be done by pbs as some options are loaded at run time
+	wrong, the options are loaded after the application is executed so we don't
+	know what will happend in the completion script if we do not run the current command line
+	which is prohibitive for completion purpose
 
-warp, on pbsfile different => need to rebuild
-	because warp doesn't have pbsfile-nodes dependency?
+warp, on pbsfile different => need to rebuild everything
+	because warp doesn't have pbsfile-nodes dependency? see mini warp
 
 
-Add a mode to depend as little as possible, IE no C dependencies, no  checking sub nodes if top node needs to be rebuild, ...
-	generate the dependency graph after building if the infomation is avilable
+Add a mode to depend as little as possible, IE no C dependencies cache, no checking sub nodes if top node needs to be rebuild, ...
+	generate the dependency graph after building if the information is available
 
 --no_warp creates warp file even if it doesn't use it
 
@@ -23,7 +47,37 @@ declare possible top target in pbsfile
 		1/ Target(something)
 		2/ Rule :NameMatch(/xxx/), :IsTarget ;
 
+pbs/subpbs return a miniwarp
+	there is no reason to give the top part of the graph to subnode 
+		linking to existing node?
+		better encapsulation of dub level
 
+	the pbs serialized the miniwarp
+		calling pbs can ask for a live sub graph
+
+	calling pbs has to link nodes if they exist in the graph
+		if same node and config
+			otherwise we have conflicting configs
+
+	create check file/build sequence at the same time as the creation of the mini warp
+		we can parallelize the check 
+		nodes in mini warp build sequence must be tagged if they are terminal
+			we don't need to compute it that in the parallelizer if it is already done
+
+	returning a warp file + check/build sequence means that we do not have to keep the live nodes 
+	in memory
+		NOTE: the build sequence is warp 1.8 first level dependencies, up to the calling pbs
+		
+		we can create w1.8 first level on the fly
+
+how do we detect circular dependencies if nodes are depended in different process each creating
+	a graph that is not circular
+	
+	we can run a check pass on the dry graph just for that, same as today but much lighter
+
+	we can merge the build sequence and if a node is present twice, we have a cyclic dependency
+
+	use tsort
 
 work out the user help vs the pbsfile help
 	=for PBS 
@@ -195,7 +249,7 @@ debugging
 		ca setup an environment specific to the node type
 
 		Rule
-			MATCH
+			MATCH_ALL
 			REH_ON_FAIL => \&setup debug environment
 
 Tmux test environment

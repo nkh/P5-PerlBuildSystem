@@ -23,7 +23,68 @@ multiple node@root
 
     the situation gets more complicated when the node linked to is not the target of a subpbs. a global build has visibility on all nodes in the graph, maybe something that should be limited, another mechanism is triggers which merged another build tree just for the sake of finding such nodes that are not targets. The trigger mechanism has the added advantage to be declarative.
 
-? shall all the nodes of a subpbs run be cached, that is a micro warp!
+? shall all the nodes of a subpbs run be cached (is MW)
+	MW is a package cache not a node cache
+		a different build may be able to reuse a node from MW if configuration is identical
+	
+	entry point in MW is not a node but a subpbs root
+		includes configuration
+
+	nodes may have use a configuration that is not the subpbs start config
+		modified at subpbs level
+		modified at node level
+
+	node cache, if implemented, could use MW as repository
+		we need to a lookup mechanism to find nodes in MW
+		we need to keep different MW for the same subpbs root
+			we can also keep a delta only
+
+			we need a decay policy 
+
+follow configuration, 'configure' configuration, through builds
+	queries to the build system
+	post pbs generates, on demand, list of
+		all configuration variables
+		all used configuration variables and where
+			display should be tree like (text, DHTML, R3)
+		all non used configuration variables
+		all modified configuration variables
+			with history
+
+	automatically generated (ie: configure) configurations of no interest can be flagged so they do
+	not appear in querires
+		warning is generated if config was used or modified
+
+	configuration can be used in the setup of files too
+		we need to follow effect of configuration on the choice of rules
+
+		Rule: IF_CONFIG => {...}, ...
+
+		if(Config(compiler)) {} else {}
+			difficult to track the effect in code but we can list where
+			the configuration was added
+
+	possibility to diff configuration usage between multiple builds (more than 2)
+		- difference in configuration
+		- common elements in configuration
+
+		generate intermediary result (eg: diff build A & B) that can be reused as
+		entry to another diff (eg: diff buid C & (diff build A & B))
+
+		the diff also contains where the configuration was created and modified
+
+possibility to builds (more than 2)
+	see 'possibility to diff configuration usage between multiple builds (more than 2)'
+
+	high level view
+		these "elements" are present in on build but not the other, where elements can be:
+			- files
+			- modules, whatever that would mean
+			- configuration variables
+			- rules
+			- ... 
+
+
 ? should it be only possible to build the target of a subpbs
     if not how do we point at the node to be build in a subpbs run (with specific config)
 

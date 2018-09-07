@@ -483,7 +483,7 @@ for my $source_name (@{[@_]})
 		
 	my $t0 = [gettimeofday];
 	
-	my $global_package_dependency = shift || 1 ; # if set, the use module becomes a dependency for all the package nodes
+	my $global_package_dependency = shift || 1 ; # if set, the used module becomes a dependency for all the package nodes
 	
 	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 	my $located_source_name ;
@@ -583,6 +583,7 @@ for my $source_name (@{[@_]})
 		$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{LOADS}++ ;
 		$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{TOTAL_TIME} += $pbsuse_time ;
 		$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_LOADS}++ ;
+		$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_TIME}+= $pbsuse_time ;
 		}
 	}
 }
