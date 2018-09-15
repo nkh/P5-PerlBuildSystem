@@ -359,11 +359,7 @@ my $node_verified = 0 ;
 my $node_existed = 0 ;
 for my $node (keys %$nodes)
 	{
-	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
-		{
-		PrintDebug "Warp checking: '$node'.\n" ;
-		}
-	else
+	unless ($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
 		{
 		PrintInfo "\r$node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 		}
@@ -397,6 +393,18 @@ for my $node (keys %$nodes)
 		
 	$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
 	
+	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
+		{
+		if ($remove_this_node)	
+			{
+			PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node\n") ;
+			}
+		else
+			{
+			PrintInfo "Warp Check: OK, $node\n" ;
+			}
+		}
+
 	if($remove_this_node) #and its dependents and its triggerer if any
 		{
 		my @nodes_to_remove = ($node) ;
@@ -407,10 +415,8 @@ for my $node (keys %$nodes)
 			
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
-				if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-					{
-					PrintDebug "Warp: Removing node '$node_to_remove'\n" ;
-					}
+				PrintDebug "Warp: Removing node '$node_to_remove'\n"
+					if($pbs_config->{DISPLAY_WARP_EMOVED_NODES}) ;	
 				
 				push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 				
@@ -427,10 +433,7 @@ for my $node (keys %$nodes)
 				$number_of_removed_nodes++ ;
 				}
 				
-			if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-				{
-				PrintDebug '-' x 30 . "\n" ;
-				}
+			PrintDebug "\n" if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	;
 				
 			@nodes_to_remove = @dependent_nodes ;
 			}
@@ -683,7 +686,22 @@ for my $node (keys %$inserted_nodes)
 		}
 	else
 		{
-		$nodes{$node}{__MD5} = 'not built yet' ; 
+		if ( ! PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$node}{__LOAD_PACKAGE}, $inserted_nodes->{$node}) )
+			{
+			if(defined (my $current_md5 = GetFileMD5($inserted_nodes->{$node}{__BUILD_NAME})))
+				{
+				$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} = $current_md5 ;
+				}
+			else
+				{
+				#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
+				$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} = 'Source file, not found!' ; 
+				}
+			}
+		else
+			{
+			$nodes{$node}{__MD5} = 'not built yet' ; 
+			}
 		}
 		
 	unless (exists $nodes_index{$node})

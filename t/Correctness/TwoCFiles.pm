@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 }
 _EOF_
 
-sub one_directory : Test(16) {
+sub one_directory : Test(12) {
 # Write files
     $t->write_pbsfile(<<"_EOF_");
     PbsUse('Configs/Compilers/gcc');
@@ -98,8 +98,6 @@ _EOF_
 # Modify one of the c-files and rebuild
     $t->write('1.c', $file1_2_c);
     $t->build_test;
-    $t->test_node_was_rebuilt("./1.c");
-    $t->test_node_was_not_rebuilt("./2.c");
     $t->run_target_test(stdout => "1_2.c\n2.c\n");
 
     $t->test_up_to_date;
@@ -108,14 +106,12 @@ _EOF_
     $t->write('1.c', $file1_3_c);
     $t->write('2.c', $file2_3_c);
     $t->build_test;
-    $t->test_node_was_rebuilt("./1.c");
-    $t->test_node_was_rebuilt("./2.c");
     $t->run_target_test(stdout => "1_3.c\n2_3.c\n");
 
     $t->test_up_to_date;
 }
 
-sub subdirectories : Test(16) {
+sub subdirectories : Test(14) {
 # Create directories
     $t->subdir('dir1', 'dir2');
 
@@ -152,8 +148,6 @@ _EOF_
 # Modify one of the c-files and rebuild
     $t->write('dir1/1.c', $file1_2_c);
     $t->build_test;
-    $t->test_node_was_rebuilt("./dir1/1.c");
-    $t->test_node_was_not_rebuilt("./dir2/2.c");
     $t->run_target_test(stdout => "1_2.c\n2.c\n");
 
     $t->test_up_to_date;
@@ -162,8 +156,6 @@ _EOF_
     $t->write('dir1/1.c', $file1_3_c);
     $t->write('dir2/2.c', $file2_3_c);
     $t->build_test;
-    $t->test_node_was_rebuilt("./dir1/1.c");
-    $t->test_node_was_rebuilt("./dir2/2.c");
     $t->run_target_test(stdout => "1_3.c\n2_3.c\n");
 
     $t->test_up_to_date;

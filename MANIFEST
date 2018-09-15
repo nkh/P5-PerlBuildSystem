@@ -154,8 +154,9 @@ PBSLib/Configs/ShellCommands.pm
 PBSLib/Configs/ConfigureProject.pm
 PBSLib/Configs/ConfigureProjectVariablesAndRules.pm
 
-PBSLib/Rules/C_depender.pm
 PBSLib/Rules/C.pm
+PBSLib/Rules/C_EvalShellCommand.pm
+PBSLib/Rules/Object_rules_utils.pm
 
 PBSLib/Language/Simplified.pm
 

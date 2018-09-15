@@ -90,17 +90,6 @@ PrintInfo("Processed $pbs_runs Pbsfile$plural.                \n");
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
 	PrintInfo(sprintf("Total dependency time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
-	
-	$PBS::C_DEPENDER::c_dependency_time ||= 0 ;
-	PrintInfo(sprintf("   C depender time: %0.2f s.\n", $PBS::C_DEPENDER::c_dependency_time)) ;
-
-	$PBS::C_DEPENDER::c_files ||= 0 ;
-	my $file_plural = '' ; $file_plural = 's' if $PBS::C_DEPENDER::c_files > 1 ;
-	
-	$PBS::C_DEPENDER::c_files_cached ||= 0 ;
-	my $cache_verb = 'was' ; $cache_verb = 'were' if $PBS::C_DEPENDER::c_files_cached > 1 ;
-	
-	PrintInfo("   C depender: $PBS::C_DEPENDER::c_files file$file_plural of which $PBS::C_DEPENDER::c_files_cached $cache_verb cached.\n") ;
 	}
 
 PrintInfo("\n** Checking **\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
@@ -243,8 +232,6 @@ DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_counter) ;
 		
 PrintInfo("Number of nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree nodes.\n") ;
 
-#~ PBS::Digest::FlushMd5Cache() ;
-
 my ($build_result, $build_message) ;
 
 if($pbs_config->{DO_BUILD})
@@ -272,10 +259,41 @@ else
 		if($debug_flag =~ /^DEBUG/ && defined $value)
 			{
 			PrintInfo("Debug flag '$debug_flag' is set. Use --fb to force build.\n") ;
-			last ;
 			}
 		}
 	}
+
+# run a global post build
+# this allows nodes to modify the dependency tree before warp
+# it was added to support c dependency scanning done by the compiler, in parallel
+# it's a test feature
+# it works because the dependency step is sequential and will break if dependency is done in parallel
+my $t0_pbs_post_build = [gettimeofday];
+my $post_build_commands = 0 ;
+
+for my $node (values %$inserted_nodes)
+	{
+	if
+		(
+		#__BUILD_DONE = node not triggered 
+		(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
+
+		&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
+		)
+		{
+		$post_build_commands++ ;
+
+		my $t0_pbs_post_build_command = [gettimeofday];
+		$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
+		my $time = sprintf("%0.2f s.", tv_interval ($t0_pbs_post_build_command, [gettimeofday])) ;
+		#my $time = '' ;
+		#PrintInfo2 "Ran PBS_POST_BUILD for $node->{__NAME} in $time\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+		}
+	}
+		
+PrintInfo(sprintf("Ran $post_build_commands PBS_POST_BUILD commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday])))
+	 if $post_build_commands ;
+;
 	
 RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;

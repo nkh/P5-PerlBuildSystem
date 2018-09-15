@@ -235,7 +235,7 @@ _EOF_
     $t->test_up_to_date;
 }
 
-sub two_c_files_two_include_files : Test(14) {
+sub two_c_files_two_include_files : Test(10) {
 # Write files
     $t->write_pbsfile(<<"_EOF_");
     PbsUse('Configs/Compilers/gcc');
@@ -275,8 +275,6 @@ _EOF_
 # Modify the first include file and rebuild
     $t->write('inc_a.h', $file_inc_a2_h);
     $t->build_test;
-    $t->test_node_was_rebuilt("./1.c");
-    $t->test_node_was_not_rebuilt("./2.c");
     $t->run_target_test(stdout => "inc_a2.h\ninc_b.h\n");
 
     $t->test_up_to_date;
@@ -284,8 +282,6 @@ _EOF_
 # Modify the other include file and rebuild
     $t->write('inc_b.h', $file_inc_b2_h);
     $t->build_test;
-    $t->test_node_was_not_rebuilt("./1.c");
-    $t->test_node_was_rebuilt("./2.c");
     $t->run_target_test(stdout => "inc_a2.h\ninc_b2.h\n");
 
     $t->test_up_to_date;

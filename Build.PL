@@ -111,8 +111,9 @@ PBSLib/Dependers/Matchers.pm
 PBSLib/Language/Simplified.pm
 
 PBSLib/Rules/C.pm
+PBSLib/Rules/Object_rules_utils.pm
+PBSLib/Rules/C_EvalShellCommand.pm
 PBSLib/Rules/C_DependAndBuild.pm
-PBSLib/Rules/C_depender.pm
 
 PBSLib/Rules/Compilers/cl.pm
 PBSLib/Rules/Compilers/compiler.pm
@@ -305,6 +306,7 @@ my $build = $class->new
 		'Term::Size::Any'     => '0',
 	        'Term::Bash::Completion::Generator' => 0,
 		'PadWalker' => '0',
+		'Sub::Identify' => 0,
 		'Net::SCP' => 0,
 		#GDBM::File' => 0 ,
 

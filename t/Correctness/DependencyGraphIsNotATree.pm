@@ -76,6 +76,10 @@ _EOF_
 
     # Build
     $t->build_test;
+
+# stop after the first build 
+#$t->generate_test_snapshot_and_exit('ADD_SNAPSHOT_NAME_EXTENSION_HERE') ;
+
     $t->run_target_test(stdout => "inc\n3.c\ninc\n2.c\n1.c\n");
 
     $t->test_up_to_date;

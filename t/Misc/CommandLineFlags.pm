@@ -45,6 +45,7 @@ _EOF_
 
     # Build
     $t->command_line_flags($t->command_line_flags . ' --a=file.in');
+#$t->generate_test_snapshot_and_exit('flag_a') ;
     $t->build_test();
 	my $stdout = $t->stdout;
 	like($stdout, qr|file\.in' ancestors.*file1\.immediate.*file\.target.*file2\.immediate.*file\.target|s, 'Correct output from build with ancestors');
@@ -111,7 +112,7 @@ else
 	}
 }
 
-sub flag_dd : Test(3) {
+sub flag_dd : Test(2) {
     # Write files
     $t->write_pbsfile(<<'_EOF_');
     ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
@@ -128,9 +129,6 @@ _EOF_
 	, qr|'\.\/file\.target' has dependencies \[\./file.in\], rule 1:target:\[B\]\[S\]|
 	, 'Correct dependency display');
 	
-    like($stdout
-	, qr|'\.\/file\.in' wasn't depended \(rules from '\.\/Pbsfile\.pl'\)\.|
-	, 'Correct no dependencies display');
 }
 
 sub flag_gtg : Test(2) {

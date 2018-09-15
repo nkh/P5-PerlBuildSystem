@@ -269,8 +269,21 @@ $depender_sub =
 		my ($dependent, $config, $tree, $inserted_nodes, $rule_definition) = @_ ;
 		
 		my ($dependencies, $builder_override) ;
+
+		my $node_name_matches_ddrr = 0 ;
+		if ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
+			{
+			for my $regex (@{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX}})
+				{
+				if($dependent =~ /$regex/)
+					{
+					$node_name_matches_ddrr = 1 ;
+					last ;
+					}
+				}
+			}
 		
-		if($dependent_matcher->($dependent, $config->{TARGET_PATH},  $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX}))
+		if($dependent_matcher->($dependent, $config->{TARGET_PATH}, $node_name_matches_ddrr))
 			{
 			for my $depender (@dependers)
 				{

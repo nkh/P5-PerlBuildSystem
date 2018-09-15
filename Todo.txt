@@ -1,7 +1,50 @@
 Perl Build System
 =================
 
+rename Object_utils to C_depender as the file name is displayed and could help understand the error
+
+
+new options:
+--files_triggered
+--files_triggered_only
+--files_triggered_reason
+
+example of output with options on
+	pbs -ho -o1 -o2
+
+	searches for examples with all switches
+	displays one or more examples 
+
+
+? status of all the warp tree display options implementation
+
+add: new c_depender test, statistics?
+
+prefix all warp message with Warp:
+
+error: node does not need rebuild but rebuilds!
+	t/two files
+
+error: gcc failure when -j aappears before repor by gcc. stderr not redirected
+
+eval { GenodeDigest } ; die @! , displays the line in the perl module although \n is present
+
+[SOURCE] instead for NoDigest
+	less typing
+	no need to know the API
+	regex (or single file) is already known
+	name is better when it is the name of the rule
+		in case multiplåe rules tag different  nodes as SOURCE
+
+[USER_TYPE]
+	annotation like types, just tags the rule
+	pbs keeps track of them
+	rule can extract all dependency nodes that have some USER_TYPE set
+	pbs can display them in -tt, maybe with an extra option
+
+
 Keep a list of triggered nodes and why, not an option, always do it.
+	do not override at each build, keep name in wrp and  alist of them in a separate out directory
 
 AddNodeFileDependency
 	the dependency must exist or it's MD5 can't be computed

@@ -4,7 +4,7 @@
 This modules overrides the way PBS generates dependencies to allow the generation
 of the object files while generating dependencies.
 
-This is usefull when compiling with Microsoft 'cl' which takes as much time to 
+This is useful when compiling with Microsoft 'cl' which takes as much time to 
 generated dependencies and object code as it takes to only generate dependencies.
 This effectively halves the build time with 'cl'.
 

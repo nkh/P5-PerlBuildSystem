@@ -10,6 +10,8 @@ This plugin handles the following PBS defined switches:
 
 =item --ttno
 
+=item --ttcl
+
 =back
 
 And add the following functionality:
@@ -32,6 +34,7 @@ use Data::TreeDumper ;
 
 my $no_header_files_display ;
 my @display_filter_regexes ;
+my $tree_color_levels ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -42,7 +45,12 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	
 	'tnonr=s',
 	\@display_filter_regexes ,
-	"removes files matching the passed regex from the tree dump.",
+	"Removes files matching the passed regex from the tree dump.",
+	'',
+
+	'ttcl',
+	\$tree_color_levels ,
+	"Color the tree glyphs per level.",
 	'',
 	) ;
 	
@@ -321,7 +329,15 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TEXT_TREE})
 			}
 		}
 			
-	PrintInfo DumpTree($tree_to_display, $dump_title, FILTER => $FilterDump) if defined $tree_to_display ;
+	my @extra_options ;
+
+	# colorize tree in blocks
+	use Term::ANSIColor qw(:constants) ;
+	my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
+	push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
+
+	PrintInfo DumpTree($tree_to_display, $dump_title, FILTER => $FilterDump, @extra_options) if defined $tree_to_display ;
+	print Term::ANSIColor::color('reset') ;
 	}
 }
 

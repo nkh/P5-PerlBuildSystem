@@ -18,6 +18,7 @@ our @EXPORT = qw(GenerateBuilder) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
+use Sub::Identify 'sub_name';
 
 use PBS::Shell ;
 use PBS::PBSConfig ;
@@ -208,11 +209,14 @@ my $display_command_information = @{$shell_commands} > 1 && $tree->{__PBS_CONFIG
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
 	$command_index++ ;
+	print "\n" if $command_index > 1 ;
+
 	my $command_information = "Running command $command_index of " . scalar(@$shell_commands)  ;
 	
 	if('CODE' eq ref $shell_command)
 		{
-		PrintInfo2 $command_information . " (perl sub)\n" if $display_command_information ;
+		my $perl_sub_name = sub_name($shell_command) ;
+		PrintInfo2 $command_information . " (perl sub $perl_sub_name )\n" if $display_command_information ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		

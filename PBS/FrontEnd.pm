@@ -244,13 +244,10 @@ if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 if($pbs_config->{DISPLAY_MD5_STATISTICS})
 	{
 	my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;
-	
+
 	PrintInfo "MD5 requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
-		. "("
-		. "cached requests: $md5_statistics->{CACHED_REQUESTS}"
-		.", non cached requests: $md5_statistics->{NON_CACHED_REQUESTS}" 
-		."), " 
-		. "cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%)\n" ;
+		. ", non cached: $md5_statistics->{NON_CACHED_REQUESTS} " 
+		. ", cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%), time: $md5_statistics->{MD5_TIME}\n" ;
 		
 	$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
 	}

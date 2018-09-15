@@ -248,6 +248,8 @@ else
 		}
 	}
 
+$pbs_config->{DISPLAY_WARP_CHECKED_NODESY}++ if $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+
 if(defined $pbs_config->{DISPLAY_PBS_TIME})
 	{
 	$pbs_config->{DISPLAY_PBS_TOTAL_TIME}++ ;
@@ -281,6 +283,7 @@ $pbs_config->{DEBUG_DISPLAY_RULES}++ if defined $pbs_config->{DEBUG_DISPLAY_RULE
 $pbs_config->{DISPLAY_USED_RULES}++ if defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY} ;
 	
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
+$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;
 
 if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
@@ -375,7 +378,6 @@ unless($pbs_config->{FORCE_BUILD})
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
 $pbs_config->{DISPLAY_FILE_LOCATION}++ if $pbs_config->{DISPLAY_ALL_FILE_LOCATION} ;
-$pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE}++ if defined $pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_NAME_ONLY} ;
 
 $Data::Dumper::Maxdepth = $pbs_config->{MAX_DEPTH} if defined $pbs_config->{MAX_DEPTH} ;
 $Data::Dumper::Indent   = $pbs_config->{INDENT_STYLE} if defined $pbs_config->{INDENT_STYLE} ;

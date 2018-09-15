@@ -148,13 +148,9 @@ if($run_in_warp_mode)
 	my $node_existed = 0 ;
 	for my $node (keys %$nodes)
 		{
-		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
+		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
 			{
-			PrintDebug "Warp checking: '$node'.\n" ;
-			}
-		else
-			{
-			PrintInfo "\r$node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
+			PrintInfo "\rwarp: verified nodes: $node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 			}
 			
 		$node_verified++ ;
@@ -186,6 +182,18 @@ if($run_in_warp_mode)
 			
 		$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
 		
+		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
+			{
+			if ($remove_this_node)	
+				{
+				PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node\n") ;
+				}
+			else
+				{
+				PrintInfo("Warp Check: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+				}
+			}
+
 		if($remove_this_node) #and its dependents and its triggerer if any
 			{
 			my @nodes_to_remove = ($node) ;
@@ -196,10 +204,8 @@ if($run_in_warp_mode)
 				
 				for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 					{
-					if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-						{
-						PrintDebug "Warp: Removing node '$node_to_remove'\n" ;
-						}
+					PrintDebug "Warp: Removing subtree node '$node_to_remove'\n"
+						if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 					
 					push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 					
@@ -216,10 +222,7 @@ if($run_in_warp_mode)
 					$number_of_removed_nodes++ ;
 					}
 					
-				if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-					{
-					PrintDebug '-' x 30 . "\n" ;
-					}
+				PrintDebug "\n" if($pbs_config->{DISPLAY_WARP_REMOVED_NODES})	;
 					
 				@nodes_to_remove = @dependent_nodes ;
 				}
@@ -360,7 +363,7 @@ if($run_in_warp_mode)
 else
 	{
 	#eurk hack we could dispense with!
-	# this is not needed but the subpses are travesed an extra time
+	# this is not needed but the subpses are traversed an extra time
 	
 	my ($dependency_tree_snapshot, $inserted_nodes_snapshot) ;
 	
@@ -378,6 +381,8 @@ else
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
+			undef, # warp config
+			' [pre- build]',
 			) ;
 		} ;
 		
@@ -440,11 +445,12 @@ sub GenerateWarpFile
 # indexing the node name  saves another 10% in size
 # indexing the location name saves another 10% in size
 
-my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration) = @_ ;
+my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration, $warp_message) = @_ ;
+$warp_message //='' ;
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("Generating warp file.                   \n") ;
+PrintInfo("Generating warp file$warp_message.                   \n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -470,12 +476,7 @@ print WARP PBS::Log::GetHeader('Warp', $pbs_config) ;
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = 
-	sub
-	{
-	my $hash = shift ;
-	return [sort keys %{$hash}] ;
-	} ;
+local $Data::Dumper::Sortkeys = 1 ; 
 
 #~ print WARP Data::Dumper->Dump([$warp_signature_source], ['warp_signature_source']) ;
 
@@ -526,7 +527,6 @@ my (@insertion_file_names, %insertion_file_index) ;
 for my $node (keys %$inserted_nodes)
 	{
 	# this doesn't work with LOCAL_NODES
-	
 	if(exists $inserted_nodes->{$node}{__VIRTUAL})
 		{
 		$nodes{$node}{__VIRTUAL} = 1 ;
@@ -581,7 +581,7 @@ for my $node (keys %$inserted_nodes)
 	if
 		(
 		   $inserted_nodes->{$node}{__PBS_CONFIG}{BUILD_DIRECTORY}  ne $global_pbs_config->{BUILD_DIRECTORY}
-		|| !Compare($inserted_nodes->{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES}, $global_pbs_config->{SOURCE_DIRECTORIES})
+		|| ! Compare($inserted_nodes->{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES}, $global_pbs_config->{SOURCE_DIRECTORIES})
 		)
 		{
 		$nodes{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} = $inserted_nodes->{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} ;
@@ -590,6 +590,7 @@ for my $node (keys %$inserted_nodes)
 		
 	if(exists $inserted_nodes->{$node}{__BUILD_DONE})
 		{
+		# build done, can also be a node that did not trigger, up to date
 		if(exists $inserted_nodes->{$node}{__VIRTUAL})
 			{
 			$nodes{$node}{__MD5} = 'VIRTUAL' ;
@@ -611,7 +612,7 @@ for my $node (keys %$inserted_nodes)
 						}
 					else
 						{
-						die ERROR("Can't open '$node' to compute MD5 digest: $!") ;
+						die ERROR("Can't open '$node' to compute MD5 digest (old node/built/not_found): $!") ;
 						}
 					}
 				}

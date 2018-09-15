@@ -58,32 +58,27 @@ my %force_digest ;
 
 my %md5_cache ;
 my $cache_hits = 0 ;
-my $md5_request = 0 ;
+my $md5_requests = 0 ;
 my $md5_time = 0 ;
 my $non_cached_md5_request = 0 ;
 
 sub Get_MD5_Statistics
 {
-my $total_md5_requests = $non_cached_md5_request + $md5_request ;
 my $md5_cache_hit_ratio = 'N/A' ;
-my $cache_misses = 'N/A' ;
 
-if($total_md5_requests)
+if($md5_requests)
 	{
-	$cache_misses = $total_md5_requests - $cache_hits  ;
-	$md5_cache_hit_ratio = int(($cache_hits * 100) / $total_md5_requests) ;
+	$md5_cache_hit_ratio = int(($cache_hits * 100) / $md5_requests) ;
 	}
 	
 return
-	({
-	TOTAL_MD5_REQUESTS  => $total_md5_requests,
-	CACHED_REQUESTS     => $md5_request,
+	{
+	TOTAL_MD5_REQUESTS  => $md5_requests,
 	NON_CACHED_REQUESTS => $non_cached_md5_request,
-	CACHE_MISSES        => $cache_misses,
 	CACHE_HITS          => $cache_hits,
 	MD5_CACHE_HIT_RATIO => $md5_cache_hit_ratio,
 	MD5_TIME            => $md5_time,
-	});
+	} ;
 }
 
 sub FlushMd5Cache
@@ -102,46 +97,15 @@ else
 
 #-------------------------------------------------------------------------------
 
-sub GetCachedFileMD5
-{
-my $file = shift or carp ERROR "GetCachedFileMD5: Called without argument!\n" ;
-
-$md5_request++ ;
-my $t0_md5 = [gettimeofday] ;
-
-my $md5 ;
-if(exists $md5_cache{$file})
-	{
-	$md5 = $md5_cache{$file}  ;
-	$cache_hits++ ;
-	}
-else
-	{
-	if(defined ($md5 = NonCached_GetFileMD5($file)))
-		{
-		$md5_cache{$file} = $md5 ;
-		}
-	else
-		{
-		die croak ERROR("Can't open '$file' to compute MD5 digest: $!") ;
-		}
-	}
-	
-$md5_time += tv_interval($t0_md5, [gettimeofday]) ;
-
-return($md5) ;
-}
-
-#-------------------------------------------------------------------------------
-
 sub GetFileMD5
 {
 #  this one caching too.
 my $file = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
-my $md5 ;
+my $md5 = 'invalid md5' ;
 
-$non_cached_md5_request++ ;
+my $t0_md5 = [gettimeofday] ;
 
+$md5_requests++ ;
 if(exists $md5_cache{$file})
 	{
 	$md5 = $md5_cache{$file}  ;
@@ -157,20 +121,12 @@ else
 		}
 	}
 
+$md5_time += tv_interval($t0_md5, [gettimeofday]) ;
 return($md5) ;
 }
 
 #-------------------------------------------------------------------------------
 # non cached MD5 functions
-#-------------------------------------------------------------------------------
-
-sub XXXGetFileMD5
-{
-my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
-
-return(NonCached_GetFileMD5($file_name)) ;
-}
-
 #-------------------------------------------------------------------------------
 
 sub CheckFilesMD5
@@ -204,6 +160,8 @@ return(1) ; # all files ok.
 
 sub NonCached_GetFileMD5
 {
+
+$non_cached_md5_request++ ;
 
 if($ENV{PBS_USE_XX_HASH})
 	{
@@ -315,7 +273,7 @@ for (@files)
 		$file_name = "__PBSFILE" ;
 		s/^PBSFILE:// ;
 		
-		my $file_md5 = GetCachedFileMD5($_) ;
+		my $file_md5 = GetFileMD5($_) ;
 		
 		# warp need this data to find out if it's been made invalid by aPbs filechange
 		$package_dependencies{__PBS_WARP_DATA}{$_} = $file_md5 ;
@@ -324,7 +282,7 @@ for (@files)
 		{
 		$file_name = "__FILE:$file_name" ;
 		
-		$package_dependencies{$package}{$file_name} = GetCachedFileMD5($_) ;
+		$package_dependencies{$package}{$file_name} = GetFileMD5($_) ;
 		}
 	}
 }
@@ -339,7 +297,7 @@ my $package = caller() ;
 
 $lib_name = "__PBS_LIB_PATH/$lib_name" ;
 
-$package_dependencies{$package}{$lib_name} = GetCachedFileMD5($file_name) ;
+$package_dependencies{$package}{$lib_name} = GetFileMD5($file_name) ;
 
 # warp need this data to find out if it's been made invalid by aPbsfile change
 $package_dependencies{__PBS_WARP_DATA}{$file_name} = $package_dependencies{$package}{$lib_name} ;
@@ -464,7 +422,6 @@ for (@{$node_digest_rules{$node_package}})
 	
 if(exists $node_config_variable_dependencies{$node_package})
 	{
-	
 	for (@{$node_config_variable_dependencies{$node_package}})
 		{
 		if($node->{__NAME} =~ $_->{REGEX})
@@ -488,7 +445,7 @@ for(@node_children)
 		}
 	else
 		{
-		$node_dependencies{$_} = GetCachedFileMD5($node->{$_}{__BUILD_NAME}) ;
+		$node_dependencies{$_} = GetFileMD5($node->{$_}{__BUILD_NAME}) ;
 		}
 	}
 
@@ -506,7 +463,7 @@ my $package = caller() ;
 
 for my $file_name (@files)
 	{
-	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_FILE:$file_name", VALUE => GetCachedFileMD5($file_name)} ;
+	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_FILE:$file_name", VALUE => GetFileMD5($file_name)} ;
 	}
 }
 
@@ -804,7 +761,7 @@ if(IsDigestToBeGenerated($package, $node))
 					
 			if($digest_is_different)
 				{
-				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, "Difference in digest: $why", $digest_is_different) ;
+				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, $why, $digest_is_different) ;
 				}
 			}
 		else
@@ -839,21 +796,16 @@ if(defined (my $current_md5 = GetFileMD5($file)))
 	{
 	unless($current_md5 eq $md5)
 		{
-		if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-			{
-			PrintDebug "\nWarp: '$file' MD5 mismatch\n" ;
-			}
+		PrintDebug "\nCheck: MD5 got '$current_md5', expected '$md5' for '$file'\n"
+			if $pbs_config->{DISPLAY_FILE_CHECK} ;
 			
 		$file_is_modified++ ;
 		}
 	}
 else
 	{
-	if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
-		{
-		PrintDebug "\nWarp: '$file' No such file $@\n" ;
-		}
-		
+	PrintDebug "\nCheck: $@, no file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
+	
 	$file_is_modified++ ;
 	}
 
@@ -913,7 +865,7 @@ my @digest_different_text ;
 
 if($digest_is_different)
 	{
-	PrintInfo("Digests in file $name is different [$digest_is_different]:\n") if($display_digest) ;
+	PrintInfo("Digests for file $name are different [$digest_is_different]:\n") if($display_digest) ;
 	
 	#~PrintInfo(Data::Dumper->Dump($digest, "digest:\n")) ;
 	#~PrintInfo(Data::Dumper->Dump($expected_digest, "expected_digest:\n")) ;
@@ -922,7 +874,7 @@ if($digest_is_different)
 		{
 		my $digest_value = $digest->{$key} || 'undef' ;
 		
-		my $only_in_file_digest_text = "key '$key' exists only in file digest" ;
+		my $only_in_file_digest_text = "key '$key' exists only in old digest" ;
 		push @digest_different_text, $only_in_file_digest_text ;
 		
 		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
@@ -953,13 +905,13 @@ if($digest_is_different)
 	}
 else
 	{
-	my $digest_is_identical = "Digest in file '$name' is identical" ;
+	my $digest_is_identical = "Digest for file '$name' is identical" ;
 	push @digest_different_text, $digest_is_identical ;
 	
 	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
 	}
 
-return($digest_is_different, join(', ', @digest_different_text) );
+return($digest_is_different, \@digest_different_text );
 }
 
 #-------------------------------------------------------------------------------
@@ -1120,10 +1072,10 @@ PrintDebug "$node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $n
 return
 	{
 	%{GetPackageDigest($package)},
-	#TODO map {$_ => GetCachedFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
+	#TODO map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
 	# TODO: depend on pbs install
 	%{GetNodeDigest($node)},
-	$node->{__NAME} => GetCachedFileMD5($node->{__BUILD_NAME}),
+	$node->{__NAME} => GetFileMD5($node->{__BUILD_NAME}),
 	__DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE},
 	} ;
 }
@@ -1139,10 +1091,10 @@ if($create_path)
 	my ($basename, $path, $ext) = File::Basename::fileparse($digest_file_name, ('\..*')) ;
 	
 	use File::Path ;
-	mkpath($path) unless(-e $path) ;
+	mkpath($path) # unless(-e $path) ;
 	}
 	
-open NODE_DIGEST, ">", $digest_file_name  or die ERROR("Can't open '$digest_file_name' for writting: $!\n") ;
+open NODE_DIGEST, ">", $digest_file_name  or die ERROR("Can't open '$digest_file_name' for writting: $!") . "\n" ;
 
 use POSIX qw(strftime);
 my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime;
@@ -1165,6 +1117,8 @@ $caller_information
 EOH
 
 print NODE_DIGEST "$caller_data\n" if defined $caller_data ;
+
+#$Data::Dumper::Sortkeys = 1;
 
 print NODE_DIGEST Data::Dumper->Dump([$digest], ['digest']) ;
 close(NODE_DIGEST) ;

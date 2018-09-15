@@ -521,6 +521,10 @@ EOT
 		'Display the post build commands for each node.',
 		'',
 
+	'ppbc|pbs_build_post_build_commands'  => \$pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS},
+		'Display the Pbs build post build commands.',
+		'',
+
 	'nil|node_information_located'  => \$pbs_config->{DISPLAY_NODE_INFO_LOCATED},
 		'Display node information located in addition to relative node name.',
 		'',
@@ -802,7 +806,7 @@ EOT
 		'Display the command and output of the program generating dependencies.',
 		'',
 		
-	'ddr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX},
+	'ddrr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX},
 		'Define the regex used to qualify a dependency for display.',
 		'',
 		
@@ -814,7 +818,7 @@ EOT
 		'Display the definition of the rule that generates a dependency.',
 		'',
 		
-	'display_dependency_regex'        => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX},
+	'ddr|display_dependency_regex'        => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX},
 		'(DF) Display the regex used to depend a node.',
 		'',
 		
@@ -836,6 +840,10 @@ EOT
 		
 	'dddo|display_different_digest_only'   => \$pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
 		'Only display when a digest are diffrent.',
+		'',
+		
+	'dfc|display_file_check'   => \$pbs_config->{DISPLAY_FILE_CHECK},
+		'Display hash checking for individual files.',
 		'',
 		
 	'display_cyclic_tree'             => \$pbs_config->{DEBUG_DISPLAY_CYCLIC_TREE},
@@ -1007,10 +1015,6 @@ EOT
 		'(DF) lists the nodes to be build.',
 		'',
 		
-	'dbsno|display_build_sequence_name_only' => \$pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_NAME_ONLY},
-		'(DF) Displays the node_names for the build sequence.',
-		'',
-
 	#----------------------------------------------------------------------------------
 	'files'                         => \$pbs_config->{DISPLAY_ALL_FILE_LOCATION},
 		'Show all the files in the dependency tree and their final location.',
@@ -1134,12 +1138,21 @@ EOT
 		'',
 		
 	'display_warp_checked_nodes'  => \$pbs_config->{DISPLAY_WARP_CHECKED_NODES},
-		"Display which nodes are contained in the warp tree.",
+		"Display which nodes are contained in the warp tree and their status.",
+		'',
+			
+	'display_warp_checked_nodes_fail_only'  => \$pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY},
+		"Display which nodes, in the warp tree, has a different MD5.",
+		'',
+			
+	'display_warp_removed_nodes'  => \$pbs_config->{DISPLAY_WARP_REMOVED_NODES},
+		"Display which nodes are removed during warp.",
 		'',
 			
 	'display_warp_triggered_nodes'  => \$pbs_config->{DISPLAY_WARP_TRIGGERED_NODES},
 		"Display which nodes are removed from the warp tree and why.",
 		'',
+
 	#----------------------------------------------------------------------------------
 	
 	'post_pbs=s'                        => $pbs_config->{POST_PBS},

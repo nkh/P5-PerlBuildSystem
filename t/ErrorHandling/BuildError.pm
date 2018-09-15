@@ -77,7 +77,6 @@ _EOF_
 # Build again
 	$t->build_test();
     $t->test_node_was_not_rebuilt("./2.c");
-    $t->test_node_was_rebuilt("./main.c");
     $t->run_target_test(stdout => "2.c\n");
 
     $t->test_up_to_date;

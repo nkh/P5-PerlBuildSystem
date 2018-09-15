@@ -132,12 +132,12 @@ return if(exists $tree->{__DEPENDED}) ;
 
 my $node_name = $tree->{__NAME} ;
 
-my $node_name_matches_ddr = 0 ;
+my $node_name_matches_ddrr = 0 ;
 for my $regex (@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	{
 	if($node_name =~ /$regex/)
 		{
-		$node_name_matches_ddr = 1 ;
+		$node_name_matches_ddrr = 1 ;
 		last ;
 		}
 	}
@@ -283,7 +283,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				RULE   => $dependency_rules->[$rule_index],
 				} ;
 			
-			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
+			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
 				PrintInfo("[$PBS::Output::indentation_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
 				}
@@ -347,11 +347,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		#----------------------------------------------------------------------------
 		# display the dependencies inserted by current rule
 		#----------------------------------------------------------------------------
-		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
+		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 			{
-			$node_name_matches_ddr = 0 if ($node_name =~ /^__/) ;
+			$node_name_matches_ddrr = 0 if ($node_name =~ /^__/) ;
 			
-			if($node_name_matches_ddr)
+			if($node_name_matches_ddrr)
 				{
 				my $node_type = '' ;
 				for my $type (VIRTUAL, LOCAL, FORCED)
@@ -991,7 +991,7 @@ else
 		next if $node_name =~ /^__/ ;
 		my $dependency_info = '' ;
 
-		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
+		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 			{
 			if(PBS::Digest::IsDigestToBeGenerated($load_package, $tree))
 				{

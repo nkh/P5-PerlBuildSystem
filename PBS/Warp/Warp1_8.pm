@@ -18,7 +18,6 @@ our $VERSION = '0.04' ;
 #-------------------------------------------------------------------------------
 
 use PBS::Output ;
-#~ use PBS::Log ;
 use PBS::Digest ;
 use PBS::Constants ;
 use PBS::Plugin;
@@ -27,7 +26,6 @@ use PBS::Warp;
 use Cwd ;
 use File::Path;
 use Data::Dumper ;
-#~ use Data::Compare ;
 use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
@@ -174,7 +172,7 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 		my $inserted_nodes = shift ;
 		
 		($dependency_tree_snapshot, $inserted_nodes_snapshot) = ($dependency_tree, $inserted_nodes) ;
-		
+	
 		GenerateWarpFile
 			(
 			$targets,
@@ -313,7 +311,7 @@ for my $node_name (keys %$inserted_nodes)
 						}
 					else
 						{
-						die ERROR("Can't open '$node_name' to compute MD5 digest: $!") ;
+						die ERROR("Can't open '$node_name' to compute MD5 digest: $!") , "\n" ;
 						}
 					}
 				}
@@ -326,7 +324,22 @@ for my $node_name (keys %$inserted_nodes)
 		}
 	else
 		{
-		$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'not built yet'} ; 
+		if ( ! PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node) )
+			{
+			if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
+				{
+				$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => $current_md5} ; 
+				}
+			else
+				{
+				#PrintError("Can't open '$node_name' to compute MD5 digest: $!\n") ;
+				$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'Source file, not found!'} ; 
+				}
+			}
+		else
+			{
+			$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'not built yet'} ; 
+			}
 		}
 		
 	if(exists $node->{__FORCED})
@@ -479,15 +492,15 @@ for my $node_name (keys %$node_md5s)
 			)
 		)
 		{
-	        PrintDebug "Warp checking: '$node_name'.\n" if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
+	        PrintInfo "Warp checking: OK $node_name\n" if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
 		}
 	else
 		{
+		PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node_name\n") if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
+
 		$nodes_not_matching{$node_name}++ ;
 		$nodes_removed{$node_name}++ ;
 		delete $nodes->{$node_name} ;
-		
-		PrintDebug "Warp checking: '$node_name', MD5 missmatch.\n" if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
 		}
 	}
 

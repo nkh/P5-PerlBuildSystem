@@ -10,7 +10,7 @@
 
 =cut
 
-PbsUse('Configs/gcc') ;
+PbsUse('Configs/Compilers/gcc') ;
 ExcludeFromDigestGeneration( 'aa_file' => qr/^.*\/aa$/) ;
 
 AddRule [VIRTUAL], 'all',  ['all' => 'a'], BuildOk("done") ;

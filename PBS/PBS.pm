@@ -674,7 +674,7 @@ if($@)
 	
 $type .= ': ' unless $type eq '' ;
 
-if((!defined $result) && ($result != 1))
+if((!defined $result) || ($result != 1))
 	{
 	$result ||= 'undef' ;
 	die "$type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;

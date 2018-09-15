@@ -536,7 +536,7 @@ else
 		}
 	else
 		{
-		$tree->{__BUILD_DONE} = "node was up to date" ;
+		$tree->{__BUILD_DONE} = "node not triggered" ;
 		}
 	}
 	

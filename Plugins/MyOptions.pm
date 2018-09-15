@@ -61,4 +61,7 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	'',
 	) ;
 EOF
+
+
+1 ;
 	

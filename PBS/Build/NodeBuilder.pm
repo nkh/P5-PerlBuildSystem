@@ -100,7 +100,6 @@ for my $triggered_dependency (@$triggered_dependencies)
 		}
 	}
 	
-
 if($rebuild)
 	{
 	# build normally
@@ -133,7 +132,18 @@ else
 			}
 		else
 			{
-			die ERROR("Can't open '$node->{__BUILD_NAME}' to compute MD5 digest: $!") ;
+			if ( ! PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node) )
+				{
+				if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
+					{
+					$node->{__MD5} = $current_md5 ;
+					}
+				else
+					{
+					#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
+					$node->{__MD5} = 'Source file, not found!' ; 
+					}
+				}
 			}
 		}
 	}
@@ -434,6 +444,7 @@ eval # rules might throw an exception
 						$triggered_dependencies,
 						$file_tree,
 						$inserted_nodes,
+						$rule_used_to_build,
 						) ;
 						
 	unless(defined $build_result || $build_result == BUILD_SUCCESS || $build_result == BUILD_FAILED)
