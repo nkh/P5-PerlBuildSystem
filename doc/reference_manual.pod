@@ -14,7 +14,6 @@ DOCUMENTATION
 		
 		Rules
 			perl code vs make like
-			meta rules
 			post depend 
 				what are they good for
 				warning about not using them too much
@@ -435,18 +434,6 @@ are used on file I<compress.c>, the dependers would generate the following depen
 
 I<gmake> is IMO too magical in its way of handling your rules. I don't mean it is wrong but that it simply doesn't fit the I<pbs> way of 
 generating dependencies.
-
-=head3 META_RULE
-
-	EX:
-	AddRuleTo 'BuiltIn', 'o_c', ['*.o' => '*.c'] ;
-	AddRuleTo 'BuiltIn', 'o_s', ['*.o' => '*.s'] ;
-	
-	AddRuleTo 'BuiltIn', [META_RULE], 'o_meta', ['o_c', 'o_s'], \&FirstAndOnlyOneOnDisk ;
-
-When you define the above 'o_meta' rule, B<PBS> removes rule 'o_c' and rule 'o_s' from it's rule list (in the current
-package only). I<FirstAndOnlyOneOnDisk> will be called with a reference to the slaves rules as arguments. This allows you 
-to define your own 'magic'. I<FirstAndOnlyOneOnDisk> source code can be found in the distribution.
 
 =head3 Cyclic dependencies
 

@@ -595,7 +595,7 @@ unless(file_name_is_absolute($file))
 		if($display_search_info)
 			{
 			PrintInfo("   in build directory '$build_directory': ") ;
-			PrintError("not found.\n", 0) if $display_search_info ;
+			PrintError("not found.\n") ;
 			}
 		}
 		
@@ -619,12 +619,12 @@ unless(file_name_is_absolute($file))
 					
 					if($file_found)
 						{
-						PrintWarning("NOT USED. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n", 0) if $display_search_info ;
+						PrintWarning("NOT USED. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n") if $display_search_info ;
 						}
 					else
 						{
 						$file_found++ ;
-						PrintInfo("Relocated. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n", 0) if $display_search_info ;
+						PrintInfo("Relocated. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n") if $display_search_info ;
 						$located_file = $searched_file ;
 						$alternative_source++ ;
 						last unless $display_all_alternates ;
@@ -632,12 +632,12 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					PrintError("not found.\n", 0) if $display_search_info ;
+					PrintError("not found.\n") if $display_search_info ;
 					}
 				}
 			else
 				{
-				die "unimplemented!" ;
+				die "Search path sub is unimplemented!" ;
 				}
 			}
 		}

@@ -100,6 +100,8 @@ sub use_dependency_cache : Test(4) {
 		^(\QC_depender: checking '\E.*\Q/2.c' dependencies.\E)\n
 		^(\QProcessed 1 Pbsfile.\E)
 		|mx, 'The dependency caches are up to date');
+
+#$t->generate_test_snapshot_and_exit('dependency_cache') ;
 }
 
 sub use_unsynchronized_cache : Test(10) {

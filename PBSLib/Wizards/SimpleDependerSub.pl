@@ -49,12 +49,6 @@ unshift @my_dependencies, $triggered ;
 return(\@my_dependencies, $builder_override) ;
 }
 
-#
-# since version 0.28_10, $builder overrides are complete rule defintions
-# meta rules are already handled properly as they return the slave rule that matched
-# if you want to override a builder, check the documentation properly
-#
-
 EOP
 
 

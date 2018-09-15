@@ -79,7 +79,6 @@ else
 	}
 
 my $builder_uses_perl_sub ;
-# we must mark the rule as meta rules shall not be marked as builders using sub if the used slave rule doesn't use a sub!
 
 for (@$shell_commands)
 	{

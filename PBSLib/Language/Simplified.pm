@@ -10,7 +10,6 @@ use File::Spec ;
 # this module overrides the build in AddRule (and al.) to allow us to define with a simpler regex
 # than perl regex.
 #
-# it matches rules that are not meta builder and that have a simple text definition for the dependent
 # it otherwise passes its arguments to PBS::AddRule
 
 # '*' will be replaced by './.*' on the dependent side
@@ -130,9 +129,7 @@ my $location = "#line $line '$file_name" ;
 
 my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @_) ;
 
-my $is_meta_rule = grep{ $_ eq META_RULE } @$types ;
-
-if('' eq ref $dependent and !$is_meta_rule)
+if('' eq ref $dependent)
 	{
 	# compute new arguments to Addrule
 	my 
@@ -249,11 +246,9 @@ else
 		}
 	}
 
-my $is_meta_rule = grep{ $_ eq META_RULE } @$rule_type ;
-
 (my $depender_and_dependencies, $builder, $node_subs) = @rule_definition ;
 
-if('ARRAY' eq ref $depender_and_dependencies and !$is_meta_rule)
+if('ARRAY' eq ref $depender_and_dependencies)
 	{
 	($dependent, my @dependencies) = @$depender_and_dependencies ;
 	

@@ -101,6 +101,7 @@ _EOF_
     $t->write('file.in', 'file2 contents');
     $t->build_test();
     $t->test_target_contents('file2 contents');
+#$t->generate_test_snapshot_and_exit('dependency_cache') ;
 }
 
 sub add_switch_dependencies : Test(12) {

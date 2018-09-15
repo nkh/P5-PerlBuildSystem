@@ -67,7 +67,6 @@ PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
 PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
-PBS/Rules/Metarules.pm
 PBS/PostBuild.pm
 PBS/Shell.pm
 PBS/Shell/SSH.pm
@@ -157,8 +156,6 @@ PBSLib/Configs/ConfigureProjectVariablesAndRules.pm
 
 PBSLib/Rules/C_depender.pm
 PBSLib/Rules/C.pm
-
-PBSLib/MetaRules/FirstAndOnlyOneOnDisk.pm
 
 PBSLib/Language/Simplified.pm
 

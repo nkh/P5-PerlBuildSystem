@@ -42,7 +42,6 @@ PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
 PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
-PBS/Rules/Metarules.pm
 PBS/Triggers.pm
 PBS/PostBuild.pm
 PBS/Shell.pm
@@ -110,8 +109,6 @@ PBSLib/Dependers/Locator.pm
 PBSLib/Dependers/Matchers.pm
 
 PBSLib/Language/Simplified.pm
-
-PBSLib/MetaRules/FirstAndOnlyOneOnDisk.pm
 
 PBSLib/Rules/C.pm
 PBSLib/Rules/C_DependAndBuild.pm

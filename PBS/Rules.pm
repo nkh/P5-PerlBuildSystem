@@ -77,17 +77,14 @@ for my $rules_namespace (@rules_namespaces)
 		{
 		for my $rule (@{$rules->{$rules_namespace}})
 			{
-			my ($post_depend, $meta_slave, $creator) ;
+			my ($post_depend, $creator) ;
 			
 			for my $rule_type (@{$rule->{TYPE}})
 				{
 				$post_depend++ if $rule_type eq POST_DEPEND ;
-				$meta_slave++ if $rule_type eq META_SLAVE ;
 				$creator++ if $rule_type eq CREATOR ;
 				}
 				
-			next if($meta_slave) ;
-			
 			if($creator)
 				{
 				push @creator_rules, $rule ;
@@ -483,7 +480,6 @@ if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	{
 	my $class_info = "[$class" ;
 	$class_info .= ' (POST_DEPEND)' if $rule_type{__POST_DEPEND} ;
-	$class_info .= ' (META_SLAVE)'  if $rule_type{__META_SLAVE} ;
 	$class_info .= ' (CREATOR)'     if $rule_type{__CREATOR};
 	$class_info .= ']' ;
 		

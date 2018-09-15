@@ -145,9 +145,7 @@ PrintDebug DumpTree(\@_, "Plugin AddRule") if $display_simplified_rule_transform
 
 my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @$rule_definition) ;
 
-my $is_meta_rule = grep{ $_ eq META_RULE } @$types ;
-
-if(defined $dependent && '' eq ref $dependent && !$is_meta_rule)
+if(defined $dependent && '' eq ref $dependent)
 	{
 	# compute new arguments to Addrule
 	my 
@@ -244,11 +242,10 @@ else
 		}
 	}
 
-my $is_meta_rule = grep{ $_ eq META_RULE } @$rule_type ;
 
 (my $depender_and_dependencies, $builder, $node_subs) = @rule_definition ;
 
-if('ARRAY' eq ref $depender_and_dependencies and !$is_meta_rule)
+if('ARRAY' eq ref $depender_and_dependencies)
 	{
 	($dependent, my @dependencies) = @$depender_and_dependencies ;
 	

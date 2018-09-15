@@ -32,16 +32,12 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		FORCED
 		POST_DEPEND
 		CREATOR
-		META_RULE
-		META_SLAVE
 		IMMEDIATE_BUILD
 		untyped
 		virtual
 		forced
 		post_depend
 		creator
-		meta_rule
-		meta_slave
 		immediate_build
 		
 		BUILD_SUCCESS
@@ -93,10 +89,6 @@ use constant CREATOR            => '__CREATOR' ;
 use constant creator            => '__CREATOR' ;
 use constant POST_DEPEND        => '__POST_DEPEND' ;
 use constant post_depend        => '__POST_DEPEND' ;
-use constant META_RULE          => '__META_RULE' ;
-use constant meta_rule          => '__META_RULE' ;
-use constant META_SLAVE         => '__META_SLAVE' ;
-use constant meta_slave         => '__META_SLAVE' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
 

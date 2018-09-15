@@ -183,7 +183,7 @@ for my $post_build_rule (@post_build_rules)
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
 	my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
-	my $rule_info = "'$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
+	my $rule_info = $rule_name . INFO2(" @ $dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}") ;
 	
 	my $depender  = $dependency_rules->[$rule_index]{DEPENDER} ;
    
@@ -493,7 +493,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		{
 		# not triggered
 		my $depender_message = $dependencies[0] || 'no depender message' ;
-		PrintInfo("\t'$rule_info'  didn't match '$node_name': $depender_message\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+		PrintInfo("\t$rule_info  didn't match '$node_name': $depender_message\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}
 	}
 	

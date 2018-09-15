@@ -154,14 +154,6 @@ that are described in the reference manual. you can also define you own "node su
 
 All these elements are described in detail in the reference manual.
 
-=head3 Meta rule
-
-A meta rule is a rule made of multiple rules with some glue to say which of the base rules does match. An example is:
-
-From which source code you build an object file when you hace a C file and and assembler file ?
-
-You have three rules, one to build from a C file, one to build from an assembler file and one to arbitrate between the rules.
-
 =head3 Dependers
 
 Dependers are perl subs, you can also define a sub that return a depender sub. These subs are run in order and the B<sum> of the dependencies

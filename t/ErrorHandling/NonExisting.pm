@@ -37,7 +37,7 @@ _EOF_
     like($stderr, qr|No matching rule|, 'Correct error message on non existing target');
 }
 
-sub non_existing_files : Test(1) {
+sub non_existing_files : Test(2) {
 # Write file
     $t->write_pbsfile(<<'_EOF_');
     PbsUse('Configs/Compilers/gcc');
@@ -50,7 +50,10 @@ _EOF_
 # Build
     $t->build;
     my $stderr = $t->stderr;
-    like($stderr, qr|non existing C file: '\./main\.c'|, 'Correct error message on non existing file');
+    my $stdout = $t->stdout;
+
+    like($stdout, qr|.*\QWarning: no dependencies for './main.o'|, 'Correct warning for no dependencies');
+    like($stderr, qr|BUILD_FAILED|, 'Correct error for build failure');
 }
 
 unless (caller()) {

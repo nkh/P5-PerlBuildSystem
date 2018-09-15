@@ -313,12 +313,12 @@ Let's run I<pbs> with our new Pbsfile:
 	...
 	** Depending [PBS/0] **
 	In Pbsfile : ./Pbsfile.pl, while at rule 4:hello.o, node './hello.o'
-	    ./hello.c already inserted by rule 0:o_cs_meta, Ignoring duplicate dependency.
+	    ./hello.c already inserted by rule 0:o_c, Ignoring duplicate dependency.
 	Configuration variable 'CC' doesn't exist. Aborting.
 	Died at '/home/nadim/devel/modules/PBS/PBSLib/Rules/C_depender.pm' line 353.
 
 I<pbs> first complains about a duplicate dependency. 'hello.c' is defined as a dependency
-to 'hello.o' by the rule 'hello.o' and the rule 'o_cs_meta'. This is a warning. The set of rule
+to 'hello.o' by the rule 'hello.o' and the rule 'o_c'. This is a warning. The set of rule
 we included automatically generates dependencies from '.o' file to '.c' files. We will
 eliminate the warning by removing our rule from the Pbsfile.
 

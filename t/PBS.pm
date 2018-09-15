@@ -650,14 +650,16 @@ Use this to manually debug a test case.
 
 sub generate_test_snapshot_and_exit {
     my $self = shift;
-	my $here = $self->here;
+    my $dir_name = shift // '' ;
+    my $here = $self->here;
+
     use File::Copy::Recursive qw(rcopy);
-	rcopy($here, "/tmp/pbs_test_snapshot");
+	rcopy($here, "/tmp/pbs_test_snapshot_$dir_name");
 	
-    print "!!! Generating snapshot to /tmp/pbs_test_snapshot and exiting !!!\n";
+    print "!!! Generating snapshot to /tmp/pbs_test_snapshot_$dir_name and exiting !!!\n";
     
     diag "!!!\n";
-    diag "!!! Generating snapshot to /tmp/pbs_test_snapshot and exiting !!!\n";
+    diag "!!! Generating snapshot to /tmp/pbs_test_snapshot_$dir_name and exiting !!!\n";
     diag "!!!\n";
     exit;
 }

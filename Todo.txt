@@ -785,6 +785,7 @@ Is LOCAL_NODES really needed when the node does have a a different path
 
 META_NODE 1
 	one node is multiple files in the filesystem
+	examlpe: source file build as different variants but refered to as the source
 	
 Create a term and acronymes section
 
@@ -840,7 +841,6 @@ find a way to build with light weight processes
 
 _builders using shell commands only should automatically generate warp2 stubs
 	=> what about adding it to the tree through a node sub?
-		=> meta rules are a bit more difficult
 	=> getting it as a result from the builder
 		=> builders can serialize themselves
 		=> need a special mode when building Warp2 data

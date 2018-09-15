@@ -82,7 +82,6 @@ Warp 1.5 file '/devel/perl_module ... 6cd0e0c8b47ae970.warp1_5.pl' doesn't exist
 PbsUse: '/devel/TheBigO/PbsLib/Configs/gcc.pm'
 PbsUse: '/devel/TheBigO/PbsLib/Rules/C.pm'
    PbsUse: '/devel/perl_modules/PerlBuildSystem-0.34/PbsLib/Rules/C_depender.pm'
-   PbsUse: '/devel/perl_modules/PerlBuildSystem-0.34/PbsLib/MetaRules/FirstAndOnlyOneOnDisk.pm'
 No user defined [PBS] Build(), using DefaultBuild() with [BuiltIn, User] rules and [BuiltIn, User] configs.
 ** Depending [PBS/0] **
 Processed 1 Pbsfile.

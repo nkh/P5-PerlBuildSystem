@@ -289,7 +289,7 @@ my $rule = PBS::Rules::RegisterRule
 		__LINE__,
 		$package,
 		"__Creator",
-		[META_SLAVE],  #$rule_types
+		[],  #$rule_types
 		$name,
 		sub{die}, # $depender_definition
 		sub{return(1, $name) ;}, #$builder_definition
