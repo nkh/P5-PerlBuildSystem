@@ -404,48 +404,47 @@ for my $config_variable (@_)
 sub GetNodeDigest
 {
 my $node = shift ;
-my $node_package = $node->{__LOAD_PACKAGE} ;
 
+my $node_name = $node->{__NAME} ;
+my $node_package = $node->{__LOAD_PACKAGE} ;
 my %node_config = %{$node->{__CONFIG}} ;
+
 my %node_dependencies ;
 
-for (@{$node_digest_rules{$node_package}})
+for my $rule (@{$node_digest_rules{$node_package}})
 	{
-	if($node->{__NAME} =~ $_->{REGEX})
-		{
-		my $config_variable_name = $_->{CONFIG_VARIABLE} ;
-		my $config_value = $node_config{$config_variable_name} ;
-		
-		$node_dependencies{$_->{NAME}} = $config_value  ;
-		}
+	$node_dependencies{$rule->{NAME}} = $node_config{$rule->{CONFIG_VARIABLE}}
+		if($node_name =~ $rule->{REGEX}) ;
 	}
-	
+
 if(exists $node_config_variable_dependencies{$node_package})
 	{
 	for (@{$node_config_variable_dependencies{$node_package}})
 		{
-		if($node->{__NAME} =~ $_->{REGEX})
-			{
-			my $config_variable_name = $_->{CONFIG_VARIABLE} ;
-			my $config_value = $node_config{$config_variable_name} ;
-			
-			$node_dependencies{"__NODE_CONFIG_VARIABLE:$config_variable_name"} = $config_value ;
-			}
+		$node_dependencies{"__NODE_CONFIG_VARIABLE:$_->{CONFIG_VARIABLE}"} = $node_config{$_->{CONFIG_VARIABLE}}
+			if($node_name =~ $_->{REGEX}) ;
 		}
 	}
 	
 # add node children to digest
-my @node_children = map {$node->{$_}{__NAME} ;} grep { ('HASH' eq ref($node->{$_})) && ($_ !~ /^__/) ;} (keys %$node) ;
 
-for(@node_children)
+for my $entry (values %$node)
 	{
-	if(exists $node->{$_}{__VIRTUAL})
+	next unless 'HASH' eq ref $entry ;
+	next unless exists $entry->{__NAME} ;
+
+	my $dependency = $entry ;
+	my $dependency_name = $dependency->{__NAME} ;
+
+	next if $dependency_name =~ /^__/ ;
+
+	if(exists $dependency->{__VIRTUAL})
 		{
-		$node_dependencies{$_} = 'VIRTUAL' ;
+		$node_dependencies{$dependency_name} = 'VIRTUAL' ;
 		}
 	else
 		{
-		$node_dependencies{$_} = GetFileMD5($node->{$_}{__BUILD_NAME}) ;
+		$node_dependencies{$dependency_name} = GetFileMD5($dependency->{__BUILD_NAME}) ;
 		}
 	}
 
@@ -1029,11 +1028,26 @@ return($digest_file_name) ;
 
 #-------------------------------------------------------------------------------
 
+my $generate_digest_time = 0 ;
+my $generate_digest_calls = 0 ;
+my $generate_digest_write = 0 ;
+my $generate_digest_get = 0 ;
+my $generate_digest_dump = 0 ;
+
+
+sub GetDigestGenerationStats
+{
+"Digest generation calls: $generate_digest_calls total: $generate_digest_time write: $generate_digest_write get:$generate_digest_get dumper:$generate_digest_dump\n" ;
+}
+
 sub GenerateNodeDigest
 {
+$generate_digest_calls++ ;
+my $t0_generate_digest = [gettimeofday] ;
 my $node = shift ;
 
 my $digest_file_name = GetDigestFileName($node) ;
+#PrintInfo2 "GenerateNodeDigest $digest_file_name\n" ;
 
 if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 	{
@@ -1050,6 +1064,7 @@ my $package = $node->{__LOAD_PACKAGE} ;
 
 if(IsDigestToBeGenerated($package, $node))
 	{
+my $t0_generate_write = [gettimeofday] ;
 	WriteDigest
 		(
 		$digest_file_name,
@@ -1058,48 +1073,58 @@ if(IsDigestToBeGenerated($package, $node))
 		'', # caller data to be added to digest
 		1, # create path
 		) ;
+
+$generate_digest_write += tv_interval($t0_generate_write, [gettimeofday]) ;
 	}
+
+$generate_digest_time += tv_interval($t0_generate_digest, [gettimeofday]) ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub GetDigest
 {
+my $t0_generate_digest_get = [gettimeofday] ;
 my $node = shift ;
-my $package = $node->{__LOAD_PACKAGE} ;
 
 PrintDebug "$node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
-return
-	{
-	%{GetPackageDigest($package)},
-	#TODO map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
-	# TODO: depend on pbs install
-	%{GetNodeDigest($node)},
-	$node->{__NAME} => GetFileMD5($node->{__BUILD_NAME}),
-	__DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE},
-	} ;
+
+#TODO: Add plugins to digest  map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
+# TODO: Add pbs install to digest
+
+my $package_digest = GetPackageDigest($node->{__LOAD_PACKAGE}) ;
+my $node_digest = GetNodeDigest($node) ;
+my $node_md5 = GetFileMD5($node->{__BUILD_NAME}) ;
+
+my $d = { %$package_digest, %$node_digest, $node->{__NAME} => $node_md5, __DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE}, } ;
+
+$generate_digest_get += tv_interval($t0_generate_digest_get, [gettimeofday]) ;
+
+return $d ;
 }
 
 #-------------------------------------------------------------------------------
+
+use File::Path ;
+use POSIX qw(strftime);
 
 sub WriteDigest
 {
 my ($digest_file_name, $caller_information, $digest, $caller_data, $create_path) = @_ ;
 
+my $t0_generate_dump = [gettimeofday] ;
 if($create_path)
 	{
 	my ($basename, $path, $ext) = File::Basename::fileparse($digest_file_name, ('\..*')) ;
 	
-	use File::Path ;
-	mkpath($path) # unless(-e $path) ;
+	mkpath($path) unless(-e $path) ;
 	}
 	
 open NODE_DIGEST, ">", $digest_file_name  or die ERROR("Can't open '$digest_file_name' for writting: $!") . "\n" ;
 
-use POSIX qw(strftime);
 my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime;
 
-my $HOSTNAME = $ENV{HOSTNAME} || qx"hostname" || 'no_host' ;
+my $HOSTNAME = $ENV{HOSTNAME} // 'no_host' ;
 my $user = PBS::PBSConfig::GetUserName() ;
 
 $caller_information = '' unless defined $caller_information ;
@@ -1118,9 +1143,10 @@ EOH
 
 print NODE_DIGEST "$caller_data\n" if defined $caller_data ;
 
-#$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Sortkeys = 1;
 
 print NODE_DIGEST Data::Dumper->Dump([$digest], ['digest']) ;
+$generate_digest_dump += tv_interval($t0_generate_dump, [gettimeofday]) ;
 close(NODE_DIGEST) ;
 }
 

@@ -88,7 +88,7 @@ if(-e $warp_file)
 		
 	$t0_warp_check = [gettimeofday];
 	
-	PrintInfo "Verifying warp: $number_of_nodes_in_the_dependency_tree nodes ...\n" ;
+	PrintInfo "Warp: verifying $number_of_nodes_in_the_dependency_tree nodes.\n" unless defined $PBS::Shell::silent_commands ;
 	
 	unless(defined $version)
 		{
@@ -135,7 +135,7 @@ if($run_in_warp_mode)
 			$PBS::pbs_run_information->{WARP_1_5}{TOTAL_TIME} = $warp_total_time ;
 			}
 			
-		PrintInfo("Warp: Up to date.\n") ;
+		PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 		return (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 
@@ -146,9 +146,11 @@ if($run_in_warp_mode)
 	# check md5 and remove all nodes that would trigger
 	my $node_verified = 0 ;
 	my $node_existed = 0 ;
+	my $node_mismatch = 0 ;
+
 	for my $node (keys %$nodes)
 		{
-		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
+		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || defined $PBS::Shell::silent_commands)
 			{
 			PrintInfo "\rwarp: verified nodes: $node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 			}
@@ -196,6 +198,8 @@ if($run_in_warp_mode)
 
 		if($remove_this_node) #and its dependents and its triggerer if any
 			{
+			$node_mismatch++ ;
+
 			my @nodes_to_remove = ($node) ;
 			
 			while(@nodes_to_remove)
@@ -272,7 +276,8 @@ if($run_in_warp_mode)
 		$PBS::pbs_run_information->{WARP_1_5}{VERIFICATION_TIME} = $warp_verification_time ;
 		
 		my $warp_total_time = tv_interval($t0_warp, [gettimeofday]) ;
-		PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_total_time)) ;
+		PrintInfo(sprintf("Warp check time: %0.2f s. [$node_verified/missmatch:$node_mismatch/removed:$number_of_removed_nodes]\n", $warp_total_time)) ;
+
 		$PBS::pbs_run_information->{WARP_1_5}{TOTAL_TIME} = $warp_total_time ;
 		}
 		
@@ -356,7 +361,7 @@ if($run_in_warp_mode)
 		}
 	else
 		{
-		PrintInfo("Warp: Up to date.\n") ;
+		PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}
@@ -382,7 +387,7 @@ else
 			$inserted_nodes,
 			$pbs_config,
 			undef, # warp config
-			' [pre- build]',
+			' [pre-build]',
 			) ;
 		} ;
 		

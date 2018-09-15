@@ -387,9 +387,9 @@ if(defined $pbs_config->{DISTRIBUTE} && ! defined $pbs_config->{JOBS})
 	$pbs_config->{JOBS} = 0 ; # let distributor determine how many jobs
 	}
 
-if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS} < 0)
+if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS} <= 0)
 	{
-	return(0, "Invalid value '$pbs_config->{JOBS}' for switch -j/-jobs\n") ;
+	delete $pbs_config->{JOBS} ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
@@ -487,6 +487,8 @@ undef $pbs_config->{CREATE_LOG} if defined $pbs_config->{DISPLAY_LAST_LOG} ;
 
 PBS::Log::CreatePbsLog($pbs_config) if(defined $pbs_config->{CREATE_LOG}) ;
 
+#----------------------------------------- HOSTNAME  -----------------------------------------
+$ENV{HOSTNAME} //= qx"hostname" // 'no_host' ;
 
 return(1, $success_message) ;
 }

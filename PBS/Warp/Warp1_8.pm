@@ -57,7 +57,7 @@ my @build_result ;
 
 if($run_in_warp_mode == RUN_NOT_NEEDED)
 	{
-	PrintInfo("Warp: Up to date.\n") ;
+	PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 	
 	if($pbs_config->{DISPLAY_WARP_TIME})
 		{
@@ -152,7 +152,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 		}
 	else
 		{
-		PrintInfo("Warp: Up to date.\n") ;
+		PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}
@@ -179,6 +179,8 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
+			undef, #warp config
+			'[pre-build]',
 			) ;
 		} ;
 		
@@ -324,22 +326,7 @@ for my $node_name (keys %$inserted_nodes)
 		}
 	else
 		{
-		if ( ! PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node) )
-			{
-			if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
-				{
-				$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => $current_md5} ; 
-				}
-			else
-				{
-				#PrintError("Can't open '$node_name' to compute MD5 digest: $!\n") ;
-				$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'Source file, not found!'} ; 
-				}
-			}
-		else
-			{
-			$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'not built yet'} ; 
-			}
+		$node_md5s{$node_name} = { __BUILD_NAME => $node->{__BUILD_NAME}, __MD5 => 'not built yet'} ; 
 		}
 		
 	if(exists $node->{__FORCED})
@@ -366,7 +353,7 @@ print MD5 'return($version, $pbsfile_md5s, $node_md5s);';
 close(MD5) ;
 
 my $md5_generation_time = tv_interval($t0_md5_generate, [gettimeofday]) ;
-PrintInfo(sprintf("md5 generation time [$number_of_nodes_hashed]: %0.2f s.\n", $md5_generation_time)) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+PrintInfo(sprintf("Warp generation time [$number_of_nodes_hashed]: %0.2f s.\n", $md5_generation_time)) if($pbs_config->{DISPLAY_WARP_TIME}) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -414,7 +401,9 @@ unless($version == $VERSION)
 	return(RUN_IN_NORMAL_MODE) ;
 	}
 
-PrintInfo(sprintf("md5 load time: %0.2f s. [$number_of_files]\n", tv_interval($t0, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+PrintInfo(sprintf("Warp load time: %0.2f s. [$number_of_files]\n", tv_interval($t0, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+
+PrintInfo "Warp: verifying $number_of_files nodes.\n" unless defined $PBS::Shell::silent_commands ;
 
 for my $pbsfile (keys %$pbsfile_md5s)
 	{
@@ -458,7 +447,7 @@ for my $node_name (keys %$node_md5s)
 	$nodes->{$node_name}{__DEPENDED_AT} = "N/A" ;
 	}
 	
-PrintInfo(sprintf("node regeneration time %0.2f s.\n", tv_interval($t_node_regeneration, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+PrintInfo(sprintf("Warp node regeneration time: %0.2f s.\n", tv_interval($t_node_regeneration, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
 
 # use filewatching or default MD5 checking
 # TODO: we don't need real nodes to verify md5 with the watch server, only to register them
@@ -480,7 +469,10 @@ my $node_verified = 0 ;
 for my $node_name (keys %$node_md5s)
 	{
 	$node_verified++ ;
-	PrintInfo "$node_verified\r" unless $node_verified %100 ;
+	unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || defined $PBS::Shell::silent_commands)
+		{
+		PrintInfo "$node_verified\r" unless  $node_verified  % 100 ;
+		}
 	
 	if
 		(
@@ -554,7 +546,7 @@ my $md5_time = tv_interval($t0, [gettimeofday]) ;
 
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
-	PrintInfo(sprintf("md5 check time: %0.2f s. [$number_of_files/missmatch:$number_of_md5_mismatch/removed:$number_of_removed_nodes]\n", $md5_time)) ;
+	PrintInfo(sprintf("Warp check time: %0.2f s. [$number_of_files/missmatch:$number_of_md5_mismatch/removed:$number_of_removed_nodes]\n", $md5_time)) ;
 	}
 
 return($run_in_warp_mode, $nodes, $number_of_removed_nodes, $pbsfile_md5s) ;

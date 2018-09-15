@@ -137,8 +137,14 @@ PBSLib/Configs/Compilers/compiler.pm
 PBSLib/Configs/Compilers/gcc.pm
 PBSLib/Configs/Compilers/old_gcc.pm
 
+PBSLib/Rules/C.pm
+PBSLib/Rules/C_EvalShellCommand.pm
+PBSLib/Rules/Object_rules_utils.pm
+PBSLib/Rules/C_depender.pm
+
 PBSLib/Rules/C_DependAndBuild.pm
 PBSLib/Rules/cl_pch.pm
+
 PBSLib/Rules/Compilers/cl.pm
 PBSLib/Rules/Compilers/compiler.pm
 PBSLib/Rules/Compilers/gcc.pm
@@ -153,10 +159,6 @@ PBSLib/Builders/SingleRunBuilder.pm
 PBSLib/Configs/ShellCommands.pm
 PBSLib/Configs/ConfigureProject.pm
 PBSLib/Configs/ConfigureProjectVariablesAndRules.pm
-
-PBSLib/Rules/C.pm
-PBSLib/Rules/C_EvalShellCommand.pm
-PBSLib/Rules/Object_rules_utils.pm
 
 PBSLib/Language/Simplified.pm
 

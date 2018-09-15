@@ -62,7 +62,7 @@ my $t0_warp = [gettimeofday];
 
 if(-e $warp_file)
 	{
-	my $blob = LoadWarpBlob($warp_file) ;
+	my $blob = LoadWarpBlob($warp_file, $pbs_config) ;
 	
 	$nodes                = $blob->{'nodes'};
 	$node_names           = $blob->{'node_names'};
@@ -96,7 +96,7 @@ if(-e $warp_file)
 		
 	$t0_warp_check = [gettimeofday];
 	
-	PrintInfo "Verifying warp: $number_of_nodes_in_the_dependency_tree nodes ...\n" ;
+	PrintInfo "Warp: verifying $number_of_nodes_in_the_dependency_tree nodes.\n" unless defined $PBS::Shell::silent_commands ;
 	
 	unless(defined $warp_1_7_version)
 		{
@@ -143,7 +143,7 @@ if($run_in_warp_mode)
 			$PBS::pbs_run_information->{WARP_1_7}{TOTAL_TIME} = $warp_total_time ;
 			}
 			
-		PrintInfo("Warp: Up to date.\n") ;
+		PrintInfo("Warp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 		return (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 
@@ -245,7 +245,7 @@ if($run_in_warp_mode)
 		}
 	else
 		{
-		PrintInfo("Warp: Up to date.\n") ;
+		PrintInfo("Warp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}
@@ -270,6 +270,8 @@ else
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
+			undef, # warp config
+			'[pre-build]',
 			) ;
 		} ;
 		
@@ -329,15 +331,11 @@ return(@build_result) ;
 
 sub LoadWarpBlob
 {
-my ($warp_file) = @_ ;
-
-my $t0_warp_generate =  [gettimeofday] ;
+my ($warp_file, $pbs_config) = @_ ;
 
 tie my %db, 'GDBM_File', $warp_file, &GDBM_WRCREAT, 0640;
 
 my $blob = thaw($db{__BLOB}) ;
-
-PrintInfo(sprintf("Loaded warp 1.7 Blob in: %0.2f s.\n", tv_interval($t0_warp_generate, [gettimeofday]))) ;
 
 return($blob) ;
 }
@@ -359,7 +357,7 @@ my $node_verified = 0 ;
 my $node_existed = 0 ;
 for my $node (keys %$nodes)
 	{
-	unless ($pbs_config->{DISPLAY_WARP_CHECKED_NODES})	
+	unless ($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || defined $PBS::Shell::silent_commands)
 		{
 		PrintInfo "\r$node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 		}
@@ -416,7 +414,7 @@ for my $node (keys %$nodes)
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
 				PrintDebug "Warp: Removing node '$node_to_remove'\n"
-					if($pbs_config->{DISPLAY_WARP_EMOVED_NODES}) ;	
+					if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;	
 				
 				push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 				
@@ -686,22 +684,7 @@ for my $node (keys %$inserted_nodes)
 		}
 	else
 		{
-		if ( ! PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$node}{__LOAD_PACKAGE}, $inserted_nodes->{$node}) )
-			{
-			if(defined (my $current_md5 = GetFileMD5($inserted_nodes->{$node}{__BUILD_NAME})))
-				{
-				$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} = $current_md5 ;
-				}
-			else
-				{
-				#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
-				$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} = 'Source file, not found!' ; 
-				}
-			}
-		else
-			{
-			$nodes{$node}{__MD5} = 'not built yet' ; 
-			}
+		$nodes{$node}{__MD5} = 'not built yet' ; 
 		}
 		
 	unless (exists $nodes_index{$node})

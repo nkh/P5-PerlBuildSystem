@@ -85,7 +85,7 @@ return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
-PrintInfo("Processed $pbs_runs Pbsfile$plural.                \n");
+PrintInfo "\e[KProcessed $pbs_runs Pbsfile$plural.\n" ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
@@ -275,26 +275,22 @@ for my $node (values %$inserted_nodes)
 	{
 	if
 		(
-		#__BUILD_DONE = node not triggered 
 		(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
 
 		&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
 		)
 		{
+		PrintInfo "Running post build commands ...\n" unless $post_build_commands ;
 		$post_build_commands++ ;
 
-		my $t0_pbs_post_build_command = [gettimeofday];
+		PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
 		$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
-		my $time = sprintf("%0.2f s.", tv_interval ($t0_pbs_post_build_command, [gettimeofday])) ;
-		#my $time = '' ;
-		#PrintInfo2 "Ran PBS_POST_BUILD for $node->{__NAME} in $time\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
 		}
 	}
-		
-PrintInfo(sprintf("Ran $post_build_commands PBS_POST_BUILD commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday])))
-	 if $post_build_commands ;
-;
 	
+PrintInfo($PBS::Output::indentation . sprintf("$post_build_commands commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday])))
+	if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+
 RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
