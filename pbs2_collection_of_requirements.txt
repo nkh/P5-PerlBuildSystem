@@ -1,4 +1,25 @@
 
+PrintDebug2
+	we need to have a color tag at the beginning of print output to be able to differentiate
+	different entries in the same category
+		PrintInfo
+			what kind of info?
+				if we have three categories then it should be made clear
+					print output to be able to differentiate
+	different entries in the same category
+		PrintInfo
+			what kind of info?
+				if we have three categories then it should be made clear
+					aprint output to be able to differentiate
+	different entries in the same category
+		PrintInfo
+			what kind of info?
+				if we have three categories then it should be made clear
+					■ ■ ■ 
+					each ■ gets colored 
+					alternatively the catagory name is displayed
+--display build result displays result for each builder element
+
 Warp verification message
 	display some statistics about the types of nodes in the cache in verification message
 	make display single line

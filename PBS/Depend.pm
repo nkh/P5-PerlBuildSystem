@@ -988,22 +988,40 @@ else
 		}
 	else
 		{
-		if(0 == $has_dependencies && $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
+		next if $node_name =~ /^__/ ;
+		my $dependency_info = '' ;
+
+		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddr)
 			{
-			next if $node_name =~ /^__/ ;
-			
-			my $dependency_info = '' ;
-			
-			if(@{$tree->{__MATCHING_RULES}})
+			if(PBS::Digest::IsDigestToBeGenerated($load_package, $tree))
 				{
-				$dependency_info = "'$node_name' has no locally defined dependencies" ;
+				if( ! $has_dependencies)
+					{
+					if(@{$tree->{__MATCHING_RULES}})
+						{
+						$dependency_info = "'$node_name' has no locally defined dependencies" ;
+						}
+					else
+						{
+						$dependency_info = "'$node_name' wasn't depended" ;
+						}
+						
+					PrintWarning "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;
+					}
 				}
 			else
 				{
-				$dependency_info = "'$node_name' wasn't depended" ;
+				#source
+				if(@{$tree->{__MATCHING_RULES}})
+					{
+					PrintWarning "Source '$node_name' matched rules, rules from '$pbs_config->{PBSFILE}'.\n" ;
+					}
+					
+				if($has_dependencies)
+					{
+					PrintWarning2 "Source '$node_name' has dependencies, rules from '$pbs_config->{PBSFILE}'.\n" ;
+					}
 				}
-				
-			PrintWarning "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;
 			}
 		}
 	}
