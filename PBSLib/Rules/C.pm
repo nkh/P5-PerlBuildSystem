@@ -52,8 +52,9 @@ for
 
 PbsUse('Rules/Object_rules_utils') ; # for object dependencies cache generation 
 
-# set of rules to pick a source file for object files, note the generation of the
-# dependency cache for object files in rule C_objects
+# set of rules to pick a source file for object files
+
+# note the generation of the dependency cache for object files in the rule
 AddRuleTo 'BuiltIn', 'c_objects', [ '*/*.o' => '*.c' , \&exists_on_disk],
 	GetConfig('CC_SYNTAX') . ' -MD -MP -MF %FILE_TO_BUILD.dependencies' ;
 

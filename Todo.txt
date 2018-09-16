@@ -1,7 +1,16 @@
 Perl Build System
 =================
 
-rename Object_utils to C_depender as the file name is displayed and could help understand the error
+add: new c_depender test
+
+node doesn't need to be rebuild
+	appears when node is rebuild!
+
+	message is cryptic, explain why
+
+	c dependency file is marked as source, does that interfere?
+
+\r \e[K
 
 
 new options:
@@ -18,16 +27,11 @@ example of output with options on
 
 ? status of all the warp tree display options implementation
 
-add: new c_depender test, statistics?
-
-prefix all warp message with Warp:
 
 error: node does not need rebuild but rebuilds!
 	t/two files
 
 error: gcc failure when -j aappears before repor by gcc. stderr not redirected
-
-eval { GenodeDigest } ; die @! , displays the line in the perl module although \n is present
 
 [SOURCE] instead for NoDigest
 	less typing
@@ -44,7 +48,7 @@ eval { GenodeDigest } ; die @! , displays the line in the perl module although \
 
 
 Keep a list of triggered nodes and why, not an option, always do it.
-	do not override at each build, keep name in wrp and  alist of them in a separate out directory
+	do not override at each build, keep name in wrap and a list of them in a separate out directory
 
 AddNodeFileDependency
 	the dependency must exist or it's MD5 can't be computed

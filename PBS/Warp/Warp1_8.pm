@@ -57,7 +57,7 @@ my @build_result ;
 
 if($run_in_warp_mode == RUN_NOT_NEEDED)
 	{
-	PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
+	PrintInfo("\e[KWarp: Up to date.\n") unless $pbs_config->{QUIET} ;
 	
 	if($pbs_config->{DISPLAY_WARP_TIME})
 		{
@@ -152,7 +152,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 		}
 	else
 		{
-		PrintInfo("\e[KWarp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
+		PrintInfo("\e[KWarp: Up to date.\n") unless $pbs_config->{QUIET} ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}
@@ -202,33 +202,40 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 				DEPEND_CHECK_AND_BUILD,
 				) ;
 		} ;
-		
-		if($@)
+	
+	# An intermediate warp file was generated after the depend pass
+	# Warp 1.8 generation use a cache and Memoize cache to speed up thing
+	# the caches need to be flushed so any changes to the dependency graph
+	# done during the build (IE: c depender) get into the warp file
+	FlushGenerateFirstLevelDependents() ;
+	Memoize::flush_cache('GetDependents');
+
+	if($@)
+		{
+		if($@ =~ /^BUILD_FAILED/)
 			{
-			if($@ =~ /^BUILD_FAILED/)
-				{
-				# this exception occures only when a Builder fails so we can generate a warp file
-				GenerateWarpFile
-					(
-					$targets,
-					$dependency_tree_snapshot,
-					$inserted_nodes_snapshot,
-					$pbs_config,
-					) ;
-				}
-				
-			die $@ ;
-			}
-		else
-			{
+			# this exception occurs only when a Builder fails so we can generate a warp file
 			GenerateWarpFile
 				(
 				$targets,
-				$dependency_tree,
-				$inserted_nodes,
+				$dependency_tree_snapshot,
+				$inserted_nodes_snapshot,
 				$pbs_config,
 				) ;
 			}
+			
+		die $@ ;
+		}
+	else
+		{
+		GenerateWarpFile
+			(
+			$targets,
+			$dependency_tree,
+			$inserted_nodes,
+			$pbs_config,
+			) ;
+		}
 			
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	}
@@ -248,7 +255,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("Generating warp file.               \n") ;
+PrintInfo("\e[KGenerating warp file.\n") ;
 
 my $t0_warp_generate =  [gettimeofday] ;
 
@@ -337,12 +344,7 @@ for my $node_name (keys %$inserted_nodes)
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = 
-	sub
-	{
-	my $hash = shift ;
-	return [sort keys %{$hash}] ;
-	} ;
+local $Data::Dumper::Sortkeys = 1 ; 
 
 print MD5 Data::Dumper->Dump([\%pbsfile_md5s], ['pbsfile_md5s']) ;
 print MD5 Data::Dumper->Dump([\%node_md5s], ['node_md5s']) ;
@@ -403,7 +405,7 @@ unless($version == $VERSION)
 
 PrintInfo(sprintf("Warp load time: %0.2f s. [$number_of_files]\n", tv_interval($t0, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
 
-PrintInfo "Warp: verifying $number_of_files nodes.\n" unless defined $PBS::Shell::silent_commands ;
+PrintInfo "Warp: verifying $number_of_files nodes.\n" unless $pbs_config->{QUIET} ;
 
 for my $pbsfile (keys %$pbsfile_md5s)
 	{
@@ -416,35 +418,32 @@ for my $pbsfile (keys %$pbsfile_md5s)
 
 # regenerate nodes
 my $nodes = {} ;
-my $global_pbs_config = {} ;
 
 my $t_node_regeneration =  [gettimeofday] ;
+
+my $shared_insertion_data = { 'INSERTION_RULE' => 'N/A', 'INSERTING_NODE' => 'N/A', 'INSERTION_FILE' => 'N/A'} ;
+
 for my $node_name (keys %$node_md5s)
 	{
 	# rebuild the data PBS needs from the warp file
 	
 	#TODO: do not regenerate. pbs is interrested in knowing if the node exists to link to it
 	# only regenerate if the data needs to be accessed (and even then, just compute the data without regenerating)
+	# can use a tied hash or access the nodes "indirectly", if they don'tt exist a generator is called
 	
-	# TODO: would the format below be fast enough to load?
-	$nodes->{$node_name}{__NAME} = $node_name ;
-	$nodes->{$node_name}{__BUILD_NAME} =  $node_md5s->{$node_name}{__BUILD_NAME} ;
-	$nodes->{$node_name}{__MD5} =  $node_md5s->{$node_name}{__MD5} ;
-	
-	$nodes->{$node_name}{__BUILD_DONE} = "Field set in warp 1.8" ;
-	$nodes->{$node_name}{__DEPENDED}++ ;
-	$nodes->{$node_name}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
-	$nodes->{$node_name}{__PBS_CONFIG} = $global_pbs_config unless exists $nodes->{$node_name}{__PBS_CONFIG} ;
-	
-	# TODO: if this information doesn't exists in warp 1.6 and it is done for backward compatibility only, reuse a reference to save memory
-	$nodes->{$node_name}{__INSERTED_AT} =
-			{
-			'INSERTION_RULE' => 'N/A',
-			'INSERTING_NODE' => 'N/A',
-			'INSERTION_FILE' => 'N/A'
-			} ;
-			
-	$nodes->{$node_name}{__DEPENDED_AT} = "N/A" ;
+	$nodes->{$node_name} =
+		{
+		__NAME        => $node_name,
+		__BUILD_NAME  => $node_md5s->{$node_name}{__BUILD_NAME},
+		__MD5         => $node_md5s->{$node_name}{__MD5},
+		__PBS_CONFIG  => {},
+		
+		__BUILD_DONE  => "Field set in warp 1.8",
+		__DEPENDED    => 1,
+		__CHECKED     => 1, # pbs will not check any node (and its subtree) which is marked as check,
+		__INSERTED_AT => $shared_insertion_data,
+		__DEPENDED_AT => "N/A",
+		} ;
 	}
 	
 PrintInfo(sprintf("Warp node regeneration time: %0.2f s.\n", tv_interval($t_node_regeneration, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
@@ -469,7 +468,7 @@ my $node_verified = 0 ;
 for my $node_name (keys %$node_md5s)
 	{
 	$node_verified++ ;
-	unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || defined $PBS::Shell::silent_commands)
+	unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
 		{
 		PrintInfo "$node_verified\r" unless  $node_verified  % 100 ;
 		}
@@ -558,7 +557,7 @@ sub GenerateNodesWarp
 {
 my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration) = @_ ;
 
-# generate a warp file per node (this could be faster with a DB
+# generate a warp file per node
 my $t0_single_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -707,6 +706,8 @@ return(keys %dependents) ;
 
 {
 my $GenerateFirstLevelDependents_done = 0 ;
+
+sub FlushGenerateFirstLevelDependents {$GenerateFirstLevelDependents_done=0}
 
 sub GenerateFirstLevelDependents
 {

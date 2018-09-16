@@ -96,7 +96,7 @@ if(-e $warp_file)
 		
 	$t0_warp_check = [gettimeofday];
 	
-	PrintInfo "Warp: verifying $number_of_nodes_in_the_dependency_tree nodes.\n" unless defined $PBS::Shell::silent_commands ;
+	PrintInfo "Warp: verifying $number_of_nodes_in_the_dependency_tree nodes.\n" unless $pbs_config->{QUIET} ;
 	
 	unless(defined $warp_1_7_version)
 		{
@@ -143,7 +143,7 @@ if($run_in_warp_mode)
 			$PBS::pbs_run_information->{WARP_1_7}{TOTAL_TIME} = $warp_total_time ;
 			}
 			
-		PrintInfo("Warp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
+		PrintInfo("Warp: Up to date.\n") unless defined $pbs_config->{QUIET} ;
 		return (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 
@@ -245,7 +245,7 @@ if($run_in_warp_mode)
 		}
 	else
 		{
-		PrintInfo("Warp: Up to date.\n") unless defined $PBS::Shell::silent_commands ;
+		PrintInfo("Warp: Up to date.\n") unless defined $pbs_config->{QUIET} ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}
@@ -357,7 +357,7 @@ my $node_verified = 0 ;
 my $node_existed = 0 ;
 for my $node (keys %$nodes)
 	{
-	unless ($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || defined $PBS::Shell::silent_commands)
+	unless ($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
 		{
 		PrintInfo "\r$node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 		}

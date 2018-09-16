@@ -123,6 +123,8 @@ _EOF_
     $t->build_test;
     $t->run_target_test(stdout => "inc_a.h\n");
 
+#$t->generate_test_snapshot_and_exit('inc_120') ;
+
 # Modify the include file and rebuild
     $t->write('subdir/inc.h', $file_inc_a2_h);
     $t->build_test;

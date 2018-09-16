@@ -293,11 +293,15 @@ EOT
 		'',
 
 	'p|pbsfile=s'                     => \$pbs_config->{PBSFILE},
-		'Pebsfile use to defines the build.',
+		'Pbsfile use to defines the build.',
 		'',
 		
 	'prf|pbs_response_file=s'         => \$pbs_config->{PBS_RESPONSE_FILE},
 		'File containing switch definitions and targets.',
+		'',
+		
+	'q|quiet'                         => \$pbs_config->{QUIET},
+		'Reduce the output from the command. See --ndpb, --so, --sco.',
 		'',
 		
 	'naprf|no_anonymous_pbs_response_file'     => \$pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
