@@ -13,20 +13,20 @@ node doesn't need to be rebuild
 \r \e[K
 
 
-new options:
+new options for simple listings:
 --files_triggered
 --files_triggered_only
 --files_triggered_reason
 
 example of output with options on
 	pbs -ho -o1 -o2
+	pbs -warp 1.8  --display_warp_checked_nodes --display_warp_checked_nodes_fail_only --display_warp_removed_nodes
 
 	searches for examples with all switches
 	displays one or more examples 
 
 
 ? status of all the warp tree display options implementation
-
 
 error: node does not need rebuild but rebuilds!
 	t/two files

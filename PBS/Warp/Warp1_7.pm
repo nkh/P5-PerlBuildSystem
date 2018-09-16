@@ -399,7 +399,7 @@ for my $node (keys %$nodes)
 			}
 		else
 			{
-			PrintInfo "Warp Check: OK, $node\n" ;
+			PrintInfo("Warp Check: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 			}
 		}
 

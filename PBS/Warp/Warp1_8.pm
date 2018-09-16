@@ -465,14 +465,13 @@ $t0 = [gettimeofday] ;
 my (%nodes_not_matching, %nodes_removed) ;
 my $node_verified = 0 ;
 
-for my $node_name (keys %$node_md5s)
+for my $node_name (sort keys %$node_md5s)
 	{
 	$node_verified++ ;
 	unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
 		{
 		PrintInfo "$node_verified\r" unless  $node_verified  % 100 ;
 		}
-	
 	if
 		(
 		   defined $node_md5s->{$node_name}{__MD5}
@@ -483,28 +482,29 @@ for my $node_name (keys %$node_md5s)
 			)
 		)
 		{
-	        PrintInfo "Warp checking: OK $node_name\n" if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
+	        PrintInfo "Warp check: OK $node_name\n"
+			if($pbs_config->{DISPLAY_WARP_CHECKED_NODES} && ! $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY}) ;
 		}
 	else
 		{
-		PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node_name\n") if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
+		PrintInfo "Warp Check: " . ERROR('MISMATCH') . INFO(" $node_name\n")
+			 if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
 
 		$nodes_not_matching{$node_name}++ ;
-		$nodes_removed{$node_name}++ ;
 		delete $nodes->{$node_name} ;
 		}
 	}
 
 my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/warp1_8/warp_${warp_signature}" ;
 
-for my $node_name (keys %nodes_not_matching)
+for my $node_name (reverse sort keys %nodes_not_matching)
 	{
-	#TODO; optimization, do this only if the node hasn't been removed by a dependency
-	# next if exists $nodes_removed{$file}++ ;
+	next if exists $nodes_removed{$node_name} ;
+	$nodes_removed{$node_name}++ ;
 	
 	my ($node_warp_directory, $node_warp_full_path) = GetNodeWarpLocation($node_name , $warp_node_path) ;
 	
-	# load list
+	# load dependent list
 	my ($node_version, $node_dependents ) = do $node_warp_full_path ;
 	
 	if(defined $node_dependents)
@@ -513,10 +513,16 @@ for my $node_name (keys %nodes_not_matching)
 			{
 			if($node_version == $VERSION)
 				{
-				for my $dependent (@{$node_dependents->{__DEPENDENT}})
+				PrintInfo "Warp Prune: $node_name\n"
+					 if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
+
+				for my $dependent (sort  @{$node_dependents->{__DEPENDENT}})
 					{
 					$nodes_removed{$dependent}++ ;
 					delete $nodes->{$dependent} ;
+
+					PrintInfo $PBS::Output::indentation . "$dependent\n"
+						 if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 					}
 				}
 			else
@@ -611,7 +617,7 @@ for my $node (values %nodes_needing_regeneration)
 my $number_of_node_warp = scalar (keys %nodes_regenerated) ;
 my $single_warp_generation_time = tv_interval($t0_single_warp_generate, [gettimeofday]) ;
 
-PrintInfo(sprintf("Single node warp generation time: %0.2f s. [$number_of_node_warp]\n", $single_warp_generation_time)) ;
+#PrintInfo(sprintf("Single node warp generation time: %0.2f s. [$number_of_node_warp]\n", $single_warp_generation_time)) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -735,7 +741,7 @@ for my $node (values %{$inserted_nodes})
 	
 $GenerateFirstLevelDependents_done = 1 ;
 
-PrintInfo(sprintf("GenerateFirstLevelDependents time: %0.2f s. [$number_of_updated_dependencies]\n", tv_interval($t0, [gettimeofday]))) ;
+#PrintInfo(sprintf("GenerateFirstLevelDependents time: %0.2f s. [$number_of_updated_dependencies]\n", tv_interval($t0, [gettimeofday]))) ;
 }
 
 }
