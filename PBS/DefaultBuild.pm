@@ -59,7 +59,7 @@ my $dependency_rules = [PBS::Rules::ExtractRules($rules, @$rules_namespaces)];
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-PrintInfo("=> Depending [$package_alias/$PBS::Output::indentation_depth] **          \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+PrintInfo("=> Depending: [$package_alias/$PBS::Output::indentation_depth]            \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -92,7 +92,7 @@ if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	PrintInfo(sprintf("Total dependency time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
 
-PrintInfo("\n** Checking **\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+PrintInfo("\nChecking:\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
 if($build_point eq '')
@@ -153,7 +153,7 @@ eval
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				PrintInfo("\n** Checking Trigger Inserted '$inserted_nodes->{$node_name}{__NAME}' **\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+				PrintInfo("\nChecking Trigger Inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 				my @triggered_build_sequence ;
 				
 				PBS::Check::CheckDependencyTree
@@ -205,9 +205,8 @@ if(defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->
 
 unless($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	PrintInfo("\n** Building ") ;
+	PrintInfo("\nBuilding:") ;
 	PrintInfo("'$build_point' ") if $build_point ne '' ;
-	PrintInfo("**\n") ;
 	}
 
 # we must get the number of nodes in the tree from the tree itself as we might have multiple %inserted_nodes if
@@ -280,7 +279,7 @@ for my $node (values %$inserted_nodes)
 		&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
 		)
 		{
-		PrintInfo "Running post build commands ...\n" unless $post_build_commands ;
+		PrintInfo "Running post build commands.\n" unless $post_build_commands ;
 		$post_build_commands++ ;
 
 		PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;

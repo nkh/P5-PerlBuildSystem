@@ -248,7 +248,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("\e[KGenerating warp file.\n") ;
+PrintInfo("\e[KWarp: generation.\n") ;
 
 my $t0_warp_generate =  [gettimeofday] ;
 
@@ -269,7 +269,7 @@ sub GenerateMd5File
 {
 my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration) = @_ ;
 
-my $t0_md5_generate =  [gettimeofday] ;
+#my $t0_md5_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_8';
@@ -347,8 +347,7 @@ print MD5 'return($version, $pbsfile_md5s, $node_md5s);';
 
 close(MD5) ;
 
-my $md5_generation_time = tv_interval($t0_md5_generate, [gettimeofday]) ;
-PrintInfo(sprintf("Warp generation time [$number_of_nodes_hashed]: %0.2f s.\n", $md5_generation_time)) if($pbs_config->{DISPLAY_WARP_TIME}) ;
+#my $md5_generation_time = tv_interval($t0_md5_generate, [gettimeofday]) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -511,6 +510,8 @@ for my $node_name (reverse sort keys %nodes_not_matching)
 
 				for my $dependent (sort  @{$node_dependents->{__DEPENDENT}})
 					{
+					next if exists $nodes_removed{$dependent} ;
+
 					$nodes_removed{$dependent}++ ;
 					delete $nodes->{$dependent} ;
 

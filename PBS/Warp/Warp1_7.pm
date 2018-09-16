@@ -521,7 +521,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("Generating warp file               \n") ;
+PrintInfo("\e[KWarp: generation.\n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;

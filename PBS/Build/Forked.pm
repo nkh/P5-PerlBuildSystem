@@ -170,7 +170,6 @@ if('HASH' eq ref $tree)
 		push @keys_to_dump, [$key_name, $replacement_key_name] ;
 		}
 	
-	#return('HASH', undef, sort {$a =~ /^__/ ? 1 : $b =~ /^__/ ? 1 : 0 } sort @keys_to_dump) ;
 	return('HASH', undef, @keys_to_dump) ;
 	}
 	
@@ -231,21 +230,21 @@ TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
 	{
-	PrintError "** Failed build@{[$number_of_failed_builders > 1 ? 's' : '']} **\n" ;
+	PrintError "Parallel build: Error\n" ;
 	print $error_output ;
 	}
 
-PrintInfo DumpTree($root_node, 'Parallel build, final state:', FILTER => $parallel_build_state, DISPLAY_ADDRESS => 0)
+PrintInfo DumpTree($root_node, 'Parallel build final state:', FILTER => $parallel_build_state, DISPLAY_ADDRESS => 0)
 	if $pbs_config->{DISPLAY_JOBS_TREE} ;
 	
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
-	print WARNING DumpTree(\%builder_stats, '** Builder process statistics: **', DISPLAY_ADDRESS => 0) ;
+	print WARNING DumpTree(\%builder_stats, 'Parallel build: process statistics:', DISPLAY_ADDRESS => 0) ;
 	}
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
-	PrintInfo(sprintf("Total build time: %0.2f s. Perl subs time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	PrintInfo(sprintf("Parallel build time: %0.2f s. sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 	}
 
 return(!$number_of_failed_builders) ;
@@ -262,7 +261,7 @@ my (@removed_nodes, @enqueued_nodes) ;
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Enqueuing terminal nodes:\n" ;
+	PrintInfo2 "Parallel build:  enqueuing terminal nodes:\n" ;
 	}
 	
 for my $node (@$build_sequence)
@@ -300,7 +299,7 @@ for my $node (@$build_sequence)
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
 	{
-	PrintInfo2("Removed nodes from parallel sequence dependency (build already done):\n") ;
+	PrintInfo2("Parallel build: removed nodes from sequence (build already done):\n") ;
 	local $PBS::Output::indentation_depth ;
 	$PBS::Output::indentation_depth++ ;
 	PrintInfo2 "$_\n" for @removed_nodes ;
@@ -365,7 +364,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 				
 	unless(defined $builder_channel)
 		{
-		PrintError "Couldn't start a forked builder #$_!\n" ;
+		PrintError "Parallel build: Couldn't start builder #$_!\n" ;
 		die ;
 		}
 	
@@ -517,7 +516,7 @@ my $started_builders = 0 ;
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Starting parallel build of:\n" ;
+	PrintInfo2 "Parallel build: starting:\n" ;
 	}
 	
 for my $enqued_node (keys %$build_queue)
@@ -719,7 +718,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Enqueuing parent node '$parent->{__NAME}'.\n" ;
+			PrintInfo2 "Parallel build: Enqueuing parent '$parent->{__NAME}'.\n" ;
 			}
 			
 		$build_queue->{$parent->{__NAME}} = {NODE => $parent} ;
@@ -734,7 +733,7 @@ sub TerminateBuilders
 my ($builders) = @_;
 my $number_of_builders = @$builders ;
 
-PrintInfo "\n** Terminating Builders **\n" ;
+PrintInfo "Parallel build: terminating processes\n" ;
 
 for my $builder_index (0 .. ($number_of_builders - 1))
 	{

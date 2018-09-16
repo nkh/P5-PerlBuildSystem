@@ -255,7 +255,7 @@ if($pbs_config->{DISPLAY_MD5_STATISTICS})
 if($pbs_config->{DISPLAY_PBS_TOTAL_TIME})
 	{
 	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
-	PrintInfo(sprintf("Total time in PBS: %0.2f s.\n", $total_time_in_pbs)) ;
+	PrintInfo(sprintf("PBS time: %0.2f s.\n", $total_time_in_pbs)) ;
 	
 	$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs
 	}

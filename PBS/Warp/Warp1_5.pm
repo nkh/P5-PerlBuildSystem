@@ -152,7 +152,7 @@ if($run_in_warp_mode)
 		{
 		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
 			{
-			PrintInfo "\rwarp: verified nodes: $node_verified" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
+			PrintInfo "warp: verified nodes: $node_verified\r" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
 			}
 			
 		$node_verified++ ;
@@ -208,7 +208,7 @@ if($run_in_warp_mode)
 				
 				for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 					{
-					PrintDebug "Warp: Removing subtree node '$node_to_remove'\n"
+					PrintDebug "Warp Prune: '$node_to_remove'\n"
 						if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 					
 					push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
@@ -225,8 +225,6 @@ if($run_in_warp_mode)
 					
 					$number_of_removed_nodes++ ;
 					}
-					
-				PrintDebug "\n" if($pbs_config->{DISPLAY_WARP_REMOVED_NODES})	;
 					
 				@nodes_to_remove = @dependent_nodes ;
 				}
@@ -452,7 +450,7 @@ $warp_message //='' ;
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
 
-PrintInfo("Generating warp file$warp_message.                   \n") ;
+PrintInfo("\e[KWarp: generation.$warp_message\n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
