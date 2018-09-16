@@ -251,9 +251,6 @@ if($run_in_warp_mode)
 	}
 else
 	{
-	#eurk hack we could dispense with!
-	# this is not needed but the subpses are travesed an extra time
-	
 	my ($dependency_tree_snapshot, $inserted_nodes_snapshot) ;
 	
 	$pbs_config->{INTERMEDIATE_WARP_WRITE} = 

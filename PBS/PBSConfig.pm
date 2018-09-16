@@ -200,25 +200,6 @@ if(defined $pbs_config->{DISPLAY_DEPENDENCY_INFO})
 	delete $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION} ;
 	}
 	
-#~ use Data::Validate::IP qw(is_ipv4 is_loopback_ipv4);
-#~ if(exists $pbs_config{LIGHT_WEIGHT_FORK})
-	#~ {
-	#~ my ($server, $port) = split(':', $pbs_config->{LIGHT_WEIGHT_FORK}) ;
-	
-	#~ unless(is_ipv4($server) || is_loopback_ipv4($server))
-		#~ {
-		#~ die ERROR "Error: IP error '$pbs_config->{LIGHT_WEIGHT_FORK}' to -ubs\n" ;
-		#~ }
-	#~ }
-	
-# segmentation fault because of missing ':' and use statement placement.
-#~ if(exists $pbs_config->{LIGHT_WEIGHT_FORK})
-	#~ {
-	#~ my ($server, $port) = split(':', $pbs_config->{LIGHT_WEIGHT_FORK}) ;
-	#~ use Net:IP ;
-	#~ my $ip = new Net::IP ($server) or die ERROR 'Error: invalid IP given to -ubs' ;
-	#~ }
-	
 if(defined $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 	{
 	$pbs_config->{NO_SUBPBS_INFO}++ ;
@@ -235,7 +216,15 @@ if(defined $pbs_config->{DISPLAY_PROGRESS_BAR})
 	$PBS::Shell::silent_commands_output++ ;
 	$pbs_config->{DISPLAY_NO_BUILD_HEADER}++ ;
 	}
-	
+
+if(defined $pbs_config->{QUIET})
+	{
+	$PBS::Shell::silent_commands++ ;
+	$PBS::Shell::silent_commands_output++ ;
+	$pbs_config->{DISPLAY_NO_BUILD_HEADER}++ ;
+	$pbs_config->{DISPLAY_PROGRESS_BAR} = 0 ;
+	}
+
 if(defined $pbs_config->{NO_WARP})
 	{
 	$pbs_config->{WARP} = 0 ;

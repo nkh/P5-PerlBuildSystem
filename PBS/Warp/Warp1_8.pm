@@ -30,7 +30,6 @@ use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
-
 use constant RUN_NOT_NEEDED => -1 ;
 use constant RUN_IN_NORMAL_MODE => 0 ;
 use constant RUN_IN_WARP_MODE => 1 ;
@@ -93,8 +92,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 		# let the rest of the system know about this (ex graph generator)
 		$pbs_config->{IN_WARP} = 1 ;
 		
-		my ($build_result, $build_message) ;
-		my $new_dependency_tree ;
+		my ($build_result, $build_message, $new_dependency_tree) ;
 		
 		eval
 			{
@@ -158,11 +156,6 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 	}
 elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 	{
-	#eurk hack we could dispense with!
-	# this is not needed but the subpses are travesed an extra time
-	
-	#TODO  since the md5 are not kept into the warp files anymore, a single generation is enough
-	
 	my ($dependency_tree_snapshot, $inserted_nodes_snapshot) ;
 	
 	$pbs_config->{INTERMEDIATE_WARP_WRITE} = 
@@ -594,12 +587,10 @@ for my $node (values %$inserted_nodes)
 			{
 			next if /^__/ ;
 			
-			$nodes_needing_regeneration{$_} = $inserted_nodes->{$_} ; # multilpe nodes may have the same dependency but we regenerate only once
+			$nodes_needing_regeneration{$_} = $inserted_nodes->{$_} ; # multiple nodes may have the same dependency but we regenerate only once
 			}
 		}
 	}
-
-#~ print DumpTree \%nodes_needing_regeneration, 'nodes_needing_regeneration', MAX_DEPTH => 1 ;
 
 for my $node (values %nodes_needing_regeneration)
 	{
