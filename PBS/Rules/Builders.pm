@@ -18,7 +18,7 @@ our @EXPORT = qw(GenerateBuilder) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
-use Sub::Identify 'sub_name';
+use Sub::Identify qw< sub_name get_code_location > ;
 
 use PBS::Shell ;
 use PBS::PBSConfig ;
@@ -216,7 +216,12 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 	if('CODE' eq ref $shell_command)
 		{
 		my $perl_sub_name = sub_name($shell_command) ;
-		PrintInfo2 $command_information . " (perl sub $perl_sub_name )\n" if $display_command_information ;
+
+		my ($file, $line) = get_code_location($shell_command) ;
+		$perl_sub_name .= " $file:$line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
+
+		PrintInfo2 $command_information . " (sub: $perl_sub_name)\n"
+			if $display_command_information || $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		
@@ -238,7 +243,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		PrintInfo2 $command_information . " (shell command. $shell_command)\n" if $display_command_information ;
+		PrintInfo2 $command_information . " (shell command: $shell_command)\n" if $display_command_information ;
 		
 		$node_shell->RunCommand($command) ;
 		}
@@ -307,6 +312,15 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	print "\n" ;
 	}
 	
+my $perl_sub_name = sub_name($builder) ;
+
+my ($sub_file, $sub_line) = get_code_location($builder) ;
+$perl_sub_name .= " $sub_file:$sub_line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
+
+PrintInfo2 "Running sub: $perl_sub_name\n"
+	if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} 
+		|| ($tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER}) ;
+
 return
 	(
 	$node_shell->RunPerlSub($builder, @_)

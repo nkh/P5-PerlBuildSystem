@@ -29,6 +29,8 @@ use Data::Dumper ;
 use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
+use POSIX qw(strftime);
+use File::Slurp ;
 
 use constant RUN_NOT_NEEDED => -1 ;
 use constant RUN_IN_NORMAL_MODE => 0 ;
@@ -454,8 +456,10 @@ if(defined $IsFileModified  && '' eq ref $IsFileModified  && 0 == $IsFileModifie
 $IsFileModified ||= \&PBS::Digest::IsFileModified ;
 
 $t0 = [gettimeofday] ;
-my (%nodes_not_matching, %nodes_removed) ;
-my $node_verified = 0 ;
+
+my ($node_verified, %nodes_not_matching, %nodes_removed) = (0);
+
+my $trigger_log = '' ;
 
 for my $node_name (sort keys %$node_md5s)
 	{
@@ -464,6 +468,7 @@ for my $node_name (sort keys %$node_md5s)
 		{
 		PrintInfo "$node_verified\r" unless  $node_verified  % 100 ;
 		}
+
 	if
 		(
 		   defined $node_md5s->{$node_name}{__MD5}
@@ -482,10 +487,16 @@ for my $node_name (sort keys %$node_md5s)
 		PrintInfo "Warp Check: " . ERROR('MISMATCH') . INFO(" $node_name\n")
 			 if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
 
+		$trigger_log .= "{ NAME => '$nodes->{$node_name}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node_name}{__MD5}' },\n" ;
+
 		$nodes_not_matching{$node_name}++ ;
 		delete $nodes->{$node_name} ;
 		}
 	}
+
+my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
+write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
+		
 
 my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/warp1_8/warp_${warp_signature}" ;
 

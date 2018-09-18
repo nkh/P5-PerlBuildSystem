@@ -63,6 +63,11 @@ return(0) if exists $node->{__VIRTUAL} ;
 
 my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
 
+for my $trigger (@{ $node->{__TRIGGERED} })
+	{
+	return(1, '__SELF') if $trigger->{NAME} eq '__SELF' ;
+	}
+
 #todo: with a well build digest, if the only difference is the pbsfile itself, and all other variables 
 # identical, we can skip the build
 # otherwise all the nodes in a pbsfile get rebuild even if the change has no impact on it
@@ -76,7 +81,7 @@ if($number_of_differences == 1 &&  $reason =~ q{key '__DEPENDING_PBSFILE' is dif
 	{
 	if((! $PBS::Shell::silent_commands))
 		{
-		PrintWarning "\tNode doesn't need to be build. Only Pbsfile difference.\n" ;
+		PrintWarning "Node doesn't need to be build. Only Pbsfile difference.\n" ;
 		}
 		
 	return(0, 'only pbsfile difference, regenerate_digest') ;
@@ -110,7 +115,7 @@ else
 	
 	if((! $PBS::Shell::silent_commands))
 		{
-		PrintWarning "\tNode doesn't need to be build.\n" ;
+		PrintWarning "Node doesn't need to be build; no dependency has changed.\n" ;
 		}
 		
 	# remember that we are using the previously generated digest.
@@ -141,7 +146,7 @@ else
 				else
 					{
 					#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
-					$node->{__MD5} = 'Source file, not found!' ; 
+					$node->{__MD5} = 'Error: File not found!' ; 
 					}
 				}
 			}
@@ -152,8 +157,9 @@ return($rebuild) ;
 
 # test when one of the dependencies is virtual, all dependencies are virtual
 # test when the pbsfile has changed
-# test when apbs module has changed
+# test when a pbs module has changed
 # test when config has changed
+# o dependency caches are build but have no digest
 # what if the builder is a perl sub that has changed?
 }
 

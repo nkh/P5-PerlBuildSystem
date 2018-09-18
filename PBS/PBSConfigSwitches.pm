@@ -517,6 +517,10 @@ EOT
 		'Display the rule which defined the Builder and which command is being run.',
 		'',
 		
+	'nsb|node_sub_builder'                  => \$pbs_config->{DISPLAY_SUB_BUILDER},
+		'Display information about sub being run (even if --nb is not set).',
+		'',
+		
 	'nconf|node_config'                => \$pbs_config->{DISPLAY_NODE_CONFIG},
 		'Display the config used to build a node.',
 		'',

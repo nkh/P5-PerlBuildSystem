@@ -1,5 +1,3 @@
-Perl Build System
-=================
 
 add: new c_depender test
 
@@ -12,7 +10,6 @@ node doesn't need to be rebuild
 
 \r \e[K
 
-
 new options for simple listings:
 --files_triggered
 --files_triggered_only
@@ -24,12 +21,6 @@ example of output with options on
 
 	searches for examples with all switches
 	displays one or more examples 
-
-
-? status of all the warp tree display options implementation
-
-error: node does not need rebuild but rebuilds!
-	t/two files
 
 error: gcc failure when -j aappears before repor by gcc. stderr not redirected
 
@@ -46,9 +37,6 @@ error: gcc failure when -j aappears before repor by gcc. stderr not redirected
 	rule can extract all dependency nodes that have some USER_TYPE set
 	pbs can display them in -tt, maybe with an extra option
 
-
-Keep a list of triggered nodes and why, not an option, always do it.
-	do not override at each build, keep name in wrap and a list of them in a separate out directory
 
 AddNodeFileDependency
 	the dependency must exist or it's MD5 can't be computed
@@ -77,6 +65,12 @@ use Term::Emit for message, maybe replace Term::ProgressBar too
 install pbs on linux and pbs.pl on windows
 
 Add a bunch of test with bad pbsfiles to catch syntax errors
+
+#test write data in test_cmdXXX.XX which is really not helpful
+	put everything in a sub directory named after date
+	put tests in warp type subdirectories
+	name test directories after test names
+	prepend FAILED to test directory  on failure
 
 #if not tagets are given, try to extract help from the pbsfile
 

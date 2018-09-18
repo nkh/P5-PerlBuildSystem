@@ -554,6 +554,8 @@ PrintInfo(DumpTree(\%package_rules, 'All rules:')) ;
 
 #-------------------------------------------------------------------------------
 
+use Sub::Name ;
+
 sub BuildOk
 {
 # Syntactic sugar, this function can be called instead for 
@@ -564,16 +566,15 @@ my $print   = shift || (! defined $PBS::Shell::silent_commands_output) ;
 
 my ($package, $file_name, $line) = caller() ;
 
-return 
-	(
-	sub
-		{
-		my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
-		
-		PrintInfo("\tPBS::BuildOk: $message \n") if $print ;
-		return(1, $message) ;
-		}
-	) ;
+my $build_ok = subname _BuildOk => sub
+	{
+	my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
+	
+	PrintInfo("\tPBS::BuildOk: $message \n") if $print ;
+	return(1, $message) ;
+	} ;
+
+return $build_ok ; 
 }
 
 

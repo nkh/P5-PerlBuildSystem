@@ -308,6 +308,7 @@ my $build = $class->new
 	        'Term::Bash::Completion::Generator' => 0,
 		'PadWalker' => '0',
 		'Sub::Identify' => 0,
+		'Sub::Name' => 0,
 		'Net::SCP' => 0,
 		#GDBM::File' => 0 ,
 

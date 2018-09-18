@@ -16,7 +16,11 @@ use t::PBS;
 
 my $t;
 
+use File::Path;
+use POSIX ;
+
 sub setup : Test(setup) {
+
     $t = t::PBS->new(string => 'Dependency graph is not a tree');
 
     $t->build_dir('build_dir');

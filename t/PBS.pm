@@ -138,12 +138,37 @@ sub new {
 		'/cover_db,-select,PBS';
 	}
     }
+
+
+    # place test in a place easier to find
+    
+    #root path must exist
+    my $test_path = "/tmp/PBS" ;
+    
+    use File::Path ;
+    mkpath $test_path, { chmod => 0755 } ;
+    
+    # but en path must not exist
+    use POSIX qw(strftime);
+    my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
+
+    use Time::HiRes 'gettimeofday' ;
+    my ($s, $u) = gettimeofday ;
+    $now_string .= "_$u" ;
+
+    my ($package, $file_name, $line) = caller() ;
+    $file_name =~ s/\//_/g ;
+    
+    $test_path = "/tmp/PBS/$$" . "_${now_string}_$file_name" ;
+
+
     my $test = $class->SUPER::new(prog => $full_pbs_path_global,
-				  workdir => '',
+				  workdir => $test_path,
 				  @_);
 
-	$test->preserve();
-	chdir($test->workdir);
+    $test->preserve();
+
+    chdir($test->workdir);
 
     bless($test, $class);
 }

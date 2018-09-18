@@ -31,6 +31,8 @@ use Data::Compare ;
 use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
+use POSIX qw(strftime);
+use File::Slurp ;
 
 #-------------------------------------------------------------------------------
 
@@ -148,6 +150,9 @@ if($run_in_warp_mode)
 	my $node_existed = 0 ;
 	my $node_mismatch = 0 ;
 
+		
+	my $trigger_log = '' ;
+
 	for my $node (keys %$nodes)
 		{
 		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
@@ -180,10 +185,13 @@ if($run_in_warp_mode)
 				}
 				
 			$remove_this_node += $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
+
+			$trigger_log .= "{ NAME => '$nodes->{$node}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node}{__MD5}' },\n" ;
 			}
 			
 		$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
 		
+
 		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
 			{
 			if ($remove_this_node)	
@@ -257,7 +265,10 @@ if($run_in_warp_mode)
 				}
 			}
 		}
-		
+
+	my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
+	write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
+
 	if($pbs_config->{DISPLAY_WARP_TRIGGERED_NODES})	
 		{
 		PrintInfo "\rNodes: $node_verified verified: $node_existed\n" ;
