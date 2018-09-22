@@ -63,7 +63,7 @@ sub SendCommand
 {
 my ($host, $port, $command) = @_ ;
 
-my $socket = new IO::Socket::INET->new("$host:$port") or die $@ ;
+my $socket = new IO::Socket::INET->new("$host:$port") or die "$@\n" ;
 
 print $socket "$command\n" ;
 

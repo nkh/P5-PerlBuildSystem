@@ -220,7 +220,7 @@ else
 			{
 			if(exists $file_tree->{__BUILD_DONE})
 				{
-				PrintInfo "Build is already done: $file_tree->{__BUILD_DONE}\n" ;
+				PrintWarning "Build is already done: $file_tree->{__BUILD_DONE}\n" ;
 				}
 			else
 				{

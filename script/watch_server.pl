@@ -348,7 +348,7 @@ if(exists $clients->{$id})
 	}
 else
 	{
-	print $socket join($separator, '0', "'$id', You are not registred") ;
+	print $socket join($separator, '0', "'$id' not registred") ;
 	print "'$id' is not registred!\n" ;
 	}
 	
@@ -398,7 +398,7 @@ if(exists $clients->{$id})
 	}
 else
 	{
-	print $socket join($separator, '0', "'$id', You are not registred") ;
+	print $socket join($separator, '0', "'$id' not registred") ;
 	print "'$id' is not registred!\n" ;
 	}
 	

@@ -82,7 +82,9 @@ eval
 	if($is_registred)
 		{
 		#We were registred.
-		PrintInfo "Watcher: $number_of_modified_files modified files. $number_of_watches watches\n";
+		PrintInfo "Watcher: modified files: $number_of_modified_files watches: $number_of_watches\n"
+			unless $pbs_config->{QUIET} ;
+
 		$PBS::pbs_run_information->{WATCH_SERVER}{WATCHES} = $number_of_watches ;
 		$PBS::pbs_run_information->{WATCH_SERVER}{MODIFIED} = $number_of_modified_files ;
 		
@@ -125,7 +127,7 @@ eval
 		my ($success, $message) = PBS::Watch::Client::WatchFiles($warp_signature, @watched_files) ;
 		if($success)
 			{
-			PrintInfo "Watcher: '$message'.\n" ;
+			PrintInfo "Watcher: '$message'.\n" unless $pbs_config->{QUIET} ;
 			}
 		else
 			{
@@ -136,7 +138,7 @@ eval
 
 if($@)
 	{
-	PrintError "Couldn't connect to watch Server! $@\n" ;
+	PrintError "Watcher: Couldn't connect to Server! $@\n" ;
 	$PBS::pbs_run_information->{WATCH_SERVER}{STATUS} = 'Not running' ;
 	$files_checker = \&PBS::Digest::IsFileModified ;
 	}
@@ -170,7 +172,7 @@ else
 					{
 					if(! $md5_mismatch)
 						{
-						PrintWarning "watch FP: '$node_name'\n" ;
+						PrintWarning "Watcher: changed but MD5: unchanged, '$node_name'\n" ;
 						}
 					else
 						{
@@ -180,7 +182,7 @@ else
 					
 				if((! exists $modified_files{$node_name}) && $md5_mismatch)
 					{
-					PrintError "!!! watch FN: '$node_name'\n" ;
+					PrintError "Watcher: unchanged, MD5: changed, '$node_name'\n" ;
 					$file_is_modified++ ;
 					}
 					
@@ -226,7 +228,7 @@ else
 if($pbs_config->{DISPLAY_PBS_TIME})
 	{
 	my $watch_server_time = tv_interval ($t0, [gettimeofday]) ;
-	PrintInfo sprintf("Watch server time: %0.2f\n", $watch_server_time) ;
+	PrintInfo sprintf("Watcher: server time %0.2f s\n", $watch_server_time) ;
 	$PBS::pbs_run_information->{WATCH_SERVER}{TIME} = $watch_server_time ;
 	}
 
@@ -254,7 +256,7 @@ eval
 
 if($@)
 	{
-	PrintError "Couldn't connect to watch Server! $@\n" ;
+	PrintError "Watcher: Couldn't connect to Server! $@\n" ;
 	}
 }
 
