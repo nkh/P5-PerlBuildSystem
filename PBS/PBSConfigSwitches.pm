@@ -413,7 +413,7 @@ EOT
 		'Debug flags cancel the build pass, this flag re-enables the build pass.',
 		'',
 		
-	'check_dependencies_at_build_time' => \$pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME},
+	'cdabt|check_dependencies_at_build_time' => \$pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME},
 		'Skipps the node build if no dependencies have changed or where rebuild to the same state.',
 		'',
 

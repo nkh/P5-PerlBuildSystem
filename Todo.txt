@@ -1,13 +1,6 @@
 
 add: new c_depender test
 
-node doesn't need to be rebuild
-	appears when node is rebuild!
-
-	message is cryptic, explain why
-
-	c dependency file is marked as source, does that interfere?
-
 \r \e[K
 
 new options for simple listings:

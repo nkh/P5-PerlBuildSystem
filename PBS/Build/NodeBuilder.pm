@@ -113,9 +113,9 @@ else
 	{
 	$check_dependencies_at_build_time_node_skipped++ ;
 	
-	if((! $PBS::Shell::silent_commands))
+	if(! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 		{
-		PrintWarning "Node doesn't need to be build; no dependency has changed.\n" ;
+		PrintWarning "No dependencie change (see --cdabt)\n" ;
 		}
 		
 	# remember that we are using the previously generated digest.
@@ -201,6 +201,9 @@ if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! $node_needs_rebuild))
 	#todo: md5 for the shell commands and perl subs should be saved in the digest
 	#todo: Need to regenerate the digest with the new pbsfile
 	# nothing to do
+
+	PrintShell "Skipping node build, no dependencie change\n" ;
+	
 	($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
 	}
 else
