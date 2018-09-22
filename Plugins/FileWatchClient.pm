@@ -16,9 +16,11 @@ This plugin handles the following PBS defined switches:
 
 =item  --use_watch_server
 
-=item  --watch_server_double_check_with_md5
-
 =item  --watch_server_verbose
+
+=item  --watch_server_double_check
+
+=item  --watch_server_double_check_stats_only
 
 =back
 
@@ -34,8 +36,9 @@ use Data::TreeDumper ;
 #-------------------------------------------------------------------------------
 
 my $use_watch_server ;
-my $watch_server_double_check_with_md5 ;
 my $watch_server_verbose ;
+my $watch_server_double_check ;
+my $watch_server_double_check_stats_only ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -44,19 +47,55 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	'Uses file watch server to speed up file verification.',
 	'',
 	
-	'watch_server_double_check_with_md5',
-	\$watch_server_double_check_with_md5,
-	'As use_watch_server but also does and md5 verification.',
-	'',
-	
 	'watch_server_verbose',
 	\$watch_server_verbose,
 	'Will display what files the server has been notfied for.',
+	'',
+
+	'watch_server_double_check',
+	\$watch_server_double_check,
+	'As use_watch_server but also does ai hash verification.',
+	'',
+
+	'watch_server_double_check_stats_only',
+	\$watch_server_double_check_stats_only,
+	'As use_watch_server_doulbe_check  but only outputs statistics.',
 	'',
 	) ;
 	
 
 #-------------------------------------------------------------------------------
+
+my ($watcher_false_negative, $watcher_false_positive) = (0, 0) ;
+
+sub ResetWatchedFilesCheckerStat
+{
+($watcher_false_negative, $watcher_false_positive) = (0, 0) ;
+}
+
+sub GetWatchedFilesCheckerStats
+{
+if
+	(
+	($watch_server_double_check || $watch_server_double_check_stats_only)
+	&& ($watcher_false_negative || $watcher_false_positive)
+	)
+	{
+	$watcher_false_negative,
+	$watcher_false_positive,
+	INFO("Warcher: " )
+		. WARNING("faulse_negative: $watcher_false_negative") 
+		. ', ' 
+		. ERROR("failse_positive: $watcher_false_positive")
+		. "\n" ;
+	}
+else
+	{
+	$watcher_false_negative,
+	$watcher_false_positive,
+	'' ;
+	}
+}
 
 sub GetWatchedFilesChecker
 {
@@ -156,7 +195,7 @@ else
 		$modified_files{$name} = $type ;
 		}
 		
-	if($watch_server_double_check_with_md5)
+	if($watch_server_double_check || $watch_server_double_check_stats_only)
 		{
 		$files_checker = 
 			sub
@@ -172,7 +211,10 @@ else
 					{
 					if(! $md5_mismatch)
 						{
-						PrintWarning "Watcher: changed but MD5: unchanged, '$node_name'\n" ;
+						PrintWarning "Watcher: changed but MD5: unchanged, '$node_name'\n"
+							unless($watch_server_double_check_stats_only) ;
+
+						$watcher_false_positive++ ;
 						}
 					else
 						{
@@ -182,7 +224,10 @@ else
 					
 				if((! exists $modified_files{$node_name}) && $md5_mismatch)
 					{
-					PrintError "Watcher: unchanged, MD5: changed, '$node_name'\n" ;
+					PrintError "Watcher: unchanged, MD5: changed, '$node_name'\n"
+							unless($watch_server_double_check_stats_only) ;
+						
+					$watcher_false_negative++ ;
 					$file_is_modified++ ;
 					}
 					

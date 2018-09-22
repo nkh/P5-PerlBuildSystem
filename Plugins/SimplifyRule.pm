@@ -137,7 +137,7 @@ sub AddRule
 # this implementation of the AddRule plugin translates simplified rule definition
 # to a pure perl rule definition. 
 
-# NOTE: A reference to the original rule is passed and directely manipulated
+# NOTE: A reference to the original rule is passed and directly manipulated
 
 my ($file_name, $line, $rule_definition) =  @_ ;
 

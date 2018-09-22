@@ -1,4 +1,17 @@
 
+
+
+gtg_p not clustering M example
+
+--tt node shows all node in -tt mode
+	parent!
+	pbs  --ttcl -tt jar2 -tnd
+
+TreeDumper wrap too short when coloring
+TreeDumper tt_filter, make negative filter! 
+
+build -watch big, cd ../test2, build -watch => same warp signature?!
+
 -bi does not work with -j
 	shows info but build fails although it should continue
 

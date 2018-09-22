@@ -172,6 +172,11 @@ eval
 				}
 			}
 		}
+
+	my ($fn, $fp, $stat_message) = RunUniquePluginSub($pbs_config, 'GetWatchedFilesCheckerStats') ;
+	RunUniquePluginSub($pbs_config, 'ResetWatchedFilesCheckerStats') ;
+
+	PrintInfo $stat_message ;
 	} ;
 
 if($pbs_config->{DISPLAY_CHECK_TIME})

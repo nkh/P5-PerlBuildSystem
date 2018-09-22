@@ -106,7 +106,7 @@ while (!$quit)
 	$connection_index++ ;
 	
 	my $now_string = strftime "%a %b %e %Y %H:%M:%S", gmtime ;
-	print "Connection $connection_index: $now_string\n" ;
+	print "[$connection_index] Connection on $now_string\n" ;
 
 	Synch($watcher) ;
 	
@@ -178,6 +178,8 @@ if(defined (my $command_and_args = <$socket>))
 	$command_and_args =~ s/\n|\r//g ;
 	
 	my ($command, $id, @args) = split /$separator/, $command_and_args ;
+
+	$clients->{$id}{ACCESS}++ if exists $clients->{$id} ;
 
 	for ($command)
 		{
@@ -332,8 +334,6 @@ if(exists $clients->{$id})
 		
 	print $socket join($separator, '1', $number_of_watches, $number_of_modified_files, $packed_modified_files) ;
 	print "$number_of_modified_files modified files, $number_of_watches watches\n" ;
-
-	$client->{ACCESS}++ ;
 	}
 else
 	{
@@ -384,7 +384,6 @@ if(exists $clients->{$id})
 	print "cleared " . scalar(keys %{$client->{MODIFIED_FILES}}) . " modified flags.\n" ;
 	
 	$client->{MODIFIED_FILES} = {} ;
-	$client->{ACCESS}++ ;
 	
 	print $socket "1\n" ;
 	}
