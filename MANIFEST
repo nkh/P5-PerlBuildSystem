@@ -142,7 +142,6 @@ PBSLib/Rules/C_EvalShellCommand.pm
 PBSLib/Rules/Object_rules_utils.pm
 PBSLib/Rules/C_depender.pm
 
-PBSLib/Rules/C_DependAndBuild.pm
 PBSLib/Rules/cl_pch.pm
 
 PBSLib/Rules/Compilers/cl.pm

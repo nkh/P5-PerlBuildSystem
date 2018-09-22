@@ -149,11 +149,6 @@ if(-e $dependency_file_name)
 					
 				if($digest->{$dependency} ne $dependency_md5{$dependency})
 					{
-					if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
-						{
-						PrintInfo("Creator: '$dependent_to_check' [MD5 difference]: '$dependency'.\n") ;
-						}
-						
 					$dependency_file_needs_update = NEED_REBUILD ;
 					last ;
 					}
@@ -169,11 +164,6 @@ if(-e $dependency_file_name)
 	}
 else
 	{
-	if(defined $tree->{__PBS_CONFIG}{DISPLAY_C_DEPENDENCY_INFO})
-		{
-		PrintInfo("Creator: '$dependent_to_check' [No digest file].\n") ;
-		}
-		
 	$dependency_file_needs_update = NEED_REBUILD ;
 	}
 

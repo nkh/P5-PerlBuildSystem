@@ -1,11 +1,69 @@
 
+use PBS::Plugin ;
+
 
 PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '+001C.pm', 'EvaluateShellCommand' =>
-	\&IncludeSourceDirectoriesInIncludePath) ;
+	\&C_eval) ;
 
-PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '+002C.pm', 'EvaluateShellCommand' =>
-	\&C_source) ;
+#-------------------------------------------------------------------------------
 
+sub C_eval 
+{
+my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
+
+if($$shell_command_ref =~ /%C_SOURCE/)
+	{
+	PrintDebug "'Eval %C_SOURCE' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+
+	my $c_source = '' ;
+
+	for my $dependency (grep { ! /^__/ } keys %$tree)
+		{
+		$c_source .= "$dependency" if $dependency =~ /\. c (?:pp)? /x ;
+		}
+
+	$$shell_command_ref =~ s/%C_SOURCE/$c_source/ ;
+
+	PrintDebug "\t=> $$shell_command_ref\n\n" 
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+	}
+
+if($$shell_command_ref =~ /%CFLAGS_INCLUDE/)
+	{
+	PrintDebug "'Eval %CFLAGS_INCLUDE' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+
+	my $cflags_include = GetCFileIncludePaths($tree);
+	
+	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/ ;
+
+	PrintDebug "\t=> $$shell_command_ref\n\n" 
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+	}
+
+if($$shell_command_ref =~ /%C_DEPENDER/)
+	{
+	PrintDebug "'Eval %C_DEPENDER' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+
+	my $c_depender = $tree->{__CONFIG}{C_DEPENDER} ;
+
+	unless(defined $c_depender)
+		{
+		PrintWarning("\t\t'C_DEPENDER' isn't defined.\n") ;
+		}
+	else
+		{
+		$$shell_command_ref =~ s/%C_DEPENDER/$c_depender/ ;
+		}
+
+	PrintDebug "\t=> $$shell_command_ref\n\n" 
+		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+	}
+}
+
+#-------------------------------------------------------------------------------
 
 sub GetCFileIncludePaths
 {
@@ -47,41 +105,6 @@ for my $include_path ($dependent_path, @include_paths)
 	}
 	
 return $result;
-}
-
-
-#-------------------------------------------------------------------------------
-
-use PBS::Plugin ;
-sub IncludeSourceDirectoriesInIncludePath
-{
-my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
-
-if($$shell_command_ref =~ /%CFLAGS_INCLUDE/)
-	{
-	my $cflags_include = GetCFileIncludePaths($tree);
-	
-	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/ ;
-	}
-}
-
-#-------------------------------------------------------------------------------
-
-sub C_source 
-{
-my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
-
-if($$shell_command_ref =~ /%C_SOURCE/)
-	{
-	my $c_source = '' ;
-
-	for my $dependency (grep { ! /^__/ } keys %$tree)
-		{
-		$c_source .= "$dependency " if $dependency =~ /\. c (?:pp)? /x ;
-		}
-
-	$$shell_command_ref =~ s/%C_SOURCE/$c_source/ ;
-	}
 }
 
 #-------------------------------------------------------------------------------

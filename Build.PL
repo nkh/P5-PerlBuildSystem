@@ -113,7 +113,6 @@ PBSLib/Language/Simplified.pm
 PBSLib/Rules/C.pm
 PBSLib/Rules/Object_rules_utils.pm
 PBSLib/Rules/C_EvalShellCommand.pm
-PBSLib/Rules/C_DependAndBuild.pm
 PBSLib/Rules/C_depender.pm
 
 PBSLib/Rules/Compilers/cl.pm

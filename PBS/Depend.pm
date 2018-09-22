@@ -183,7 +183,7 @@ for my $post_build_rule (@post_build_rules)
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
 	my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
-	my $rule_info = $rule_name . INFO2(" @ $dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}") ;
+	my $rule_info = $rule_name . INFO2(" @ $dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}", 0) ;
 	
 	my $depender  = $dependency_rules->[$rule_index]{DEPENDER} ;
    

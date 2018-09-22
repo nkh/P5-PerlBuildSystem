@@ -790,28 +790,8 @@ EOT
 		' Display the time spend checking the dependency tree.',
 		'',
 		
-	'dcdi|display_c_dependency_info'  => \$pbs_config->{DISPLAY_C_DEPENDENCY_INFO},
-		'Display information while depending C files.',
-		'',
-		
-	'scd|show_c_depending'            => \$pbs_config->{SHOW_C_DEPENDING},
-		'PBS will show which C files dependency are build.',
-		'see -- dcd.',
-		
 	'dre|dependency_result'           => \$pbs_config->{DISPLAY_DEPENDENCY_RESULT},
 		'Display the result of each dependency step.',
-		'',
-		
-	'ncd|no_c_dependencies'           => \$pbs_config->{NO_C_DEPENDENCIES},
-		'completely ignore c dependencies.',
-		'',
-		
-	'dcd|display_c_dependencies'      => \$pbs_config->{DISPLAY_C_DEPENDENCIES},
-		'Display the dependencies that are newer than a c file.',
-		'',
-		
-	'display_cpp_output'              => \$pbs_config->{DISPLAY_CPP_OUTPUT},
-		'Display the command and output of the program generating dependencies.',
 		'',
 		
 	'ddrr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX},

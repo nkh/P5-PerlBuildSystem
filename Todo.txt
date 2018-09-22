@@ -1,16 +1,25 @@
 
 
+Check pbsfiles/config project
 
-gtg_p not clustering M example
+document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
+	that they are best put under lib/rules
+	plugins are for global changes
+
+c depender:
+                $config->{'C_DEPENDER_SYSTEM_INCLUDES'},
+
+	option to not take in the system includes
+	option to make the system includes a sub group so they are not displayed all the time in -tno
 
 --tt node shows all node in -tt mode
 	parent!
-	pbs  --ttcl -tt jar2 -tnd
+	pbs --ttcl -tt jar2 -tnd
 
 TreeDumper wrap too short when coloring
-TreeDumper tt_filter, make negative filter! 
+	-tww is a short term hack till Text::Ansi::Util gets fixed
 
-build -watch big, cd ../test2, build -watch => same warp signature?!
+TreeDumper tt_filter, make negative filter! 
 
 -bi does not work with -j
 	shows info but build fails although it should continue
@@ -59,8 +68,11 @@ AddNodeFileDependency
 AddVariableDependency
 	=> should be done in the rule
 	=> should automatically add the variables that are used during the build of the node
+		%PBS_REPO would force all nodes to rebuild on a change of repo or added repo,
+		which is the opposite of the intended purpose of repositories!
 
 log creation doesn't work with -j
+	need a composite log, which is a good idea even without -j
 
 project generation sript can generate project which doesn't require compilation
 	- we can still use .c file but

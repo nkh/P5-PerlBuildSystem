@@ -500,7 +500,7 @@ if(defined $global_flags)
 # Get the config and extract what we need from it
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
-if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
+if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
 	PrintInfo("Merging to configuration: '${package}::${original_type}::$original_class' from '$origin'.\n") ;
 	}
@@ -883,12 +883,14 @@ EOH
 
 sub EvalConfig 
 {
-my $entry  = shift ;
-my $config = shift ;
-my $key    = shift ;
-my $origin = shift ;
+my ($entry, $config, $key, $origin, $tree) = @_ ;
 
 return($entry) unless defined $entry ;
+return($entry)  unless $entry =~ /%/ ;
+
+my $source_entry = $entry ;
+PrintDebug "'PBS::CONFIG::EvalConfig' for '$tree->{__NAME}':\n\t   $source_entry\n"
+	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 my $undefined_config = 0 ;
 
@@ -896,20 +898,20 @@ my $undefined_config = 0 ;
 $entry =~ s/\%\%/__PBS__PERCENT__/g ;
 
 # replace config names with their values
-while($entry =~/\$config->\{('*[^}]+)'*}/g)
+while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 	{
 	my $element = $1 ; $element =~ s/^'// ; $element =~ s/'$// ;
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning("While evaluating '$key': \$config->{$1} doesn't exist at $origin.\n") ;
+		PrintWarning("\t\t\$config->{$1} doesn't exist at $origin.\n") ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("While evaluating '$key': \$config->{$1} isn't defined at $origin.\n") ;
+		PrintWarning("\t\t\$config->{$1} isn't defined at $origin.\n") ;
 		$undefined_config++ ;
 		}
 	}
@@ -928,20 +930,24 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		#~ PrintDebug DumpTree($config, "Config") ;
-		PrintWarning("While evaluating '$key': configuration variable '$element' doesn't exist at $origin.\n") ;
+		PrintWarning("\t\t'$element' doesn't exist at $origin.\n") ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("While evaluating '$key': configuration variable '$element' isn't defined at $origin.\n") ;
+		PrintWarning("\t\t'$element' isn't defined at $origin.\n") ;
 		}
 	}
 	
-$entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : $1/eg ;
+
+$entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : "%$1"/eg ;
 
 $entry =~ s/__PBS__PERCENT__/\%/g ;
+
+PrintDebug "\t=> $entry\n\n"
+	 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
+		&& $source_entry ne $entry ;
 
 return($entry) ;
 }

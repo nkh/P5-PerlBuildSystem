@@ -128,13 +128,6 @@ else
 		{
 		if(defined $pbs_config->{JOBS})
 			{
-			#~ PrintWarning("--j switch disable till perl get better threads than the completely useless Ithreads.\n") ;
-			#~ use PBS::ThreadedBuild ;
-			#~ return
-				#~ (
-				#~ PBS::ThreadedBuild::ThreadedBuild($package_alias, $pbs_config, $build_sequence, $inserted_nodes) 
-				#~ ) ;
-				
 			if(defined $pbs_config->{LIGHT_WEIGHT_FORK})
 				{
 				eval "use PBS::Build::LightWeightServer ;" ;
@@ -197,8 +190,6 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR})
 			({
 			count => $number_of_nodes_to_build,
 			ETA   => "linear", 
-			#~ pre_update_user_code => $PBS::Output::global_info_escape_code,
-			#~ post_update_user_code => $PBS::Output::global_reset_escape_code,
 			});
 	}
 	

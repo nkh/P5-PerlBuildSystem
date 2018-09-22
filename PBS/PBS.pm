@@ -197,8 +197,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	# check target names
 	for(@$targets)
 		{
-		#~ s/^\.\/// ; !!! what was the use of this? I think it can be removed as well as the './' adding in the root rule
-		
 		if(/@/ > 1)
 			{
 			PrintError("Invalid composite target definition\n") ;
@@ -387,8 +385,8 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	}
 else
 	{
-	PrintError("Can't find Pbsfile '$Pbsfile' to define build.\n". DumpTree($pbs_config->{SUBPBS_HASH}, "'Subpbs rule definition:", DISPLAY_ADDRESS => 0)) ;
-	die ;
+	PrintError("Can't find Pbsfile '$Pbsfile' to define build.\n". DumpTree($pbs_config->{SUBPBS_HASH}, "Rule:", DISPLAY_ADDRESS => 0)) ;
+	die "\n";
 	}
 	
 $PBS::Output::indentation_depth-- ;

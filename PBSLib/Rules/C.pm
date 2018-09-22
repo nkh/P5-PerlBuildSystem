@@ -25,6 +25,8 @@ AddConfigTo('BuiltIn', 'CFLAGS_INCLUDE:LOCAL' => '') unless(GetConfig('CFLAGS_IN
 	
 # make all object files depend on CDEFINES, it will be added to the digest
 AddNodeVariableDependencies(qr/\.o$/, CDEFINES => GetConfig('CDEFINES')) ;
+# above needs to be completed! also note that .o can be have multiple source type
+# CC_SYNTAX  => "%%CC  %%CFLAGS   %%CDEFINES  %%CFLAGS_INCLUDE  -I%%PBS_REPOSITORIES -o %%FILE_TO_BUILD -c %%C_SOURCE %%C_DEPENDER",
 
 # -------------------------
 # declare source file types
@@ -56,7 +58,7 @@ PbsUse('Rules/Object_rules_utils') ; # for object dependencies cache generation
 
 # note the generation of the dependency cache for object files in the rule
 AddRuleTo 'BuiltIn', 'c_objects', [ '*/*.o' => '*.c' , \&exists_on_disk],
-	GetConfig('CC_SYNTAX') . ' -MD -MP -MF %FILE_TO_BUILD.dependencies' ;
+	GetConfig('CC_SYNTAX') ;
 
 AddRuleTo 'BuiltIn', 'cpp_objects', [ '*/*.o' => '*.cpp' , \&exists_on_disk],
 	GetConfig('CXX_SYNTAX') ;

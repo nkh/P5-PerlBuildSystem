@@ -69,15 +69,7 @@ my ($shell, $builder, $package, $name, $file_name, $line) = @_ ;
 
 $shell = new PBS::Shell() unless defined $shell ;
  
-my $shell_commands ;
-if(ref $builder eq '')
-	{
-	$shell_commands = [$builder] ; # single string
-	}
-else
-	{
-	$shell_commands = $builder ; # array of strings and perl sub refs
-	}
+my $shell_commands = ref $builder eq '' ? [$builder] : $builder ;
 
 my $builder_uses_perl_sub ;
 
@@ -235,6 +227,8 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	else
 		{
+		PrintInfo2 $command_information . "command: $shell_command\n" if $display_command_information ;
+
 		my $command = EvaluateShellCommandForNode
 						(
 						$shell_command,
@@ -244,8 +238,6 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		PrintInfo2 $command_information . "command: $shell_command\n" if $display_command_information ;
-		
 		$node_shell->RunCommand($command) ;
 		}
 	}
@@ -334,9 +326,7 @@ my($shell_command, $shell_command_info, $tree, $dependencies, $triggered_depende
 
 RunPluginSubs($tree->{__PBS_CONFIG}, 'EvaluateShellCommand', \$shell_command, $tree, $dependencies, $triggered_dependencies) ;
 
-my $config = $tree->{__CONFIG} ;
-
-$shell_command = PBS::Config::EvalConfig($shell_command, $config, "Shell command", $shell_command_info) ;
+$shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, "Shell command", $shell_command_info, $tree) ;
 
 return($shell_command) ;
 }

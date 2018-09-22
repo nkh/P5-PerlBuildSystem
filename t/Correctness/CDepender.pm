@@ -18,7 +18,7 @@ my $t;
 sub setup : Test(setup) {
     $t = t::PBS->new(string => 'C depender');
 
-	$t->setup_test_data('c_depender');
+    $t->setup_test_data('c_depender');
 
     $t->build_dir('build_dir');
     $t->target('test-c.exe');
@@ -30,7 +30,7 @@ sub setup : Test(setup) {
 1;
 _EOF_
 
-    $t->command_line_flags('--post_pbs=post_pbs.pl -dsi -dcdi -ndpb -no_colorization');
+    $t->command_line_flags('--post_pbs=post_pbs.pl -dsi -ndpb -no_colorization');
 }
 
 sub copy_from_pbsfiles_dir {
@@ -42,6 +42,8 @@ sub copy_from_pbsfiles_dir {
 
 sub change_include_file : Test(8) {
 # Build
+    #$t->generate_test_snapshot_and_exit() ;
+
     $t->build_test;
     $t->run_target_test(stdout => "ab");
 

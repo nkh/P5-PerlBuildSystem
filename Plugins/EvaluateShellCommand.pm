@@ -1,11 +1,7 @@
 
 =head1 Plugin  EvaluateShellCommand
 
-Let the Build system author evaluate shell commands before they are run.  This allows
-her to add variables like %SOME_SPECIAL_VARIABLE without interfering with PBS.
-
-
-Provides the following shell replacement variables:
+Provides the following replacement variables:
 
 	%PBS_REPOSITORIES
 	
@@ -20,7 +16,6 @@ Provides the following shell replacement variables:
 	%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY
 	%TRIGGERED_DEPENDENCY_LIST
 	%DEPENDENCY_LIST
-
 
 =over 2
 
@@ -56,12 +51,7 @@ sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
-my $evaluate_shell_command_verbose = $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
-
-if($evaluate_shell_command_verbose)
-	{
-	PrintDebug "'EvaluateShellCommand' plugin handling '$tree->{__NAME}' shell command:\n\t$$shell_command_ref\n" ;
-	}
+my $source_entry = $$shell_command_ref ;
 
 my @repository_paths = PBS::Build::NodeBuilder::GetNodeRepositories($tree) ;
 
@@ -77,10 +67,7 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 	my $replacement = '';
 	for my $repository_path (@repository_paths)
 		{
-		if($evaluate_shell_command_verbose)
-			{
-			PrintDebug "\t\trepository: $repository_path\n" ;
-			}
+		#PrintDebug "\t\trepository: $repository_path\n" ;
 			
 		$replacement .= "$prefix$repository_path ";
 		}
@@ -93,7 +80,7 @@ for my $field_to_replace (keys %pbs_repositories_replacements)
 	$$shell_command_ref =~ s/$field_to_replace/$pbs_repositories_replacements{$field_to_replace}/g ;
 	}
 
-#other %VARIABLE
+#other %VARIABLES
 my $file_to_build = $tree->{__BUILD_NAME} || GetBuildName($tree->{__NAME}, $tree);
 
 my @dependencies ;
@@ -151,7 +138,8 @@ $$shell_command_ref =~ s/\%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY/$dependency_
 $$shell_command_ref =~ s/\%TRIGGERED_DEPENDENCY_LIST/$triggered_dependency_list/g ;
 $$shell_command_ref =~ s/\%DEPENDENCY_LIST/$dependency_list/g ;
 
-PrintDebug "\t=> $$shell_command_ref\n\n" if($evaluate_shell_command_verbose) ; 
+PrintDebug "'Eval %FILE_TO_BUILD, etc... for '$tree->{__NAME}':\n\t   $source_entry\n\t=> $$shell_command_ref\n\n"
+	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} && $source_entry ne $$shell_command_ref ;
 }
 
 #-------------------------------------------------------------------------------

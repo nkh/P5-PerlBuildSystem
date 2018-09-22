@@ -22,6 +22,8 @@ And add the following functionality:
 
 =item --tnonr, removes files matching the passed regex
 
+=item --tww, set the wrap width
+
 =back
 
 =cut
@@ -35,6 +37,7 @@ use Data::TreeDumper ;
 my $no_header_files_display ;
 my @display_filter_regexes ;
 my $tree_color_levels ;
+my $wrap_width ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -46,6 +49,11 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	'tnonr=s',
 	\@display_filter_regexes ,
 	"Removes files matching the passed regex from the tree dump.",
+	'',
+
+	'tww=i',
+	\$wrap_width ,
+	"Set the wrap width.",
 	'',
 
 	'ttcl',
@@ -335,6 +343,9 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TEXT_TREE})
 	use Term::ANSIColor qw(:constants) ;
 	my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
 	push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
+
+	# terminal width
+	push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
 
 	PrintInfo DumpTree($tree_to_display, $dump_title, FILTER => $FilterDump, @extra_options) if defined $tree_to_display ;
 	print Term::ANSIColor::color('reset') ;
