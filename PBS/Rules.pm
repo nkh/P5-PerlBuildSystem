@@ -570,7 +570,7 @@ my $build_ok = subname _BuildOk => sub
 	{
 	my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
 	
-	PrintInfo("\tPBS::BuildOk: $message \n") if $print ;
+	PrintInfo("PBS::BuildOk: $message \n") if $print ;
 	return(1, $message) ;
 	} ;
 

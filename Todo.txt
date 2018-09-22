@@ -1,5 +1,13 @@
 
+-bi does not work with -j
+	shows info but build fails although it should continue
+
+error: gcc failure when -j appears before report by pbs. stderr not redirected?
+
 add: new c_depender test
+
+--tmux-error
+
 
 \r \e[K
 
@@ -15,14 +23,13 @@ example of output with options on
 	searches for examples with all switches
 	displays one or more examples 
 
-error: gcc failure when -j aappears before repor by gcc. stderr not redirected
 
 [SOURCE] instead for NoDigest
 	less typing
 	no need to know the API
 	regex (or single file) is already known
 	name is better when it is the name of the rule
-		in case multiplåe rules tag different  nodes as SOURCE
+		in case multiple rules tag different  nodes as SOURCE
 
 [USER_TYPE]
 	annotation like types, just tags the rule
@@ -47,9 +54,6 @@ project generation sript can generate project which doesn't require compilation
 		- replace the .o depender
 		- build the .o by touching them
 			
--bi does not work with -j
-	shows info but build fails although it should continue
-
 debug breakpoint could display an informative message about what it is doing
 and what is available for poking
 

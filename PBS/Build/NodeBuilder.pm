@@ -115,7 +115,7 @@ else
 	
 	if(! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 		{
-		PrintWarning "No dependencie change (see --cdabt)\n" ;
+		PrintWarning "No dependencie change (see --cdabt).\n" ;
 		}
 		
 	# remember that we are using the previously generated digest.

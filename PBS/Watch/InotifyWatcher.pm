@@ -10,7 +10,7 @@ InotifyWatcher - linux watch mechanism for watch_server.pl
 
 =head1 DESCRIPTION
 
-This module is used by I<watch_server.pl> on linux. When queried, the watch server willl report all the  modifiedfile.
+This module is used by I<watch_server.pl> on linux. When queried, the watch server will report all the modified files.
 
 =cut
 
@@ -32,7 +32,7 @@ die "multiple definitions of a singleton!" if defined $inotify_singleton ;
 
 my ($class, $modified_files, $deleted_files) = @_ ;
 
-my $inotify = new Linux::Inotify2 or die "Unable to create new inotify object: $!";
+my $inotify = new Linux::Inotify2 or die "Unable to create new inotify object: $!\n";
 my $inotify_fd = $inotify->fileno() ;
 
 my $self = 
