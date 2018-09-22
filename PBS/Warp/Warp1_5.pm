@@ -186,7 +186,8 @@ if($run_in_warp_mode)
 				
 			$remove_this_node += $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
 
-			$trigger_log .= "{ NAME => '$nodes->{$node}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node}{__MD5}' },\n" ;
+			$trigger_log .= "{ NAME => '$nodes->{$node}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node}{__MD5}' },\n"
+				if $remove_this_node ;
 			}
 			
 		$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
