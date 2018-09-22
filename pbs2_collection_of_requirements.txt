@@ -1,4 +1,26 @@
 
+Binary repository layer
+	rather than as if a specific file has an md5 on the repository we should
+	ask if it has a file with that md5, it doesn't matter where it is
+
+	repositories can send a patch over the list of previously available artefacts to reduce traffic
+
+	the artefacts are needed locally only when a dependent has to be build
+
+	a node that needs to be build does not need to be checked with the repos
+
+	feels close to what warp does except we need a physicla file rather than a pseudo node in $inserted_nodes
+
+	if a node needs to be build, it doesn't exist or a depdndency has changed, we can still find it
+		using it's dependencies and config as a hash
+
+	
+
+in large project, digest files take a significant time to load (1s :) ) can the size be reduced?
+	C includes are repeated many times
+
+Can we get the nd5 of a sub? of a closure?
+
 PrintDebug2
 	we need to have a color tag at the beginning of print output to be able to differentiate
 	different entries in the same category
