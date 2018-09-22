@@ -318,7 +318,7 @@ my $build = $class->new
 		
 	pm_files     => \%all_modules,
 	
-	script_files => 'script/pbs.pl',
+	script_files => ['script/pbs.pl', 'script/watch_server.pl'],
 	dist_author  => 'Khemir Nadim ibn Hamouda. <nadim@khemir.net>',
 	dist_abstract => 'Build utility/modules in the same spirit as gmake',
 	);

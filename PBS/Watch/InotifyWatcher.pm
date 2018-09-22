@@ -4,6 +4,9 @@ package PBS::Watch::InotifyWatcher ;
 use strict;
 use warnings ;
 
+# check
+# https://github.com/tinkershack/fluffy#cli-invocations
+
 =head1 NAME
 
 InotifyWatcher - linux watch mechanism for watch_server.pl
@@ -14,6 +17,7 @@ This module is used by I<watch_server.pl> on linux. When queried, the watch serv
 
 =cut
 
+use File::Basename ;
 use Linux::Inotify2;
 use IO::Select ;
 use Data::TreeDumper ;
@@ -53,11 +57,13 @@ return bless $self, $class ;
 sub WatchFile
 {
 my ($self, $file) = @_ ;
+		
+#my ($basename, $path, $ext) = File::Basename::fileparse($file, ('\..*')) ;
 
 my $watch_added = $self->{INOTIFY}->watch
 			(
 			$file,
-			IN_MODIFY | IN_DELETE_SELF,
+			IN_ALL_EVENTS,
 			\&RememberModifiedFiles,
 			) ;
 
@@ -71,7 +77,7 @@ sub RememberModifiedFiles
 my $e = shift;
 my $fullname = $e->fullname ;
 
-#~ print "Event received for: '$fullname'\n\n" ;
+#print "Event received for: '$fullname'\n" ;
 
 $inotify_singleton->{MODIFIED_FILES}{$fullname} =  WATCH_TYPE_FILE if $e->IN_MODIFY;;
 $inotify_singleton->{DELETED_FILES}{$fullname} = WATCH_TYPE_FILE  if $e->IN_DELETE_SELF;
@@ -106,7 +112,7 @@ for my $synch (1)
 		$self->{INOTIFY}->poll() ;
 		}
 		
-	#~ print "Multiple synch needed($synch).\n" if $synch > 1 ;
+	#print "Multiple synch needed($synch).\n" if $synch > 1 ;
 	}
 }
 
