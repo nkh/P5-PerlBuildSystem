@@ -7,11 +7,6 @@ use POSIX qw(strftime);
 
 #-------------------------------------------------------------------------------
 
-my $cache_header = "C dependencies PBS generated at " ;
-my $cache_footer = 'END C dependencies PBS' ;
-
-sub InsertDependencyNodes
-{
 # C depender for object files (not part of the core pbs but distributed with it)
 
 # old C depender:
@@ -59,6 +54,44 @@ sub InsertDependencyNodes
 #	it's one tenth of the old code size   
 
 
+my $cache_header = "C dependencies PBS generated at " ;
+my $cache_footer = 'END C dependencies PBS' ;
+
+#-------------------------------------------------------------------------------
+
+sub read_dependencies_cache
+{
+my (undef, undef, $tree) = @_ ;
+
+my $file_to_build = $tree->{__BUILD_NAME} || PBS::Rules::Builders::GetBuildName($tree->{__NAME}, $tree) ;
+my $dependency_file = "$file_to_build.dependencies" ;
+
+my @node_dependencies = ($dependency_file) ; # worse case: the non valid dependency cache
+my @dependencies_cache ;
+
+if 
+	(
+	   ( -e $file_to_build && -e $dependency_file)
+	&& ( @dependencies_cache = read_file($dependency_file, chomp => 1) )
+	&& ( $dependencies_cache[0] =~ /^$cache_header/ && $dependencies_cache[-1] =~ /^$cache_footer/ )
+	)
+	{
+	# valid cache, remove header and footer
+	shift @dependencies_cache ; pop @dependencies_cache ;
+		
+	# use the cache, unless it points to a non-existing header files
+	@node_dependencies = @dependencies_cache
+		unless grep { ! -e $_ } @dependencies_cache ;
+	}
+
+$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
+return [1, @node_dependencies] ; # triggered
+}
+
+#-------------------------------------------------------------------------------
+
+sub InsertDependencyNodes
+{
 my ($node, $inserted_nodes) = @_ ;
 
 return unless exists $node->{__BUILD_DONE} ;
@@ -124,39 +157,7 @@ $inserted_nodes->{$dependency_file}{__MD5} = GetFileMD5($dependency_file) ;
 # regenerate our own digest
 eval { PBS::Digest::GenerateNodeDigest($node) } ;
 
-die "Error Generating node digest: $@" if $@ ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub read_dependencies_cache
-{
-my (undef, undef, $tree) = @_ ;
-
-my $file_to_build = $tree->{__BUILD_NAME} || PBS::Rules::Builders::GetBuildName($tree->{__NAME}, $tree) ;
-my$dependency_file = "$file_to_build.dependencies" ;
-
-my @node_dependencies = ($dependency_file) ; #dependencies to be object file
-
-if ( -e $file_to_build && -e $dependency_file)
-	{
-	my @dependencies = read_file($dependency_file, chomp => 1) ;
-
-	if( $dependencies[0] =~ /^$cache_header/ && $dependencies[-1] =~ /^$cache_footer/)
-		{
-		# valid cache
-		shift @dependencies ; pop @dependencies ;
-			
-		my @missing_headers = grep { ! -e $_ } @dependencies ;
-	
-		@node_dependencies = @dependencies # use the cache
-			unless @missing_headers ;
-		}
-	}
-
-$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
-return [1, @node_dependencies] ; # triggered
-
+die "Error Generating node digest: $@\n" if $@ ;
 }
 
 #-------------------------------------------------------------------------------
