@@ -47,31 +47,31 @@ my $config         = shift || {} ;
 
 my $primary_tree = shift @$trees ;
 
-PrintInfo("\n**Generating tree graph**\n") ;
+PrintInfo("\nGraph: starting generation\n") ;
 if($config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE} && $config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES})
 	{
-	PrintWarning("Graph can't be clustered on definition package and source directory. Definition package will be used\n") ;
+	PrintWarning("Graph: graph can't be clustered on definition package and source directory. Definition package will be used\n") ;
 	$config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES} = 0 ;
 	}
 	
-PrintInfo("Using package clusters.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE} ;
-PrintInfo("Configs will be displayed;\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG} ;
-PrintInfo("Using source directory clusters.\n") if $config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES} ;
-PrintInfo("Build directories will be given.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY} ;
-PrintInfo("Triggered nodes not parts of the primary build will be shown.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES} ;
-PrintInfo("Dot file will be generated.\n") if($config->{GENERATE_TREE_GRAPH_CANONICAL}) ;
+PrintInfo("Graph: using package clusters.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE} ;
+PrintInfo("Graph: configs will be displayed.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG} ;
+PrintInfo("Graph: using source directory clusters.\n") if $config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES} ;
+PrintInfo("Graph: build directories will displayed.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY} ;
+PrintInfo("Graph: triggered nodes not parts of the primary build will be shown.\n") if $config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES} ;
+PrintInfo("Graph: dot file will be generated.\n") if($config->{GENERATE_TREE_GRAPH_CANONICAL}) ;
 
 if($config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} && @{$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 	{
-	PrintInfo("Following nodes and their dependencies will be displayed as a single unit:\n") ;
+	PrintInfo("Graph: these nodes and their dependencies will be displayed as a single unit:\n") ;
 	for my $cluster_node_name (@{$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 		{
 		PrintInfo("\t$cluster_node_name\n") ;
 		}
 	}
 	
-PrintInfo("Postscript output.\n") if($config->{GENERATE_TREE_GRAPH_POSTSCRIPT}) ;
-PrintInfo("SVG output.\n") if($config->{GENERATE_TREE_GRAPH_SVG}) ;
+PrintInfo("Graph: Postscript output.\n") if($config->{GENERATE_TREE_GRAPH_POSTSCRIPT}) ;
+PrintInfo("Graph: SVG output.\n") if($config->{GENERATE_TREE_GRAPH_SVG}) ;
 
 my %inserted_graph_nodes   = () ;
 my %inserted_edges   = () ;
@@ -108,7 +108,7 @@ my $graph = PBS::GraphViz->new
 		fontsize => 10,
 		ranksep => $config->{GENERATE_TREE_GRAPH_SPACING} * .75,
 		nodesep => $config->{GENERATE_TREE_GRAPH_SPACING} * .25,
-		URL => "http://www.khemir.net/projects/pbs/",
+		URL => "",
 		);
 						
 my $tree_node = GenerateTreeGraph
@@ -185,7 +185,7 @@ if($config->{GENERATE_TREE_GRAPH_HTML})
 	{
 	use PBS::Graph::Html ;
 	
-	PrintInfo("Generating html data.\n") ;
+	PrintInfo("Graph: generating html data.\n") ;
 	
 	$html_data{DIRECTORY} = $config->{GENERATE_TREE_GRAPH_HTML} ;
 	$html_data{TREE}      = $primary_tree ;
@@ -217,13 +217,13 @@ if
 			}
 		else
 			{
-			PrintErro("Can't open '$file_name' : $!") ;
+			PrintErro("Graph: can't open '$file_name' : $!") ;
 			}
 		}
 	else
 		{
 		$file_name .= '.png' unless $file_name =~ /\.png$/ ;
-		PrintInfo("Writing png file '$file_name'.\n") ;
+		PrintInfo("Graph: png file: '$file_name'.\n") ;
 		$graph->as_png($file_name) ;
 		}
 
@@ -237,7 +237,7 @@ if
 			}
 		else
 			{
-			PrintErro("Can't open '$config->{GENERATE_TREE_GRAPH_SVG}' : $!") ;
+			PrintErro("Graph: can't open '$config->{GENERATE_TREE_GRAPH_SVG}' : $!") ;
 			}
 		}
 	}
@@ -258,7 +258,7 @@ if($config->{GENERATE_TREE_GRAPH_SNAPSHOTS})
 		) ;
 	}
 	
-PrintInfo("Done generating tree graph.\n") ;
+PrintInfo("Graph: done.\n") ;
 }
 
 #-------------------------------------------------------------------------------
@@ -309,12 +309,12 @@ for my $exclude_node_regex (@{$config->{GENERATE_TREE_GRAPH_EXCLUDE}})
 
 unless($include_node == 1)
 	{
-	PrintInfo("Excluding node '$name' and it's dependency.\n") ;
+	PrintInfo("Graph: excluding node '$name' and it's dependency.\n") ;
 	return() ;
 	}
 else
 	{
-	#PrintInfo("Graphing node '$name' and it's dependency.\n") ;
+	#PrintInfo("Graph: adding node '$name' and it's dependency.\n") ;
 	}
 
 my $inserting_node_link = 0 ; # used to verify if inserted link has been drawn
@@ -359,7 +359,18 @@ if($node_type eq 'HASH')
 			}
 		}
 		
-	my @node_attributes = 
+	my @node_attributes ; 
+	push @node_attributes, (fontname => 'arial') unless $config->{GENERATE_TREE_GRAPH_POSTSCRIPT} ;
+	
+	if($display_definition_package)
+		{
+		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE}  || 'no pbsfile in pbsconfig';
+		my $package = $node->{__PBS_CONFIG}{PACKAGE} || 'no package in pbs config';
+		
+		push @node_attributes, (cluster => $package . ':' . $Pbsfile) ;
+		}
+	
+	push @node_attributes,
 		(
 		height   => 0.2,
 		URL      => "$html_link",
@@ -368,8 +379,6 @@ if($node_type eq 'HASH')
 		group    => $group,
 		) ;
 		
-	push @node_attributes, (fontname => 'arial') unless $config->{GENERATE_TREE_GRAPH_POSTSCRIPT} ;
-	
 	# try to align nodes snugly
 	if($root_rank >= 0)
 		{
@@ -384,7 +393,8 @@ if($node_type eq 'HASH')
 		}
 	else
 		{
-		push @node_attributes, (rank => $rank) ;
+		push @node_attributes, (rank => $rank) 
+			unless $display_definition_package ; # rank stops the cluster generation
 		}
 		
 	$rank++ ;
@@ -416,14 +426,6 @@ if($node_type eq 'HASH')
 	if(defined $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} || $name eq PBS_ROOT_NAME)
 		{
 		push @node_attributes, (shape => 'invhouse') ;
-		}
-	
-	if($display_definition_package)
-		{
-		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE}  || 'no pbsfile in pbsconfig';
-		my $package = $node->{__PBS_CONFIG}{PACKAGE} || 'no package in pbs config';
-		
-		push @node_attributes, (cluster => $package . ':' . $Pbsfile) ;
 		}
 	
 	if($display_source_directory && defined $node->{__ALTERNATE_SOURCE_DIRECTORY})
@@ -496,6 +498,7 @@ if($node_type eq 'HASH')
 			
 			my @keys_to_dump ;
 			for(keys %$hash)
+
 				{
 				next if(/^__/) ;
 				next if(/^TARGET_PATH/) ;
@@ -555,7 +558,7 @@ if($node_type eq 'HASH')
 				{
 				my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE} ;
 				my $package = $node->{__PBS_CONFIG}{PACKAGE} ;
-				
+		
 				push @config_node_attributes, (cluster => $package . ':' . $Pbsfile) ;
 				}
 				
@@ -706,7 +709,8 @@ if($node_type eq 'HASH')
 				}
 			}
 			
-		$graph_node              = $graph->add_node( {@node_attributes, label => $label} ) ;
+		#PrintDebug DumpTree [@node_attributes, label => $label ] ;
+		$graph_node = $graph->add_node(label => $label,  @node_attributes) ;
 		$inserted_graph_nodes->{$name} = $graph_node ;
 		}
 	else
@@ -808,7 +812,7 @@ if($node_type eq 'HASH')
 							$inserted_graph_nodes, $inserted_edges, $inserted_configs, $inserted_pbs_configs,
 							$fill_color,
 							-1,
-							 $rank,
+							$rank,
 							$group,
 							) ;
 											
@@ -932,7 +936,7 @@ if($node_type eq 'HASH')
 	}
 else
 	{
-	PrintError("Unexpected node '$name' of type '$node_type' in tree while generating graph.\n") ;
+	PrintError("Graph: unexpected node '$name' of type '$node_type' in tree while generating graph.\n") ;
 	die ;
 	}
 	

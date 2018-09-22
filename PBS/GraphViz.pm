@@ -1146,8 +1146,10 @@ sub _as_debug {
 
 #nadim    
 	# Deal with ranks
+	my @clusters = 'ARRAY' eq ref $clusters{$cluster} ? @{$clusters{$cluster}} : ($clusters{$cluster}) ;
+
 	my %ranks;
-	foreach my $name (@{$clusters{$cluster}}) 
+	foreach my $name (@clusters) 
 		{
 		my $node = $self->{NODES}->{$name};
 		if(exists $node->{rank})
@@ -1162,7 +1164,6 @@ sub _as_debug {
 		$dot .= join '; ', @{$ranks{$rank}} ;
 		$dot .= "}\n" ;
 		}
-#nadim out
 
     $dot .= $clusters_edge{$cluster} if exists $clusters_edge{$cluster};
     $dot .= "\t}\n";
