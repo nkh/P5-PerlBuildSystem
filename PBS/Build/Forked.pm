@@ -78,103 +78,95 @@ my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
 
-my $parallel_build_state = 
-sub
-{
-my ($tree) = @_ ;
-
-if('HASH' eq ref $tree)
+my $parallel_build_state = sub
 	{
-	my @keys_to_dump ;
-	
-	for(sort keys %$tree)
-		{
-		if(/^__/)
-			{
-			if
-			(
-			   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
-			|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
-			#~ || /^__VIRTUAL/
-			)
-				{
-				# display these
-				}
-			else
-				{
-				next ;
-				}
-			}
-			
-		my $replacement_key_name = my $key_name = $_ ;
-		if( ! /^__/)
-			{
-			if('HASH' eq ref $tree->{$key_name})
-				{
-				# triggered
-				if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED} && exists $tree->{$key_name}{__TRIGGERED})
-					{
-					$replacement_key_name = "* $key_name" ;
-					}
+	my ($tree) = @_ ;
 
-				# building 
-				if('HASH' eq ref $build_queue->{$key_name} && exists $build_queue->{$key_name}{PID})
-                                        {
-					$replacement_key_name = 
-						Term::ANSIColor::color('yellow') 
-						. $replacement_key_name
-						. ' [Building] ' 
-						#$PBS::OUTPUT::global_info2_escape_code
-						. Term::ANSIColor::color('reset') 
-						. Term::ANSIColor::color('green') 
-						#. $PBS::OUTPUT::global_info_escape_code
-						;
-                                        }
+	if('HASH' eq ref $tree)
+		{
+		my @keys_to_dump ;
+		
+		for(sort keys %$tree)
+			{
+			if(/^__/)
+				{
+				if
+				(
+				   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
+				|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
+				#~ || /^__VIRTUAL/
+				)
+					{
+					# display these
+					}
 				else
 					{
-					# Queued 
-					if(exists $build_queue->{$key_name})
-						{
-						$replacement_key_name = 
-							Term::ANSIColor::color('cyan') 
-							. $replacement_key_name
-							. ' [Queued] ' 
-							#$PBS::OUTPUT::global_info2_escape_code
-							. Term::ANSIColor::color('reset') 
-							. Term::ANSIColor::color('green') 
-							#. $PBS::OUTPUT::global_info_escape_code
-							;
-						}
-					}
-				
-				# built
-				if(exists $tree->{$key_name}{__BUILD_DONE})
-					{
-					my $build_timestamp = 
-						exists $tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP} 
-							? " @ t:$tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP}"
-							: '' ;
-
-					$replacement_key_name = 
-						Term::ANSIColor::color('bold blue') 
-						. $replacement_key_name
-						. " [done$build_timestamp]"
-						#$PBS::OUTPUT::global_info2_escape_code
-						. Term::ANSIColor::color('reset') 
-						. Term::ANSIColor::color('green') 
-						#. $PBS::OUTPUT::global_info_escape_code ;
+					next ;
 					}
 				}
+				
+			my $replacement_key_name = my $key_name = $_ ;
+			my $keep_key = 1 ;
+
+			if( ! /^__/)
+				{
+				if('HASH' eq ref $tree->{$key_name})
+					{
+					# triggered
+					if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED} && exists $tree->{$key_name}{__TRIGGERED})
+						{
+						$replacement_key_name = "* $key_name" ;
+						}
+
+					# building 
+					if('HASH' eq ref $build_queue->{$key_name} && exists $build_queue->{$key_name}{PID})
+						{
+						$replacement_key_name = 
+							$PBS::Output::global_warning_escape_code
+							. $replacement_key_name
+							. ' [Building] ' 
+							. $PBS::Output::global_info_escape_code ;
+						}
+					else
+						{
+						# Queued 
+						if(exists $build_queue->{$key_name})
+							{
+							$replacement_key_name = 
+								$PBS::Output::global_user_escape_code
+								. $replacement_key_name
+								. ' [Queued] ' 
+								. $PBS::Output::global_info_escape_code ;
+							}
+						}
+					
+					# built
+					if(exists $tree->{$key_name}{__BUILD_DONE})
+						{
+						my $build_timestamp = 
+							exists $tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP} 
+								? " @ t:$tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP}"
+								: '' ;
+
+						$replacement_key_name = 
+							$PBS::Output::global_info2_escape_code
+							. $replacement_key_name
+							. " [done$build_timestamp]"
+							. $PBS::Output::global_info_escape_code ;
+
+						$keep_key = exists $tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP} ;
+						}
+					}
+				}
+			
+			push @keys_to_dump, [$key_name, $replacement_key_name] if $keep_key ;
 			}
 		
-		push @keys_to_dump, [$key_name, $replacement_key_name] ;
+		return('HASH', undef, @keys_to_dump) ;
 		}
-	
-	return('HASH', undef, @keys_to_dump) ;
-	}
-	
-return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-} ;
+		
+	return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+	} ;
 
 while(%$build_queue)
 	{
@@ -733,7 +725,7 @@ sub TerminateBuilders
 my ($builders) = @_;
 my $number_of_builders = @$builders ;
 
-PrintInfo "Parallel build: terminating processes\n" ;
+PrintInfo "Parallel build:  terminating build processes [$number_of_builders]\n" ;
 
 for my $builder_index (0 .. ($number_of_builders - 1))
 	{

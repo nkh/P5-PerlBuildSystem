@@ -113,12 +113,12 @@ my $success_message = '' ;
 
 local @ARGV = ( # default colors
 		'-ci'  => 'green',
-		'-ci2' => 'bold blue',
+		'-ci2' => 'bright_blue',
 		'-cw'  => 'yellow',
-		'-cw2' => 'bold yellow',
+		'-cw2' => 'bright_yellow',
 		'-ce'  => 'red',
 		'-cd'  => 'magenta',
-		'-cs'  => 'bold green',
+		'-cs'  => 'bright_green',
 		'-cu'  => 'cyan',
 		) ;
 		

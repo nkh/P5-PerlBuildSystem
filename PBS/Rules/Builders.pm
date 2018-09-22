@@ -204,14 +204,15 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	}
 	
 my $command_index = 0 ;
-my $display_command_information = @{$shell_commands} > 1 && $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} ;
+my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} ;
 
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
 	$command_index++ ;
 	print "\n" if $command_index > 1 ;
 
-	my $command_information = "Running command $command_index of " . scalar(@$shell_commands)  ;
+	my $command_information = '' ;
+	$command_information = "Running command $command_index of " . scalar(@$shell_commands) . ', ' if @$shell_commands > 1 ;
 	
 	if('CODE' eq ref $shell_command)
 		{
@@ -220,7 +221,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		my ($file, $line) = get_code_location($shell_command) ;
 		$perl_sub_name .= " $file:$line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 
-		PrintInfo2 $command_information . " (sub: $perl_sub_name)\n"
+		PrintInfo2 $command_information . "sub: $perl_sub_name\n"
 			if $display_command_information || $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
@@ -243,13 +244,11 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		PrintInfo2 $command_information . " (shell command: $shell_command)\n" if $display_command_information ;
+		PrintInfo2 $command_information . "command: $shell_command\n" if $display_command_information ;
 		
 		$node_shell->RunCommand($command) ;
 		}
 	}
-	
-PrintInfo2 "Ran all defined commands\n" if $display_command_information ;
 	
 return(1 , "OK Building $file_to_build") ;
 }

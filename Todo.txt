@@ -6,7 +6,7 @@ error: gcc failure when -j appears before report by pbs. stderr not redirected?
 
 add: new c_depender test
 
---tmux-error
+add --tmux-error option
 
 
 \r \e[K

@@ -182,6 +182,7 @@ if(defined $pbs_config->{DISPLAY_BUILD_SEQUENCER_INFO} && ! $pbs_config->{DISPLA
 	{
 	PrintInfo("($node_build_sequencer_info) ");
 	}
+
 if
 	(
 	   defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}

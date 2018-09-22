@@ -63,7 +63,7 @@ my ($self, $file) = @_ ;
 my $watch_added = $self->{INOTIFY}->watch
 			(
 			$file,
-			IN_ALL_EVENTS,
+			IN_MODIFY | IN_DELETE_SELF,
 			\&RememberModifiedFiles,
 			) ;
 
