@@ -3,7 +3,12 @@ use File::Slurp ;
 use File::Path ;
 use PBS::Rules::Builders ;
 
+use POSIX qw(strftime);
+
 #-------------------------------------------------------------------------------
+
+my $cache_header = "C dependencies PBS generated at " ;
+my $cache_footer = 'END C dependencies PBS' ;
 
 sub InsertDependencyNodes
 {
@@ -72,10 +77,8 @@ $o_dependencies =~ s/\s+/:/g ;
 my %dependencies = map { $_ => 1 } grep { /\.h$/ } split(/:+/, $o_dependencies) ;
 my @dependencies = sort  map { $_ = "./$_" unless (/^\// || /^\.\//); $_} keys %dependencies ;
 
-use POSIX qw(strftime);
 my $now = strftime "%a %b %e %H:%M:%S %Y", gmtime;
-
-my $cache = "C dependencies PBS generated at " . __FILE__ . ':' . __LINE__ . " $now\n" ;
+my $cache = $cache_header . __FILE__ . ':' . __LINE__ . " $now\n" ;
 
 my $insertion_data =
 	{
@@ -110,7 +113,7 @@ for my $d (@dependencies, $dependency_file)
 		}
 	}
 
-$cache .= "END C dependencies PBS\n" ;
+$cache .= "$cache_footer\n" ;
 
 write_file $dependency_file, $cache ;
 
@@ -128,57 +131,32 @@ die "Error Generating node digest: $@" if $@ ;
 
 sub read_dependencies_cache
 {
-my
-        (
-        $dependent_to_check,
-        $config,
-        $tree,
-        $inserted_nodes,
-        $dependencies,         # rule local
-        $builder_override,     # rule local
-        $rule_definition,      # for introspection
-        ) = @_ ;
+my (undef, undef, $tree) = @_ ;
 
 my $file_to_build = $tree->{__BUILD_NAME} || PBS::Rules::Builders::GetBuildName($tree->{__NAME}, $tree) ;
 my$dependency_file = "$file_to_build.dependencies" ;
+
+my @node_dependencies = ($dependency_file) ; #dependencies to be object file
 
 if ( -e $file_to_build && -e $dependency_file)
 	{
 	my @dependencies = read_file($dependency_file, chomp => 1) ;
 
-	if 	(
-		$dependencies[0] =~ /^C dependencies PBS generated at/
-		&& $dependencies[-1] =~ /^END C dependencies PBS/
-		)
+	if( $dependencies[0] =~ /^$cache_header/ && $dependencies[-1] =~ /^$cache_footer/)
 		{
 		# valid cache
-		# note: if compilation fails, the dependencies cache generation fails and we have a make rule
 		shift @dependencies ; pop @dependencies ;
 			
-		my @invalid = grep { ! -e $_ } @dependencies ;
+		my @missing_headers = grep { ! -e $_ } @dependencies ;
 	
-		if(@invalid)
-			{
-			$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
-			return [1, $dependency_file] ; # triggered
-			}
-		else
-			{
-			$tree->{__PBS_POST_BUILD} = \&InsertDependencyNodes ;
-			return [1, @dependencies] ;
-			}
-		}
-	else
-		{
-		$tree->{__PBS_POST_BUILD} = \&InsertDependencyNodes ;
-		return [1, $dependency_file] ; # triggered
+		@node_dependencies = @dependencies # use the cache
+			unless @missing_headers ;
 		}
 	}
-else
-	{
-	$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
-	return [1, $dependency_file] ; # triggered
-	}
+
+$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
+return [1, @node_dependencies] ; # triggered
+
 }
 
 #-------------------------------------------------------------------------------
