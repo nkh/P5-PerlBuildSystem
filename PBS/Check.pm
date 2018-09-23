@@ -47,11 +47,6 @@ return($global_user_check_subs{$package}) ;
 #-----------------------------------------------------------------------------
 
 my $checked_dependency_tree = 0 ;
-my $total_time_e = 0 ;
-my $total_time_l = 0 ;
-my $total_time_e2 = 0 ;
-my $total_time_l0 = 0 ;
-my $total_time_digest = 0 ;
 
 sub CheckDependencyTree
 {
@@ -149,10 +144,7 @@ unless(exists $tree->{__DEPENDED})
 		}
 	}
 	
-my $t0 = [gettimeofday];
 my ($full_name, $is_alternative_source, $alternative_index) = LocateSource($name, $build_directory, $source_directories) ;
-my $time_l0 = tv_interval ($t0, [gettimeofday]) ;
-$total_time_l0 += $time_l0 ;
 
 if ($is_alternative_source)
 	{
@@ -266,34 +258,24 @@ if(exists $tree->{__FORCED})
 	
 #----------------------------------------------------------------------------
 
-my $node_exist_on_disk = 1 ;
-
-$t0 = [gettimeofday];
-
-#~ =comment
-
 # self is part of the digest this check is redundant
 unless(-e $full_name)
 	{
 	unless(exists $tree->{__VIRTUAL})
 		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => "Doesn't exist"} ;
+		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found on disk"} ;
 		PrintInfo("$name: trigged on itself [Doesn't exist]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-		$node_exist_on_disk = 0 ;
 		$triggered++ ;
 		}
 	}
 #~ =cut
 
-my $time_e = tv_interval ($t0, [gettimeofday]) ;
-$total_time_e += $time_e ;
-
-if(defined $node_checker_rule)
+if(! $triggered && defined $node_checker_rule)
 	{
 	my ($must_build, $why) = $node_checker_rule->($tree, $full_name) ;
 	if($must_build)
 		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => $why} ;
+		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
 		PrintInfo("$name: trigged on itself [$why]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
 		$triggered++ ;
 		}
@@ -318,29 +300,22 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 			}
 		}
 	}
-	
+
+# IMPORTANT: this also generates child parents links for parallel build
+# do not make the block  depend on previous triggers
 for my $dependency (keys %$tree)
 	{
 	next if $dependency =~ /^__/ ; # eliminate private data
 	
-	my $t0 = [gettimeofday];
-	my $time_l = tv_interval ($t0, [gettimeofday]) ;
-	$total_time_l += $time_l ;
-	
-	$t0 = [gettimeofday];
-	my $time_e2 = tv_interval ($t0, [gettimeofday]) ;
-	$total_time_e2 += $time_e2 ;
-		
 	if(exists $tree->{$dependency}{__CHECKED})
 		{
 		if($tree->{$dependency}{__TRIGGERED})
 			{
 			$triggered = 1 ; # current node also need to be build
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => 'Subdependency or self'} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => ''} ;
 			
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
-			
 			push @{$tree->{$dependency}{__PARENTS}}, $tree ;
 			}
 		}
@@ -362,7 +337,7 @@ for my $dependency (keys %$tree)
 		
 		if($subdependency_triggered)
 			{
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => 'Subdependency or self'};
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => ''} ;
 			$triggered++ ;
 			
 			# data used to parallelize build
@@ -389,14 +364,11 @@ else
 		my ($must_build_because_of_digest, $reason) = (0, '') ;
 		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($tree) unless $triggered ;
 
-		my $time_digest = tv_interval ($t0, [gettimeofday]) ;
-		$total_time_digest += $time_digest ;
-		
 		if($must_build_because_of_digest)
 			{
 			for (@$reason)
 				{
-				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $_} ;
+				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => ': ' . $_} ;
 				PrintInfo("$name: trigged on '__DIGEST_TRIGGERED'[$_]\n")
 					 if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
 				}
@@ -543,9 +515,6 @@ else
 	
 delete($tree->{__CYCLIC_FLAG}) ;
 $tree->{__CHECKED}++ ;
-
-#~ print "$total_time_l0  $total_time_e $total_time_l  $total_time_e2 $total_time_digest\n" if  $checked_dependency_tree  >3200 ;
-#~ print $total_time_l0  + $total_time_e + $total_time_l  + $total_time_e2 + $total_time_digest . "\n" if  $checked_dependency_tree  >3200 ;
 
 return($triggered) ;
 }

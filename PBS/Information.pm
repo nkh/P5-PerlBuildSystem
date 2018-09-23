@@ -149,7 +149,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 				}
 				
 			# only for display
-			my $dependency_display_string = $dependency_name . ' (' . $triggered_dependency_data->{REASON} . ')' ;
+			my $dependency_display_string = $dependency_name . $triggered_dependency_data->{REASON} ;
 			
 			if
 				(

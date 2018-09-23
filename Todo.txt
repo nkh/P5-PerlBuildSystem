@@ -1,5 +1,7 @@
 
 
+self or sub dependency
+
 Check pbsfiles/config project
 
 document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
@@ -9,7 +11,7 @@ document EvalShellCommand and the order they are run as well as --evaluate_shell
 c depender:
                 $config->{'C_DEPENDER_SYSTEM_INCLUDES'},
 
-	option to not take in the system includes
+	#option to not take in the system includes
 	option to make the system includes a sub group so they are not displayed all the time in -tno
 
 --tt node shows all node in -tt mode

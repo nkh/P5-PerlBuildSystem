@@ -60,10 +60,11 @@ if($number_of_differences == 1 &&  $reason->[0] =~ q{key '__DEPENDING_PBSFILE' i
 	{
 	if((! $PBS::Shell::silent_commands))
 		{
-		PrintWarning "Node doesn't need to be build. Only Pbsfile difference.\n" ;
+		#PrintWarning "Node doesn't need to be build. Only Pbsfile difference.\n" ;
 		}
-		
-	return(0, 'only pbsfile difference, regenerate_digest') ;
+	
+	#expecting people to write correct build systems is dangerous :)	
+	#return(0, 'only pbsfile difference, regenerate_digest') ;
 	}
 
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;

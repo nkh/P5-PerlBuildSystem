@@ -760,24 +760,24 @@ if(IsDigestToBeGenerated($package, $node))
 					
 			if($digest_is_different)
 				{
-				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, $why, $digest_is_different) ;
+				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, $why, scalar @{$why} ) ;
 				}
 			}
 		else
 			{
-			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, 'Empty digest.', 1) ;
+			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ['Empty digest'], 1) ;
 			}
 		}
 	else
 		{
 		PrintInfo("Digest file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
-		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, "Digest file '$digest_file_name' not found", 1) ;
+		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ["Digest file '$digest_file_name' not found"], 1) ;
 		}
 	
 	}
 else
 	{
-	($rebuild_because_of_digest, $result_message) = (0, 'Excluded from digest') ;
+	($rebuild_because_of_digest, $result_message) = (0, ['Excluded from digest'], 0) ;
 	}
 	
 return($rebuild_because_of_digest, $result_message, $number_of_differences) ;
