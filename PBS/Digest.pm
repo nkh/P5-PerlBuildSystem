@@ -39,8 +39,6 @@ our $VERSION = '0.05' ;
 use PBS::PBSConfig ;
 use PBS::Output ;
 
-use Digest::MD5 qw(md5_hex) ;
-
 #-------------------------------------------------------------------------------
 
 my %package_dependencies ;
