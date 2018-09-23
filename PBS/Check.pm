@@ -394,16 +394,17 @@ else
 		
 		if($must_build_because_of_digest)
 			{
-			push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $reason} ;
-			PrintInfo("$name: trigged on '__DIGEST_TRIGGERED'[$reason]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
+			for (@$reason)
+				{
+				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $_} ;
+				PrintInfo("$name: trigged on '__DIGEST_TRIGGERED'[$_]\n")
+					 if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
+				}
 			
 			# since we allow nodes to be build by the step before check (ex object files  with "depend and build"
 			# we still want to trigger the node as some particular tasks might be done by the "builder
 			# ie: write a digest for the node ot run post build commands
 			$triggered++ ;
-			
-			# but we do not want to rebuild the node if we've just done that
-			#~ delete $tree->{__BUILD_DONE} ;
 			}
 		}
 	}

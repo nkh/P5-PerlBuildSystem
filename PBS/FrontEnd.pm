@@ -228,19 +228,9 @@ if(defined $pbs_config->{CREATE_LOG})
 	print $lh "** PBS run $pbs_run_index Done **\n";
 	}
 
-# move all stat into a variable accessible in from a pbs file and all
-# the displaying into a plugin
+# move all stat into the nodes as they are build in different process
+# the stat displaying would need to traverse the tree, 
 
-if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
-	{
-	my $skip_statistics = PBS::Build::NodeBuilder::GetBuildTimeSkippStatistics() ;
-	
-	PrintInfo "Build time check: $skip_statistics->{CHECK_DEPENDENCIES} nodes, " 
-		. "skipped: $skip_statistics->{SKIPPED_BUILDS} nodes ($skip_statistics->{SKIPP_RATIO}%)\n" ;
-
-	$PBS::pbs_run_information->{SKIP_STATISTICS} = $skip_statistics  ;
-	}
-	
 if($pbs_config->{DISPLAY_MD5_STATISTICS})
 	{
 	my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;

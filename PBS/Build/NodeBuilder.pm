@@ -30,36 +30,15 @@ use PBS::PBSConfig ;
 
 #-------------------------------------------------------------------------------
 
-my $check_dependencies_at_build_time_node_checked = 0 ;
-my $check_dependencies_at_build_time_node_skipped = 0 ;
-
-sub GetBuildTimeSkippStatistics
-{
-my $skipp_ratio = 'N/A' ;
-
-if($check_dependencies_at_build_time_node_checked)
-	{
-	$skipp_ratio = int(($check_dependencies_at_build_time_node_skipped * 100) / $check_dependencies_at_build_time_node_checked) ;
-	}
-	
-return
-	({
-	  CHECK_DEPENDENCIES => $check_dependencies_at_build_time_node_checked
-	, SKIPPED_BUILDS     => $check_dependencies_at_build_time_node_skipped
-	, SKIPP_RATIO        => $skipp_ratio
-	}) ;
-}
-
-#-------------------------------------------------------------------------------
-
 sub NodeNeedsRebuild
 {
 my ($node) = @_ ;
 
-$check_dependencies_at_build_time_node_checked++ ;
-
 # virtual node have no digests so we can't check it
 return(0) if exists $node->{__VIRTUAL} ;
+
+local $PBS::Output::indentation_depth ;
+$PBS::Output::indentation_depth += 2 ;
 
 my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
 
@@ -77,7 +56,7 @@ for my $trigger (@{ $node->{__TRIGGERED} })
 # the right way to check this is not by checking if the pbsfile only has changed
 # as some changes in the pbsfile may not have impact on the node to be build
 # but by comparing all the  contents of  digest, minus the pbsfile
-if($number_of_differences == 1 &&  $reason =~ q{key '__DEPENDING_PBSFILE' is different} )
+if($number_of_differences == 1 &&  $reason->[0] =~ q{key '__DEPENDING_PBSFILE' is different} )
 	{
 	if((! $PBS::Shell::silent_commands))
 		{
@@ -111,8 +90,6 @@ if($rebuild)
 	}
 else
 	{
-	$check_dependencies_at_build_time_node_skipped++ ;
-	
 	if(! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 		{
 		PrintWarning "No dependencie change (see --cdabt).\n" ;
@@ -176,7 +153,6 @@ my $node_build_sequencer_info = shift ;
 my $t0 = [gettimeofday];
 
 use Data::TreeDumper ;
-#~ print DumpTree($file_tree, $build_name, MAX_DEPTH => 1) ;
 
 if(defined $pbs_config->{DISPLAY_BUILD_SEQUENCER_INFO} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	{
@@ -195,19 +171,25 @@ if
 my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly built.") ;	
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
-my ($node_needs_rebuild, $why) = NodeNeedsRebuild($file_tree) ;
+my $node_needs_rebuild = 1 ;
 
-if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME} && (! $node_needs_rebuild))
+if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 	{
 	#todo: md5 for the shell commands and perl subs should be saved in the digest
 	#todo: Need to regenerate the digest with the new pbsfile
 	# nothing to do
 
-	PrintShell "Skipping node build, no dependencie change\n" ;
-	
-	($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
+	($node_needs_rebuild, my $why) = NodeNeedsRebuild($file_tree) ;
+
+	unless ($node_needs_rebuild)
+		{
+		PrintShell "Skipping node build, no dependency change\n" ;
+		
+		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
+		}
 	}
-else
+
+if($node_needs_rebuild)
 	{
 	my $rules_with_builders = ExtractRulesWithBuilder($file_tree) ;
 	

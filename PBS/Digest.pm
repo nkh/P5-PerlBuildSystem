@@ -910,7 +910,7 @@ else
 	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
 	}
 
-return($digest_is_different, \@digest_different_text );
+return($digest_is_different, \@digest_different_text);
 }
 
 #-------------------------------------------------------------------------------
@@ -1000,7 +1000,7 @@ else
 	PrintInfo("$digest_is_identical.\n") if($display_digest && ! $display_different_digest_only) ;
 	}
 
-return(!$digest_is_different, join(', ', @digest_different_text) ) ;
+return(!$digest_is_different, \@digest_different_text) ;
 }
 
 #-------------------------------------------------------------------------------
