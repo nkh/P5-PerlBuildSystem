@@ -1,4 +1,15 @@
 
+Sort node in tt by insertion time
+
+add $pathfilenoext, with a better name
+
+
+check simplified dependencies rules and perl rules
+
+gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
+
+#in modo #1 config is different, why
+	keys not sorted before hashing
 
 self or sub dependency
 

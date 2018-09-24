@@ -73,74 +73,82 @@ my $FilterDump;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	{
-	$FilterDump= sub #no private data
+	$FilterDump = 
+		sub #no private data
+		{
+		my ($tree) = @_ ;
+		
+		if('HASH' eq ref $tree)
 			{
-			my ($tree) = @_ ;
+			my @keys_to_dump ;
 			
-			if('HASH' eq ref $tree)
+			for(keys %$tree)
 				{
-				my @keys_to_dump ;
-				
-				for(keys %$tree)
+				if(/^__/)
 					{
-					if(/^__/)
+					if
+					(
+					   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
+					|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
+					|| (/^__DEPENDED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_DEPENDED_AT})
+					|| (/^__INSERTED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_INSERTED_AT})
+					#~ || /^__VIRTUAL/
+					)
 						{
-						if
-						(
-						   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
-						|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
-						|| (/^__DEPENDED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_DEPENDED_AT})
-						|| (/^__INSERTED_AT$/ && defined $pbs_config->{DEBUG_DISPLAY_TREE_INSERTED_AT})
-						#~ || /^__VIRTUAL/
-						)
-							{
-							# display these
-							}
-						else
-							{
-							next ;
-							}
+						# display these
 						}
-						
-					# handle --tnonh
-					if(/\.h$/ && $no_header_files_display)
+					else
 						{
 						next ;
 						}
-						
-					# handle --tnonr
-					my $excluded ;
-					for my $regex (@display_filter_regexes)
-						{
-						if($_ =~ $regex)
-							{
-							$excluded++ ;
-							last ;
-							}
-						}
-					next if $excluded ;
-					
-					
-					my $key_name = $_ ;
-					if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
-						{
-						if($key_name !~ /^__/)
-							{
-							if('HASH' eq ref $tree->{$key_name} && exists $tree->{$key_name}{__TRIGGERED})
-								{
-								$key_name = [$key_name, "* $key_name"] ;
-								}
-							}
-						}
-						
-					push @keys_to_dump, $key_name ;
 					}
+					
+				# handle --tnonh
+				if(/\.h$/ && $no_header_files_display)
+					{
+					next ;
+					}
+					
+				# handle --tnonr
+				my $excluded ;
+				for my $regex (@display_filter_regexes)
+					{
+					if($_ =~ $regex)
+						{
+						$excluded++ ;
+						last ;
+						}
+					}
+				next if $excluded ;
 				
-				return('HASH', undef, sort {$a =~ /^__/ ? 1 : $b =~ /^__/ ? 1 : 0 } sort @keys_to_dump) ;
+				
+				my $key_name = $_ ;
+				if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
+					{
+					if($key_name !~ /^__/)
+						{
+						if('HASH' eq ref $tree->{$key_name} && exists $tree->{$key_name}{__TRIGGERED})
+							{
+							$key_name = [$key_name, "* $key_name"] ;
+							}
+						}
+					}
+					
+				push @keys_to_dump, $key_name ;
 				}
-				
-			return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-			} ;
+			
+			return
+				(
+				'HASH', undef,
+				sort 
+					{
+					$tree->{$a}{__INSERTED_AT}{INSERTION_TIME} <=> $tree->{$b}{__INSERTED_AT}{INSERTION_TIME} 
+					} @keys_to_dump
+				) ;
+			}
+			
+		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+		} ;
 	}
 else
 	{

@@ -514,7 +514,6 @@ if($node_type eq 'HASH')
 		
 		#PrintInfo(Data::Dumper->Dump([$node->{__CONFIG}], ['config']));
 		$config_md5 = md5_hex(Data::Dumper->Dump([$node->{__CONFIG}], ['config'])) ;
-		print $config_md5 . "\n" ;
 		}
 		
 		$config_name = $config_md5 . ($package || '') ;
