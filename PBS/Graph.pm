@@ -477,13 +477,13 @@ if($node_type eq 'HASH')
 	
 	if($config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG} && $name ne PBS_ROOT_NAME)
 		{
-		my $html_link = "config$free_config_index.html" ;
-		
-		$html_data{CONFIG}{"$free_config_index"}{FILE} = $html_link ;
-		$html_data{CONFIG}{"$free_config_index"}{DATA} = $node->{__CONFIG} ;
-		
 		my $Pbsfile = $node->{__PBS_CONFIG}{PBSFILE}  || 'no pbsfile in pbsconfig';
 		my $package = $node->{__PBS_CONFIG}{PACKAGE} || 'no package in pbs config';
+		
+		my $html_link = "config$free_config_index.html" ;
+		$html_data{CONFIG}{"$free_config_index"}{FILE} = $html_link ;
+		$html_data{CONFIG}{"$free_config_index"}{DATA} = $node->{__CONFIG} ;
+		$html_data{CONFIG}{"$free_config_index"}{PACKAGE} = $package ;
 		
 		my $config_md5 ;
 		
@@ -536,7 +536,7 @@ if($node_type eq 'HASH')
 				$inserted_configs->{$config_md5} = $free_config_index ;
 				}
 				
-			$config_label .= "\n$package:$Pbsfile" unless ($display_definition_package) ;
+			$config_label .= "\n$Pbsfile" unless ($display_definition_package) ;
 			
 			my @config_node_attributes =
 					(
@@ -655,7 +655,7 @@ if($node_type eq 'HASH')
 					}
 				}
 				
-			$pbs_config_label .= "\n$package:$Pbsfile" unless ($display_definition_package) ;
+			$pbs_config_label .= "\n$Pbsfile" unless ($display_definition_package) ;
 			
 			my @pbs_config_node_attributes =
 					(
@@ -843,7 +843,12 @@ if($node_type eq 'HASH')
 				
 				if(defined $node->{$key_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA})
 					{
-					$arrow_tail = 'none' if($node->{$key_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} eq $name) ;
+					if(exists $node->{$key_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+						&&   $node->{$key_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+eq $name) 
+						{
+						$arrow_tail = 'none' ;
+						}
 					}
 				else
 					{

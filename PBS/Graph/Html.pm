@@ -137,6 +137,8 @@ for my $config_name (keys %{$html_data->{CONFIG}})
 #---------------
 EOH
 	
+	$body .= "PACKAGE : $html_data->{CONFIG}{$config_name}{PACKAGE}\n\n" ;
+
 	for my $config_entry (sort keys %{$config->{DATA}})
 		{
 		my $value = defined $config->{DATA}{$config_entry} ? $config->{DATA}{$config_entry} : 'undef' ;
@@ -172,11 +174,12 @@ Node: $node->{__NAME} $build_name
 #----------------------------------
 
 Dependencies: @{[GetDependencies($node)]}
-Package     : @{[$node->{__PACKAGE} || '']}
-Depended at : $node->{__DEPENDED_AT}
+Depended at : @{[$node->{__DEPENDED_AT} || 'not depended']}'
 Linked      : @{[$node->{__LINKED} || '0']}
 EOH
 	
+	$body .= "\n" ;
+
 	my $triggers ;
 	if($node->{__TRIGGERED})
 		{
@@ -185,7 +188,7 @@ EOH
 				$node->{__TRIGGERED}
 				,	{
 					Data::TreeDumper::GetPackageSetup()
-					,  START_LEVEL => 1
+					, START_LEVEL => 1
 					, USE_ASCII   => 1
 					, TITLE       => "Triggered   :"
 					}
@@ -197,6 +200,22 @@ EOH
 		}
 	
 	$body .= $triggers ;
+
+	if (exists $node->{__CONFIG})
+		{
+		$body .= "\n" ;
+		$body .= Data::TreeDumper::TreeDumper
+				(
+				$node->{__CONFIG},
+					{
+					Data::TreeDumper::GetPackageSetup()
+					, START_LEVEL => 1
+					, USE_ASCII   => 1
+					, TITLE       => "Config      :"
+					}
+				) ;
+		}
+
 	$body =~ s/ /&nbsp;/g  ;
 	$body =~ s/\n/<br>\n/g  ;
 	
@@ -240,8 +259,12 @@ my $insertion_data = $node->{__INSERTED_AT} ;
 
 if(exists $insertion_data->{ORIGINAL_INSERTION_DATA})
 	{
-	"Inserted by rule '$insertion_data->{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}'"
-	. "\nDepended in subpbs file '$insertion_data->{INSERTION_FILE}'.";
+	"Inserted by rule '" .
+		(exists $insertion_data->{ORIGINAL_INSERTION_DATA}{INSERTION_RULE} 
+			? $insertion_data->{ORIGINAL_INSERTION_DATA}{INSERTION_RULE} 
+			: '')
+	. "'\n"
+	. "Depended in subpbs file '$insertion_data->{INSERTION_FILE}'.";
 	}
 else
 	{
