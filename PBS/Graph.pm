@@ -505,13 +505,16 @@ if($node_type eq 'HASH')
 				push @keys_to_dump, $_ ;
 				}
 			
+			@keys_to_dump = sort @keys_to_dump ;
+			
 			return(\@keys_to_dump) ;
 			} ;
 			
 		$Data::Dumper::Sortkeys = $DumpFilter ;
 		
-		#~ PrintInfo(Data::Dumper->Dump([$node->{__CONFIG}], ['config']));
+		#PrintInfo(Data::Dumper->Dump([$node->{__CONFIG}], ['config']));
 		$config_md5 = md5_hex(Data::Dumper->Dump([$node->{__CONFIG}], ['config'])) ;
+		print $config_md5 . "\n" ;
 		}
 		
 		$config_name = $config_md5 . ($package || '') ;
