@@ -1,6 +1,8 @@
 
 # Sort node in tt by insertion time
 
+ORIGINAL_INSERTION_DATA on first run , invhouse?
+
 add $pathfilenoext, with a better name
 
 

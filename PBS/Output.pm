@@ -68,6 +68,20 @@ $global_debug_escape_code    = '' ;
 $global_reset_escape_code    = '' ;
 }
 
+sub InfoLabel
+{
+$global_error_escape_code    .= '[Error]' ;
+$global_warning_escape_code  .= '[Warning] ' ;
+$global_warning2_escape_code .= '[Warning2] ' ;
+$global_info_escape_code     .= '[Info] ' ;
+$global_info2_escape_code    .= '[Info2] ' ;
+$global_user_escape_code     .= '[User] ' ;
+$global_shell_escape_code    .= '[Shell] ' ;
+$global_debug_escape_code    .= '[Debug] ' ;
+$global_reset_escape_code    .= '' ;
+}
+
+
 sub SetOutputColor
 {
 my $switch = shift ;
@@ -99,7 +113,7 @@ sub ERROR
 my $indent = '' ;
 $indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
+my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef' ${[caller]} ]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
 
 return $global_error_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;

@@ -222,8 +222,12 @@ EOH
 		'Displays Pbs version.',
 		'',
 		
-	'no_colorization'                 => \&PBS::Output::NoColors,
+	'no_color'                        => \&PBS::Output::NoColors,
 		'Removes colors from output. Usefull when redirecting to a file.',
+		'',
+		
+	'info_label'             => \&PBS::Output::InfoLabel,
+		'Adds a text label specifying the type of output.',
 		'',
 		
 	'c|colorize'                      => \$PBS::Output::colorize,
