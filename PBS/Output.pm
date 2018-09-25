@@ -110,8 +110,10 @@ else
 
 sub ERROR
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef' ${[caller]} ]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -122,8 +124,10 @@ return($string) ;
 
 sub WARNING
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $indentation_depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -134,8 +138,10 @@ return($string) ;
 
 sub WARNING2
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -146,8 +152,10 @@ return($string) ;
 
 sub INFO
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 
@@ -159,8 +167,10 @@ return($string) ;
 
 sub INFO2
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -171,8 +181,10 @@ return($string) ;
 
 sub USER
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -183,8 +195,10 @@ return($string) ;
 
 sub SHELL
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -195,8 +209,10 @@ return($string) ;
 
 sub DEBUG
 {
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
 my $indent = '' ;
-$indent = $PBS::Output::indentation x $PBS::Output::indentation_depth unless (defined $_[1] && $_[1] == 0) ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
 
 my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
 $string =~ s/\n(.)/\n$indent$1/g ;
@@ -283,7 +299,7 @@ _print(\*STDOUT, \&SHELL, @_) ;
 
 sub PrintDebug
 {
-_print(\*STDERR, \&DEBUG,@_) ;
+_print(\*STDERR, \&DEBUG, @_) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -297,7 +313,7 @@ my $center_line_index           = shift ;
 my $center_line_colorizing_sub  = shift || sub{$_[0]} ;
 my $context_colorizing_sub      = shift || sub{$_[0]} ;
 
-open(FILE, '<', $file_name) or die ERROR qq[Can't open $file_name for context display: $!] ;
+open(FILE, '<', $file_name) or die ERROR(qq[Can't open $file_name for context display: $!]), "\n" ;
 
 my $number_of_lines_skip = ($center_line_index - $number_of_context_lines) - 1 ;
 
@@ -342,13 +358,13 @@ return($line_with_context) ;
 #-------------------------------------------------------------------------------
 sub PrintWithContext
 {
-_print(GetLineWithContext(@_)) ;
+_print(\*STDERR, \&ERROR, GetLineWithContext(@_)) ;
 }
 
 #-------------------------------------------------------------------------------
 sub PbsDisplayErrorWithContext
 {
-PrintWithContext($_[0], 1, 3, $_[1], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
+PrintWithContext($_[0], 1, 4, $_[1], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
 }
 
 #-------------------------------------------------------------------------------

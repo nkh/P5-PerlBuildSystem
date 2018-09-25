@@ -336,6 +336,7 @@ my $dependencies_evaluator = sub
 			$dependency =~ s/\$basename/$basename/g ;
 			$dependency =~ s/\$path/$path/g ;
 			$dependency =~ s/\$ext/$ext/g ;
+			$dependency =~ s/\$file_no_ext/$path\/$basename/g ;
 			
 			push @all_dependencies, $dependency ;
 			}

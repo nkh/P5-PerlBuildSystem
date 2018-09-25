@@ -30,7 +30,7 @@ sub setup : Test(setup) {
 1;
 _EOF_
 
-    $t->command_line_flags('--post_pbs=post_pbs.pl -dsi -ndpb -no_colorization');
+    $t->command_line_flags('--post_pbs=post_pbs.pl -dsi -ndpb -no_color');
 }
 
 sub copy_from_pbsfiles_dir {

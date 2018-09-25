@@ -1,19 +1,19 @@
 
-# Sort node in tt by insertion time
+fork fails in windows, again!
 
-ORIGINAL_INSERTION_DATA on first run , invhouse?
+#in all warp files
+	local $PBS::Output::indentation_depth = -1 ;
+		calls PBS::PBS::Pbs which increments it immediately 
 
-add $pathfilenoext, with a better name
-
-
+	problem is after the call to PBS::PBS::Pbs, we call other functions and we have -1 in the variable
+	
+Tie::Hash::Index pulls in a zillion modules and libffi
+	
 check simplified dependencies rules and perl rules
 
-gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
+#gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
 
-#in modo #1 config is different, why
-	keys not sorted before hashing
-
-self or sub dependency
+#self or sub dependency
 
 Check pbsfiles/config project
 
@@ -27,21 +27,14 @@ c depender:
 	#option to not take in the system includes
 	option to make the system includes a sub group so they are not displayed all the time in -tno
 
---tt node shows all node in -tt mode
-	parent!
-	pbs --ttcl -tt jar2 -tnd
-
-TreeDumper wrap too short when coloring
-	-tww is a short term hack till Text::Ansi::Util gets fixed
-
-TreeDumper tt_filter, make negative filter! 
-
 -bi does not work with -j
 	shows info but build fails although it should continue
+		probably node builder knows about --bi but not parallel builder
 
 error: gcc failure when -j appears before report by pbs. stderr not redirected?
 
 add: new c_depender test
+	current tests cover the change
 
 add --tmux-error option
 
@@ -102,6 +95,16 @@ use Term::Emit for message, maybe replace Term::ProgressBar too
 install pbs on linux and pbs.pl on windows
 
 Add a bunch of test with bad pbsfiles to catch syntax errors
+
+# Sort node in tt by insertion time
+
+#ORIGINAL_INSERTION_DATA on first run , invhouse?
+	# warp doesn't have that information
+
+#add $file_no_ext, with a better name
+
+#in modo #1 config is different, why
+	keys not sorted before hashing
 
 #test write data in test_cmdXXX.XX which is really not helpful
 	put everything in a sub directory named after date

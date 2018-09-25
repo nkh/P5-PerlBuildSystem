@@ -443,7 +443,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				PrintError( "Self referencial rule #$rule_index '$rule_info' for $node_name: $dependency_names.\n") ;
 				
 				PbsDisplayErrorWithContext($rule->{FILE}, $rule->{LINE}) ;
-				die ;
+				die "\n";
 				}
 			
 			if(exists $tree->{$dependency_name})
