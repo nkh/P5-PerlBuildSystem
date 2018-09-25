@@ -148,7 +148,7 @@ _EOF_
 # Build
 	$t->build_test_fail;
     my $stderr = $t->stderr;
-    like($stderr, qr|\$undefined_variable' : BUILD_FAILED : No matching rule\.\n|, 'Correct error message in output');
+    like($stderr, qr|\$undefined_variable' : BUILD_FAILED : No matching rule\n|, 'Correct error message in output');
 }
 
 sub creator_sub : Test(2) {

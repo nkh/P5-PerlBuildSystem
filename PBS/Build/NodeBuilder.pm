@@ -230,11 +230,11 @@ if($node_needs_rebuild)
 		
 		if(@{$file_tree->{__MATCHING_RULES}})
 			{
-			$reason .= "No Builder.\n" ; 
+			$reason .= "No builder\n" ; 
 			}
 		else
 			{
-			$reason .= "No matching rule.\n"  ;
+			$reason .= "No matching rule\n"  ;
 			}
 		
 		# show why the node was to be build
@@ -305,7 +305,7 @@ if($build_result == BUILD_SUCCESS)
 	}
 else
 	{
-	PrintError("Building '$build_name' : BUILD_FAILED : $build_message\n") ;
+	PrintError("\nBuilding '$build_name' : BUILD_FAILED : $build_message\n") ;
 	}
 	
 my $build_time = tv_interval ($t0, [gettimeofday]) ;

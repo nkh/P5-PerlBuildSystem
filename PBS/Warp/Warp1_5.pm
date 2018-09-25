@@ -135,7 +135,7 @@ if($run_in_warp_mode)
 			$PBS::pbs_run_information->{WARP_1_5}{TOTAL_TIME} = $warp_total_time ;
 			}
 			
-		PrintInfo("\e[KWarp: Up to date.\n") unless $pbs_config->{QUIET} ;
+		PrintInfo("\e[KWarp: Up to date\n") unless $pbs_config->{QUIET} ;
 		return (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 
@@ -369,7 +369,7 @@ if($run_in_warp_mode)
 		}
 	else
 		{
-		PrintInfo("\e[KWarp: Up to date.\n") unless $pbs_config->{QUIET} ;
+		PrintInfo("\e[KWarp: Up to date\n") unless $pbs_config->{QUIET} ;
 		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 	}

@@ -355,6 +355,8 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TEXT_TREE})
 	# terminal width
 	push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
 
+	push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
+
 	PrintInfo DumpTree($tree_to_display, $dump_title, FILTER => $FilterDump, @extra_options) if defined $tree_to_display ;
 	print Term::ANSIColor::color('reset') ;
 	}

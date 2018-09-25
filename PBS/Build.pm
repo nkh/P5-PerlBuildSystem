@@ -48,8 +48,8 @@ if
 		(1 == @$build_sequence && $build_sequence->[0]{__NAME} =~ /^__/) #only root is present
 	)
 	{
-	PrintInfo("Nothing to build.\n") ;
-	return(BUILD_SUCCESS, 'Nothing to build') ; ;
+	PrintInfo("Build: nothing to do\n") ;
+	return(BUILD_SUCCESS, 'Build: nothing to do') ; ;
 	}
 else
 	{
@@ -98,11 +98,11 @@ else
 		
 	my $perl_vs_shellcommands = ", $node_builders_using_perl_subs P, $node_builders_not_using_perl_subs S" ;
 	my $plural = $number_of_nodes_to_build > 1 ? 's' : '' ;
-	PrintInfo("$number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands] node$plural scheduled for build.\n") ;
+	PrintInfo("Build: $number_of_nodes_to_build node$plural scheduled for build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
 
 	if(defined (my $lh = $pbs_config->{CREATE_LOG}))
 		{
-		print $lh INFO "$number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands] node$plural scheduled for build.\n" ;
+		print $lh INFO "Build: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands] node$plural scheduled for build.\n" ;
 		}
 		
 	# display which --bi don't match
@@ -116,13 +116,13 @@ else
 			}
 		else
 			{
-			PrintWarning("--bi $pbs_config->{DISPLAY_BUILD_INFO}[$bi_regex_index] doesn't match any node in the build sequence.\n") ;
+			PrintWarning("Build: --bi $pbs_config->{DISPLAY_BUILD_INFO}[$bi_regex_index] doesn't match any node in the build sequence.\n") ;
 			}
 		}
 		
 	if(@{$pbs_config->{DISPLAY_BUILD_INFO}} && $no_bi_regex_matched)
 		{
-		PrintWarning("No --bi switch matched.\n") ;
+		PrintWarning("Build: no --bi switch matched.\n") ;
 		}
 	else
 		{

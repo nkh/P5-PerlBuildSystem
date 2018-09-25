@@ -116,9 +116,9 @@ else
 			}
 		else
 			{
-			PrintError("No such build point: '$build_point'.\n") ;
+			PrintError("Build: no such build point: '$build_point'.\n") ;
 			DisplayCloseMatches($build_point, $inserted_nodes) ;
-			die ;
+			die "\n" ;
 			}
 		}
 	}
@@ -210,8 +210,9 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 
 unless($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	PrintInfo("\nBuilding:") ;
-	PrintInfo("'$build_point' ") if $build_point ne '' ;
+	PrintInfo("\nBuild: start") ;
+	PrintInfo(" @ '$build_point'") if $build_point ne '' ;
+	print "\n" ;
 	}
 
 # we must get the number of nodes in the tree from the tree itself as we might have multiple %inserted_nodes if
@@ -234,7 +235,7 @@ my $node_counter = sub
 		
 DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_counter) ;
 		
-PrintInfo("Number of nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree nodes.\n") ;
+PrintInfo("Build: nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree nodes\n") ;
 
 my ($build_result, $build_message) ;
 
@@ -245,24 +246,24 @@ if($pbs_config->{DO_BUILD})
 
 	if($build_result == BUILD_SUCCESS)
 		{
-		PrintInfo("Build Done.\n") ;
+		PrintInfo("Build: done\n") ;
 		}
 	else
 		{
-		PrintError("Build failed.\n") ;
+		PrintError("Build: failed\n") ;
 		}
 		
 	}
 else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
-	PrintInfo("Build skipped. Done.\n") ;
+	PrintInfo("Build: skipped, done.\n") ;
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
 		if($debug_flag =~ /^DEBUG/ && defined $value)
 			{
-			PrintInfo("Debug flag '$debug_flag' is set. Use --fb to force build.\n") ;
+			PrintInfo("Build: debug flag '$debug_flag' is set. Use --fb to force build.\n") ;
 			}
 		}
 	}
@@ -284,7 +285,7 @@ for my $node (values %$inserted_nodes)
 		&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
 		)
 		{
-		PrintInfo "Running post build commands.\n" unless $post_build_commands ;
+		PrintInfo "Build: running post build commands.\n" unless $post_build_commands ;
 		$post_build_commands++ ;
 
 		PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;

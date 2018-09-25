@@ -263,7 +263,7 @@ unless(-e $full_name)
 	{
 	unless(exists $tree->{__VIRTUAL})
 		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found on disk"} ;
+		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => "not found on disk"} ;
 		PrintInfo("$name: trigged on itself [Doesn't exist]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
 		$triggered++ ;
 		}

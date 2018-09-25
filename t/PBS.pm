@@ -411,7 +411,7 @@ sub test_up_to_date {
     my $self = shift;
     _inc_level;
     $self->build_test(targets => $self->{'target'});
-    my $up_to_date = 'Warp: Up to date.$|Nothing to build.$';
+    my $up_to_date = 'Warp: Up to date$|Build: nothing to do$';
     my $stdout = $self->stdout;
     like($stdout, qr/$up_to_date/m, 'Up to date');
     _dec_level;

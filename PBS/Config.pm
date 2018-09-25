@@ -58,7 +58,7 @@ if(defined $package && $package ne '')
 	}
 else
 	{
-	PrintWarning("'GetPackageConfig' mandatory argument missing at '$file_name:$line'.\n") ;
+	PrintWarning("Config: 'GetPackageConfig' mandatory argument missing at '$file_name:$line'\n") ;
 	return({}) ;
 	}
 }
@@ -73,7 +73,7 @@ my $from = shift ; # namespace
 
 unless(defined $from)
 	{
-	PrintWarning("'GetConfigFrom' mandatory argument missing at '$file_name:$line'.\n") ;
+	PrintWarning("Config: 'GetConfigFrom' mandatory argument missing at '$file_name:$line'\n") ;
 	#~ PbsDisplayErrorWithContext($file_name,$line) ;
 	return() ;
 	}
@@ -155,7 +155,7 @@ if(@config_variables == 0)
 	{
 	unless($wantarray)
 		{
-		PrintWarning("'GetConfig' is returning the whole config but it was not called in list context at '$file_name:$line'.\n") ;
+		PrintWarning("Config: 'GetConfig' is returning the whole config but it was not called in list context at '$file_name:$line'\n") ;
 		}
 		
 	return(%$user_config) ;
@@ -163,7 +163,7 @@ if(@config_variables == 0)
 	
 if(@config_variables > 1 && (!$wantarray))
 	{
-	PrintWarning("'GetConfig' is asked for multiple values but it was not called in list context at '$file_name:$line'!\n") ;
+	PrintWarning("Config: 'GetConfig' is asked for multiple values but it was not called in list context at '$file_name:$line'\n") ;
 	}
 
 for my $config_variable (@config_variables)
@@ -180,7 +180,7 @@ for my $config_variable (@config_variables)
 		
 		if($pbs_config->{NO_SILENT_OVERRIDE} || ! $silent_not_exists)
 			{
-			PrintWarning("User config variable '$config_variable' doesn't exist at '$file_name:$line'. Returning undef!\n") ;
+			PrintWarning("Config: User config variable '$config_variable' doesn't exist at '$file_name:$line'; returning undef\n") ;
 			}
 			
 		#~ PbsDisplayErrorWithContext($file_name,$line) ;
@@ -208,7 +208,7 @@ my $from = shift ; # from namespace
 
 unless(defined $from)
 	{
-	PrintWarning("'GetConfigFromAsList' mandatory argument missing at '$file_name:$line'.\n") ;
+	PrintWarning("Config: 'GetConfigFromAsList' mandatory argument missing at '$file_name:$line'\n") ;
 	#~ PbsDisplayErrorWithContext($file_name,$line) ;
 	return() ;
 	}
@@ -266,12 +266,14 @@ my @user_config ;
 
 unless($wantarray)
 	{
-	die ERROR "'GetConfigAsList' is not called in list context $caller_location!\n" ;
+	PrintError "Config: GetConfigAsList: not called in list context $caller_location" ;
+	die "\n" ;
 	}
 
 if(@config_variables == 0)
 	{
-	die ERROR "'GetConfigAsList' called without arguments $caller_location'.\n" ;
+	PrintError "Config: GetConfigAsList: called without arguments $caller_location'" ;
+	die "\n" ;
 	}
 	
 for my $config_variable (@config_variables)
@@ -287,7 +289,7 @@ for my $config_variable (@config_variables)
 				my $array_element_index = 0 ;
 				for my $array_element (@$config_data)
 					{
-					PrintWarning "GetConfigAsList: Element $array_element_index of array '$config_variable', $caller_location, is not defined!\n" unless defined $array_element  ;
+					PrintWarning "Config: GetConfigAsList: Element $array_element_index of array '$config_variable', $caller_location, is not defined\n" unless defined $array_element  ;
 					$array_element_index++ ;
 					}
 				
@@ -297,19 +299,20 @@ for my $config_variable (@config_variables)
 				
 			'' eq $data_type && do
 				{
-				PrintWarning "GetConfigAsList: '$config_variable', $caller_location, is not defined!\n" unless defined $config_data ;
+				PrintWarning "Config: GetConfigAsList: '$config_variable', $caller_location, is not defined\n" unless defined $config_data ;
 				
 				push @user_config, $config_data ;
 				last ;
 				} ;
 				
-			die ERROR "GetConfigAsList: Unhandled type '$data_type' for '$config_variable' $caller_location.\n" ;
+			PrintError "Config: GetConfigAsList: Unhandled type '$data_type' for '$config_variable' $caller_location" ;
+			die "\n" ;
 			}
 		
 		}
 	else
 		{
-		PrintWarning("Config variable '$config_variable' doesn't exist $caller_location. Ignoring!\n") ;
+		PrintWarning("Config: GetConfigAsList:variable '$config_variable' doesn't exist $caller_location; ignoring request\n") ;
 		#~ PbsDisplayErrorWithContext($file_name,$line) ;
 		}
 	}
@@ -374,7 +377,7 @@ if(defined $_[1])
 	}
 else
 	{
-	PrintWarning croak "Configuration variable '$_[0]' is not defined!\n" ;
+	PrintWarning croak "Config: variable '$_[0]' is not defined!\n" ;
 	return(0) ;
 	}
 }
@@ -486,14 +489,14 @@ if(defined $global_flags)
 		
 	if($global_attributes{LOCKED} && $global_attributes{UNLOCKED})
 		{
-		PrintError("Global configuration flag defined at '$origin', is declared as LOCKED and UNLOCKED\n") ;
-		die ;
+		PrintError("Config: Global configuration flag defined at '$origin', is declared as LOCKED and UNLOCKED") ;
+		die "\n";
 		}
 		
 	if($global_attributes{OVERRIDE_PARENT} && $global_attributes{LOCAL})
 		{
-		PrintError("Global configuration flag defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL\n") ;
-		die ;
+		PrintError("Config: Global configuration flag defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL") ;
+		die "\n";
 		}
 	}
 		
@@ -502,7 +505,7 @@ my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
-	PrintInfo("Merging to configuration: '${package}::${original_type}::$original_class' from '$origin'.\n") ;
+	PrintInfo("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") ;
 	}
 
 my $config_to_merge_to = GetPackageConfig($package) ;
@@ -546,10 +549,10 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		if(@found_invalid_attribute)
 			{
 			PrintError
-				"Configuration variable '$key' with attributes '$flags' defined at '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
-				. "Valid attributes are: " . join( ', ',  sort keys %valid_attributes) . "\n" ;
+				"Config: variable '$key' with attributes '$flags' defined at '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
+				. "Valid attributes are: " . join( ', ',  sort keys %valid_attributes) ;
 				
-			die ;
+			die "\n" ;
 			}
 			
 		$force           = $attributes{FORCE}           || $global_attributes{FORCE}           || '' ;
@@ -563,14 +566,14 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		
 		if($locked && $unlocked)
 			{
-			PrintError("Configuration variable '$key' defined at '$origin', is declared as LOCKED and UNLOCKED\n") ;
-			die ;
+			PrintError("Config: variable '$key' defined at '$origin', is declared as LOCKED and UNLOCKED") ;
+			die  "\n" ;
 			}
 			
 		if($override_parent && $local)
 			{
-			PrintError("Configuration variable '$key' defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL\n") ;
-			die ;
+			PrintError("Config: variable '$key' defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL") ;
+			die "\n" ;
 			}
 		}
 		
@@ -683,7 +686,7 @@ EOH
 					)
 				) ;
 				
-			die ;
+			die "\n" ;
 			}
 		
 		$config_to_merge_to->{$type}{$class}{$key}{LOCKED} = 1 if $locked ;
@@ -904,14 +907,14 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} doesn't exist at $origin.\n") ;
+		PrintWarning("\t\t\$config->{$1} doesn't exist at $origin\n") ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} isn't defined at $origin.\n") ;
+		PrintWarning("\t\t\$config->{$1} isn't defined at $origin\n") ;
 		$undefined_config++ ;
 		}
 	}
@@ -930,13 +933,13 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\t'$element' doesn't exist at $origin.\n") ;
+		PrintWarning("\t\t'$element' doesn't exist at $origin\n") ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\t'$element' isn't defined at $origin.\n") ;
+		PrintWarning("\t\t'$element' isn't defined at $origin\n") ;
 		}
 	}
 	
@@ -1081,7 +1084,7 @@ if('HASH' ne ref $sub_pbs_package_config)
 			"Section PACKAGE_CONFIG in sub pbs definition is not a hash, '$rule->{NAME}:$rule->{FILE}:$rule->{LINE}'" 
 			. "(type is '" . ref($sub_pbs_package_config) . "')",
 			DISPLAY_ADDRESS => 0 ;
-	die ;
+	die "\n" ;
 	}
 	
 my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
