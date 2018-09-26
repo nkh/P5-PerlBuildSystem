@@ -47,7 +47,7 @@ eval
 # call without arguments
 my @data = GetConfigAsList() ;
 } ;
-print $@, "\n" ;
+print $@ ;
 
 
 eval
@@ -55,7 +55,7 @@ eval
 # call in non list context
 GetConfigAsList() ;
 } ;
-print $@, "\n" ;
+print $@ ;
 
 
 eval

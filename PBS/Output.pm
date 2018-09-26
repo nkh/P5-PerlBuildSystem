@@ -228,6 +228,7 @@ my ($glob, $color_and_depth, @data) = @_ ;
 
 for (@data)
 	{
+	$_ = '' unless defined $_ ;
 	#~ print "\n$_\n" ;
 	
 	s/^(\t+)/$indentation x length($1)/gsme ;
