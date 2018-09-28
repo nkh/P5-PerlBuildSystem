@@ -10,12 +10,11 @@ fork fails in windows, again!
 Tie::Hash::Index pulls in a zillion modules and libffi
 	
 check simplified dependencies rules and perl rules
+Check pbsfiles/config project
 
 #gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
 
 #self or sub dependency
-
-Check pbsfiles/config project
 
 document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
 	that they are best put under lib/rules

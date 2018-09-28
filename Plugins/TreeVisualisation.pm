@@ -261,7 +261,7 @@ EOT
 			$dependency_tree,
 			"Tree for $dependency_tree->{__NAME}:",
 			DISPLAY_ROOT_ADDRESS => 1,
-			DISPLAY_PERL_SIZE => 1,
+			#DISPLAY_PERL_SIZE => 1,
 			FILTER =>$FilterDump,
 			
 			RENDERER => 

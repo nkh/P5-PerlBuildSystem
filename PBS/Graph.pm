@@ -543,8 +543,9 @@ if($node_type eq 'HASH')
 					height => 0.2,
 					fontsize => 10,
 					group => $group,
-					shape => 'rect',
-					style => 'bold',
+					shape => 'octagon',
+					#style => 'bold',
+					color => 'lightsalmon2',
 					name  => $config_name,
 					label => $config_label,
 					#~ "config #$free_config_index",
@@ -662,12 +663,12 @@ if($node_type eq 'HASH')
 					height => 0.2,
 					fontsize => 10,
 					group => $group,
-					shape => 'trapezium',
+					shape => 'doubleoctagon',
 					#~ style => 'bold',
 					name  => $pbs_config_name,
 					label => $pbs_config_label,
 					#~ "Pbs config, # $free_pbs_config_index"
-					color => 'blue',
+					color => 'dodgerblue1',
 					URL => $html_link,
 					tooltip  => "Pbs config",
 					) ;
@@ -733,6 +734,7 @@ if($node_type eq 'HASH')
 		$graph->add_edge
 			({
 			arrowsize => 0.65,
+			style => 'dotted',
 			color => 'orange',
 			from => $graph_node,
 			to => $config_name,
@@ -749,7 +751,8 @@ if($node_type eq 'HASH')
 		$graph->add_edge
 			({
 			arrowsize => 0.65,
-			color => 'orange',
+			style => 'dotted',
+			color => 'dodgerblue1',
 			from => $graph_node,
 			to => $pbs_config_name,
 			URL => "Pbs config $pbs_config_name",
