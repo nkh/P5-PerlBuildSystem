@@ -122,14 +122,14 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				next if $excluded ;
 				
 				
-				my $key_name = $_ ;
+				my $key_name = [$_, $_] ;
 				if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
 					{
-					if($key_name !~ /^__/)
+					if(! /^__/)
 						{
-						if('HASH' eq ref $tree->{$key_name} && exists $tree->{$key_name}{__TRIGGERED})
+						if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__TRIGGERED})
 							{
-							$key_name = [$key_name, "* $key_name"] ;
+							$key_name = [$_, "* $_"] ;
 							}
 						}
 					}
@@ -137,17 +137,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				push @keys_to_dump, $key_name ;
 				}
 			
-			return
-				(
-				'HASH', undef,
-				sort 
-					{
-					exists $tree->{$a}{__INSERTED_AT}{INSERTION_TIME} && exists $tree->{$b}{__INSERTED_AT}{INSERTION_TIME} 
-						? $tree->{$a}{__INSERTED_AT}{INSERTION_TIME} <=> $tree->{$b}{__INSERTED_AT}{INSERTION_TIME}
-						: $a cmp $b
-					} 
-					@keys_to_dump
-				) ;
+			return	( 'HASH', undef, sort { $a->[0] cmp $b->[0] } @keys_to_dump ) ;
 			}
 			
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;

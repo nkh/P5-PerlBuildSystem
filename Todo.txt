@@ -1,5 +1,24 @@
 
 
+-tntr fails
+
+pbs -no_warp --trigger world.h -ndpb -tno -tnt -bni -fb
+%CC -o %FILE_TO_BUILD %DEPENDENCY_LIST
+gcc -o /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/a.out /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/main/main.o /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/world/world.o ARRAY(0x55724f57e218)
+sh: 1: Syntax error: "(" unexpected
+
+Building '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/a.out' : BUILD_FAILED :
+    Shell command failed!
+    Errno     : 512
+    Errno text:
+
+    Builder: #2 'a.out'.
+
+
+#--trigger --trigger_list
+	list in which format?
+	#--trigger no stop as DEBUG_FLAG
+
 #--files, ... 
 	pbs --no_warp --no_build --nodes -no_color | grep '^node:' | cut -d ' ' -f 2 | for i in $(cat); do  echo .${i##*.} ; done | sort -u
 
@@ -17,9 +36,6 @@ Keep builder in non parallel builds
 log creation doesn't work with -j
 	need a composite log, which is a good idea even without -j
 
-
---trigger --trigger_list
-	list in which format?
 
 big  -j 8 needs 3 builds to stabilize
 	-j 12 goes through!

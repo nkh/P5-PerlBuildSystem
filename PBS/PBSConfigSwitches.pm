@@ -120,6 +120,7 @@ my $pbs_config = shift || {} ;
 $PBS::Output::colorize++ ;
 
 $pbs_config->{DO_BUILD} = 1 ;
+$pbs_config->{TRIGGER} = [] ;
 
 $pbs_config->{JOBS_DIE_ON_ERROR} = 0 ;
 
@@ -895,6 +896,17 @@ EOT
 		'(DF) Display the build name of the nodes. Must be used with --tno',
 		'',
 		
+	'trigger_none'                        => \$pbs_config->{DEBUG_TRIGGER_NONE},
+		'(DF) As if no node triggered, see --trigger',
+		'',
+		
+	'trigger=s'                           => $pbs_config->{TRIGGER},
+		'(DF) Force the triggering of a node if you want to check its effects.',
+		'',
+		
+	'trigger_list=s'                       => \$pbs_config->{DEBUG_TRIGGER_LIST},
+		'(DF) Points to a file containing trigers.',
+		'',
 	'tnt|tree_node_triggered'           => \$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED},
 		'(DF) Display if the node must be rebuild by append a star if it does.',
 		'',
@@ -997,6 +1009,10 @@ EOT
 		
 	'gtg_printer|generate_tree_graph_printer'=> \$pbs_config->{GENERATE_TREE_GRAPH_PRINTER},
 		'Non triggerring edges are displayed as dashed lines.',
+		'',
+		
+	'gtg_sn|generate_tree_graph_start_node=s'       => \$pbs_config->{GENERATE_TREE_GRAPH_START_NODE},
+		'Generate a graph from the given node.',
 		'',
 		
 	'a|ancestors=s'                   => \$pbs_config->{DEBUG_DISPLAY_PARENT},

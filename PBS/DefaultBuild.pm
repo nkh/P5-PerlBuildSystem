@@ -257,15 +257,17 @@ if($pbs_config->{DO_BUILD})
 else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
-	PrintInfo("Build: skipped, done.\n") ;
+	PrintWarning("Build: NOT BULDING.\n") ;
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
 		if($debug_flag =~ /^DEBUG/ && defined $value)
 			{
-			PrintInfo("Build: debug flag '$debug_flag' is set. Use --fb to force build.\n") ;
+			PrintWarning("Build: $debug_flag set.\n") ;
 			}
 		}
+
+	($build_result, $build_message) = (0, 'No build flags') ;
 	}
 
 # run a global post build

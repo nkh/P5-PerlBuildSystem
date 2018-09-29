@@ -46,7 +46,7 @@ _EOF_
     # Build
     $t->command_line_flags($t->command_line_flags . ' --a=file.in');
 #$t->generate_test_snapshot_and_exit('flag_a') ;
-    $t->build_test();
+    $t->build();
 	my $stdout = $t->stdout;
 	like($stdout, qr|file\.in' ancestors.*file1\.immediate.*file\.target.*file2\.immediate.*file\.target|s, 'Correct output from build with ancestors');
 }
@@ -123,7 +123,7 @@ _EOF_
 
     # Build
     $t->command_line_flags($t->command_line_flags . ' --dd');
-    $t->build_test();
+    $t->build();
     my $stdout = $t->stdout;
     like($stdout
 	, qr|'\.\/file\.target' has dependencies \[\./file.in\], rule 1:target:\[B\]\[S\]|

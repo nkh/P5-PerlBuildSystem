@@ -252,17 +252,15 @@ if(exists $tree->{__FORCED})
 	
 #----------------------------------------------------------------------------
 
-# self is part of the digest this check is redundant
-unless(-e $full_name)
+unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	{
-	unless(exists $tree->{__VIRTUAL})
+	if( ! exists $tree->{__VIRTUAL} && ! -e $full_name)
 		{
 		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => "not found on disk"} ;
 		PrintInfo("$name: trigged on itself [Doesn't exist]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
 		$triggered++ ;
 		}
 	}
-#~ =cut
 
 if(! $triggered && defined $node_checker_rule)
 	{
@@ -296,7 +294,7 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 	}
 
 # IMPORTANT: this also generates child parents links for parallel build
-# do not make the block  depend on previous triggers
+# do not make the block depend on previous triggers
 for my $dependency (keys %$tree)
 	{
 	next if $dependency =~ /^__/ ; # eliminate private data
@@ -338,6 +336,20 @@ for my $dependency (keys %$tree)
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$tree->{$dependency}{__PARENTS}}, $tree ;
 			}
+		else
+			{
+			# trigger on our dependencies because they won't trigger themselves if they match 
+			# and are a source node. If a source node triggered, it would need to be rebuild.
+			for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+				{
+				if($dependency =~ /$trigger_regex/)
+					{
+					#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+					push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $dependency"} ;
+					$triggered++ ;
+					}
+				}
+			}
 		}
 	}
 
@@ -350,7 +362,7 @@ else
 	# the dependencies have been checked recursively ; the only thing a digest check could trigger with is package or node depndencies
 	# like pbsfile, variables, etc.. there should be a switch to only check that
 	
-	unless($triggered)
+	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} ||  $triggered)
 		{
 		# check digest
 		my $t0 = [gettimeofday];
@@ -370,6 +382,19 @@ else
 			# since we allow nodes to be build by the step before check (ex object files  with "depend and build"
 			# we still want to trigger the node as some particular tasks might be done by the "builder
 			# ie: write a digest for the node ot run post build commands
+			$triggered++ ;
+			}
+		}
+	}
+
+if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+	{
+	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+		{
+		if($name =~ /$trigger_regex/)
+			{
+			#PrintDebug "$name =~ /$trigger_regex/\n" ;
+			push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $trigger_regex"} ;
 			$triggered++ ;
 			}
 		}
@@ -411,7 +436,6 @@ if($triggered)
 			#~ $full_name = "$build_directory/ROOT${directories}$file" ;
 			#~ }
 		#~ }
-		
 		
 	$files_in_build_sequence->{$name} = $tree ;
 	push @$build_sequence, $tree  ;

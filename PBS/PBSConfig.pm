@@ -347,28 +347,6 @@ for my $include_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_INCLUDE}})
 	}
 	
 #-------------------------------------------------------------------------------
-# build or not switches
-if($pbs_config->{NO_BUILD} && $pbs_config->{FORCE_BUILD})
-	{
-	PrintWarning "Both --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
-	$pbs_config->{FORCE_BUILD} = 0 ;
-	}
-	
-$pbs_config->{DO_BUILD} = 0 if $pbs_config->{NO_BUILD} ;
-
-unless($pbs_config->{FORCE_BUILD})
-	{
-	while(my ($debug_flag, $value) = each %$pbs_config) 
-		{
-		if($debug_flag =~ /^DEBUG/ && defined $value)
-			{
-			$pbs_config->{DO_BUILD} = 0 ;
-			keys %$pbs_config;
-			last ;
-			}
-		}
-	}
-#-------------------------------------------------------------------------------
 
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
@@ -385,6 +363,13 @@ if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS} <= 0)
 	delete $pbs_config->{JOBS} ;
 	}
 	
+push @{$pbs_config->{TRIGGER}}, 
+	grep { $_ ne '' && $_ !~ /^\s*#/ }
+		read_file($pbs_config->{DEBUG_TRIGGER_LIST}, chomp => 1)
+			if $pbs_config->{DEBUG_TRIGGER_LIST} ;
+
+$pbs_config->{DEBUG_TRIGGER}++ if @{$pbs_config->{TRIGGER}} ; # force stop on this option
+
 if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
 	{
 	$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED} = 1 ;
@@ -415,6 +400,28 @@ else
 
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless defined $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
 
+#-------------------------------------------------------------------------------
+# build or not switches
+if($pbs_config->{NO_BUILD} && $pbs_config->{FORCE_BUILD})
+	{
+	PrintWarning "Both --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
+	$pbs_config->{FORCE_BUILD} = 0 ;
+	}
+	
+$pbs_config->{DO_BUILD} = 0 if $pbs_config->{NO_BUILD} ;
+
+unless($pbs_config->{FORCE_BUILD})
+	{
+	while(my ($debug_flag, $value) = each %$pbs_config) 
+		{
+		if($debug_flag =~ /^DEBUG/ && defined $value)
+			{
+			$pbs_config->{DO_BUILD} = 0 ;
+			keys %$pbs_config;
+			last ;
+			}
+		}
+	}
 #--------------------------------------------------------------------------------
 
 $Data::TreeDumper::Startlevel = 1 ;
