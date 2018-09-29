@@ -353,16 +353,18 @@ $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} 
 $Data::Dumper::Maxdepth = $pbs_config->{MAX_DEPTH} if defined $pbs_config->{MAX_DEPTH} ;
 $Data::Dumper::Indent   = $pbs_config->{INDENT_STYLE} if defined $pbs_config->{INDENT_STYLE} ;
 
-if(defined $pbs_config->{DISTRIBUTE} && ! defined $pbs_config->{JOBS})
+if(defined $pbs_config->{DISTRIBUTE})
 	{
-	$pbs_config->{JOBS} = 0 ; # let distributor determine how many jobs
+	$pbs_config->{JOBS} = 0 unless defined $pbs_config->{JOBS} ; # let distributor determine how many jobs
+	}
+else
+	{
+	if(! defined $pbs_config->{JOBS} || $pbs_config->{JOBS} <= 0)
+		{
+		$pbs_config->{JOBS} = 1 ;
+		}
 	}
 
-if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS} <= 0)
-	{
-	delete $pbs_config->{JOBS} ;
-	}
-	
 push @{$pbs_config->{TRIGGER}}, 
 	grep { $_ ne '' && $_ !~ /^\s*#/ }
 		read_file($pbs_config->{DEBUG_TRIGGER_LIST}, chomp => 1)

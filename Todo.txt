@@ -1,5 +1,8 @@
 
 
+new C depender, what if the compiler generates the dependencies but post build commands are not run?
+
+
 #new C depender has dependencies rooted in / even when dependencies are in ./
 	makes long lines of display!
 

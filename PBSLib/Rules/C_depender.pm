@@ -105,7 +105,7 @@ my ($node, $inserted_nodes) = @_ ;
 
 return unless exists $node->{__BUILD_DONE} ;
 
-my ($dependency_file, $o_dependencies) = ($node->{__NAME} . '.dependencies', '') ;
+my ($dependency_file, $o_dependencies) = ($node->{__BUILD_NAME} . '.dependencies', '') ;
 
 $o_dependencies = read_file $dependency_file ; # in gcc case, this is a makefile
 $o_dependencies =~ s/^.*:\s+// ;
