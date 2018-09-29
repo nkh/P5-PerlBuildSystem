@@ -1,14 +1,12 @@
 
 package PBS::Build::ForkedNodeBuilder ;
-use PBS::Debug ;
 
 use 5.006 ;
 
 use strict ;
 use warnings ;
-use Carp ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
-use Digest::MD5 qw(md5_hex) ;
+use File::Path ;
 
 require Exporter ;
 
@@ -119,27 +117,21 @@ for(@$build_sequence)
 		}
 	}
 	
-my $redirection_file =  md5_hex($shell->GetInfo() . '_node_' . $node_name) ;
+my $redirection_file = $node->{__BUILD_NAME} || GetBuildName($node->{__NAME}, $node);
+$redirection_file .= '.build_buffer' ;
 
-my $pbs_build_buffers_directory = $node->{__PBS_CONFIG}{BUILD_DIRECTORY} . "/PBS_BUILD_BUFFERS/";
-
-unless(-e $pbs_build_buffers_directory)
-	{
-	use File::Path ;
-	mkpath($pbs_build_buffers_directory) ;
-	}
-	
-$redirection_file = $pbs_build_buffers_directory . $redirection_file ;
+# create path to the node so external commands succeed
+my ($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
+mkpath($path) unless(-e $path) ;
 
 #all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
 #once the build is finished, the output is send to the master process
 
 local *STDOUT ;
-local *STDERR ;
-
-open STDOUT, '>', $redirection_file or die "Can't redirect STDOUT to '$redirection_file': $!";
+open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
 STDOUT->autoflush(1) ;
 
+local *STDERR ;
 open STDERR, '>&' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!";
 STDERR->autoflush(1) ;
 
@@ -168,7 +160,7 @@ if(defined $node)
 		}
 		
 	my ($build_result, $build_message) = (BUILD_FAILED, '?') ;
-	
+
 	eval 
 		{
 		($build_result, $build_message) = PBS::Build::NodeBuilder::BuildNode($node, $node->{__PBS_CONFIG}, $inserted_nodes, $node_build_sequencer_info) ;
@@ -185,7 +177,7 @@ if(defined $node)
 	# status
 	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 	
-	return($redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
+	return($redirection_file_log, "$redirection_file", tv_interval ($t0, [gettimeofday])) ;
 	}
 else
 	{

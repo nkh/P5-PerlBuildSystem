@@ -1,37 +1,16 @@
 
 
--tntr fails
-
-pbs -no_warp --trigger world.h -ndpb -tno -tnt -bni -fb
-%CC -o %FILE_TO_BUILD %DEPENDENCY_LIST
-gcc -o /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/a.out /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/main/main.o /home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/world/world.o ARRAY(0x55724f57e218)
-sh: 1: Syntax error: "(" unexpected
-
-Building '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/hello2/out_nadim/a.out' : BUILD_FAILED :
-    Shell command failed!
-    Errno     : 512
-    Errno text:
-
-    Builder: #2 'a.out'.
-
-
-#--trigger --trigger_list
-	list in which format?
-	#--trigger no stop as DEBUG_FLAG
-
-#--files, ... 
-	pbs --no_warp --no_build --nodes -no_color | grep '^node:' | cut -d ' ' -f 2 | for i in $(cat); do  echo .${i##*.} ; done | sort -u
-
-#Generate SVG by default
-
-new C depender has dependencies rooted in / even when dependencies are in ./
+#new C depender has dependencies rooted in / even when dependencies are in ./
 	makes long lines of display!
 
 	same problem as before, can move the project without rebuilding all because
 	of system dependencies
 
+
 Keep builder in non parallel builds
 	keep non failing output too
+	=> display progress bar hides all output
+	=> we could not hide in the buffer but hide in the terminal
 
 log creation doesn't work with -j
 	need a composite log, which is a good idea even without -j
@@ -44,20 +23,10 @@ big  -j 8 needs 3 builds to stabilize
 
 fork fails in windows, again!
 
-#in all warp files
-	local $PBS::Output::indentation_depth = -1 ;
-		calls PBS::PBS::Pbs which increments it immediately 
-
-	problem is after the call to PBS::PBS::Pbs, we call other functions and we have -1 in the variable
-	
 Tie::Hash::Index pulls in a zillion modules and libffi
 	
 check simplified dependencies rules and perl rules
 Check pbsfiles/config project
-
-#gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
-
-#self or sub dependency
 
 document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
 	that they are best put under lib/rules
@@ -134,6 +103,25 @@ use Term::Emit for message, maybe replace Term::ProgressBar too
 install pbs on linux and pbs.pl on windows
 
 Add a bunch of test with bad pbsfiles to catch syntax errors
+
+V#gtg, why different config objects, => we would have a completely unreadable graph, local config is closer
+
+#self or sub dependency
+
+#in all warp files
+	local $PBS::Output::indentation_depth = -1 ;
+		calls PBS::PBS::Pbs which increments it immediately 
+
+	problem is after the call to PBS::PBS::Pbs, we call other functions and we have -1 in the variable
+	
+#--trigger --trigger_list
+	list in which format?
+	#--trigger no stop as DEBUG_FLAG
+
+#--files, ... 
+	pbs --no_warp --no_build --nodes -no_color | grep '^node:' | cut -d ' ' -f 2 | for i in $(cat); do  echo .${i##*.} ; done | sort -u
+
+#Generate SVG by default
 
 # Sort node in tt by insertion time
 
