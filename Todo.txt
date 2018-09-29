@@ -1,6 +1,11 @@
 
+#running post pbs commands even when not runnning the build
+	must run even if some build failed but not if no build at all
+
 
 new C depender, what if the compiler generates the dependencies but post build commands are not run?
+	extra out directory
+	takes an extra run to stabilize warp
 
 
 #new C depender has dependencies rooted in / even when dependencies are in ./
@@ -10,8 +15,11 @@ new C depender, what if the compiler generates the dependencies but post build c
 	of system dependencies
 
 
-Keep builder in non parallel builds
-	keep non failing output too
+#Keep builder in non parallel builds
+	#keep non failing output too
+		all builds parallel
+
+Keep builders
 	=> display progress bar hides all output
 	=> we could not hide in the buffer but hide in the terminal
 

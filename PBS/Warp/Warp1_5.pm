@@ -61,8 +61,12 @@ if(-e $warp_file)
 	{
 	($nodes, $node_names, $global_pbs_config, $insertion_file_names,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration)
-		= do $warp_file or die ERROR("Couldn't evaluate warp file '$warp_file'\nFile error: $!\nCompilation error: $@\n") ;
-	
+		= do $warp_file or do
+			{
+			PrintError("Couldn't evaluate warp file '$warp_file'\nFile error: $!\nCompilation error: $@") ;
+			die "\n" ;
+			} ;
+
 	$PBS::pbs_run_information->{WARP_1_5}{SIZE} = -s $warp_file ;
 	
 	if($number_of_nodes_in_the_dependency_tree)

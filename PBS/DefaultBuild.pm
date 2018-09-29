@@ -253,6 +253,37 @@ if($pbs_config->{DO_BUILD})
 		PrintError("Build: failed\n") ;
 		}
 		
+	# run a global post build
+	# this allows nodes to modify the dependency tree before warp
+	# it was added to support c dependency scanning done by the compiler, in parallel
+	# it's a test feature
+	# it works because the dependency step is sequential and will break if dependency is done in parallel
+	my $t0_pbs_post_build = [gettimeofday];
+	my $post_build_commands = 0 ;
+
+	for my $node (values %$inserted_nodes)
+		{
+		if
+			(
+			(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
+
+			&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
+			)
+			{
+			PrintInfo "Build: running post build commands.\n" unless $post_build_commands ;
+			$post_build_commands++ ;
+
+			PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+			$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
+			}
+		}
+
+	PrintInfo
+		(
+		$PBS::Output::indentation
+		. sprintf("$post_build_commands commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday]))
+		) if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+
 	}
 else
 	{
@@ -269,34 +300,6 @@ else
 
 	($build_result, $build_message) = (0, 'No build flags') ;
 	}
-
-# run a global post build
-# this allows nodes to modify the dependency tree before warp
-# it was added to support c dependency scanning done by the compiler, in parallel
-# it's a test feature
-# it works because the dependency step is sequential and will break if dependency is done in parallel
-my $t0_pbs_post_build = [gettimeofday];
-my $post_build_commands = 0 ;
-
-for my $node (values %$inserted_nodes)
-	{
-	if
-		(
-		(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
-
-		&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
-		)
-		{
-		PrintInfo "Build: running post build commands.\n" unless $post_build_commands ;
-		$post_build_commands++ ;
-
-		PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
-		$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
-		}
-	}
-	
-PrintInfo($PBS::Output::indentation . sprintf("$post_build_commands commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday])))
-	if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
 
 RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;

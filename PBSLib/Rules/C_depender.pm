@@ -65,7 +65,7 @@ sub read_dependencies_cache
 {
 my (undef, undef, $node) = @_ ;
 
-my $file_to_build = $node->{__NAME} ; 
+my $file_to_build = $node->{__BUILD_NAME} // PBS::Rules::Builders::GetBuildName($node->{__NAME}, $node) ;
 my $dependency_file = "$file_to_build.dependencies" ;
 
 # base dependency cache in ./ 
@@ -164,7 +164,8 @@ $cache .= "$cache_footer\n" ;
 write_file $dependency_file, $cache ;
 
 # make sure object file digest doesn't use the temporary dependency file hash 
-PBS::Digest::FlushMd5Cache($dependency_file) ;
+#PBS::Digest::FlushMd5Cache($dependency_file) ;
+PBS::Digest::FlushMd5Cache() ;
 $inserted_nodes->{$dependency_file}{__MD5} = GetFileMD5($dependency_file) ;  
 
 # regenerate our own digest, could be done by PBS for all nodes with a post PBS build
