@@ -319,7 +319,6 @@ use PBS::Graph ;
 PBS::Graph::GenerateTreeGraphFile
 	(
 	[\$dependency_tree, \@trigger_inserted_roots], \$inserted_nodes,
-	'$pbs_config->{LOG_NAME}',
 	'' #title,
 	{
 		\%\$pbs_config,

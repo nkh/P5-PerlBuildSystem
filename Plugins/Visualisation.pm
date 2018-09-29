@@ -100,27 +100,6 @@ if(defined $pbs_config->{DISPLAY_ALL_RULES})
 	PBS::Rules::DisplayAllRules() ;
 	}
    
-if(defined $pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE})
-	{
-	my @sorted_file_names = sort keys %$inserted_nodes ;
-	
-	PrintInfo('Number of nodes in the tree: ' . scalar(@sorted_file_names) . "\n") ;
-	
-	for my $file (@sorted_file_names)
-		{
-		PrintInfo("$file -> ") ;
-		PrintInfo("[R]") unless exists $inserted_nodes->{$file}{__IN_BUILD_DIRECTORY} ;
-		PrintInfo("$inserted_nodes->{$file}{__BUILD_NAME}\n") ;
-		}
-		
-	PrintInfo("\n") ;
-	}
-
-if(defined $pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE_EXTRA})
-	{
-	PrintInfo(DumpTree($inserted_nodes, "Files in dependency tree:")) ;
-	}
-
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	{
 	my $GetBuildNames = 

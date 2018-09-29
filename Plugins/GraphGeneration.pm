@@ -41,7 +41,6 @@ $graph_title .= "Pbsfile: '$pbs_config->{PBSFILE}'" ;
 if
 	(
 	   defined $pbs_config->{GENERATE_TREE_GRAPH} 
-	|| defined $pbs_config->{GENERATE_TREE_GRAPH_SVG}
 	|| defined $pbs_config->{GENERATE_TREE_GRAPH_HTML}
 	|| defined $pbs_config->{GENERATE_TREE_GRAPH_SNAPSHOTS}
 	)
@@ -51,20 +50,6 @@ if
 	PBS::Graph::GenerateTreeGraphFile
 		(
 		  [$build_node, @trigger_inserted_roots], $inserted_nodes
-		, $pbs_config->{GENERATE_TREE_GRAPH}
-		, $graph_title
-		, $pbs_config
-		) ;
-	}
-
-if(defined $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE})
-	{
-	eval "use PBS::Graph" ; die $@ if $@ ;
-	
-	PBS::Graph::GenerateTreeGraphFile
-		(
-		  [$dependency_tree, @trigger_inserted_roots], $inserted_nodes
-		, $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE}
 		, $graph_title
 		, $pbs_config
 		) ;

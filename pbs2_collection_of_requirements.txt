@@ -1,4 +1,131 @@
 
+target naming
+	given the rule:
+		A => B, C(A)
+
+		where C, it's name, depends on A's name
+			ie '*.lib' => tests, *.module1
+
+		if B also depends on C
+			B => C(?).test
+
+		how do we propagate A's name?
+
+
+	this is because the rules are completely separated, they should be or we would not be able to
+	reuse rules
+
+	this has been implemented this way in the passed:
+		my @modules = qw( module1 module ) ; 
+
+		# we can also get the modules from a configuration
+		AddConfig MODULES =>  'module1 module' ; # keep them as text
+		my @modules = split /\s+/, GetConfig 'MODULES' ; # which can be hidden behind some sub
+
+
+		And then rules added:
+
+		AddRule *.lib => tests, @modules ;
+		AddRule tests => map {"$_.test"} @modules ; which can also be hidden behind a sub
+
+
+		with syntactic sugar where no variable is used:
+		PbsUse 'sugar' ;  # define get_modules and get_modules_tests
+
+		AddConfig MODULES =>  'module1 module' ;
+
+		AddRule *.lib => tests, get_modules('MODULES') ;
+		AddRule tests => get_module_tests( 'MODULES') ;
+
+		# the above has the asdvantage of hidding all the details and keeping it Config and Rules only
+
+		it is also possible to replace both rules by a meta rule:
+		PbsUse 'sugar' ;  # define AddModuleRules
+
+		AddConfig MODULES =>  'module1 module' ;
+
+		AddModuleRules => 'MODULES' ; # looks like a module but is a rule wrapper
+
+		we can even make it a one shot config + rules wrapper
+		PbsUse 'sugar' ;  # define AddModuleRules
+
+		AddModuleRules => 'module1 module' ; # adds config, adds rules
+
+
+ 		There are differences between the different solutions
+			details are more or less hidden
+				but it is still under the users control
+
+			in the sugary solution, the rules and configurations are not created in the pbsfile
+			but in the lib file, that's what pbs will report, except if we force it otherwise
+
+			
+
+		* Aternatives *
+
+		* export the TARGET for the rules
+			! a very bad idea, rules coould be far down the chain and would have to know about other
+			rules
+
+
+		* create config variables before running rules
+		PbsUse 'ModulesConfig' ;
+
+		AddConfig MODULES =>  'module1 module' ;
+		AddModulesConfig 'MODULES' # Adds in the config everything a module needs
+						# MODULES_PATHS => 'module1/module1 module2/module2'
+						# MODULES_TESTS => 'module1/module1.test module2/module2.tests'
+						# AddModulesConfig is verbose about the new variable creation
+
+		AddRule *.lib => tests, GetConfigSplit => MODULES_PATHS ;
+		AddRule tests => GetConfigSplit => MODULES_TESTS ; 
+		
+
+		or 
+
+		PbsUse 'ModuleConfigs' ;
+
+		AddConfig         MODULES =>  'module1 module' ;
+		AddModulesConfig 'MODULES' ; 
+
+		AddRule *.lib => tests, GetConfigSplit => MODULES_PATHS ;
+		AddRule tests => GetConfigSplit => MODULES_TESTS ; 
+
+		# pros and cons
+		pros:
+			very simple, no modifications of the API, flexibility for the user
+			everything ends up in the configuration which is visible with --nc/--bni
+			config locking/override is already in place
+			rules are added in the right pbs file
+
+		cons: 
+			everything ends up in the configuration!
+				the configuration is passed to levels below
+					may be a good thing
+					may be made LOCAL
+
+
+Language independent builders
+	when possible transform perl builder in external perl builders
+		take the code and put it in a bin directory 
+		if the builder accesses internals, split the builder in a builder that writes
+			the needed information and a builder that is a shell command
+		
+			this has the disadvantage of starting a new process
+
+	use inline::Language and keep the external language in the pbsfiles
+		how easy is it to debug then?
+
+Setting up paths for binaries under the build system control
+	if the build system has a set of utilities that are used to build, add the set's path
+	to $PATH before running the commands
+
+		this removes the need for the build system users to change $PATH
+
+
+
+	
+
 Binary repository layer
 	rather than as if a specific file has an md5 on the repository we should
 	ask if it has a file with that md5, it doesn't matter where it is

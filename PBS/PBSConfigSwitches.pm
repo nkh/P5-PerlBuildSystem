@@ -137,6 +137,7 @@ $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
 $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} ||= [] ;
+$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_EXCLUDE} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_INCLUDE} ||= [] ;
 $pbs_config->{DISPLAY_PBS_CONFIGURATION} ||= [] ;
@@ -904,15 +905,19 @@ EOT
 		
 	#-------------------------------------------------------------------------------	
 	'gtg|generate_tree_graph=s'       => \$pbs_config->{GENERATE_TREE_GRAPH},
-		'Generate a graph for the dependency tree. A string argument defining the file name must be given.',
+		'Generate a graph for the dependency tree. Give the file name as argument.',
 		'',
 		
-	'gtg_p|generate_tree_graph_package=s'=> \$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE},
-		'As generate_tree_graph but groups the node by definition package.',
+	'gtg_p|generate_tree_graph_package'=> \$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE},
+		'Groups the node by definition package.',
 		'',
 		
-	'gtg_canonical'=> \$pbs_config->{GENERATE_TREE_GRAPH_CANONICAL},
+	'gtg_canonical=s'=> \$pbs_config->{GENERATE_TREE_GRAPH_CANONICAL},
 		'Generates a canonical dot file.',
+		'',
+		
+	'gtg_format=s'                        => \$pbs_config->{GENERATE_TREE_GRAPH_FORMAT},
+		'chose graph format between: svg (default), ps, png.',
 		'',
 		
 	'gtg_html=s'=> \$pbs_config->{GENERATE_TREE_GRAPH_HTML},
@@ -929,6 +934,17 @@ EOT
 		
 	'gtg_cn=s'                         => $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE},
 		'The node given as argument and its dependencies will be displayed as a single unit. Multiple gtg_cn allowed.',
+		'',
+		
+	'gtg_cr=s'                         => $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX},
+		'Put nodes matching the given regex in a node named as the regx. Multiple gtg_cr allowed.',
+		<<'EOT',
+$> pbs -gtg_cr '\.c$' --gtg
+
+create a graph where all the .c files are clustered in a single node named '.c$'
+EOT
+	'gtg_crl=s'                         => \$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST},
+		'List of regexes, as if you gave multiple --gtg_cr, one per line',
 		'',
 		
 	'gtg_sd|generate_tree_graph_source_directories' => \$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES},
@@ -979,14 +995,6 @@ EOT
 		'Multiply node spacing with given coefficient.',
 		'',
 		
-	'gtg_ps'                           => \$pbs_config->{GENERATE_TREE_GRAPH_POSTSCRIPT},
-		'Generate a postscript file instead for png.',
-		'',
-		
-	'gtg_svg=s'                        => \$pbs_config->{GENERATE_TREE_GRAPH_SVG},
-		'Generate a SVG file.',
-		'',
-		
 	'gtg_printer|generate_tree_graph_printer'=> \$pbs_config->{GENERATE_TREE_GRAPH_PRINTER},
 		'Non triggerring edges are displayed as dashed lines.',
 		'',
@@ -1004,22 +1012,13 @@ EOT
 		'',
 		
 	'dbss|display_build_sequence_simple'      => \$pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE},
-		'(DF) lists the nodes to be build.',
+		'(DF) List the nodes to be build.',
 		'',
 		
 	#----------------------------------------------------------------------------------
-	'files'                         => \$pbs_config->{DISPLAY_ALL_FILE_LOCATION},
-		'Show all the files in the dependency tree and their final location.',
+	'f|files|nodes'                   => \$pbs_config->{DISPLAY_FILE_LOCATION},
+		'Show all the nodes in the dependency tree and their final location.',
 		'',
-		
-	'fe|files_extra'                  => \$pbs_config->{DEBUG_DISPLAY_ALL_FILES_IN_TREE_EXTRA},
-		'Debug flag. Display the dependency tree of all the files in the dependency tree.',
-		'',
-		
-	'fr|files_from_repository'        => \$pbs_config->{DISPLAY_FILE_LOCATION},
-		'Show all the files not located in the default source directory.',
-		'',
-		
 	#----------------------------------------------------------------------------------
 	'bi|build_info=s'                 => $pbs_config->{DISPLAY_BUILD_INFO},
 		'Options: --b --d --bc --br. A file or \'*\' can be specified. No Builds are done.',

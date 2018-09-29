@@ -207,28 +207,22 @@ if(defined $tree->{__USER_ATTRIBUTE})
 	
 
 $full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
+my $is_virtual = exists $tree->{__VIRTUAL} ;
 
 $tree->{__BUILD_NAME} = $full_name ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
 	{
-	my $located_message = '' ;
-	$located_message = "located at '$full_name'" if $full_name ne $name ;
-	
-	if($is_alternative_source)
-		{
-		PrintInfo("$name [R]: $located_message\n") ;
-		}
-	else
-		{
-		PrintInfo("$name: $located_message\n")  if ($pbs_config->{DISPLAY_ALL_FILE_LOCATION}) ;
-		}
+	PrintInfo "node: $name"
+			. ($is_alternative_source ? ' -> [R]' : '')
+			. ($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
+			. "\n" ;
 	}
 	
 #----------------------------------------------------------------------------
 # handle the node type
 #----------------------------------------------------------------------------
-if(exists $tree->{__VIRTUAL})
+if($is_virtual)
 	{
 	if(exists $tree->{__LOCAL})
 		{
@@ -396,7 +390,7 @@ if($triggered)
 	
 	if($tree->{__BUILD_NAME} ne $full_name)
 		{
-		if(defined $pbs_config->{DISPLAY_ALL_FILE_LOCATION})
+		if(defined $pbs_config->{DISPLAY_FILE_LOCATION})
 			{
 			PrintWarning("Relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}.\n")  ;
 			PrintWarning(DumpTree($tree->{__TRIGGERED}, 'Cause:')) ;
@@ -436,7 +430,7 @@ else
 		
 		unless($repository_name eq $build_directory_name)
 			{
-			PrintWarning("Forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_ALL_FILE_LOCATION} ;
+			PrintWarning("Forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
 			
 			# build a  localizer rule on the fly for this node
 			my $localizer =

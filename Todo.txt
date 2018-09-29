@@ -1,4 +1,31 @@
 
+
+#--files, ... 
+	pbs --no_warp --no_build --nodes -no_color | grep '^node:' | cut -d ' ' -f 2 | for i in $(cat); do  echo .${i##*.} ; done | sort -u
+
+#Generate SVG by default
+
+new C depender has dependencies rooted in / even when dependencies are in ./
+	makes long lines of display!
+
+	same problem as before, can move the project without rebuilding all because
+	of system dependencies
+
+Keep builder in non parallel builds
+	keep non failing output too
+
+log creation doesn't work with -j
+	need a composite log, which is a good idea even without -j
+
+
+--trigger --trigger_list
+	list in which format?
+
+big  -j 8 needs 3 builds to stabilize
+	-j 12 goes through!
+
+	parallelizer checks that all nodes in the build sequence are build and reports error
+
 fork fails in windows, again!
 
 #in all warp files
@@ -77,9 +104,6 @@ AddVariableDependency
 	=> should automatically add the variables that are used during the build of the node
 		%PBS_REPO would force all nodes to rebuild on a change of repo or added repo,
 		which is the opposite of the intended purpose of repositories!
-
-log creation doesn't work with -j
-	need a composite log, which is a good idea even without -j
 
 project generation sript can generate project which doesn't require compilation
 	- we can still use .c file but

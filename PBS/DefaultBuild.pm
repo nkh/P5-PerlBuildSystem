@@ -181,7 +181,7 @@ eval
 
 if($pbs_config->{DISPLAY_CHECK_TIME})
 	{
-	PrintInfo(sprintf("Total Check time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) ;
+	PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) ;
 	}
 
 # die later if check failed (ex: cyclic tree), run visualisation plugins first

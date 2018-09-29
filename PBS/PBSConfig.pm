@@ -21,6 +21,7 @@ use Getopt::Long ;
 use Pod::Parser ;
 use Cwd ;
 use File::Spec;
+use File::Slurp ;
 
 use PBS::Output ;
 use PBS::Log ;
@@ -324,6 +325,11 @@ for my $cluster_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 	#~ print "=> $cluster_node_regex\n" ;
 	}
 
+push @{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}}, 
+	grep { $_ ne '' && $_ !~ /^\s*#/ }
+		read_file($pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}, chomp => 1)
+			if defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST} ;
+
 for my $exclude_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_EXCLUDE}})
 	{
 	#~ print "$exclude_node_regex => " ;
@@ -365,8 +371,6 @@ unless($pbs_config->{FORCE_BUILD})
 #-------------------------------------------------------------------------------
 
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
-
-$pbs_config->{DISPLAY_FILE_LOCATION}++ if $pbs_config->{DISPLAY_ALL_FILE_LOCATION} ;
 
 $Data::Dumper::Maxdepth = $pbs_config->{MAX_DEPTH} if defined $pbs_config->{MAX_DEPTH} ;
 $Data::Dumper::Indent   = $pbs_config->{INDENT_STYLE} if defined $pbs_config->{INDENT_STYLE} ;
