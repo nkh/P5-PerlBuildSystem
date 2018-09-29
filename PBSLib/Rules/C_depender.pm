@@ -4,6 +4,7 @@ use File::Path ;
 use PBS::Rules::Builders ;
 
 use POSIX qw(strftime);
+use Cwd ;
 
 #-------------------------------------------------------------------------------
 
@@ -62,13 +63,19 @@ my $cache_footer = 'END C dependencies PBS' ;
 
 sub read_dependencies_cache
 {
-my (undef, undef, $tree) = @_ ;
+my (undef, undef, $node) = @_ ;
 
-my $file_to_build = $tree->{__BUILD_NAME} || PBS::Rules::Builders::GetBuildName($tree->{__NAME}, $tree) ;
+my $file_to_build = $node->{__NAME} ; 
 my $dependency_file = "$file_to_build.dependencies" ;
 
+# base dependency cache in ./ 
+my $source_directory = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}[0] ;
+$source_directory = cwd if $source_directory eq './' ;
+
+$dependency_file =~ s/^$source_directory/./ ;
+
 # handle the newly generated cache, if any
-$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
+$node->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
 
 my @dependencies_cache ;
 
@@ -98,7 +105,7 @@ my ($node, $inserted_nodes) = @_ ;
 
 return unless exists $node->{__BUILD_DONE} ;
 
-my ($dependency_file, $o_dependencies) = ($node->{__BUILD_NAME} . '.dependencies', '') ;
+my ($dependency_file, $o_dependencies) = ($node->{__NAME} . '.dependencies', '') ;
 
 $o_dependencies = read_file $dependency_file ; # in gcc case, this is a makefile
 $o_dependencies =~ s/^.*:\s+// ;
@@ -112,6 +119,11 @@ my @dependencies = sort  map { $_ = "./$_" unless (/^\// || /^\.\//); $_} keys %
 my $now = strftime "%a %b %e %H:%M:%S %Y", gmtime;
 my $cache = $cache_header . __FILE__ . ':' . __LINE__ . " $now\n" ;
 
+# base dependencies in ./ if possible
+my $source_directory = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}[0] ;
+$source_directory = cwd if $source_directory eq './' ;
+
+
 my $insertion_data =
 	{
 	INSERTING_NODE => $node->{__NAME},
@@ -123,6 +135,8 @@ my $insertion_data =
 
 for my $d (@dependencies, $dependency_file)
 	{
+	$d =~ s/^$source_directory/./ ;
+
 	$cache .= "$d\n" ;
 
 	if(exists $inserted_nodes->{$d})
@@ -156,7 +170,7 @@ $inserted_nodes->{$dependency_file}{__MD5} = GetFileMD5($dependency_file) ;
 # regenerate our own digest, could be done by PBS for all nodes with a post PBS build
 eval { PBS::Digest::GenerateNodeDigest($node) } ;
 
-die "Error Generating node digest: $@\n" if $@ ;
+die "Error Generating node '$node->{__NAME}' digest: $@\n" if $@ ;
 }
 
 #-------------------------------------------------------------------------------
