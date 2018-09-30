@@ -3,7 +3,7 @@ use File::Slurp ;
 use File::Path ;
 use PBS::Rules::Builders ;
 
-use POSIX qw(strftime);
+#use POSIX qw(strftime);
 use Cwd ;
 
 #-------------------------------------------------------------------------------
@@ -65,6 +65,8 @@ sub read_dependencies_cache
 {
 my (undef, undef, $node) = @_ ;
 
+my $dependency_name = "$node->{__NAME}.dependencies" ;
+
 my $file_to_build = $node->{__BUILD_NAME} // PBS::Rules::Builders::GetBuildName($node->{__NAME}, $node) ;
 my $dependency_file = "$file_to_build.dependencies" ;
 
@@ -93,7 +95,7 @@ if
 	}
 else
 	{
-	return [1, $dependency_file] ;
+	return [1, $dependency_name] ;
 	}
 }
 
@@ -116,7 +118,9 @@ $o_dependencies =~ s/\s+/:/g ;
 my %dependencies = map { $_ => 1 } grep { /\.h$/ } split(/:+/, $o_dependencies) ;
 my @dependencies = sort  map { $_ = "./$_" unless (/^\// || /^\.\//); $_} keys %dependencies ;
 
-my $now = strftime "%a %b %e %H:%M:%S %Y", gmtime;
+#my $now = strftime "%a %b %e %H:%M:%S %Y", gmtime;
+my $now = '' ;
+
 my $cache = $cache_header . __FILE__ . ':' . __LINE__ . " $now\n" ;
 
 # base dependencies in ./ if possible
