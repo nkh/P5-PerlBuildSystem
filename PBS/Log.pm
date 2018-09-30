@@ -21,6 +21,7 @@ use File::Path;
 use FileHandle;
 use POSIX qw(strftime);
 use Cwd ;
+use Term::ANSIColor qw(:constants) ;
 
 use PBS::Output ;
 use PBS::PBSConfig ;
@@ -102,6 +103,9 @@ my $build_sequence  = shift ;
 
 if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
+	# colorize tree in blocks
+	my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
+
 	PrintInfo("Writing tree data to log file ...\n") ;
 	my $log_start = time() ;
 	
@@ -115,15 +119,13 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 				} ;
 			
-	print $lh INFO
-					(
-					DumpTree
-						(
-						$build_sequence,
-						"\nBuildSequence:",
-						FILTER => $GetBuildNames,
-						)
-					) ;
+	print $lh INFO( DumpTree
+			(
+			$build_sequence,
+			"\nBuildSequence:",
+			FILTER => $GetBuildNames,
+			USE_ASCII => 1,
+			)) ;
 	
 	# files in the dependency tree.
 	
@@ -187,15 +189,13 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 					
 	print $lh "\n\nNumber of nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree.\n" ;
 
-	print $lh INFO
-					(
-					DumpTree
-						(
-						$dependency_tree,
-						"\nDependency tree:",
-						FILTER => $MarkNodesToRebuild,
-						)
-					) ;
+	print $lh DumpTree
+			(
+			$dependency_tree,
+			"\nDependency tree:",
+			FILTER => $MarkNodesToRebuild,
+			USE_ASCII => 1,
+			) ;
 	
 	# Nodes.
 	my $GetAttributesOnly = sub
@@ -223,6 +223,7 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 			} ;
 			
 	print $lh INFO "\nNodes:\n" ;
+
 	my $node_dumper = sub 
 				{
 				my $tree = shift ;
@@ -238,6 +239,8 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 									$tree,
 									"$tree->{__NAME}:",
 									FILTER => $GetAttributesOnly,
+									USE_ASCII => 1,
+									COLOR_LEVELS => [\@colors, ''],									
 									)
 								) ;
 										
