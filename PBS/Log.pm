@@ -80,10 +80,11 @@ my $log_path = $pbs_config->{BUILD_DIRECTORY} . '/PBS_LOG/' ;
 
 mkpath($log_path) unless(-e $log_path) ;
 
-$pbs_config->{LOG_NAME} = $log_path . mktemp('PBS_LOG_XXXXXXX', $log_path) ;
+my $now_string = strftime "%b_%e_%H_%M_%S_%Y", gmtime;
+$pbs_config->{LOG_NAME} = $log_path . mktemp("${now_string}_PBS_LOG_XXXXXXX", $log_path) ;
 
 my $lh = new FileHandle "> $pbs_config->{LOG_NAME}" || die "Can't create log file! $@.\n" ;
-$pbs_config->{CREATE_LOG} = $lh ;
+$pbs_config->{LOG_FH} = $lh ;
 
 PrintInfo("Generating log in '$pbs_config->{LOG_NAME}'.\n") ;
 
@@ -99,7 +100,7 @@ my $dependency_tree = shift ;
 my $inserted_nodes  = shift ;
 my $build_sequence  = shift ;
 
-if(defined (my $lh = $pbs_config->{CREATE_LOG}))
+if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
 	PrintInfo("Writing tree data to log file ...\n") ;
 	my $log_start = time() ;
@@ -345,56 +346,6 @@ close(DUMP) ;
 
 #-------------------------------------------------------------------------------
 
-sub DisplayLastestLog
-{
-my $last_log_path = shift ;
-
-use Cwd ;
-my $cwd = cwd ;
-
-if($last_log_path  =~ s[^\./]{})
-	{
-	$last_log_path = "$cwd/$last_log_path/PBS_LOG/" ;
-	}
-
-my @log_names ;
-
-opendir(DIR, $last_log_path) or die ERROR "can't opendir $last_log_path: $!.\n";
-
-while (defined(my $file = readdir(DIR)))
-	{
-	next if $file =~ /\.\.?$/ ;
-	
-	push @log_names, "$last_log_path/$file" ;
-	}
-	
-closedir(DIR);
-
-my $latest_log_name = '' ;
-my $latest_log_time = 0 ;
-
-for(@log_names)
-	{
-	my ($write_time) = (stat($_))[9] ;
-	
-	if($latest_log_time < $write_time)
-		{
-		$latest_log_name = $_ ;
-		$latest_log_time = $write_time ;
-		}
-	}
-
-unless($latest_log_name eq '')
-	{
-	open LOG, '<', $latest_log_name or die ERROR " Can't open '$latest_log_name' for reading: $!.\n" ;
-	local $/ = undef ;
-	print <LOG> ;
-	close(LOG) ;
-	}
-}
-
-#-------------------------------------------------------------------------------
-
 1 ;
 
 __END__
@@ -404,7 +355,7 @@ PBS::Log  -
 
 =head1 DESCRIPTION
 
-I<LogTreeData> prints information about the build to the file handle stored $pbs_config->{CREATE_LOG}. it is
+I<LogTreeData> prints information about the build to the file handle stored $pbs_config->{LOG_FH}. it is
 used in conjuction with I<PBS::Information::DisplayNodeInformation> to create a the B<PBS> log file.
 
 =head2 EXPORT

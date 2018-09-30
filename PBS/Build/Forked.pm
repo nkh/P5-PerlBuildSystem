@@ -223,7 +223,7 @@ TerminateBuilders($builders) ;
 if($number_of_failed_builders)
 	{
 	PrintError "Parallel build: Error\n" ;
-	print $error_output ;
+	PrintError $error_output ;
 	}
 
 PrintInfo DumpTree($root_node, 'Parallel build final state:', FILTER => $parallel_build_state, DISPLAY_ADDRESS => 0)
@@ -591,6 +591,8 @@ sub SendIpcToBuildNode
 my ($pbs_config, $node, $node_index, $number_of_nodes_to_build, $pid) = @_ ;
 my $node_name = $node->{__NAME} ; 
 
+$number_of_nodes_to_build = 1 if $number_of_nodes_to_build < 1 ;
+
 # IPC start the build
 my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build ) ;
 my $builder_channel = $pid->{BUILDER_CHANNEL} ;
@@ -675,7 +677,7 @@ else
 	}
 	
 # handle log
-if(defined (my $lh = $pbs_config->{CREATE_LOG}))
+if(defined (my $lh= $pbs_config->{LOG_FH}))
 	{
 	print $builder_channel "GET_LOG" . "__PBS_FORKED_BUILDER__" . "\n" ;
 	while(<$builder_channel>)

@@ -75,6 +75,7 @@ _EOF_
 # Build
 	$t->build_test_fail;
     my $stderr = $t->stderr;
+	
     like($stderr, qr/BUILD_FAILED : Builder sub error/, 'Error message from builder sub');
 }
 

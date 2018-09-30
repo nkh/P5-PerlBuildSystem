@@ -107,9 +107,10 @@ my ($node, $inserted_nodes) = @_ ;
 
 return unless exists $node->{__BUILD_DONE} ;
 
+my $dependency_name = "$node->{__NAME}.dependencies" ;
 my ($dependency_file, $o_dependencies) = ($node->{__BUILD_NAME} . '.dependencies', '') ;
 
-$o_dependencies = read_file $dependency_file ; # in gcc case, this is a makefile
+$o_dependencies = read_file $dependency_file or die ERROR "C_DEPENDER: can't read cache\n" ; # in gcc case, this is a makefile
 $o_dependencies =~ s/^.*:\s+// ;
 $o_dependencies =~ s/\\/ /g ;
 $o_dependencies =~ s/\n/:/g ;
@@ -137,7 +138,7 @@ my $insertion_data =
 	INSERTION_TIME => Time::HiRes::time,
 	} ;
 
-for my $d (@dependencies, $dependency_file)
+for my $d (@dependencies, $dependency_name)
 	{
 	$d =~ s/^$source_directory/./ ;
 
@@ -169,7 +170,10 @@ write_file $dependency_file, $cache ;
 
 # make sure object file digest doesn't use the temporary dependency file hash 
 PBS::Digest::FlushMd5Cache($dependency_file) ;
-$inserted_nodes->{$dependency_file}{__MD5} = GetFileMD5($dependency_file) ;  
+PBS::Digest::FlushMd5Cache($node->{__BUILD_NAME}) ;
+#PBS::Digest::FlushMd5Cache() ;
+
+$inserted_nodes->{$dependency_name}{__MD5} = GetFileMD5($dependency_file) ;  
 
 # regenerate our own digest, could be done by PBS for all nodes with a post PBS build
 eval { PBS::Digest::GenerateNodeDigest($node) } ;

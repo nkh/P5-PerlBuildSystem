@@ -430,7 +430,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_POST_BU
 		}
 	}
 	
-my $log_handle = $pbs_config->{CREATE_LOG} ;
+my $log_handle = $pbs_config->{LOG_FH} ;
 print $log_node_info if(defined $log_handle) ;
 
 print STDOUT $node_info ;

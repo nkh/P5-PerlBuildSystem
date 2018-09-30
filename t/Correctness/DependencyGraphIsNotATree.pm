@@ -96,6 +96,7 @@ _EOF_
     $t->build_test;
     $t->run_target_test(stdout => "inc2\n3.c\ninc2\n2.c\n1.c\n");
 
+#$t->generate_test_snapshot_and_exit('not_up_to_date') ;
     $t->test_up_to_date;
 }
 

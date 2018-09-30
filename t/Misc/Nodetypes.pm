@@ -69,6 +69,7 @@ _EOF_
     $t->write('file.in', 'file contents');
 
     # Build
+#$t->generate_test_snapshot_and_exit('typr_local') ;
     $t->build_test('targets' => 'file.in');
     $t->test_file_contents($t->catfile($t->build_dir, 'file.in'), 'file contents');
 }
@@ -125,7 +126,8 @@ _EOF_
     $t->write('file2.in', 'file2 contents');
 
     # Build
-	$t->build_test();
+#$t->generate_test_snapshot_and_exit('immediate_build') ;
+    $t->build_test();
     $t->test_target_contents('file2 contentsfile contentsfile2 contents');
 }
 

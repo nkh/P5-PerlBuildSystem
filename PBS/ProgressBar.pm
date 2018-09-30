@@ -758,7 +758,7 @@ if ( ! defined $so_far ) {
     print $fh "\r";
     printf $fh "$name: "
       if defined $name;
-    print $fh "(nothing to do)\n";
+    #print $fh "(nothing to do)\n";
     return 2**32-1;
   }
 

@@ -1,8 +1,28 @@
 
+
+left flushmd5cache
+
+working on JOB = 1
+
+
+#3.o, where'd the digest?! in warp :P
+
+Node@root: time to retire
+	doesn't play well with progressbar (but it's the crappy progress bar that should be replaced with
+		something much simpler)
+	loads all the warp files, even in war
+		doesn't have a config
+
+	either do it with warp, saving the configs or build locally after saving the configs
+
+
 new C depender, what if the compiler generates the dependencies but post build commands are not run?
 	=> we need the post pbs because the build is in another process and the warp is in the main process
 		meso warp fixes the problem without post pbs build commands but still needs to be
 		stiched up correctly when meso warp master generation fails (or is not run)
+
+	add: new c_depender test
+		current tests cover the change
 
 
 	#extra out directory
@@ -24,7 +44,13 @@ Keep builders
 	=> display progress bar hides all output
 	=> we could not hide in the buffer but hide in the terminal
 
-log creation doesn't work with -j
+#log name with date!
+
+#sub logs in sub dirs? with build buffers?
+
+catch die in sub process
+
+#log creation doesn't work with -j
 	need a composite log, which is a good idea even without -j
 
 
@@ -55,9 +81,7 @@ c depender:
 		probably node builder knows about --bi but not parallel builder
 
 error: gcc failure when -j appears before report by pbs. stderr not redirected?
-
-add: new c_depender test
-	current tests cover the change
+	in case that would be buffering, this code may help use IO::Handle; STDERR->autoflush(1);
 
 add --tmux-error option
 

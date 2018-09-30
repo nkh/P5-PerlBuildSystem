@@ -75,7 +75,15 @@ while(defined (my $command_and_args = <$parent_channel>))
 			
 		/^GET_LOG$/ and do
 			{
-			SendFile($parent_channel, $build_log, !$pbs_config->{KEEP_PBS_BUILD_BUFFERS}) ;
+			if(defined $pbs_config->{CREATE_LOG})
+				{
+				SendFile($parent_channel, $build_log, !$pbs_config->{KEEP_PBS_BUILD_BUFFERS}) ;
+				}
+			else
+				{
+				print $parent_channel 'No log option was given.' . "__PBS_FORKED_BUILDER___\n" ;
+				}
+
 			last ;
 			} ;
 			
@@ -116,12 +124,12 @@ for(@$build_sequence)
 		last ;
 		}
 	}
-	
-my $redirection_file = $node->{__BUILD_NAME} || GetBuildName($node->{__NAME}, $node);
-$redirection_file .= '.build_buffer' ;
 
-# create path to the node so external commands succeed
-my ($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
+my $redirection_base = $node->{__BUILD_NAME} || GetBuildName($node->{__NAME}, $node);
+my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
+
+my $redirection_file = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.build_buffer" ;
+my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
 #all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
@@ -135,14 +143,16 @@ local *STDERR ;
 open STDERR, '>&' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!";
 STDERR->autoflush(1) ;
 
-my $redirection_file_log = "${redirection_file}_log" ;
+my $redirection_file_log = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.log" ;
+($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
+mkpath($path) unless(-e $path) ;
+
 if(defined $pbs_config->{CREATE_LOG})
 	{
-	die "LOG not implemented in -j mode yet";
-	open LOG, '>', $redirection_file_log or die "Can't redirect log to '$redirection_file_log': $!";
-	LOG->autoflush(1) ;
+	my $lh = new FileHandle($redirection_file_log, 'w') || die "Can't create log file for $redirection_file_log: $@.\n" ;
+	$lh->autoflush(1) ;
 	
-	$pbs_config->{CREATE_LOG} = *LOG ;
+	$pbs_config->{LOG_FH} = $lh ;
 	}
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
@@ -177,7 +187,7 @@ if(defined $node)
 	# status
 	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 	
-	return($redirection_file_log, "$redirection_file", tv_interval ($t0, [gettimeofday])) ;
+	return($redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
 	}
 else
 	{

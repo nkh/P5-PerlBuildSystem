@@ -279,7 +279,7 @@ if($node_needs_rebuild)
 	}
 	
 # log the build
-if(defined (my $lh = $pbs_config->{CREATE_LOG}))
+if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
 	my $build_string = "Build result for '$build_name' : $build_result : $build_message\n" ;
 	
@@ -603,7 +603,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		$build_message = "\n\t Building $build_name '$rule_info': Exception type: $@" ;
 		}
 		
-	if(defined (my $lh = $pbs_config->{CREATE_LOG}))
+	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
 		print $lh INFO "Post build result for '$rule_info' on '$name': $build_result : $build_message\n" ;
 		}

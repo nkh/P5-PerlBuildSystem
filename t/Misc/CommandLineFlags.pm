@@ -64,7 +64,8 @@ _EOF_
     $t->command_line_flags($t->command_line_flags . ' --l');
     $t->build_test();
     my $stdout = $t->stdout;
-    $stdout =~ qr|(build_dir/PBS_LOG/PBS_LOG.*)'|;
+
+    $stdout =~ qr|Generating log in '(.*)'.| ;
     my $log_file = $1;
     $t->test_file_exist($log_file);
 }
@@ -90,8 +91,8 @@ $t->write('file2.in', 'file2 contents');
 $t->command_line_flags($t->command_line_flags . ' --kpbb -j=1');
  
 use Digest::MD5 qw(md5_hex) ;
-my $buffer_name = 'PBS_BUILD_BUFFERS/' . md5_hex('PBS::Shell_node_./file.target') ;
-#~ diag "Expecting file  $buffer_name\n" ;
+my $buffer_name = '_PBS_BUILD_LOGS/file.target.build_buffer' ;
+#diag "Expecting file  $buffer_name\n" ;
 # Build
 if($^O eq 'MSWin32')
 	{

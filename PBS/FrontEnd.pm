@@ -90,12 +90,6 @@ if($display_help || $display_switch_help || $display_version || defined $display
 	return(1) ;
 	}
 	
-if(defined $pbs_config->{DISPLAY_LAST_LOG})
-	{
-	PBS::Log::DisplayLastestLog($pbs_config->{DISPLAY_LAST_LOG}) ;
-	return(1) ;
-	}
-
 if(defined $pbs_config->{WIZARD})
 	{
 	eval "use PBS::Wizard;" ;
@@ -143,9 +137,8 @@ unless($switch_parse_ok)
 $display_pbs_run++ if defined $pbs_config->{DISPLAY_PBS_RUN} ;
 PrintInfo2 "** PBS run $pbs_run_index **\n" if $display_pbs_run ;
 
-if(defined $pbs_config->{CREATE_LOG})
+if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
-	my $lh = $pbs_config->{CREATE_LOG} ;
 	print $lh "** PBS run $pbs_run_index **\n";
 	}
 
@@ -222,9 +215,8 @@ else
 $pbs_run_index-- ;
 PrintInfo2 "** PBS run $pbs_run_index Done **\n" if $display_pbs_run ;
 
-if(defined $pbs_config->{CREATE_LOG})
+if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
-	my $lh = $pbs_config->{CREATE_LOG} ;
 	print $lh "** PBS run $pbs_run_index Done **\n";
 	}
 

@@ -603,12 +603,8 @@ EOT
 		 .'build processes forward the buffers to PBS and unlink the files. You '
 		 .'can keep the buffers by specifying this switch',
 		 
-	'l|create_log'                    => \$pbs_config->{CREATE_LOG},
-		'PBS will creat a simple log for the current run.',
-		'',
-		
-	'll|display_last_log=s'                  => \$pbs_config->{DISPLAY_LAST_LOG},
-		'PBS dump the last log in the given build directory.',
+	'l|log|create_log'                    => \$pbs_config->{CREATE_LOG},
+		'Creat a log.',
 		'',
 		
 	#----------------------------------------------------------------------------------
