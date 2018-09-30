@@ -13,7 +13,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.02' ;
+our $VERSION = '0.03' ;
 
 #-------------------------------------------------------------------------------
 
@@ -461,7 +461,11 @@ for my $node (keys %$nodes)
 			{
 			if(exists $nodes->{$dependent})
 				{
-				$nodes->{$dependent}{$node}++ ;
+				$nodes->{$dependent}{$node} = 
+						{
+						__BUILD_DONE => 'Field set in warp 1.7',
+						__CHECKED => 1,
+						} ;
 				}
 			}
 		}

@@ -168,8 +168,7 @@ $cache .= "$cache_footer\n" ;
 write_file $dependency_file, $cache ;
 
 # make sure object file digest doesn't use the temporary dependency file hash 
-#PBS::Digest::FlushMd5Cache($dependency_file) ;
-PBS::Digest::FlushMd5Cache() ;
+PBS::Digest::FlushMd5Cache($dependency_file) ;
 $inserted_nodes->{$dependency_file}{__MD5} = GetFileMD5($dependency_file) ;  
 
 # regenerate our own digest, could be done by PBS for all nodes with a post PBS build

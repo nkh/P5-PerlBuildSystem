@@ -1,13 +1,18 @@
 
 new C depender, what if the compiler generates the dependencies but post build commands are not run?
-	extra out directory
-	takes an extra run to stabilize warp
+	=> we need the post pbs because the build is in another process and the warp is in the main process
+		meso warp fixes the problem without post pbs build commands but still needs to be
+		stiched up correctly when meso warp master generation fails (or is not run)
+
+
+	#extra out directory
+	#takes an extra run to stabilize warp
 
 
 #new C depender has dependencies rooted in / even when dependencies are in ./
 	makes long lines of display!
 
-	same problem as before, can move the project without rebuilding all because
+	same problem as before, can't move the project without rebuilding all because
 	of system dependencies
 
 
@@ -23,7 +28,7 @@ log creation doesn't work with -j
 	need a composite log, which is a good idea even without -j
 
 
-big  -j 8 needs 3 builds to stabilize
+#big  -j 8 needs 3 builds to stabilize
 	-j 12 goes through!
 
 	parallelizer checks that all nodes in the build sequence are build and reports error
