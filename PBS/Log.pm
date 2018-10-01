@@ -77,7 +77,7 @@ sub CreatePbsLog
 {
 my $pbs_config = shift ;
 
-my $log_path = $pbs_config->{BUILD_DIRECTORY} . '/PBS_LOG/' ;
+my $log_path = $pbs_config->{BUILD_DIRECTORY} . '/_PBS_LOG/' ;
 
 mkpath($log_path) unless(-e $log_path) ;
 

@@ -42,7 +42,7 @@ eval "use GDBM_File;" ;
 die ERROR("Warp 1.7 needs module GDBM_File which is not installed:\n\n$@\n") if $@ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_7';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_7';
 my $warp_file= "$warp_path/Pbsfile_$warp_signature.blob" ;
 
 $PBS::pbs_run_information->{WARP_1_7}{FILE} = $warp_file ;
@@ -472,7 +472,7 @@ for my $node (keys %$nodes)
 	}
 
 my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_7';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_7';
 
 write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
 
@@ -539,7 +539,7 @@ PrintInfo("\e[KWarp: generation.\n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_7';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_7';
 mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.7', $warp_path, $warp_signature, $targets, $pbs_config) ;

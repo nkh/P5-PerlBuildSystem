@@ -465,7 +465,7 @@ unless(defined $pbs_config->{BUILD_DIRECTORY})
 		}
 	else
 		{
-		$pbs_config->{BUILD_DIRECTORY} = $cwd . "/out_" . GetUserName() ;
+		$pbs_config->{BUILD_DIRECTORY} = $cwd . "/_out_" . GetUserName() ;
 		}
 	}
 

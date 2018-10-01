@@ -41,7 +41,7 @@ sub WarpPbs
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_8';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
 my $warp_file = "$warp_path/Pbsfile_$warp_signature.pl" ;
 
 $PBS::pbs_run_information->{WARP_1_8}{FILE} = $warp_file ;
@@ -272,7 +272,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 #my $t0_md5_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_8';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
 mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.8', $warp_path, $warp_signature, $targets, $pbs_config) ;
@@ -357,7 +357,7 @@ sub CheckMd5File
 my ($targets, $pbs_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path      = $pbs_config->{BUILD_DIRECTORY} . '/warp1_8';
+my $warp_path      = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
 my $node_md5_file  = "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
 
 my $run_in_warp_mode = RUN_IN_WARP_MODE ;
@@ -496,7 +496,7 @@ my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
 write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
 		
 
-my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/warp1_8/warp_${warp_signature}" ;
+my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/_warp1_8/warp_${warp_signature}" ;
 
 for my $node_name (reverse sort keys %nodes_not_matching)
 	{
@@ -570,7 +570,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 my $t0_single_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . "/warp1_8/warp_${warp_signature}" ;
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . "/_warp1_8/warp_${warp_signature}" ;
 mkpath($warp_path) unless(-e $warp_path) ;
 
 #~ my $node_generated = 1 ;

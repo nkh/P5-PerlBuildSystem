@@ -39,7 +39,7 @@ sub WarpPbs
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_5';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_5';
 my $warp_file= "$warp_path/Pbsfile_$warp_signature.pl" ;
 
 $PBS::pbs_run_information->{WARP_1_5}{FILE} = $warp_file ;
@@ -472,7 +472,7 @@ PrintInfo("\e[KWarp: generation.$warp_message\n") ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/warp1_5';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_5';
 mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.5',$warp_path, $warp_signature, $targets, $pbs_config) ;
