@@ -8,7 +8,8 @@ use warnings;
 
 #use t::Correctness::DependencyGraphIsNotATree;
 #use t::Correctness::IncludeFiles ;
-use t::Correctness::CDepender ;
+#use t::Correctness::CDepender ;
+use t::Misc::ExtraDependencies ;
 
 t::PBS::set_global_warp_mode('1.5');
 
@@ -19,5 +20,5 @@ t::PBS::set_global_warp_mode('1.5');
 
 #t::Correctness::DependencyGraphIsNotATree->runtests();
 #t::Correctness::IncludeFiles->runtests();
-
-t::Correctness::CDepender->runtests();
+#t::Correctness::CDepender->runtests();
+t::Misc::ExtraDependencies->runtests() ;

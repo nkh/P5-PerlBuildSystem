@@ -361,7 +361,7 @@ else
 	{
 	if(!defined $pbs_config->{JOBS} || $pbs_config->{JOBS} < 1)
 		{
-		$pbs_config->{JOBS} = undef ; 
+		$pbs_config->{JOBS} = 1 ; 
 		}
 	}
 
