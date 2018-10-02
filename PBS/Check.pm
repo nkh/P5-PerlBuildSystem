@@ -336,19 +336,17 @@ for my $dependency (keys %$tree)
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$tree->{$dependency}{__PARENTS}}, $tree ;
 			}
-		else
+		}
+
+	# trigger on our dependencies because they won't trigger themselves if they match 
+	# and are a source node. If a source node triggered, it would need to be rebuild.
+	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+		{
+		if($dependency =~ /$trigger_regex/)
 			{
-			# trigger on our dependencies because they won't trigger themselves if they match 
-			# and are a source node. If a source node triggered, it would need to be rebuild.
-			for my $trigger_regex (@{$pbs_config->{TRIGGER}})
-				{
-				if($dependency =~ /$trigger_regex/)
-					{
-					#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
-					push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $dependency"} ;
-					$triggered++ ;
-					}
-				}
+			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $dependency"} ;
+			$triggered++ ;
 			}
 		}
 	}

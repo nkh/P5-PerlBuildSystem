@@ -325,10 +325,19 @@ for my $cluster_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 	#~ print "=> $cluster_node_regex\n" ;
 	}
 
-push @{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}}, 
-	grep { $_ ne '' && $_ !~ /^\s*#/ }
-		read_file($pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}, chomp => 1)
-			if defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST} ;
+if(defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
+	{
+	if( -e $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
+		{
+		push @{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}}, 
+			grep { $_ ne '' && $_ !~ /^\s*#/ }
+				read_file($pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}, chomp => 1) ;
+		}
+	else
+		{
+ 		die ERROR( "Graph: cluster list '$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}' not found"), "\n" ;
+		}
+	}
 
 for my $exclude_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_EXCLUDE}})
 	{
