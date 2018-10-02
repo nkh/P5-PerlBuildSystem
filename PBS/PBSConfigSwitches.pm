@@ -145,6 +145,7 @@ $pbs_config->{DISPLAY_PBS_CONFIGURATION} ||= [] ;
 $pbs_config->{VERBOSITY} ||= [] ;
 $pbs_config->{POST_PBS} ||= [] ;
 $pbs_config->{DISPLAY_TREE_FILTER} ||= [] ;
+$pbs_config->{DISPLAY_TEXT_TREE_REGEX} ||= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $pbs_config) ;} ;
 
@@ -852,8 +853,16 @@ EOT
 		'Die if a cycle involving source files is found (default is warn).',
 		'',
 		
-	'tt|text_tree:s'                  => \$pbs_config->{DEBUG_DISPLAY_TEXT_TREE},
-		'(DF) Display the dependency tree using a text dumper. A string argument can be given to point at a specific node.',
+	'tt|text_tree'                  => \$pbs_config->{DEBUG_DISPLAY_TEXT_TREE},
+		'(DF) Display the dependency tree using a text dumper',
+		'',
+		
+	'ttmr|text_tree_match_regex:s'      => $pbs_config->{DISPLAY_TEXT_TREE_REGEX},
+		' limits how many trees are displayed.',
+		'',
+		
+	'ttmm|text_tree_match_max:i'      => \$pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH},
+		' limits how many trees are displayed.',
 		'',
 		
 	'ttf|text_tree_filter=s'          => $pbs_config->{DISPLAY_TREE_FILTER},
@@ -868,7 +877,7 @@ EOT
 		'Generate a dhtml dump of the tree in the specified file.',
 		'',
 		
-	'ttm|text_tree_max_depth=i'       => \$pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH},
+	'ttmd|text_tree_max_depth=i'       => \$pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH},
 		'Limit the depth of the dumped tree.',
 		'',
 		

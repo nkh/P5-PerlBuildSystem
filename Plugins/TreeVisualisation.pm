@@ -297,64 +297,72 @@ EOT
 	close(DHTML) ;
 	}
 
-if(defined $pbs_config->{DEBUG_DISPLAY_TEXT_TREE})
+my @extra_options ;
+
+# colorize tree in blocks
+use Term::ANSIColor qw(:constants) ;
+my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
+push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
+
+# terminal width
+push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
+
+push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
+
+
+my @trees ;
+
+my $matching_nodes = 0 ;
+
+if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 	{
-	my ($tree_to_display, $dump_title) ;
-	
-	if('' eq $pbs_config->{DEBUG_DISPLAY_TEXT_TREE})
+	for my $node_name (keys %$inserted_nodes)
 		{
-		($tree_to_display, $dump_title) = ($dependency_tree, , "Tree for '$dependency_tree->{__NAME}':") ;
+		last if $matching_nodes == $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ;
+
+		for my $regex (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
+			{
+			if($node_name =~ $regex)
+				{
+				push @trees, $node_name ;
+				$matching_nodes++;
+				last ;
+				}
+			}
+		}
+
+	if(@trees == 0)
+		{ 
+		PrintWarning("Tree visualization: No node matched the regex you gave.\n") ;
+		}
+	if(@trees == 1)
+		{
+		PrintInfo DumpTree($dependency_tree, "Tree for '$inserted_nodes->{$trees[0]}':", FILTER => $FilterDump, @extra_options) ;
 		}
 	else
 		{
-		if(exists $inserted_nodes->{$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}})
-			{
-			($tree_to_display, $dump_title) = 
-				(
-				  $inserted_nodes->{$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}}
-				, "Tree for '$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}':"
-				) ;
-			}
-		else
-			{
-			my $local_name = './' . $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
-			
-			if(exists $inserted_nodes->{$local_name})
-				{
-				($tree_to_display, $dump_title) = ($inserted_nodes->{$local_name}, "Tree for '$local_name':") ;
-				}
-			else
-				{
-				PrintWarning("Display text tree: No such element '$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}'\n") ;
-				DisplayCloseMatches($pbs_config->{DEBUG_DISPLAY_TEXT_TREE}, $inserted_nodes) ;
-				}
-			}
+		my %trees = ( map { ($_ => $inserted_nodes->{$_}) } @trees ) ;
+
+		PrintInfo DumpTree(\%trees, "Trees:", FILTER => $FilterDump, @extra_options) ;
 		}
-		
-	# find the inserted roots
-	for my $node_name (keys %$inserted_nodes)
-		{
-		if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
-			{
-			$tree_to_display->{"$node_name (triggered by '$inserted_nodes->{$node_name}{__TRIGGER_INSERTED}') "} =  $inserted_nodes->{$node_name} ;
-			}
-		}
-			
-	my @extra_options ;
-
-	# colorize tree in blocks
-	use Term::ANSIColor qw(:constants) ;
-	my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
-	push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
-
-	# terminal width
-	push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
-
-	push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
-
-	PrintInfo DumpTree($tree_to_display, $dump_title, FILTER => $FilterDump, @extra_options) if defined $tree_to_display ;
-	print Term::ANSIColor::color('reset') ;
 	}
+else
+	{
+	PrintInfo DumpTree($dependency_tree, "Tree for '$dependency_tree->{__NAME}':", FILTER => $FilterDump, @extra_options)
+		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
+	}
+	
+print Term::ANSIColor::color('reset');
+
+# find the inserted roots
+# todo: make this an option
+#for my $node_name (keys %$inserted_nodes)
+#	{
+#	if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
+#		{
+#		push @trees, $node_name + title: "$node_name, triggered by '$inserted_nodes->{$node_name}{__TRIGGER_INSERTED}')"
+#		}
+#	}
 }
 
 #-------------------------------------------------------------------------------

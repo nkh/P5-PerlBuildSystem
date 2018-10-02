@@ -379,7 +379,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
 
 if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	{
-	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE} = '' unless $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
+	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ ;
 	}
 	
 if(@{$pbs_config->{DISPLAY_TREE_FILTER}})
@@ -401,6 +401,7 @@ else
 	}
 
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless defined $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
+$pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ||= 3 ;
 
 #-------------------------------------------------------------------------------
 # build or not switches

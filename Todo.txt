@@ -16,7 +16,7 @@ log:
 		navigation link on node names
 		bread crumbs to parents
 		
---tt takes a node name, make it a regex
+#--tt takes a node name, make it a regex
 
 
 #pbs files locations
@@ -128,7 +128,7 @@ c depender:
 	shows info but build fails although it should continue
 		probably node builder knows about --bi but not parallel builder
 
-error: gcc failure when -j appears before report by pbs. stderr not redirected?
+#error: gcc failure when -j appears before report by pbs. stderr not redirected?
 	in case that would be buffering, this code may help use IO::Handle; STDERR->autoflush(1);
 
 	fixwd but redirection kills coloring of gcc output
