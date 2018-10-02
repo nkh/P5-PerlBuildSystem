@@ -357,8 +357,8 @@ sub CheckMd5File
 my ($targets, $pbs_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path      = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
-my $node_md5_file  = "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
+my $warp_path     = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
+my $node_md5_file = "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
 
 my $run_in_warp_mode = RUN_IN_WARP_MODE ;
 
@@ -367,7 +367,7 @@ my $t0 =  [gettimeofday] ;
 
 if(! -e $node_md5_file)
 	{
-	PrintWarning "Warp file'$node_md5_file' doesn't exist!\n" ;
+	PrintWarning "Warp file '_warp1_8/Pbsfile_${warp_signature}_md5.pl' doesn't exist!\n" ;
 	return(RUN_IN_NORMAL_MODE) ;
 	}
 	

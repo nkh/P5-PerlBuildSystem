@@ -115,7 +115,7 @@ if(-e $warp_file)
 	}
 else
 	{
-	PrintWarning("Warp file '$warp_file' doesn't exist.\n") ;
+	PrintWarning("Warp file '_warp1_5/Pbsfile_$warp_signature.pl' doesn't exist.\n") ;
 	$run_in_warp_mode = 0 ;
 	}
 
