@@ -298,28 +298,13 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 #----------------------
 # node config
 #----------------------
-if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_CONFIG})
+if(defined $file_tree->{__CONFIG})
 	{
-	if(defined $file_tree->{__CONFIG})
-		{
-		$current_node_info = INFO 
-					(
-					DumpTree
-						(
-						$file_tree->{__CONFIG},
-						"Build config",
-						INDENTATION => '        ',
-						)
-					) ;
-									
-		}
-	else
-		{
-		$current_node_info = '' ;
-		}
-		
-	$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG}) ;
-	$node_info     .= $current_node_info if($pbs_config->{DISPLAY_NODE_CONFIG}) ;
+	$log_node_info .= INFO(	DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => '        ', USE_ASCII => 1))
+				if defined $pbs_config->{CREATE_LOG} ;
+								
+	$node_info .= INFO(DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => '        ',))
+			if $pbs_config->{DISPLAY_NODE_CONFIG} ;
 	}
 	
 #----------------------
@@ -430,10 +415,16 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_POST_BU
 		}
 	}
 	
-my $log_handle = $pbs_config->{LOG_FH} ;
-print $log_node_info if(defined $log_handle) ;
 
-print STDOUT $node_info ;
+if(defined (my $lh = $pbs_config->{LOG_FH}))
+	{
+	print $lh $log_node_info, "\n" if defined $lh ;
+	}
+
+if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
+	{
+	print STDOUT $node_info ;
+	}
 }
 
 #----------------------------------------------------------------------

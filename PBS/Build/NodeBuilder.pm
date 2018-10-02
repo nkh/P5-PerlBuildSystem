@@ -164,6 +164,7 @@ if
 	(
 	   defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
 	|| defined $pbs_config->{DISPLAY_BUILD_INFO}
+	|| defined $pbs_config->{CREATE_LOG}
 	)
 	{
 	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config) ;
@@ -281,7 +282,7 @@ if($node_needs_rebuild)
 # log the build
 if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
-	my $build_string = "Build result for '$build_name' : $build_result : $build_message\n" ;
+	my $build_string = "Build result for '$build_name' : $build_result : $build_message\n\n" ;
 	
 	if($build_result == BUILD_FAILED)
 		{
@@ -605,7 +606,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
-		print $lh INFO "Post build result for '$rule_info' on '$name': $build_result : $build_message\n" ;
+		print $lh INFO "Post build result for '$rule_info' on '$name': $build_result : $build_message\n\n" ;
 		}
 		
 	if(defined $pbs_config->{DISPLAY_POST_BUILD_RESULT})

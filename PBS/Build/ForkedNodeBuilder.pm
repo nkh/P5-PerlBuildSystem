@@ -18,6 +18,7 @@ our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
 use PBS::Output ;
+use PBS::Log ;
 use PBS::Constants ;
 use PBS::Build::NodeBuilder ;
 
@@ -125,7 +126,7 @@ for(@$build_sequence)
 		}
 	}
 
-my $redirection_base = $node->{__BUILD_NAME} || GetBuildName($node->{__NAME}, $node);
+my $redirection_base = $node->{__BUILD_NAME} // GetBuildName($node->{__NAME}, $node);
 my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
 
 my $redirection_file = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.build_buffer" ;
@@ -139,20 +140,20 @@ local *STDOUT ;
 open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
 STDOUT->autoflush(1) ;
 
-local *STDERR ;
-open STDERR, '>&' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!";
-STDERR->autoflush(1) ;
+open(OLDERR, ">&STDERR") ;
+open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
 
 my $redirection_file_log = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.log" ;
 ($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
+
 if(defined $pbs_config->{CREATE_LOG})
 	{
-	my $lh = new FileHandle($redirection_file_log, 'w') || die "Can't create log file for $redirection_file_log: $@.\n" ;
+	my $lh = new FileHandle "> $redirection_file_log" || die ERROR "Can't create log file for $redirection_file_log: $@.\n" ;
 	$lh->autoflush(1) ;
 	
-	$pbs_config->{LOG_FH} = $lh ;
+	$node->{__PBS_CONFIG}{LOG_FH} = $lh ;
 	}
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
@@ -184,6 +185,11 @@ if(defined $node)
 		print ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		}
 	
+	if(defined $pbs_config->{CREATE_LOG} && defined $pbs_config->{LOG_PBS_NODE_DATA})
+		{
+		PBS::Log::LogNodeData($node, $node->{__PBS_CONFIG}{LOG_FH}) ;
+		}
+
 	# status
 	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 	
@@ -193,6 +199,9 @@ else
 	{
 	die ERROR "ForkedBuilder: Couldn't find node '$node_name' in build_sequence.\n" ;
 	}
+	
+close(STDERR);
+open(STDERR, ">&OLDERR");
 }
 
 #~ #--------------------------------------------------------------------------------------------

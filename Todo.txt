@@ -1,4 +1,35 @@
 
+--trigger
+	#--trigger_none --trigger_list
+	#--trigger no stop as DEBUG_FLAG
+	make it work with warp > 0
+
+
+log:
+	#--log_node_pbs_data, adds pbs data to log, save time and apace
+
+	rules triggering are not in the log
+	pbsfile loading is not in the log
+
+	--log_html
+		generate a set of pages from the log files
+		navigation link on node names
+		bread crumbs to parents
+		
+--tt takes a node name, make it a regex
+
+
+#pbs files locations
+	PBS_LOGS   -> _PBS_LOGS
+	warp 1.8   -> _PBS_WARP_1.8
+	out_nadim  -> _PBS_build_dir_nadim
+
+	or all under a main directory
+		_PBS
+			LOGS
+			WARP_1.8
+			build_dir_nadim		
+
 
 AddEnvVariableDependency in --j 0+
 	passes 	passes in warp 0 
@@ -100,6 +131,9 @@ c depender:
 error: gcc failure when -j appears before report by pbs. stderr not redirected?
 	in case that would be buffering, this code may help use IO::Handle; STDERR->autoflush(1);
 
+	fixwd but redirection kills coloring of gcc output
+
+
 add --tmux-error option
 
 
@@ -135,23 +169,34 @@ example of output with options on
 AddNodeFileDependency
 	the dependency must exist or it's MD5 can't be computed
 	=> should wait till the depending node is build to compute dependent md5
+
+
 	!!! why wouldn't we just add a rule? why does the file dependency have to be in the digest but not in the graph?
+	
 	not supported in warp
 	=> Remove
 
+	this is the mechanism we use to add dependency on pbsfiles, it can hardly be removed :)
+	
+	it is accessible to the user if they want to "use" non pbs files to define config or rules
+		and want the dependency to be right
+
 AddVariableDependency
-	=> should be done in the rule
+	=> should be done in the rule, not globally in the pbsfile
 	=> should automatically add the variables that are used during the build of the node
 		%PBS_REPO would force all nodes to rebuild on a change of repo or added repo,
 		which is the opposite of the intended purpose of repositories!
+	
+	Warp doesn't check variables! it works because pbs checks the pbsfiles where the variables
+	are declared
 
 AddEnvVariableDependency
 	breaks warp
 	env is evil
-	=> put in config, add config variable dependency
+	=> put in config, add config variable dependency for lesser evil
 		will still break warp
 		overrides will be caught
-		will be saved in coonfig
+		will be saved in config
 
 project generation sript can generate project which doesn't require compilation
 	- we can still use .c file but
@@ -162,6 +207,7 @@ debug breakpoint could display an informative message about what it is doing
 and what is available for poking
 
 use Term::Emit for message, maybe replace Term::ProgressBar too
+	=> replace with simpler code not in a module, we already have a %done for forked builders
 
 install pbs on linux and pbs.pl on windows
 
@@ -181,10 +227,6 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 	problem is after the call to PBS::PBS::Pbs, we call other functions and we have -1 in the variable
 	
-#--trigger --trigger_list
-	list in which format?
-	#--trigger no stop as DEBUG_FLAG
-
 #--files, ... 
 	pbs --no_warp --no_build --nodes -no_color | grep '^node:' | cut -d ' ' -f 2 | for i in $(cat); do  echo .${i##*.} ; done | sort -u
 

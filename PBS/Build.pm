@@ -126,7 +126,7 @@ else
 		}
 	else
 		{
-		if(defined $pbs_config->{JOBS})
+		if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS})
 			{
 			if(defined $pbs_config->{LIGHT_WEIGHT_FORK})
 				{

@@ -604,7 +604,11 @@ EOT
 		 .'can keep the buffers by specifying this switch',
 		 
 	'l|log|create_log'                    => \$pbs_config->{CREATE_LOG},
-		'Creat a log.',
+		'Create a main log and a log for each node',
+		'',
+		
+	'lpnd|log_pbs_node_data'              => \$pbs_config->{LOG_PBS_NODE_DATA},
+		'Add pbs node data to the log',
 		'',
 		
 	#----------------------------------------------------------------------------------

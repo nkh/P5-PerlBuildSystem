@@ -36,6 +36,7 @@ AddConfigTo 'BuiltIn',
 	WFLAGS  => # C compiler warning flags
 		'-Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align '
 		. '-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes '
+		. '-fdiagnostics-color=always '
 		. '-Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline',
 								
 

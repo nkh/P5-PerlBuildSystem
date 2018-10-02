@@ -103,9 +103,6 @@ my $build_sequence  = shift ;
 
 if(defined (my $lh = $pbs_config->{LOG_FH}))
 	{
-	# colorize tree in blocks
-	my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
-
 	PrintInfo("Writing tree data to log file ...\n") ;
 	my $log_start = time() ;
 	
@@ -197,68 +194,52 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 			USE_ASCII => 1,
 			) ;
 	
-	# Nodes.
-	my $GetAttributesOnly = sub
-			{
-			my $tree = shift ;
-			
-			if('HASH' eq ref $tree)
-				{
-				return
-					(
-					'HASH',
-					undef,
-					sort
-						grep 
-							{ 
-						 	/^[A-Z_]/ 
-						 	&& ($_ ne '__DEPENDENCY_TO') 
-						 	&& ($_ ne '__PARENTS')
-						 	&& defined $tree->{$_}
-						 	} keys %$tree 
-					) ;
-			}
-			
-			return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-			} ;
-			
-	print $lh INFO "\nNodes:\n" ;
-
-	my $node_dumper = sub 
-				{
-				my $tree = shift ;
-				if('HASH' eq ref $tree && exists $tree->{__NAME})
-					{
-					if($tree->{__NAME} !~ /^__/)
-						{
-						print $lh 
-							INFO
-								(
-								DumpTree
-									(
-									$tree,
-									"$tree->{__NAME}:",
-									FILTER => $GetAttributesOnly,
-									USE_ASCII => 1,
-									COLOR_LEVELS => [\@colors, ''],									
-									)
-								) ;
-										
-						print $lh "\n\n" ;
-						}
-						
-					return('HASH', $tree, grep {! /^__/} keys %$tree) ; # tweak to run faster
-					}
-				else
-					{
-					return('SCALAR', 1) ; # prune
-					}
-				} ;
-			
-	DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_dumper) ;
-
 	PrintInfo("Done in " . (time() - $log_start) . " sec.\n");
 	}
+}
+
+sub LogNodeData
+{
+my ($node, $lh) = @_ ;
+
+# Nodes.
+my $GetAttributesOnly = sub
+	{
+	my $tree = shift ;
+
+	if('HASH' eq ref $tree)
+		{
+		return
+			(
+			'HASH',
+			undef,
+			sort
+				grep 
+					{ 
+					/^[A-Z_]/ 
+					&& ($_ ne '__DEPENDENCY_TO') 
+					&& ($_ ne '__PARENTS')
+					&& defined $tree->{$_}
+					} keys %$tree 
+			) ;
+		}
+
+	return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+	} ;
+			
+# colorize tree in blocks
+my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
+
+print $lh INFO	DumpTree
+			(
+			$node,
+			"$node->{__NAME}:",
+			FILTER => $GetAttributesOnly,
+			USE_ASCII => 1,
+			COLOR_LEVELS => [\@colors, ''],									
+			)  ;
+				
+print $lh "\n\n" ;
 }
 
 #-------------------------------------------------------------------------------

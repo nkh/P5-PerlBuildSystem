@@ -676,17 +676,6 @@ else
 		}
 	}
 	
-# handle log
-if(defined (my $lh= $pbs_config->{LOG_FH}))
-	{
-	print $builder_channel "GET_LOG" . "__PBS_FORKED_BUILDER__" . "\n" ;
-	while(<$builder_channel>)
-		{
-		last if /__PBS_FORKED_BUILDER__/ ;
-		print $lh $_ ;
-		}
-	}
-	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
 	PrintInfo "'$built_node_name': build result: $build_result, message: $build_message\n" ;
