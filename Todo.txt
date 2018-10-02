@@ -1,10 +1,4 @@
 
---trigger
-	#--trigger_none --trigger_list
-	#--trigger no stop as DEBUG_FLAG
-	make it work with warp > 0
-
-
 log:
 	#--log_node_pbs_data, adds pbs data to log, save time and apace
 
@@ -16,19 +10,6 @@ log:
 		navigation link on node names
 		bread crumbs to parents
 		
-#--tt takes a node name, make it a regex
-
-
-#pbs files locations
-	PBS_LOGS   -> _PBS_LOGS
-	warp 1.8   -> _PBS_WARP_1.8
-	out_nadim  -> _PBS_build_dir_nadim
-
-	or all under a main directory
-		_PBS
-			LOGS
-			WARP_1.8
-			build_dir_nadim		
 
 
 AddEnvVariableDependency in --j 0+
@@ -40,8 +21,6 @@ AddEnvVariableDependency in --j 0+
 	#? how does it pass the automated tests!n warp > 0 ? 
 		test is skipped
 
-#left flushmd5cache
-
 working on JOB = 1
 	automatic test pass when run by hand
 		
@@ -49,8 +28,6 @@ working on JOB = 1
 		returning output and logs
 		finding the node linearly
 		handling the communication, splitting answers on tags
-
-#3.o, where'd the digest?! in warp :P
 
 Node@root: time to retire
 	doesn't play well with progressbar (but it's the crappy progress bar that should be replaced with
@@ -76,6 +53,10 @@ new C depender, what if the compiler generates the dependencies but post build c
 	#takes an extra run to stabilize warp, fixed
 
 
+#left flushmd5cache
+
+#3.o, where'd the digest?! in warp :P
+
 #new C depender has dependencies rooted in / even when dependencies are in ./
 	makes long lines of display!
 
@@ -87,9 +68,24 @@ new C depender, what if the compiler generates the dependencies but post build c
 	#keep non failing output too
 		all builds parallel
 
-Keep builders
-	=> display progress bar hides all output
-	=> we could not hide in the buffer but hide in the terminal
+#--trigger
+	#--trigger_none --trigger_list
+	#--trigger no stop as DEBUG_FLAG
+	#make it work with warp > 0
+
+#--tt takes a node name, make it a regex
+
+
+#pbs files locations
+	PBS_LOGS   -> _PBS_LOGS
+	warp 1.8   -> _PBS_WARP_1.8
+	out_nadim  -> _PBS_build_dir_nadim
+
+	or all under a main directory
+		_PBS
+			LOGS
+			WARP_1.8
+			build_dir_nadim		
 
 #log name with date!
 

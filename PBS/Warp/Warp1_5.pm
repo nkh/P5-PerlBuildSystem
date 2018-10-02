@@ -152,7 +152,6 @@ if($run_in_warp_mode)
 	my $node_existed = 0 ;
 	my $node_mismatch = 0 ;
 
-		
 	my $trigger_log = '' ;
 
 	for my $node (keys %$nodes)

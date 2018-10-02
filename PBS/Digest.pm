@@ -789,21 +789,50 @@ my ($pbs_config, $file, $md5) = @_ ;
 my $file_is_modified = 0;
 
 # check with inotify/archive flag first
-if(defined (my $current_md5 = GetFileMD5($file)))
+if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	{
-	unless($current_md5 eq $md5)
+	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 		{
-		PrintDebug "\nCheck: MD5 got '$current_md5', expected '$md5' for '$file'\n"
-			if $pbs_config->{DISPLAY_FILE_CHECK} ;
-			
-		$file_is_modified++ ;
+		if($file =~ /$trigger_regex/)
+			{
+			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			$file_is_modified++ ;
+
+			PrintDebug "\nCheck: --triger match'\n"
+				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+			}
 		}
 	}
 else
 	{
-	PrintDebug "\nCheck: $@, no file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
-	
-	$file_is_modified++ ;
+	if(defined (my $current_md5 = GetFileMD5($file)))
+		{
+		unless($current_md5 eq $md5)
+			{
+			PrintDebug "\nCheck: MD5 got '$current_md5', expected '$md5' for '$file'\n"
+				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+				
+			$file_is_modified++ ;
+			}
+		}
+	else
+		{
+		PrintDebug "\nCheck: $@, no file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
+		
+		$file_is_modified++ ;
+		}
+
+	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+		{
+		if($file =~ /$trigger_regex/)
+			{
+			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			$file_is_modified++ ;
+
+			PrintDebug "\nCheck: --triger match'\n"
+				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+			}
+		}
 	}
 
 return($file_is_modified) ;
