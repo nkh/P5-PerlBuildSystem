@@ -345,7 +345,7 @@ for my $dependency (keys %$tree)
 		if($dependency =~ /$trigger_regex/)
 			{
 			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
-			push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $dependency"} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
 			$triggered++ ;
 			}
 		}
@@ -392,7 +392,7 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		if($name =~ /$trigger_regex/)
 			{
 			#PrintDebug "$name =~ /$trigger_regex/\n" ;
-			push @{$tree->{__TRIGGERED}}, {NAME => '--trigger', REASON => ": $trigger_regex"} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 			$triggered++ ;
 			}
 		}
