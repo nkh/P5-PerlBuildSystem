@@ -182,6 +182,7 @@ tie my %tree_hash, "Tie::Hash::Indexed" ;
 				INSERTION_PACKAGE      => 'PBS::PBS::Pbs',
 				INSERTION_LOAD_PACKAGE => 'Root load',
 				INSERTION_RULE         => 'Root load',
+				INSERTION_RULE_NAME    => 'Root',
 				INSERTION_TIME         => 0,
 				INSERTING_NODE         => 'Root load',
 				},

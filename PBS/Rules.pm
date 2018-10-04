@@ -398,8 +398,7 @@ $builder_generated_types ||= {} ;
 my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
 $depender_generated_types  ||= [] ; 
 
-my $origin = '' ;
-$origin = ":$package:$class:$file_name:$line"  if($pbs_config->{ADD_ORIGIN}) ;
+my $origin = ":$package:$class:$file_name:$line";
 	
 for my $rule_type (@$rule_types)
 	{

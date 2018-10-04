@@ -361,8 +361,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				$node_type = '[' . $node_type . '] ' if $node_type ne '' ;
 				
 				my $rule_info =  $dependency_rules->[$rule_index]{NAME}
-									. $dependency_rules->[$rule_index]{ORIGIN} ;
-									
+						. (defined $pbs_config->{ADD_ORIGIN} 
+							? $dependency_rules->[$rule_index]{ORIGIN}
+							: ':' .$dependency_rules->[$rule_index]{FILE}) ;
+
 				my $rule_type = '' ;
 				$rule_type .= '[B]'  if(defined $dependency_rules->[$rule_index]{BUILDER}) ;
 				$rule_type .= '[BO]' if($builder_override) ;
@@ -568,6 +570,7 @@ for my $dependency (@dependencies)
 	use constant TRIGGERED_NODE_NAME  => 0 ;
 	use constant TRIGGERING_NODE_NAME => 1 ;
 	use constant TRIGGER_INFO         => 2 ;
+	use constant TRIGGER_INFO_NAME    => 3 ;
 	
 	use Carp ;
 	unless('HASH' eq ref $dependency)
@@ -581,8 +584,9 @@ for my $dependency (@dependencies)
 	for my $trigger_rule (PBS::Triggers::GetTriggerRules($load_package))
 		{
 		my ($match, $triggered_node_name) = $trigger_rule->{DEPENDER}($dependency_name) ;
-		my $trigger_info =  $trigger_rule->{NAME}
-								. $trigger_rule->{ORIGIN} ;
+
+		my $trigger_info_name =  $trigger_rule->{NAME} ;
+		my $trigger_info =  $trigger_info_name . $trigger_rule->{ORIGIN} ;
 								
 		if($match)
 			{
@@ -609,7 +613,7 @@ for my $dependency (@dependencies)
 					}
 				else
 					{
-					$triggered_nodes{$triggered_node_name} = [$triggered_node_name, $dependency_name, $trigger_info] ;
+					$triggered_nodes{$triggered_node_name} = [$triggered_node_name, $dependency_name, $trigger_info, $trigger_info_name] ;
 					}
 				}
 				
@@ -629,6 +633,7 @@ for my $triggered_node_data (values %triggered_nodes)
 	my $triggered_node_name  = $triggered_node_data->[TRIGGERED_NODE_NAME] ;
 	my $triggering_node_name = $triggered_node_data->[TRIGGERING_NODE_NAME] ;
 	my $rule_info            = $triggered_node_data->[TRIGGER_INFO],
+	my $rule_name            = $triggered_node_data->[TRIGGER_INFO_NAME],
 	
 	my $time = Time::HiRes::time() ;
 	
@@ -643,6 +648,7 @@ for my $triggered_node_data (values %triggered_nodes)
 					INSERTION_PACKAGE      => $package_alias,
 					INSERTION_LOAD_PACKAGE => $load_package,
 					INSERTION_RULE         => $rule_info,
+					INSERTION_RULE_NAME    => $rule_name,
 					INSERTION_TIME         => $time,
 					INSERTING_NODE         => $triggering_node_name,
 					},
@@ -690,7 +696,9 @@ for my $dependency (@dependencies)
 		my $display_linked_node_info = 0 ;
 		$display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO})) ;
 		
-		my $rule_info =  $dependency_rules->[$rule_index]{NAME} . $dependency_rules->[$rule_index]{ORIGIN} ;
+		my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
+		my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+
 		my $linked_node_is_depended = exists $inserted_nodes->{$dependency_name}{__DEPENDED}
 						? ''
 						: ' [not depended yet]'  ;
@@ -738,9 +746,9 @@ for my $dependency (@dependencies)
 	else
 		{
 		# a new node is born
-		my $rule_info =  $dependency_rules->[$rule_index]{NAME}
-							. $dependency_rules->[$rule_index]{ORIGIN} ;
-							
+		my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
+		my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+
 		my $time = Time::HiRes::time() ;
 		
 		#DEBUG
@@ -780,6 +788,7 @@ for my $dependency (@dependencies)
 								INSERTION_PACKAGE      => $package_alias,
 								INSERTION_LOAD_PACKAGE => $load_package,
 								INSERTION_RULE         => $rule_info,
+								INSERTION_RULE_NAME    => $rule_name,
 								INSERTION_TIME         => $time,
 								INSERTING_NODE         => $tree->{__NAME},
 								} ;
@@ -860,7 +869,7 @@ if(@has_matching_non_subpbs_rules)
 				if($dependency_result->[0])
 					{
 					my $rule_info =  $dependency_rules->[$matching_rule_index]{NAME}
-										. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
+								. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
 										
 					$ignored_rules .= "\t$matching_rule_index:$rule_info\n" ;
 					}

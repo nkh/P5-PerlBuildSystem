@@ -292,7 +292,7 @@ PBS::Graph::Html -
 
 Helper module to B<PBS::Graph>. I<GenerateHtmlGraph> generates a HTML document with a dependency graph linked to a set 
 of HTML (text) files containing pertinent information about the node that was clicked in the main HTML document (index.html).
-It can also add a frame to the main document so the graph and the textual inforamtion are displayed simulteanously.
+It can also add a frame to the main document so the graph and the textual information are displayed simultaneously.
 
 =head2 EXPORT
 

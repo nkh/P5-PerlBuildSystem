@@ -9,7 +9,54 @@ log:
 		generate a set of pages from the log files
 		navigation link on node names
 		bread crumbs to parents
-		
+
+
+		or a simple page wth minimum javascript that uses dependency data
+			need an out directory and a start node
+			and a dependency graph, parseable, where does it come from?
+				generate is in the LOG directory
+				maybe we do not need a full graph, we can use the node's data
+
+				given that they are in the same out directory, the data needs
+				only list parents and dependencies and their build name to find
+				the logs, 
+
+				can start a browser anywhere, practical when debugging, looking
+				at log data one can simply "click" the node.html to start browsing
+				the graph
+					this means that the script is in every html file!
+				
+	No need to have dependencies in the list, they are in the node info
+		we need -ni to generate the link for us or parse the output
+
+ breadcrunb/breadcrumb/breadcrumb/breadcrumb
+
+ .--------------..--------------.---------.-------------.
+ | node info    || build buffer | Log     | local graph |
+ '--------------''--------------'---------'-------------'------.
+ |                                                             |
+ |  name ...                                                   |
+ |                                                             |
+ |                                                             |
+ |        dependency                                           |
+ |        dependency                                           |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ '-------------------------------------------------------------'
+
+
+
 
 
 AddEnvVariableDependency in --j 0+
@@ -130,15 +177,10 @@ c depender:
 	fixwd but redirection kills coloring of gcc output
 
 
-add --tmux-error option
+add --tmux-error option to test, with limit on how many are opened
 
 
 \r \e[K
-
-new options for simple listings:
---files_triggered
---files_triggered_only
---files_triggered_reason
 
 example of output with options on
 	pbs -ho -o1 -o2
@@ -194,7 +236,7 @@ AddEnvVariableDependency
 		overrides will be caught
 		will be saved in config
 
-project generation sript can generate project which doesn't require compilation
+project generation script can generate project which doesn't require compilation
 	- we can still use .c file but
 		- replace the .o depender
 		- build the .o by touching them

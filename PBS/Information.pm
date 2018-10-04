@@ -94,8 +94,14 @@ $log_node_info .= INFO ("Node $type'$name' [$build_name]:\n") if(defined $pbs_co
 if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
 	$current_node_info = INFO "\tInserted at $file_tree->{__INSERTED_AT}{INSERTION_FILE} " ;
-	$current_node_info .= INFO "[$file_tree->{__INSERTED_AT}{INSERTION_PACKAGE}]:" if defined $file_tree->{__INSERTED_AT}{INSERTION_PACKAGE} ;
-	$current_node_info .= INFO "$file_tree->{__INSERTED_AT}{INSERTION_RULE}.\n" ;
+
+	$current_node_info .= INFO("[$file_tree->{__INSERTED_AT}{INSERTION_PACKAGE}]:")
+				 	if defined $pbs_config->{ADD_ORIGIN}
+						&& defined $file_tree->{__INSERTED_AT}{INSERTION_PACKAGE} ;
+
+	$current_node_info .= INFO (defined $pbs_config->{ADD_ORIGIN} 
+					 ? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}.\n"
+					 : "$file_tree->{__INSERTED_AT}{INSERTION_RULE_MAME}\n") ;
 
 	$log_node_info .= $current_node_info  if(defined $pbs_config->{CREATE_LOG});
 

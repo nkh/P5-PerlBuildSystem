@@ -949,7 +949,7 @@ EOT
 		'The use a frame in the graph html.',
 		'',
 		
-	'gtg_snapshot|gtg_snapshots=s'=> \$pbs_config->{GENERATE_TREE_GRAPH_SNAPSHOTS},
+	'gtg_snapshots=s'=> \$pbs_config->{GENERATE_TREE_GRAPH_SNAPSHOTS},
 		'Generates a serie of snapshots from the build.',
 		'',
 		

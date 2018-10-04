@@ -159,11 +159,7 @@ else
 		}
 	}
 	
-my $origin = '' ;
-if($pbs_config->{ADD_ORIGIN})
-	{
-	$origin = ":$package:$file_name:$line" ;
-	}
+my $origin = ":$package:$file_name:$line" ;
 	
 my $trigger_rule = 
 	{

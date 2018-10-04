@@ -182,13 +182,8 @@ if('CODE' eq ref $switch)
 	$post_build_depender_sub = $switch ;
 	}
 	
-my $origin = '' ;
-	
-if($pbs_config->{ADD_ORIGIN})
-	{
-	$origin = ":$package:$file_name:$line" ;
-	}
-	
+my $origin = ":$package:$file_name:$line" ;
+
 my $post_build_definition = 
 	{
 	TYPE                => 'unused field', #unused type field
