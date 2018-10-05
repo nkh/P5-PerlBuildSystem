@@ -182,9 +182,37 @@ if(defined $node)
 		
 	my ($build_result, $build_message) = (BUILD_FAILED, '?') ;
 
+	local $node->{__PBS_CONFIG} = $node->{__PBS_CONFIG} ;
+
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_INFO}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_ORIGIN}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_DEPENDENCIES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_CAUSE}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_RULES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_BUILD_SEQUENCER_INFO}++ ;
+
+		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
+		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
+
+		local $PBS::Shell::silent_commands ;
+		$PBS::Shell::silent_commands = 0 ;
+
+		local $PBS::Shell::silent_commands_output ; 
+		$PBS::Shell::silent_commands_output = 0 ; 
+               
 	eval 
 		{
-		($build_result, $build_message) = PBS::Build::NodeBuilder::BuildNode($node, $node->{__PBS_CONFIG}, $inserted_nodes, $node_build_sequencer_info) ;
+		($build_result, $build_message) =
+			PBS::Build::NodeBuilder::BuildNode
+				(
+				$node,
+				$node->{__PBS_CONFIG},
+				$inserted_nodes,
+				$node_build_sequencer_info
+				) ;
 		} ;
 		
 	if($@)

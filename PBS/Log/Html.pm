@@ -1,6 +1,5 @@
 
 package PBS::Log::Html ;
-use PBS::Debug ;
 
 use strict ;
 use warnings ;
@@ -16,22 +15,25 @@ our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
 use Data::TreeDumper;
-use File::MkTemp;
-use File::Path;
-use FileHandle;
-use POSIX qw(strftime);
-use Cwd ;
-use Term::ANSIColor qw(:constants) ;
+use File::Slurp ;
+use HTML::FromANSI ;
 
 use PBS::Log ;
 use PBS::Output ;
-use PBS::PBSConfig ;
 
 my $template = <<'EOT' ;
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+a:hover, a:visited, a:link, a:active
+{
+    text-decoration: none;
+}
+</style>
+
 <style>
 .div {
     border: none;
@@ -39,7 +41,7 @@ my $template = <<'EOT' ;
     cursor: pointer;
     padding: 20px 28px;
     font-size: 14px;
-i   margin=0 ;
+   margin=0 ;
 }
 
 </style>
@@ -133,18 +135,18 @@ ul.breadcrumb li a:hover {
 <div id="node info" class="tabcontent">
 
 <pre>
-Node Info
+%%NodeInfo%%
 
 </pre>
 </div>
 
 <div id="build buffer" class="tabcontent" style="background-color: black ;">
-build buffer
+%%BuildBuffer%%
 </div>
 
-<div id="log" class="tabcontent">
+<div id="log" class="tabcontent" style="background-color: black ;">
 <pre>
-LOG
+%%Log%%
 </pre>
 </div>
 
@@ -216,10 +218,38 @@ my $node_tree_dump  = DumpTree
 			"$node->{__NAME}:",
 			FILTER => $GetAttributesOnly,
 			USE_ASCII => 1,
-			COLOR_LEVELS => [\@colors, ''],									
-			#RENDERER => 'DHTML',
+			RENDERER =>
+                            {
+                            NAME => 'DHTML',
+                            BUTTON =>
+                                    {
+                                    COLLAPSE_EXPAND => 1,
+                                    SEARCH => 1,
+                                    },
+                            },
 			)  ;
-				
+
+$template =~ s/%%NodeInfo%%/$node_tree_dump/ ;
+
+#NodeInfo from Information, already in the log now
+#Log put< PBS data in it, a dump of the node
+local $SIG{__WARN__} = sub { return 1 } ;
+
+#BuildBuffer need to htmlify
+my $h = HTML::FromANSI->new(fill_cols => 0,) ;
+$h->add_text(read_file($redirection_file)) ;
+ 
+$template =~ s/%%BuildBuffer%%/$h->html/e ;
+
+my $h2 = HTML::FromANSI->new(fill_cols => 0,) ;
+$h2->add_text(read_file($redirection_file_log)) ;
+ 
+$template =~ s/%%Log%%/$h2->html/e ;
+
+my $html_log = "$redirection_file_log.html" ;
+write_file $html_log, $template ;
+
+
 }
 
 
