@@ -243,7 +243,7 @@ PBS has default colors but colorization is not turned on by default.
 
 Colors can be defined through switches (try pbs -h | grep color) or 
 by setting you colors in the environement variable 'PBS_FLAGS', ex:
-	export PBS_FLAGS='-c -ci green -ci2 blink green -cw yellow -cw2 blink yellow -ce red -cd magneta -cs bold green -cu cyan'
+	export PBS_FLAGS='-c -ci green -ci2 blink green -ci3 black on_green -cw yellow -cw2 blink yellow -ce red -cd magneta -cs bold green -cu cyan'
 
 Recognized colors are :
 	'bold'   
@@ -280,7 +280,11 @@ EOT
 		'',
 
 	'ci2|color_info2=s'               => \&PBS::Output::SetOutputColor,
-		'Set the alternate information color.',
+		'Set the information2 color.',
+		'',
+
+	'ci3|color_info3=s'               => \&PBS::Output::SetOutputColor,
+		'Set the information3 color.',
 		'',
 
 	'cu|color_user=s'                 => \&PBS::Output::SetOutputColor,
@@ -608,8 +612,8 @@ EOT
 		'Create a main log and a log for each node',
 		'',
 		
-	'lpnd|log_pbs_node_data'              => \$pbs_config->{LOG_PBS_NODE_DATA},
-		'Add pbs node data to the log',
+	'log_html|create_log_html'              => \$pbs_config->{CREATE_LOG_HTML},
+		'createe an html log for each node, implies --create_log and --keep_pbs_build_buffers',
 		'',
 		
 	#----------------------------------------------------------------------------------

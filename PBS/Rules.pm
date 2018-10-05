@@ -423,7 +423,7 @@ if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
 	{
 	PrintError("Rule can't be 'VIRTUAL' and 'CREATOR'.") ;
 	PbsDisplayErrorWithContext($file_name,$line) ;
-	die ;
+	die "\n" ;
 	}
 	
 my $rule_definition = 

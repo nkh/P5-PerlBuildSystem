@@ -183,6 +183,7 @@ for my $post_build_rule (@post_build_rules)
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
 	my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
+	my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
 	my $rule_info = $rule_name . INFO2(" @ $dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}", 0) ;
 	
 	my $depender  = $dependency_rules->[$rule_index]{DEPENDER} ;
@@ -634,6 +635,7 @@ for my $triggered_node_data (values %triggered_nodes)
 	my $triggering_node_name = $triggered_node_data->[TRIGGERING_NODE_NAME] ;
 	my $rule_info            = $triggered_node_data->[TRIGGER_INFO],
 	my $rule_name            = $triggered_node_data->[TRIGGER_INFO_NAME],
+	my $rule_line            = '',
 	
 	my $time = Time::HiRes::time() ;
 	
@@ -649,6 +651,7 @@ for my $triggered_node_data (values %triggered_nodes)
 					INSERTION_LOAD_PACKAGE => $load_package,
 					INSERTION_RULE         => $rule_info,
 					INSERTION_RULE_NAME    => $rule_name,
+					INSERTION_RULE_LINE    => $rule_line,
 					INSERTION_TIME         => $time,
 					INSERTING_NODE         => $triggering_node_name,
 					},
@@ -746,8 +749,9 @@ for my $dependency (@dependencies)
 	else
 		{
 		# a new node is born
-		my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
-		my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+		my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
+		my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
+		my $rule_info = $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 		my $time = Time::HiRes::time() ;
 		
@@ -789,6 +793,7 @@ for my $dependency (@dependencies)
 								INSERTION_LOAD_PACKAGE => $load_package,
 								INSERTION_RULE         => $rule_info,
 								INSERTION_RULE_NAME    => $rule_name,
+								INSERTION_RULE_LINE    => $rule_line,
 								INSERTION_TIME         => $time,
 								INSERTING_NODE         => $tree->{__NAME},
 								} ;
@@ -971,7 +976,7 @@ else
 				) ;
 			
 		# keep this node insertion info
-		$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} =  $tree->{__INSERTED_AT} ;
+		$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
 		
 		# keep parent relationship
 		for my $dependency_to_key (keys %{$tree->{__DEPENDENCY_TO}})

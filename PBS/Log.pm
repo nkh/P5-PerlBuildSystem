@@ -23,6 +23,7 @@ use POSIX qw(strftime);
 use Cwd ;
 use Term::ANSIColor qw(:constants) ;
 
+use PBS::Log::Html ;
 use PBS::Output ;
 use PBS::PBSConfig ;
 
@@ -196,50 +197,6 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 	
 	PrintInfo("Done in " . (time() - $log_start) . " sec.\n");
 	}
-}
-
-sub LogNodeData
-{
-my ($node, $lh) = @_ ;
-
-# Nodes.
-my $GetAttributesOnly = sub
-	{
-	my $tree = shift ;
-
-	if('HASH' eq ref $tree)
-		{
-		return
-			(
-			'HASH',
-			undef,
-			sort
-				grep 
-					{ 
-					/^[A-Z_]/ 
-					&& ($_ ne '__DEPENDENCY_TO') 
-					&& ($_ ne '__PARENTS')
-					&& defined $tree->{$_}
-					} keys %$tree 
-			) ;
-		}
-
-	return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-	} ;
-			
-# colorize tree in blocks
-my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
-
-print $lh INFO	DumpTree
-			(
-			$node,
-			"$node->{__NAME}:",
-			FILTER => $GetAttributesOnly,
-			USE_ASCII => 1,
-			COLOR_LEVELS => [\@colors, ''],									
-			)  ;
-				
-print $lh "\n\n" ;
 }
 
 #-------------------------------------------------------------------------------

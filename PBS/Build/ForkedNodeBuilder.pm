@@ -19,6 +19,7 @@ our $VERSION = '0.01' ;
 
 use PBS::Output ;
 use PBS::Log ;
+use PBS::Log::Html ;
 use PBS::Constants ;
 use PBS::Build::NodeBuilder ;
 
@@ -100,6 +101,26 @@ exit ;
 
 #-------------------------------------------------------------------------------
 
+sub GetLogFileNames
+{
+my ($node) = @_ ;
+
+my $redirection_base = $node->{__BUILD_NAME} // GetBuildName($node->{__NAME}, $node);
+my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
+
+$redirection_base = "${base_path}_PBS_BUILD_LOGS" ;
+
+my $redirection_file = "$redirection_base/$base_basename$base_ext.build_buffer" ;
+my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
+mkpath($path) unless(-e $path) ;
+
+my $redirection_file_log = "$redirection_base/$base_basename$base_ext.log" ;
+($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
+mkpath($path) unless(-e $path) ;
+
+return $redirection_base, $redirection_file, $redirection_file_log ;
+}
+
 sub BuildNode
 {
 my 
@@ -126,13 +147,7 @@ for(@$build_sequence)
 		}
 	}
 
-my $redirection_base = $node->{__BUILD_NAME} // GetBuildName($node->{__NAME}, $node);
-my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
-
-my $redirection_file = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.build_buffer" ;
-my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
-mkpath($path) unless(-e $path) ;
-
+my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNames($node) ;
 #all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
 #once the build is finished, the output is send to the master process
 
@@ -142,11 +157,6 @@ STDOUT->autoflush(1) ;
 
 open(OLDERR, ">&STDERR") ;
 open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
-
-my $redirection_file_log = "${base_path}_PBS_BUILD_LOGS/$base_basename$base_ext.log" ;
-($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
-mkpath($path) unless(-e $path) ;
-
 
 if(defined $pbs_config->{CREATE_LOG})
 	{
@@ -185,10 +195,8 @@ if(defined $node)
 		print ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		}
 	
-	if(defined $pbs_config->{CREATE_LOG} && defined $pbs_config->{LOG_PBS_NODE_DATA})
-		{
-		PBS::Log::LogNodeData($node, $node->{__PBS_CONFIG}{LOG_FH}) ;
-		}
+	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)
+		if(defined $pbs_config->{CREATE_LOG_HTML}) ;
 
 	# status
 	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
@@ -208,7 +216,7 @@ open(STDERR, ">&OLDERR");
 
 sub SendFile
 {
-my ($channel,$file, $remove_file) =  @_ ;
+my ($channel, $file, $remove_file) =  @_ ;
 
 open FILE_TO_SEND, '<', $file or die "Can't open '$file': $!" ;
 while(<FILE_TO_SEND>)

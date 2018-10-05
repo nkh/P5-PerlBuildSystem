@@ -565,7 +565,8 @@ for my $node (keys %$inserted_nodes)
 		}
 		
 	#this can also be reduced for a +/- 10% reduction
-	if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
+	if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+		&& exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
 		{
 		$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
 		}

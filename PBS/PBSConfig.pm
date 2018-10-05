@@ -115,6 +115,7 @@ my $success_message = '' ;
 local @ARGV = ( # default colors
 		'-ci'  => 'green',
 		'-ci2' => 'bright_blue',
+		'-ci3' => 'green',
 		'-cw'  => 'yellow',
 		'-cw2' => 'bright_yellow',
 		'-ce'  => 'red',
@@ -495,6 +496,12 @@ if(defined $pbs_config->{LIB_PATH})
 CheckPackageDirectories($pbs_config) ;
 
 #----------------------------------------- Log -----------------------------------------
+
+if(defined $pbs_config->{CREATE_LOG_HTML})
+	{
+	$pbs_config->{CREATE_LOG}++ ;
+	$pbs_config->{KEEP_PBS_BUILD_BUFFERS}++ ;
+	}
 
 PBS::Log::CreatePbsLog($pbs_config) if defined $pbs_config->{CREATE_LOG} ;
 

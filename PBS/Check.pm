@@ -159,7 +159,7 @@ if(defined $tree->{__USER_ATTRIBUTE})
 	{
 	my $insertion_package ;
 	
-	if(defined $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA})
+	if(exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA})
 		{
 		$insertion_package = $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_LOAD_PACKAGE} ;
 		}

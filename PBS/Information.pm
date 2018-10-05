@@ -70,17 +70,17 @@ my $terminal_width = chars() || 10_000 ;
 my $columns = length("Node $type'$name':") ;
 $columns = $columns < $terminal_width ? $columns : $terminal_width ;
 
-my $separator = INFO ('#' . ('-' x ($columns - 1)) . "\n")  ;
+my $separator = INFO ('-' x $columns . "\n")  ;
 
 my $node_header = "\n" . $separator ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= INFO ("Node $type'$name' [$build_name]:\n") ;
+	$node_header .= INFO3 ("Node $type'$name' [$build_name]:\n") ;
 	}
 else
 	{
-	$node_header .= INFO ("Node $type'$name':\n") ;
+	$node_header .= INFO3 ("Node $type'$name':\n") ;
 	}
 	
 $node_header .= $separator ;
@@ -93,22 +93,42 @@ $log_node_info .= INFO ("Node $type'$name' [$build_name]:\n") if(defined $pbs_co
 #----------------------
 if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
-	$current_node_info = INFO "\tInserted at $file_tree->{__INSERTED_AT}{INSERTION_FILE} " ;
-
-	$current_node_info .= INFO("[$file_tree->{__INSERTED_AT}{INSERTION_PACKAGE}]:")
-				 	if defined $pbs_config->{ADD_ORIGIN}
-						&& defined $file_tree->{__INSERTED_AT}{INSERTION_PACKAGE} ;
-
-	$current_node_info .= INFO (defined $pbs_config->{ADD_ORIGIN} 
-					 ? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}.\n"
-					 : "$file_tree->{__INSERTED_AT}{INSERTION_RULE_MAME}\n") ;
-
-	$log_node_info .= $current_node_info  if(defined $pbs_config->{CREATE_LOG});
-
-	if(defined $pbs_config->{DISPLAY_NODE_ORIGIN})
+	if(exists $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}) # inserted and depended in different pbsfiles
 		{
-		$node_info .= $current_node_info ;
+		my $origin = "\tOriginated at rule: " 
+				. (defined $pbs_config->{ADD_ORIGIN} 
+
+					? "$file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}" 
+
+					: "$file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE_NAME}"
+					  . ":$file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}"
+
+					# __ROOT rules are automatically added by pbs when depending a node a subpbs
+					# it's not part of the user written subpbs
+					  . ($file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE_NAME} eq '__ROOT'
+						? ''
+						: ":$file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE_LINE}")
+				  ) ;
+
+		$current_node_info = INFO2 "$origin\n" ;
 		}
+
+	my $inserted = "\tInserted at rule: "
+			. (defined $pbs_config->{ADD_ORIGIN} 
+
+				? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}"
+
+				: "$file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME}"
+				  . ":$file_tree->{__INSERTED_AT}{INSERTION_FILE}"
+				  . ($file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME} eq '__ROOT'
+					? ''
+					: ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_LINE}")
+				) ;	
+
+	$current_node_info .= INFO "$inserted\n" ;
+
+	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
+	$node_info     .= $current_node_info if defined $pbs_config->{DISPLAY_NODE_ORIGIN} ;
 	}
 	
 #----------------------
@@ -126,10 +146,8 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 		
 		push @dependencies, $file_tree->{$_}{__NAME} ;
 		
-		if(exists $file_tree->{$_}{__BUILD_NAME})
-			{
-			push @located_dependencies, $file_tree->{$_}{__BUILD_NAME} ;
-			}
+		push @located_dependencies, $file_tree->{$_}{__BUILD_NAME}
+			if(exists $file_tree->{$_}{__BUILD_NAME}) ;
 		}
 		
 	if(exists $file_tree->{__TRIGGERED})
@@ -236,14 +254,6 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 		$builder          = $dependencies_and_build_rules->[$rule_number]{BUILDER} ;
 		$builder_override = $rule->{RULE}{BUILDER_OVERRIDE} ;
 		
-		#~ my $rule_dependencies = join ' ', map {$_->{NAME}} @{$rule->{DEPENDENCIES}} ;
-		
-		#~ my $creator ;
-		#~ for my $rule_type (@{$rule->{DEFINITION}{TYPE}})
-			#~ {
-			#~ $creator++ if(CREATOR eq $rule_type) ;
-			#~ }
-			
 		my $builder_override_tag ;
 		if(defined $builder_override)
 			{
@@ -263,15 +273,13 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 				}
 			else
 				{
-				$builder_override_tag = '[B = undef! in Override]' ;
+				$builder_override_tag = '[B] = undef! in Override]' ;
 				}
 			}
 		else
 			{
-			if(defined $builder)
-				{
-				push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] } ;
-				}
+			push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] }
+				if(defined $builder) ;
 			}
 			
 		my $rule_dependencies ;
@@ -281,7 +289,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 			}
 		else
 			{
-			$rule_dependencies = 'no derived dependency from this rule' ;
+			$rule_dependencies = 'no derived dependency' ;
 			}
 			
 		my $rule_tag = '' ;
@@ -291,7 +299,12 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 		#~ $rule_tag .= '[CREATOR]' if $creator;
 		
 		my $rule_info = $dependencies_and_build_rules->[$rule_number]{NAME}
-							. $dependencies_and_build_rules->[$rule_number]{ORIGIN} ;
+					. (defined $pbs_config->{ADD_ORIGIN} 
+						? $dependencies_and_build_rules->[$rule_number]{ORIGIN}
+
+						: ':' . $dependencies_and_build_rules->[$rule_number]{FILE}
+						  .':' . $dependencies_and_build_rules->[$rule_number]{LINE}
+					  ) ;
 							
 		$current_node_info = INFO ("\tmatching rule: #$rule_number$rule_tag '$rule_info'\n") ;
 		$current_node_info .= INFO ("\t\t=> $rule_dependencies\n") ;
@@ -333,11 +346,12 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILDER})
 			}
 			
 		my $rule_info = $rule_used_to_build->{INDEX} 
-				. $rule_tag
-				. " '"
+				. $rule_tag . ' '
 				. $rule_used_to_build->{DEFINITION}{NAME}
-				. $rule_used_to_build->{DEFINITION}{ORIGIN}
-				. "'" ;
+				. ( $pbs_config->{ADD_ORIGIN}
+					? $rule_used_to_build->{DEFINITION}{ORIGIN}
+					: ":" . $rule_used_to_build->{DEFINITION}{FILE}
+					  . ":" . $rule_used_to_build->{DEFINITION}{LINE} ) ;
 							
 		$current_node_info = INFO ("\tUsing builder from rule: #$rule_info\n") ;
 		

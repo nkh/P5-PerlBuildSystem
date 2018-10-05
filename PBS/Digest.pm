@@ -798,7 +798,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
 			$file_is_modified++ ;
 
-			PrintDebug "\nCheck: --triger match'\n"
+			PrintDebug "\nCheck: --triger match: $file\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 			}
 		}
@@ -829,7 +829,7 @@ else
 			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
 			$file_is_modified++ ;
 
-			PrintDebug "\nCheck: --triger match'\n"
+			PrintDebug "\nCheck: --triger match: $file\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 			}
 		}

@@ -30,7 +30,7 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 INFO INFO2 USER SHELL DEBUG
+		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		) ;
@@ -48,6 +48,7 @@ our $global_warning_escape_code  = '' ;
 our $global_warning2_escape_code = '' ;
 our $global_info_escape_code     = '' ;
 our $global_info2_escape_code    = '' ;
+our $global_info3_escape_code    = '' ;
 our $global_user_escape_code     = '' ;
 our $global_shell_escape_code    = '' ;
 our $global_debug_escape_code    = '' ;
@@ -62,6 +63,7 @@ $global_warning_escape_code  = '' ;
 $global_warning2_escape_code = '' ;
 $global_info_escape_code     = '' ;
 $global_info2_escape_code    = '' ;
+$global_info3_escape_code    = '' ;
 $global_user_escape_code     = '' ;
 $global_shell_escape_code    = '' ;
 $global_debug_escape_code    = '' ;
@@ -75,6 +77,7 @@ $global_warning_escape_code  .= '[Warning] ' ;
 $global_warning2_escape_code .= '[Warning2] ' ;
 $global_info_escape_code     .= '[Info] ' ;
 $global_info2_escape_code    .= '[Info2] ' ;
+$global_info3_escape_code    .= '[Info3] ' ;
 $global_user_escape_code     .= '[User] ' ;
 $global_shell_escape_code    .= '[Shell] ' ;
 $global_debug_escape_code    .= '[Debug] ' ;
@@ -102,6 +105,7 @@ else
 	$global_warning2_escape_code = $escape_code if ($switch eq 'cw2' || $switch eq 'color_warning2') ;
 	$global_info_escape_code     = $escape_code if ($switch eq 'ci'  || $switch eq 'color_info') ;
 	$global_info2_escape_code    = $escape_code if ($switch eq 'ci2' || $switch eq 'color_info2') ;
+	$global_info3_escape_code    = $escape_code if ($switch eq 'ci3' || $switch eq 'color_info3') ;
 	$global_user_escape_code     = $escape_code if ($switch eq 'cu'  || $switch eq 'color_user') ;
 	$global_shell_escape_code    = $escape_code if ($switch eq 'cs'  || $switch eq 'color_shell') ;
 	$global_debug_escape_code    = $escape_code if ($switch eq 'cd'  || $switch eq 'color_debugger') ;
@@ -176,6 +180,20 @@ my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]
 $string =~ s/\n(.)/\n$indent$1/g ;
 
 return $global_info2_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
+return($string) ;
+}
+
+sub INFO3
+{
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+
+my $indent = '' ;
+$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
+
+my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
+$string =~ s/\n(.)/\n$indent$1/g ;
+
+return $global_info3_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
 return($string) ;
 }
 
