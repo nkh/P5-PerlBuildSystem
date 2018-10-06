@@ -145,129 +145,39 @@ if($run_in_warp_mode)
 
 	$IsFileModified ||= \&PBS::Digest::IsFileModified ;
 	
-	my $number_of_removed_nodes = 0 ;
-	
-	# check md5 and remove all nodes that would trigger
-	my $node_verified = 0 ;
-	my $node_existed = 0 ;
-	my $node_mismatch = 0 ;
+	# check and remove all nodes that would trigger
+	my ($number_of_removed_nodes, $node_verified, $node_existed, $node_mismatch, $trigger_log)
+		 = ChekNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
-	my $trigger_log = '' ;
-
+	# rebuild the data PBS needs from the warp file for the nodes that have not triggered
 	for my $node (keys %$nodes)
 		{
-		unless($pbs_config->{DISPLAY_WARP_CHECKED_NODES} || $pbs_config->{QUIET})
+		$nodes->{$node}{__NAME} = $node ;
+		$nodes->{$node}{__BUILD_DONE} = "Field set in warp 1.5" ;
+		$nodes->{$node}{__DEPENDED}++ ;
+		$nodes->{$node}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
+		
+		$nodes->{$node}{__PBS_CONFIG} = $global_pbs_config unless exists $nodes->{$node}{__PBS_CONFIG} ;
+		
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A Warp 1.5' ;
+		
+		unless(exists $nodes->{$node}{__DEPENDED_AT})
 			{
-			PrintInfo "warp: verified nodes: $node_verified\r" unless  ($node_verified + $number_of_removed_nodes) % 100 ;
+			$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
 			}
 			
-		$node_verified++ ;
-		
-		next unless exists $nodes->{$node} ; # can have been removed by one of its dependencies
-		
-		$node_existed++ ;
-		
-		my $remove_this_node = 0 ;
-		
-		if('VIRTUAL' eq $nodes->{$node}{__MD5})
+		#let our dependent nodes know about their dependencies
+		#this needed when regenerating the warp file from partial warp data
+		for my $dependent (map {$node_names->[$_]} @{$nodes->{$node}{__DEPENDENT}})
 			{
-			# virtual nodes don't have MD5
-			}
-		else
-			{
-			# rebuild the build name
-			if(exists $nodes->{$node}{__LOCATION})
+			if(exists $nodes->{$dependent})
 				{
-				$nodes->{$node}{__BUILD_NAME} = $nodes->{$node}{__LOCATION} . substr($node, 1) ;
-				}
-			else
-				{
-				$nodes->{$node}{__BUILD_NAME} = $node ;
-				}
-				
-			$remove_this_node += $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
-
-			$trigger_log .= "{ NAME => '$nodes->{$node}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node}{__MD5}' },\n"
-				if $remove_this_node ;
-			}
-			
-		$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
-		
-
-		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
-			{
-			if ($remove_this_node)	
-				{
-				PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node\n") ;
-				}
-			else
-				{
-				PrintInfo("Warp Check: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
-				}
-			}
-
-		if($remove_this_node) #and its dependents and its triggerer if any
-			{
-			$node_mismatch++ ;
-
-			my @nodes_to_remove = ($node) ;
-			
-			while(@nodes_to_remove)
-				{
-				my @dependent_nodes ;
-				
-				for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
+				$nodes->{$dependent}{$node} =
 					{
-					PrintDebug "Warp Prune: '$node_to_remove'\n"
-						if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
-					
-					push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
-					
-					# remove triggering node and its dependents
-					if(exists $nodes->{$node_to_remove}{__TRIGGER_INSERTED})
-						{
-						my $trigerring_node = $nodes->{$node_to_remove}{__TRIGGER_INSERTED} ;
-						push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$trigerring_node}{__DEPENDENT}} ;
-						delete $nodes->{$trigerring_node} ;
-						}
-						
-					delete $nodes->{$node_to_remove} ;
-					
-					$number_of_removed_nodes++ ;
-					}
-					
-				@nodes_to_remove = @dependent_nodes ;
-				}
-			}
-		else
-			{
-			# rebuild the data PBS needs from the warp file
-			$nodes->{$node}{__NAME} = $node ;
-			$nodes->{$node}{__BUILD_DONE} = "Field set in warp 1.5" ;
-			$nodes->{$node}{__DEPENDED}++ ;
-			$nodes->{$node}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
-			
-			$nodes->{$node}{__PBS_CONFIG} = $global_pbs_config unless exists $nodes->{$node}{__PBS_CONFIG} ;
-			
-			$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
-			
-			unless(exists $nodes->{$node}{__DEPENDED_AT})
-				{
-				$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
-				}
-				
-			#let our dependent nodes know about their dependencies
-			#this needed when regenerating the warp file from partial warp data
-			for my $dependent (map {$node_names->[$_]} @{$nodes->{$node}{__DEPENDENT}})
-				{
-				if(exists $nodes->{$dependent})
-					{
-					$nodes->{$dependent}{$node} =
-						{
-						__BUILD_DONE => 'Field set in warp 1.5',
-						__CHECKED => 1,
-						} ;
-					}
+					__BUILD_DONE => 'Field set in warp 1.5',
+					__CHECKED => 1,
+					} ;
 				}
 			}
 		}
@@ -457,6 +367,108 @@ return(@build_result) ;
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+sub ParallelChekNodes
+{
+# we don't have a graph real graph but dependencies in $nodes elements
+
+
+return _CheckNodes(@_)  ;
+}
+
+sub ChekNodes
+{
+return _CheckNodes(@_)  ;
+}
+
+sub _CheckNodes
+{
+my ($pbs_config, $nodes, $node_names, $IsFileModified) = @_ ;
+
+my ($number_of_removed_nodes, $node_verified, $node_existed, $node_mismatch, $trigger_log) = (0, 0, 0, 0, '') ;
+
+for my $node (keys %$nodes)
+	{
+	PrintInfo "warp: verified nodes: $node_verified\r"
+		if $pbs_config->{DISPLAY_WARP_CHECKED_NODES}
+		   && ! $pbs_config->{QUIET}
+		   && (($node_verified + $number_of_removed_nodes) % 100) ;
+		
+	$node_verified++ ;
+	
+	next unless exists $nodes->{$node} ; # can have been removed by one of its dependencies
+	
+	$node_existed++ ;
+	
+	my $remove_this_node = 0 ;
+	
+	# virtual nodes don't have MD5
+	if('VIRTUAL' ne $nodes->{$node}{__MD5})
+		{
+		# rebuild the build name
+		$nodes->{$node}{__BUILD_NAME} =	exists $nodes->{$node}{__LOCATION}
+							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
+							: $node ;
+			
+		$remove_this_node += $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
+
+		$trigger_log .= "{ NAME => '$nodes->{$node}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node}{__MD5}' },\n"
+			if $remove_this_node ;
+		}
+
+	$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
+
+	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
+		{
+		if ($remove_this_node)	
+			{
+			PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node\n") ;
+			}
+		else
+			{
+			PrintInfo("Warp Check: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+			}
+		}
+
+	if($remove_this_node) #and its dependents and its triggerer if any
+		{
+		$node_mismatch++ ;
+
+		my @nodes_to_remove = ($node) ;
+		
+		while(@nodes_to_remove)
+			{
+			my @dependent_nodes ;
+			
+			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
+				{
+				PrintDebug "Warp Prune: '$node_to_remove'\n"
+					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} ;
+				
+				push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
+				
+				# remove triggering node and its dependents
+				if(exists $nodes->{$node_to_remove}{__TRIGGER_INSERTED})
+					{
+					my $trigerring_node = $nodes->{$node_to_remove}{__TRIGGER_INSERTED} ;
+					push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$trigerring_node}{__DEPENDENT}} ;
+					delete $nodes->{$trigerring_node} ;
+					}
+					
+				delete $nodes->{$node_to_remove} ;
+				
+				$number_of_removed_nodes++ ;
+				}
+				
+			@nodes_to_remove = @dependent_nodes ;
+			}
+		}
+	}
+
+return ($number_of_removed_nodes, $node_verified, $node_existed, $node_mismatch, $trigger_log) ;
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+
 sub GenerateWarpFile
 {
 # indexing the node name  saves another 10% in size
@@ -574,8 +586,6 @@ for my $node (keys %$inserted_nodes)
 		{
 		$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
 		}
-	
-	$nodes{$node}{__INSERTED_AT}{INSERTION_RULE} = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} ;
 	
 	if(exists $inserted_nodes->{$node}{__DEPENDED_AT})
 		{

@@ -788,7 +788,6 @@ sub IsFileModified
 my ($pbs_config, $file, $md5) = @_ ;
 my $file_is_modified = 0;
 
-# check with inotify/archive flag first
 if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	{
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
@@ -800,6 +799,8 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 
 			PrintDebug "\nCheck: --triger match: $file\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+
+			last ;
 			}
 		}
 	}
