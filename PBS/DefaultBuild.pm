@@ -187,13 +187,13 @@ if($pbs_config->{DISPLAY_CHECK_TIME})
 # die later if check failed (ex: cyclic tree), run visualisation plugins first
 my $check_failed = $@ ;
 
+# ie: -tt options
+RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
+
 if(defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->{INTERMEDIATE_WARP_WRITE})
 	{
 	$pbs_config->{INTERMEDIATE_WARP_WRITE}->($dependency_tree, $inserted_nodes) ;
 	}
-
-# ie: -tt options
-RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
 #~ return(BUILD_FAILED, $check_failed) if $check_failed ;
 die $check_failed if $check_failed ;

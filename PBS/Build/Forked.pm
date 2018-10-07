@@ -357,7 +357,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	unless(defined $builder_channel)
 		{
 		PrintError "Parallel build: Couldn't start builder #$_!\n" ;
-		die ;
+		die "\n" ;
 		}
 	
 	print $builder_channel "GET_PROCESS_ID" . "__PBS_FORKED_BUILDER__" . "\n";
@@ -722,13 +722,6 @@ for my $builder_index (0 .. ($number_of_builders - 1))
 	{
 	my $builder_channel = $builders->[$builder_index]{BUILDER_CHANNEL} ;
 	
-	if($builders->[$builder_index]{BUILDING})
-		{
-		# 20 feb 2005, I don't think this can happend any more NK.
-		# happend 20 May 2005 :-)
-		die ; 
-		}
-		
 	print $builder_channel "STOP_PROCESS\n" ;
 	}
 	

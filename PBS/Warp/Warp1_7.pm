@@ -397,11 +397,11 @@ for my $node (keys %$nodes)
 		{
 		if ($remove_this_node)	
 			{
-			PrintInfo "Warp Check: " . ERROR('Removing') . INFO("  $node\n") ;
+			PrintInfo "Warp verify: " . ERROR('Removing') . INFO("  $node\n") ;
 			}
 		else
 			{
-			PrintInfo("Warp Check: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+			PrintInfo("Warp verify: OK, $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 			}
 		}
 
@@ -409,14 +409,17 @@ for my $node (keys %$nodes)
 		{
 		my @nodes_to_remove = ($node) ;
 		
+		PrintInfo "Warp Prune:\n" 
+			if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_to_remove ;
+
 		while(@nodes_to_remove)
 			{
 			my @dependent_nodes ;
 			
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
-				PrintDebug "Warp: Removing node '$node_to_remove'\n"
-					if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;	
+				PrintInfo2 $PBS::Output::indentation . "$node_to_remove\n"
+					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} ;
 				
 				push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} @{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 				

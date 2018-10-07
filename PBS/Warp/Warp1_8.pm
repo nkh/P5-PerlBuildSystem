@@ -397,7 +397,7 @@ unless($version == $VERSION)
 
 PrintInfo(sprintf("Warp load time: %0.2f s. [$number_of_files]\n", tv_interval($t0, [gettimeofday]))) if($pbs_config->{DISPLAY_WARP_TIME}) ;
 
-PrintInfo "Warp: verifying $number_of_files nodes.\n" unless $pbs_config->{QUIET} ;
+PrintInfo "Warp verify: $number_of_files nodes.\n" unless $pbs_config->{QUIET} ;
 
 for my $pbsfile (keys %$pbsfile_md5s)
 	{
@@ -477,12 +477,12 @@ for my $node_name (sort keys %$node_md5s)
 			)
 		)
 		{
-	        PrintInfo "Warp check: OK $node_name\n"
+	        PrintInfo "Warp verify: OK $node_name\n"
 			if($pbs_config->{DISPLAY_WARP_CHECKED_NODES} && ! $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY}) ;
 		}
 	else
 		{
-		PrintInfo "Warp Check: " . ERROR('MISMATCH') . INFO(" $node_name\n")
+		PrintInfo "Warp verify: " . ERROR('MISMATCH') . INFO(" $node_name\n")
 			 if($pbs_config->{DISPLAY_WARP_CHECKED_NODES}) ;
 
 		$trigger_log .= "{ NAME => '$nodes->{$node_name}{__BUILD_NAME}', OLD_MD5 => '$nodes->{$node_name}{__MD5}' },\n" ;
@@ -517,14 +517,14 @@ for my $node_name (reverse sort keys %nodes_not_matching)
 				PrintInfo "Warp Prune: $node_name\n"
 					 if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 
-				for my $dependent (sort  @{$node_dependents->{__DEPENDENT}})
+				for my $dependent (reverse sort  @{$node_dependents->{__DEPENDENT}})
 					{
 					next if exists $nodes_removed{$dependent} ;
 
 					$nodes_removed{$dependent}++ ;
 					delete $nodes->{$dependent} ;
 
-					PrintInfo $PBS::Output::indentation . "$dependent\n"
+					PrintInfo2 $PBS::Output::indentation . "$dependent\n"
 						 if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 					}
 				}
@@ -554,7 +554,7 @@ my $md5_time = tv_interval($t0, [gettimeofday]) ;
 
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
-	PrintInfo(sprintf("Warp check time: %0.2f s. [$number_of_files/missmatch:$number_of_md5_mismatch/removed:$number_of_removed_nodes]\n", $md5_time)) ;
+	PrintInfo(sprintf("Warp verify time: %0.2f s. [$number_of_files/trigger:$number_of_md5_mismatch/removed:$number_of_removed_nodes]\n", $md5_time)) ;
 	}
 
 return($run_in_warp_mode, $nodes, $number_of_removed_nodes, $pbsfile_md5s) ;

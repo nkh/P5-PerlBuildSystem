@@ -1,4 +1,13 @@
 
+Is md5 recomputed for elements of triggered nodes?
+	in big test
+		objects was made dependent on a mkv
+		objects is triggered
+		when building it, there is a delay, which does not exist when mkv is not a dependency
+
+
+		extra md5 in pbs? objects format builder??
+
 log:
 	#--log_node_pbs_data, adds pbs data to log, save time and apace
 
