@@ -383,6 +383,10 @@ EOT
 		"displays 'MD5' statistic.",
 		'',
 		
+	'display_md5_time'            => \$PBS::Digest::display_md5_time,
+		"displays the time it takes to hash each node",
+		'',
+		
 	'build_directory=s'               => \$pbs_config->{BUILD_DIRECTORY},
 		'Directory where the build is to be done.',
 		'',
@@ -426,6 +430,10 @@ EOT
 		
 	'cdabt|check_dependencies_at_build_time' => \$pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME},
 		'Skipps the node build if no dependencies have changed or where rebuild to the same state.',
+		'',
+
+	'check_only_terminal_nodes' => \$pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES},
+		'Skipps the checking of generated artefacts.',
 		'',
 
 	'no_build'                     => \$pbs_config->{NO_BUILD},
@@ -920,6 +928,11 @@ EOT
 	'trigger_list=s'                       => \$pbs_config->{DEBUG_TRIGGER_LIST},
 		'(DF) Points to a file containing trigers.',
 		'',
+
+	'display_trigger'                       => \$pbs_config->{DEBUG_DISPLAY_TRIGGER},
+		'(DF) how which files are processed and triggered',
+		'',
+
 	'tnt|tree_node_triggered'           => \$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED},
 		'(DF) Display if the node must be rebuild by append a star if it does.',
 		'',

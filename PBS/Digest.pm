@@ -1,6 +1,5 @@
 
 package PBS::Digest;
-use PBS::Debug ;
 
 use 5.006 ;
 
@@ -35,6 +34,7 @@ our @EXPORT = qw(
 		) ;
 					
 our $VERSION = '0.05' ;
+our $display_md5_time = 0 ;
 
 use PBS::PBSConfig ;
 use PBS::Output ;
@@ -93,6 +93,17 @@ else
 	}
 }
 
+sub GetMd5Cache
+{
+return \%md5_cache ;
+}
+
+sub PopulateMd5Cache
+{
+my $hash = shift ;
+%md5_cache = (%md5_cache, %$hash) ;
+}
+
 #-------------------------------------------------------------------------------
 
 sub GetFileMD5
@@ -119,7 +130,13 @@ else
 		}
 	}
 
-$md5_time += tv_interval($t0_md5, [gettimeofday]) ;
+
+my $time += tv_interval($t0_md5, [gettimeofday]) ;
+
+PrintInfo2(sprintf "md5 time: %.8f " . scalar(%md5_cache) . " file: $file\n", $time) if $display_md5_time ;
+
+my $md5_time += $time ;
+
 return($md5) ;
 }
 
@@ -179,12 +196,17 @@ my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
 use IO::File ;
 my $fh = new IO::File ;
 
+my $t0_md5 = [gettimeofday] ;
+
 if(-f $file_name && $fh->open($file_name))
 	{
 	$fh->binmode();
 	my $md5sum = Digest::MD5->new->addfile($fh)->hexdigest ;
 	undef $fh ;
 	
+	my $time += tv_interval($t0_md5, [gettimeofday]) ;
+	PrintUser(sprintf "md5 time: %.8f " . scalar(%md5_cache) . " file: $file_name\n", $time) if $display_md5_time ;
+
 	return($md5sum) ;
 	}
 else
@@ -790,11 +812,13 @@ my $file_is_modified = 0;
 
 if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	{
+	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			PrintUser "Trigger (digest): $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			$trigger_match++ ;
 			$file_is_modified++ ;
 
 			PrintDebug "\nCheck: --triger match: $file\n"
@@ -803,6 +827,8 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			last ;
 			}
 		}
+
+	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 	}
 else
 	{
@@ -823,17 +849,24 @@ else
 		$file_is_modified++ ;
 		}
 
+	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			PrintUser "Trigger (digest): $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			$trigger_match++ ;
+
 			$file_is_modified++ ;
 
 			PrintDebug "\nCheck: --triger match: $file\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+
+			last ;
 			}
 		}
+	
+	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 	}
 
 return($file_is_modified) ;

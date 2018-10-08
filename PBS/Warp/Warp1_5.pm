@@ -12,7 +12,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.06' ;
+our $VERSION = '0.07' ;
 
 #-------------------------------------------------------------------------------
 
@@ -150,8 +150,9 @@ if($run_in_warp_mode)
 	
 	# check and remove all nodes that would trigger
 	my ($node_mismatch, $trigger_log)
-		 = ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
-		 #= CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
+		 = $pbs_config->{JOBS} != 0
+			? ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) 
+		  	: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
 
@@ -173,8 +174,8 @@ if($run_in_warp_mode)
 			$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
 			}
 			
-		#let our dependent nodes know about their dependencies
-		#this needed when regenerating the warp file from partial warp data
+		# let our dependent nodes know about their dependencies
+		# this is needed when regenerating the warp file from partial warp data
 		for my $dependent (map {$node_names->[$_]} @{$nodes->{$node}{__DEPENDENT}})
 			{
 			if(exists $nodes->{$dependent})
@@ -384,26 +385,22 @@ for my $node (keys %$nodes)
 		}
 	}
 
-my @nodes_per_level ;
-push @{$nodes_per_level[tr~/~/~]}, $_ for keys %$nodes ;
-shift @nodes_per_level unless defined $nodes_per_level[0] ;
-
 my ($number_trigger_nodes, $trigger_log) = (0, '') ;
 my $number_of_check_processes = 16 ;
 	
 my $checkers = StartCheckers($number_of_check_processes, $pbs_config, $nodes, $node_names, $IsFileModified)  ;
 
-for my $level (reverse 0 .. @nodes_per_level - 1)
+
+if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	{
-	next unless defined $nodes_per_level[$level] ;
-	next unless scalar(@{$nodes_per_level[$level]}) ;
+	my @terminal_nodes = grep { exists $nodes->{$_}{__TERMINAL} } keys %$nodes ;
+	PrintWarning "Warp terminal nodes: " . scalar(@terminal_nodes) . "\n" ;
 
 	my $checker_index = 0 ;
-
-	for my $slice (distribute(scalar @{$nodes_per_level[$level]}, $number_of_check_processes))
+	for my $slice (distribute(scalar @terminal_nodes, $number_of_check_processes))
 		{
 		# slice and send node list to check, $checker->Check(@node_list)  ;
-		my @nodes_to_check = @{$nodes_per_level[$level]}[$slice->[0] .. $slice->[1]] ;
+		my @nodes_to_check = @terminal_nodes[$slice->[0] .. $slice->[1]] ;
 		StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check)  ;
 		}
 
@@ -418,7 +415,6 @@ for my $level (reverse 0 .. @nodes_per_level - 1)
 			{
 			# collect list of removed nodes
 			my ($nodes_triggered, $trigger_nodes) = CollectNodeCheckResult(@$checkers[$_]) ;
-			#PrintDebug DumpTree [$nodes_triggered, $trigger_nodes], 'results' ; 
 
 			$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
 
@@ -430,15 +426,62 @@ for my $level (reverse 0 .. @nodes_per_level - 1)
 		}
 
 	delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+	}
+else
+	{
+	my @nodes_per_level ;
+	push @{$nodes_per_level[tr~/~/~]}, $_ for keys %$nodes ;
+	shift @nodes_per_level unless defined $nodes_per_level[0] ;
 
-	delete $nodes_per_level[$level] ; # done with the level
-
-	# remove trigger nodes from subsequent checks
-	for my $nodes_per_level (@nodes_per_level)
+	for my $level (reverse 0 .. @nodes_per_level - 1)
 		{
-		$nodes_per_level = [ grep {! exists $all_nodes_triggered{$_}} @$nodes_per_level ] ;
+		next unless defined $nodes_per_level[$level] ;
+		next unless scalar(@{$nodes_per_level[$level]}) ;
+
+		my $checker_index = 0 ;
+
+		for my $slice (distribute(scalar @{$nodes_per_level[$level]}, $number_of_check_processes))
+			{
+			# slice and send node list to check, $checker->Check(@node_list)  ;
+			my @nodes_to_check = @{$nodes_per_level[$level]}[$slice->[0] .. $slice->[1]] ;
+			StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check)  ;
+			}
+
+		my %all_nodes_triggered ;
+
+		my @checker_finished ;
+		while(@checker_finished < $number_of_check_processes)
+			{
+			my @finished = WaitForCheckersToFinish($pbs_config, $checkers) ;
+
+			for(@finished)
+				{
+				# collect list of removed nodes
+				my ($nodes_triggered, $trigger_nodes) = CollectNodeCheckResult(@$checkers[$_]) ;
+				#PrintDebug DumpTree [$nodes_triggered, $trigger_nodes], 'results' ; 
+
+				$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
+
+				$number_trigger_nodes += @$trigger_nodes ;
+				$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
+				}
+
+			push @checker_finished, @finished
+			}
+
+		delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+
+		delete $nodes_per_level[$level] ; # done with the level
+
+		# remove trigger nodes from subsequent checks
+		for my $nodes_per_level (@nodes_per_level)
+			{
+			$nodes_per_level = [ grep {! exists $all_nodes_triggered{$_}} @$nodes_per_level ] ;
+			}
 		}
 	}
+
+
 
 TerminateCheckers($checkers) ;
 
@@ -619,6 +662,10 @@ while(defined (my $command_and_args = <$parent_channel>))
 			{
 			(undef, my @nodes_to_check) = @command_and_args ;
 
+			# the main process cache is synchronized with our cache
+			# flush it so we only have digests for the nodes to check
+			PBS::Digest::FlushMd5Cache() ;
+			
 			my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
 
 			my (%s1, %s2) ;
@@ -633,12 +680,20 @@ while(defined (my $command_and_args = <$parent_channel>))
 			last ;
 			} ;
 			
-		/^GET_TRIGGERED_NODE$/ and do
+		/^GET_CACHE$/ and do
 			{
-			(undef, my @nodes_to_check) = @command_and_args ;
-			my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
-			print $parent_channel "Done checking\n__PBS_FORKED_CHECKER__\n" ;
-			
+			my $cache = PBS::Digest::GetMd5Cache() ;
+			for (keys %$cache)
+				{
+				print $parent_channel 
+						$_ 
+						. "__PBS_FORKED_CHECKER__"
+						. $cache->{$_} 
+						. "__PBS_FORKED_CHECKER__" ;
+				}
+					
+			print $parent_channel "__PBS_FORKED_CHECKER__\n" ;
+
 			last ;
 			} ;
 		}
@@ -667,15 +722,26 @@ sub CollectNodeCheckResult
 {
 my ($pid) = @_ ;
 	
-my $builder_channel = $pid->{CHECKER_CHANNEL} ;
+my $checker_channel = $pid->{CHECKER_CHANNEL} ;
 
-my $result = <$builder_channel> ;
+my $result = <$checker_channel> ;
 chomp $result ;
 
 my ($nodes_triggered, $trigger_nodes) = split /__PBS_FORKED_CHECKER_ARG__/, $result ;
 
 my @nodes_triggered = split /__PBS_FORKED_CHECKER__/, $nodes_triggered ;
 my @trigger_nodes = split /__PBS_FORKED_CHECKER__/, $trigger_nodes ;
+
+#------------------
+# synchronize cache
+#------------------
+print $checker_channel "GET_CACHE" . "__PBS_FORKED_CHECKER__" . "\n" ;
+$result = <$checker_channel> ;
+chomp $result ;
+
+my %cache = (split /__PBS_FORKED_CHECKER__/, $result) ;
+
+PBS::Digest::PopulateMd5Cache(\%cache) ;
 
 return \@nodes_triggered, \@trigger_nodes ;
 }
@@ -715,16 +781,28 @@ shift @nodes_per_level unless defined $nodes_per_level[0] ;
 my ($number_trigger_nodes, $trigger_log) = (0, '') ;
 my $sub_process = 8 ;
 
-for my $level (reverse 0 .. @nodes_per_level - 1)
+# location for MD% computation
+for my $node (keys %$nodes)
 	{
-	next unless defined $nodes_per_level[$level] ;
-	next unless scalar(@{$nodes_per_level[$level]}) ;
+	if('VIRTUAL' ne $nodes->{$node}{__MD5})
+		{
+		# rebuild the build name
+		$nodes->{$node}{__BUILD_NAME} =	exists $nodes->{$node}{__LOCATION}
+							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
+							: $node ;
+		}
+	}
+
+if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
+	{
+	my @terminal_nodes = grep { exists $nodes->{$_}{__TERMINAL} } keys %$nodes ;
+	PrintWarning "Warp terminal nodes: " . scalar(@terminal_nodes) . "\n" ;
 
 	my %all_nodes_triggered ;
 
-	for my $slice (distribute(scalar @{$nodes_per_level[$level]}, $sub_process))
+	for my $slice (distribute(scalar @terminal_nodes, $sub_process))
 		{
-		my @nodes_to_check = @{$nodes_per_level[$level]}[$slice->[0] .. $slice->[1]] ;
+		my @nodes_to_check = @terminal_nodes[$slice->[0] .. $slice->[1]] ;
 		my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
 
 		$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
@@ -734,13 +812,37 @@ for my $level (reverse 0 .. @nodes_per_level - 1)
 		}
 
 	delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
-
-	delete $nodes_per_level[$level] ; # done with the level
-
-	# remove trigger nodes from subsequent checks
-	for my $nodes_per_level (@nodes_per_level)
+	}
+else
+	{
+	for my $level (reverse 0 .. @nodes_per_level - 1)
 		{
-		$nodes_per_level = [ grep {! exists $all_nodes_triggered{$_}} @$nodes_per_level ] ;
+		next unless defined $nodes_per_level[$level] ;
+		next unless scalar(@{$nodes_per_level[$level]}) ;
+
+		my %all_nodes_triggered ;
+
+		# no need to slice since we run single threaded here
+		for my $slice (distribute(scalar @{$nodes_per_level[$level]}, $sub_process))
+			{
+			my @nodes_to_check = @{$nodes_per_level[$level]}[$slice->[0] .. $slice->[1]] ;
+			my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
+
+			$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
+
+			$number_trigger_nodes += @$trigger_nodes ;
+			$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
+			}
+
+		delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+
+		delete $nodes_per_level[$level] ; # done with the level
+
+		# remove trigger nodes from subsequent checks
+		for my $nodes_per_level (@nodes_per_level)
+			{
+			$nodes_per_level = [ grep {! exists $all_nodes_triggered{$_}} @$nodes_per_level ] ;
+			}
 		}
 	}
 
@@ -786,14 +888,19 @@ my (@trigger_nodes, @nodes_triggered) ;
 for my $node (@$nodes_to_check)
 	{
 	PrintInfo "warp: verified nodes: $node_verified\r"
-		if $pbs_config->{DISPLAY_WARP_CHECKED_NODES}
-		   && ! $pbs_config->{QUIET}
-		   && ($node_verified + $number_of_removed_nodes) % 100 ;
+		if ! $pbs_config->{QUIET}
+		   && ($node_verified + $number_of_removed_nodes) % 2 ;
 		
 	$node_verified++ ;
 	
 	next unless exists $nodes->{$node} ; 
 	
+	if(! exists $nodes->{$node}{__TERMINAL} && $pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
+		{
+		#PrintWarning "Check: --check_only_terminal_nodes, skipping $node\n" ;
+		next ;
+		}
+
 	my $remove_this_node = 0 ;
 	
 	# virtual nodes don't have MD5
@@ -827,7 +934,7 @@ for my $node (@$nodes_to_check)
 		{
 		my @nodes_to_remove = ($node) ;
 		
-		PrintInfo "Warp Prune:\n" 
+		PrintInfo "Warp Prune:" 
 			if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_to_remove ;
 
 		while(@nodes_to_remove)
@@ -961,6 +1068,20 @@ for my $node (keys %$inserted_nodes)
 		#$nodes{$node}{__DIGEST} = GetDigest($inserted_nodes->{$node}) ;
 		}
 		
+	if(exists $inserted_nodes->{$node}{__LOAD_PACKAGE})
+		{
+		unless(PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$node}{__LOAD_PACKAGE}, $inserted_nodes->{$node}))
+			{
+			# remember which node is terminal for later optimization
+			$nodes{$node}{__TERMINAL} = 1 ;
+			}
+		}
+	elsif(exists $inserted_nodes->{$node}{__TERMINAL})
+		{
+		# remember which node is terminal for later optimization
+		$nodes{$node}{__TERMINAL} = 1 ;
+		}
+
 	if(exists $inserted_nodes->{$node}{__FORCED})
 		{
 		$nodes{$node}{__FORCED} = 1 ;

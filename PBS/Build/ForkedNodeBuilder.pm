@@ -182,8 +182,14 @@ if(defined $node)
 		
 	my ($build_result, $build_message) = (BUILD_FAILED, '?') ;
 
+	# when building in parallel, we can put as much possible in the log even if
+	# the progress bar is displayed, when it isn't, it's up to the user what gets in
 	local $node->{__PBS_CONFIG} = $node->{__PBS_CONFIG} ;
+	local $PBS::Shell::silent_commands ;
+	local $PBS::Shell::silent_commands_output ; 
 
+	if($node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR})
+		{
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_INFO}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_ORIGIN}++ ;
@@ -197,11 +203,9 @@ if(defined $node)
 		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
 		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
 
-		local $PBS::Shell::silent_commands ;
 		$PBS::Shell::silent_commands = 0 ;
-
-		local $PBS::Shell::silent_commands_output ; 
 		$PBS::Shell::silent_commands_output = 0 ; 
+		}
                
 	eval 
 		{

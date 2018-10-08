@@ -340,15 +340,20 @@ for my $dependency (keys %$tree)
 
 	# trigger on our dependencies because they won't trigger themselves if they match 
 	# and are a source node. If a source node triggered, it would need to be rebuild.
+	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 		{
 		if($dependency =~ /$trigger_regex/)
 			{
-			#PrintDebug "$dependency =~ /$trigger_regex/\n" ;
+			PrintUser "Trigger: $dependency =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			$trigger_match++ ;
+
 			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
 			$triggered++ ;
 			}
 		}
+
+	PrintInfo2 "Trigger: $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 	}
 
 if(exists $tree->{__VIRTUAL})
@@ -387,15 +392,20 @@ else
 
 if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 	{
+	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 		{
 		if($name =~ /$trigger_regex/)
 			{
-			#PrintDebug "$name =~ /$trigger_regex/\n" ;
+			PrintUser "Trigger: $name =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			$trigger_match++ ;
+
 			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 			$triggered++ ;
 			}
 		}
+
+	PrintInfo2 "Trigger: $name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 	}
 
 # node is checked, add it to the build sequence if triggered

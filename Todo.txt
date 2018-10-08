@@ -1,12 +1,74 @@
 
-Is md5 recomputed for elements of triggered nodes?
+
+more check optimization
+	do not put all the big files in the same sub processes (duh!)
+
+	all source files are terminal, doesn't matter at what depth they are
+		we check files per level, to avid checking something that would 
+		be triggered at a lower level
+
+		this is not the most efficient as two large terminal files at different
+		levels would be handled sequentially!
+
+		check all the terminal nodes together only
+		remove them from the nodes to check
+		remove all they triggered dependents
+		check all levels
+			checking all levels and not only terminals is for the case
+			where a terminal is not modified but a generate node is
+
+			! a heavy price paid to correctness
+
+
+			we still need to compute md5 for regenerated nodes but only them
+
+
+
+#--ndpb
+	-ni is active although only headers should be displayed
+
+#no output from parallel check
+	# too quick to see anything of interest but looks frozen on big chuncks
+
+
+#Is md5 recomputed for elements of triggered nodes?
 	in big test
 		objects was made dependent on a mkv
 		objects is triggered
 		when building it, there is a delay, which does not exist when mkv is not a dependency
 
 
-		extra md5 in pbs? objects format builder??
+		extra md5 in pbs?
+
+		objects format builder??
+			=> uses the md5 cache
+
+		=> -ndpb -display_md5_time is your friend
+
+	dependent is rebuild, pbsfiles arre loaded, new nodes created
+		warp removes dependencies, removed digest cache?
+
+	=> parallel checking doesn't share cache!
+		when we start building all md5 must be recomputed in the main process, even source
+
+	Cache synch added 
+
+	this is a worst case scenario, one huge file and a bunch of small files
+		the small files are processed quickly and we block on the huge file
+		till we can get onto the next level
+
+		worse case scenario is i all the large files are in the same sub process to check
+			=> that can be dealt with when slicing the nodes to check but is an extra check
+
+
+#./objects [V] couldn't be triggered with --trigger
+	=> --display_trigger
+	=> can't trigger a virtual, it's the whole idea that dependencies trigger it
+
+#running pbs post build commands takes time, why?
+	=> warp regeneration takes time not post build commands
+		Not because cache is empty, --display_md5_time shows only few digests are computed
+			generating the 2 Mb file takes time
 
 log:
 	#--log_node_pbs_data, adds pbs data to log, save time and apace
