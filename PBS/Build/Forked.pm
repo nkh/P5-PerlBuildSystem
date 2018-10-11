@@ -530,25 +530,7 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	PrintInfo2 "Parallel build: starting:\n" ;
 	}
 	
-for my $enqued_node 
-	(
-	# decide which node to enqueue first, try to keep the build processes busy
-	map { $_->[2] ; }
-		sort 
-			{ 
-			# closes to root, least parents   
-			$a->[0] <=> $b->[0] ||	$a->[1] <=> $b->[1] 
-			}
-				 map
-					{
-						[
-						$build_queue->{$_}{NODE}{__LEVEL},
-						$build_queue->{$_}{NODE}{__PARENTS},
-						$_
-						]
-					} keys %$build_queue
-	)
-#for my $enqued_node (keys %$build_queue)
+for my $enqued_node (keys %$build_queue)
 	{
 	my $node_pid = $build_queue->{$enqued_node}{PID} ;
 	
