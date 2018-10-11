@@ -373,7 +373,7 @@ sub ParallelCheckNodes
 {
 my ($pbs_config, $nodes, $node_names, $IsFileModified) = @_ ;
 
-# location for MD% computation
+# location for MD5 computation
 for my $node (keys %$nodes)
 	{
 	if('VIRTUAL' ne $nodes->{$node}{__MD5})
@@ -513,17 +513,6 @@ my @checker_ready ;
 
 if(@waiting_for_messages)
 	{
-	if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
-		{
-		PrintWarning "Waiting for:\n" ;
-		
-		local $PBS::Output::indentation_depth ;
-		$PBS::Output::indentation_depth++ ;
-		
-		PrintWarning "$_\n" for(@waiting_for_messages) ;
-		print "\n" ;
-		}
-		
 	# block till we get end of check from a checker process 
 	my @sockets_ready = $select_all->can_read() ; 
 	
@@ -781,7 +770,7 @@ shift @nodes_per_level unless defined $nodes_per_level[0] ;
 my ($number_trigger_nodes, $trigger_log) = (0, '') ;
 my $sub_process = 8 ;
 
-# location for MD% computation
+# location for MD5 computation
 for my $node (keys %$nodes)
 	{
 	if('VIRTUAL' ne $nodes->{$node}{__MD5})

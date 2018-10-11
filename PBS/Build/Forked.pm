@@ -39,11 +39,14 @@ sub Build
 
 The parallelisation algorithm is simple and effective enough as most dependency trees have many dependencies 
 for each node making the graph look triangular to a very wide base triangular. Note that this is not the most
-effective parallelisation algorithm. Building the nodes that have parents with few children first is more
-effective as it maximizes that number of build thread that are active. This means that we build hight first instead
-for depth first. Since nodes have different build time, the parallelisation algorithm (in fact the prioritisation of the 
-terminal nodes) should be dynamic to be optimal and in that case, should take into account the load on the cpu building
-the node as build time is not only a factor of the CPU but also network and other I/O.
+effective parallelisation algorithm. Building the nodes that have parents with few children first and then their
+parents is more effective as it maximizes that number of build thread that are active, 
+
+
+This means that we build hight first instead for depth first. Since nodes have different build time, the
+parallelisation algorithm (in fact the prioritisation of the terminal nodes) should be dynamic to be optimal and 
+in that case, should take into account the load on the cpu building the node as build time is not only a factor
+of the CPU but also network and other I/O.
 
 keeping previous build time to build the longest nodes to build first can also make the end of the build more effective as it
 keeps the builder pool full.
@@ -56,7 +59,7 @@ my $pbs_config      = shift ;
 our $build_sequence = shift ;
 my $inserted_nodes  = shift ;
 
-my $build_queue = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
+my ($build_queue, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
 
 my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
@@ -190,12 +193,12 @@ while(%$build_queue)
 		if $pbs_config->{DISPLAY_JOBS_TREE} ;
 
 	my @built_nodes = WaitForBuilderToFinish($pbs_config, $builders) ;
-	
-	
 	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occured
 		
 	for my $built_node_name (@built_nodes)
 		{
+		$level_statistics->[$build_queue->{$built_node_name}{NODE}{__LEVEL} - 1]{done}++ ;
+		
 		my ($build_result, $build_time, $node_error_output) = CollectNodeBuildResult($pbs_config, $built_node_name, $build_queue) ;
 		
 		$number_of_already_build_node++ ;
@@ -212,6 +215,20 @@ while(%$build_queue)
 			{
 			$error_output .= $node_error_output ;
 			$number_of_failed_builders++ ;
+			}
+
+
+		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
+			{
+			PrintWarning "Build levels:\n" ;
+			local $PBS::Output::indentation_depth ;
+			$PBS::Output::indentation_depth++ ;
+
+			my $index = 1 ;
+			for my $level (@$level_statistics)
+				{
+				PrintWarning( $index++ . ' = ' . ($level->{done} // 0) . '/' . $level->{nodes} . "\n" ) ; 
+				}
 			}
 		
 		delete $build_queue->{$built_node_name} ;
@@ -247,8 +264,8 @@ return(!$number_of_failed_builders) ;
 sub EnqueuTerminalNodes
 {
 my ($build_sequence, $pbs_config) = @_ ;
-my %build_queue ;
 
+my (%build_queue, @level_statistics) ;
 my (@removed_nodes, @enqueued_nodes) ;
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
@@ -261,7 +278,6 @@ for my $node (@$build_sequence)
 	# node in the build sequence might have been build already.
 	# when a node is build, its __BUILD_DONE field is set
 	
-	#print  "$node->{__NAME} " . (defined $node->{__CHILDREN_TO_BUILD} ? $node->{__CHILDREN_TO_BUILD} : 'undef') . "\n" ;
 	for my $child (keys %$node)
 		{
 		next if $child =~ /^__/ ;
@@ -274,8 +290,6 @@ for my $node (@$build_sequence)
 		}
 
 	#enqueue node if it's terminal
-	#print  "$node->{__NAME} " . (defined $node->{__CHILDREN_TO_BUILD} ? $node->{__CHILDREN_TO_BUILD} : 'undef') . "\n" ;
-
 	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
@@ -286,6 +300,11 @@ for my $node (@$build_sequence)
 			}
 			
 		$build_queue{$node->{__NAME}} = {NODE => $node} ;
+		}
+
+	if($node->{__LEVEL} != 0) # we hide PBS top node
+		{
+		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
 		}
 	}
 	
@@ -298,7 +317,7 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
 	}
 			
 	
-return(\%build_queue) ;
+return(\%build_queue, \@level_statistics) ;
 }
 
 #----------------------------------------------------------------------------------------------------------------------
@@ -511,7 +530,25 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	PrintInfo2 "Parallel build: starting:\n" ;
 	}
 	
-for my $enqued_node (keys %$build_queue)
+for my $enqued_node 
+	(
+	# decide which node to enqueue first, try to keep the build processes busy
+	map { $_->[2] ; }
+		sort 
+			{ 
+			# closes to root, least parents   
+			$a->[0] <=> $b->[0] ||	$a->[1] <=> $b->[1] 
+			}
+				 map
+					{
+						[
+						$build_queue->{$_}{NODE}{__LEVEL},
+						$build_queue->{$_}{NODE}{__PARENTS},
+						$_
+						]
+					} keys %$build_queue
+	)
+#for my $enqued_node (keys %$build_queue)
 	{
 	my $node_pid = $build_queue->{$enqued_node}{PID} ;
 	

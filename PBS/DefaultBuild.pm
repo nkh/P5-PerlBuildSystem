@@ -131,6 +131,7 @@ eval
 	PBS::Check::CheckDependencyTree
 		(
 		$build_node, # start of the tree
+		0, # node level, used for some parallelizing optimization
 		$inserted_nodes,
 		$pbs_config,
 		$config,
@@ -140,7 +141,7 @@ eval
 		\%trigged_nodes,
 		) ;
 	
-	print "               \r" ;
+	print ' ' x 30 . "\r" ;
 	
 	# check if any triggered top node has been left outside the build
 	for my $node_name (keys %$inserted_nodes)
@@ -159,6 +160,7 @@ eval
 				PBS::Check::CheckDependencyTree
 					(
 					$inserted_nodes->{$node_name},
+					0, #node level
 					$inserted_nodes,
 					$pbs_config,
 					$config,

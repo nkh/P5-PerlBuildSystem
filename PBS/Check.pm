@@ -57,6 +57,7 @@ $checked_dependency_tree++ ;
 PrintInfo "$checked_dependency_tree\r"  unless $checked_dependency_tree % 100 ;
 
 my $tree                     = shift ;
+my $node_level               = shift ;
 my $inserted_nodes           = shift ; # this is to be considered read only
 my $pbs_config               = shift ;
 my $config                   = shift ; 
@@ -84,9 +85,8 @@ if(exists $tree->{__CHECKED})
 		}
 	}
 	
+$tree->{__LEVEL} = $node_level ;
 my $name = $tree->{__NAME} ;
-
-#~ PrintDebug(DumpTree($tree, $name, MAX_DEPTH => 3)) ;
 
 if(exists $tree->{__CYCLIC_FLAG})
 	{
@@ -316,6 +316,7 @@ for my $dependency (keys %$tree)
 		my ($subdependency_triggered) = CheckDependencyTree
 							(
 							$tree->{$dependency},
+							$node_level + 1,
 							$inserted_nodes,
 							$pbs_config,
 							$config,

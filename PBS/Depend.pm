@@ -1049,6 +1049,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	PBS::Check::CheckDependencyTree
 		(
 		$tree,
+		0, # node level
 		$inserted_nodes,
 		$pbs_config,
 		$config,
