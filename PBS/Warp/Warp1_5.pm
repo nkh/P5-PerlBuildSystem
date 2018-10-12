@@ -386,7 +386,7 @@ for my $node (keys %$nodes)
 	}
 
 my ($number_trigger_nodes, $trigger_log) = (0, '') ;
-my $number_of_check_processes = 16 ;
+my $number_of_check_processes = $pbs_config->{JOBS} ;
 	
 my $checkers = StartCheckers($number_of_check_processes, $pbs_config, $nodes, $node_names, $IsFileModified)  ;
 
@@ -407,7 +407,7 @@ if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	my %all_nodes_triggered ;
 
 	my @checker_finished ;
-	while(@checker_finished < $number_of_check_processes)
+	while(@checker_finished < $checker_index)
 		{
 		my @finished = WaitForCheckersToFinish($pbs_config, $checkers) ;
 
@@ -450,7 +450,7 @@ else
 		my %all_nodes_triggered ;
 
 		my @checker_finished ;
-		while(@checker_finished < $number_of_check_processes)
+		while(@checker_finished < $checker_index)
 			{
 			my @finished = WaitForCheckersToFinish($pbs_config, $checkers) ;
 
@@ -538,7 +538,7 @@ sub StartCheckers
 my ($number_of_checkers, $pbs_config, $nodes, $node_names, $IsFileModified) = @_ ;
 
 my @checkers ;
-for my$checker_index (0 .. ($number_of_checkers - 1))
+for my $checker_index (0 .. ($number_of_checkers - 1))
 	{
 	my ($checker_channel) = StartCheckerProcess
 				(
@@ -744,16 +744,16 @@ my $number_of_checkers = @$checkers ;
 
 PrintInfo "Parallel Check:  terminating Check processes [$number_of_checkers]\n" ;
 
-for my $checker_index (0 .. ($number_of_checkers - 1))
+for my $checker (@$checkers)
 	{
-	my $checker_channel = $checkers->[$checker_index]{CHECKER_CHANNEL} ;
+	my $checker_channel = $checker->{CHECKER_CHANNEL} ;
 	
 	print $checker_channel "STOP_PROCESS\n" ;
 	}
 	
-for (0 .. ($number_of_checkers - 1))
+for my $checker (@$checkers)
 	{
-	waitpid($checkers->[$_], 0) ;
+	waitpid($checker->{PID}, 0) ;
 	}
 }
 
@@ -1120,7 +1120,8 @@ for my $node (keys %$inserted_nodes)
 		$nodes{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} = $inserted_nodes->{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} ;
 		$nodes{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES} = [@{$inserted_nodes->{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES}}] ; 
 		}
-		
+
+
 	if(exists $inserted_nodes->{$node}{__BUILD_DONE})
 		{
 		# build done, can also be a node that did not trigger, up to date
@@ -1145,7 +1146,8 @@ for my $node (keys %$inserted_nodes)
 						}
 					else
 						{
-						die ERROR("Can't open '$node' to compute MD5 digest (old node/built/not_found): $!") ;
+						PrintError("Can't open '$node' to compute MD5 digest (old node/built/not_found): $!\n") ;
+						die "\n" ;
 						}
 					}
 				}
