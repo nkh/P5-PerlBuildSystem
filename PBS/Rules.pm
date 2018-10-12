@@ -337,7 +337,7 @@ my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 if(exists $package_rules{$package}{$class})
 	{
-	#! replace loop bellow by hash lookup
+	#! replace loop below by hash lookup
 	for my $rule (@{$package_rules{$package}{$class}})
 		{
 		if($rule->{NAME} eq $name)

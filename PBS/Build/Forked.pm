@@ -45,7 +45,7 @@ my $distributor        = PBS::Distributor::CreateDistributor($pbs_config, $build
 my $number_of_builders = GetNumberOfBuilders($number_of_terminal_nodes, $pbs_config, $distributor) ;
 my $builders           = StartBuilders($number_of_builders, $pbs_config, $distributor, $inserted_nodes) ;
 
-my ($number_of_already_build_node, $number_of_failed_builders, $error_output) = (0, 0, '') ;
+my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error_output) = (0, 0, 0, '') ;
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
 my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
@@ -56,8 +56,8 @@ my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only o
 
 while ($number_of_nodes_to_build > $number_of_already_build_node)
 	{
-	# start building a node if a process is free and no error occurred
-	unless($number_of_failed_builders)
+	# start building a node if a process is free
+	if(!$number_of_failed_builders || $pbs_config->{NO_STOP})
 		{
 		my $started_builders = StartNodesBuild
 					(
@@ -97,6 +97,8 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			{
 			$error_output .= $node_error_output ;
 			$number_of_failed_builders++ ;
+
+			$excluded += MarkAllParentsAsFailed($pbs_config, $built_node) ;
 			}
 
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
@@ -118,7 +120,9 @@ TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
 	{
-	PrintError "Parallel build: Error\n" ;
+	PrintError "#------------------------------------------------------------------------------\n";
+	PrintError "¤ Parallel build: Error\n" ;
+	PrintError "#------------------------------------------------------------------------------\n";
 	PrintError $error_output ;
 	}
 
@@ -130,10 +134,48 @@ if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
 	PrintInfo(sprintf("Parallel build time: %0.2f s. sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+
+	print(
+		($number_of_failed_builders ? ERROR("Parallel build: ") : INFO("Parallel build: "))
+		. INFO("nodes to build: $number_of_nodes_to_build"
+		. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
+		. ($number_of_failed_builders
+			? ERROR(", failures: $number_of_failed_builders")
+			: INFO (", failures: 0")) 
+		. ($excluded
+			? WARNING(", excluded: $excluded\n")
+			: INFO ("\n"))
+		) ;
 	}
 
 return(!$number_of_failed_builders) ;
 }
+
+#---------------------------------------------------------------------------------------------------------------
+
+sub MarkAllParentsAsFailed
+{
+my ($pbs_config, $built_node) = @_ ;
+
+local $PBS::Output::indentation_depth ;
+$PBS::Output::indentation_depth++ ;
+
+my $excluded = 0 ;
+
+for my $parent (@{ $built_node->{__PARENTS} })
+	{
+	next if $parent->{__NAME} =~ /^__/ ;
+
+	$parent->{__HAS_FAILED_CHILD}++ ;
+	PrintWarning "excluding: '$parent->{__NAME}'\n" ;
+	$excluded++ ;
+
+	$excluded += MarkAllParentsAsFailed($pbs_config, $parent) ;
+	}
+
+return $excluded ;
+}
+
 
 #---------------------------------------------------------------------------------------------------------------
 
@@ -411,9 +453,10 @@ for my $builder (@$builders)
 	{
 	next if $builder->{BUILDING} != 0 ; # skip active builders
 
-#PrintUser DumpTree $build_queue, 'build queue' ;
-
-	my $node_to_build = $build_queue->pop() ;
+	my $node_to_build ; 
+	
+	#find a node to build which didn't have a descendent that failed
+	while( defined( $node_to_build = $build_queue->pop() )  && exists $node_to_build->{__HAS_FAILED_CHILD} ) { ; }
 
 	return 0 unless defined $node_to_build ;
 	
@@ -552,8 +595,9 @@ else
 	else
 		{
 		# the build failed, save the builder output to display later and stop building
-		PrintError "#------------------------------------------------------------------------------\n"
-			  ."Error building node '$built_node->{__NAME}'! Error will be reported bellow.\n" ;
+		PrintError "#------------------------------------------------------------------------------\n" ;
+		PrintError "# Build: Error '$built_node->{__NAME}', will be reported below.\n" ;
+		PrintError "#------------------------------------------------------------------------------\n" ;
 			  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)

@@ -79,7 +79,7 @@ AddRule [VIRTUAL], 'all_lib',['all' => 'x.lib:1.0', 'lib.lib', 'this.lib', 'HERE
 
 #~AddRule 'all_lib', ['all' => qw(lib.lib)] ;
 
-# rules bellow to test graph generation
+# rules below to test graph generation
 AddRule 'test', ['all' => 'HERE', 'A'] ;
 AddRule [FORCED], 'ho', ['HERE' => undef] ;
 AddRule 'hz', ['HERE' => 'x.z'] ;

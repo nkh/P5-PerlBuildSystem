@@ -223,7 +223,7 @@ For I<'/path_to_a/a.o'>, the above depender definition will generate these depen
 
 =head4 Node without dependencies
 
-if your node has no dependencies use I<undef> as in the example bellow,.
+if your node has no dependencies use I<undef> as in the example below,.
 
 	AddRule [VIRTUAL], 'install',  [install => undef], \&Installer ;
 

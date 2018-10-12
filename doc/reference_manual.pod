@@ -154,7 +154,7 @@ B<AddRule>, which takes the following parameters:
 			[ 1, 2, 3 ] ;
 		
 
-B<AddRule> will add this rule to a rule namespace (explained bellow) called 'User'. PBS will know this rule as:
+B<AddRule> will add this rule to a rule namespace (explained below) called 'User'. PBS will know this rule as:
 PBS::'User'::'Exe'. To specify the rule name space, you use B<AddRuleTo>, which takes the following parameters:
 
 =over 2
@@ -190,7 +190,7 @@ All the rules added through I<AddRule> are added to this namespace.
 
 =head5 'Builtin'
 
-This is a namespace that the Default B<Build> (explained bellow) uses in conjonction to the 'User' namespace.
+This is a namespace that the Default B<Build> (explained below) uses in conjonction to the 'User' namespace.
 The namespaces are conventions. Except for the default Build using them, they are in no diffrent from other namespaces.
 
 =head5 'CommandLineDefinitions'
@@ -221,7 +221,7 @@ For I<'/path_to_a/a.o'>, the depender will generate these dependencies :
 	'/somewhere/a.c2'                => '/somewhere/a.c2'# full path
 	[path]/subdir/prefix_[basename].c3'  => '/path_to_a/subdir/prefix_a.c3'
 
-if your node has no dependencies use I<undef> as in the example bellow,.
+if your node has no dependencies use I<undef> as in the example below,.
 
 	AddRuleTo 'Builtin', [VIRTUAL], 'install',  [install => undef], \&Installer ;
 
@@ -339,7 +339,7 @@ AndMatch: takes a list of regexes of dependent matcher subs.  Ands (&&) all the 
 
 B<PBS> allows you to give a reference to a sub instead for defining the dependencies inline with the rules.
 The sub will be called only if the dependent
-part matches (in the example bellow, only if the node is named 'a.o').
+part matches (in the example below, only if the node is named 'a.o').
 
 	Ex: AddRule 'a.o_rule name',
 		['a.o' => \&SpecialDepender], ...
@@ -583,7 +583,7 @@ The last defined argument for a node/file is passed to the builder. PBS will war
 
 =head3 Node Attribute Checking
 
-You can give attributes to the nodes, the attribute is declare by following the node name with a colon and a textual attribute (see the example bellow). When B<PBS> finds such an attribute,
+You can give attributes to the nodes, the attribute is declare by following the node name with a colon and a textual attribute (see the example below). When B<PBS> finds such an attribute,
 it calls a user sub registrated via I<RegisterUserCheckSub>. The user sub receives the following arguments:
 
 =over 2 
@@ -782,7 +782,7 @@ This allows you to separate your source files from the generated files.
 Using B<--source_directory> or B<--sd>, you can direct B<PBS> to search for files in other source directories than the current 
 directory. You can specify multiple B<--sd> switches. B<PBS> will search the directories in the order you specify them. 
 
-See B<Digest> bellow.
+See B<Digest> below.
 
 =head2 Default directories
 
@@ -855,7 +855,7 @@ Some points are worth noting.
 
 =item 1 No new process is started when using /lib/Pbsfile
 
-=item 2 '/lib/Pbsfile' is not special in any way (See bellow in B<USER DEFINED BUILD> for an explanation).
+=item 2 '/lib/Pbsfile' is not special in any way (See below in B<USER DEFINED BUILD> for an explanation).
 
 =back
 
@@ -998,7 +998,7 @@ See also switches B<--dur --dar --dc --dac --dr>.
 
 =head1 USER DEFINED BUILD
 
-I<In this section and sections bellow, a working knowledge of perl is needed. I think any programmer with some experience can experiment with perl.>
+I<In this section and sections below, a working knowledge of perl is needed. I think any programmer with some experience can experiment with perl.>
 
 Sometimes you just can seem to get  your build system to do what you want, however intricate rules you write!
 B<PBS> Let's you take control by defining a I<user Build()> function. When such a function is found,

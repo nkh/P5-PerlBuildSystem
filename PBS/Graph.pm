@@ -249,7 +249,7 @@ if($config->{GENERATE_TREE_GRAPH_SNAPSHOTS})
 		$inserted_nodes,
 		$graph,
 		$primary_tree->{__PBS_CONFIG}{GENERATE_TREE_GRAPH_SNAPSHOTS},
-		\%inserted_graph_nodes, # this and bellow contain name only
+		\%inserted_graph_nodes, # this and below contain name only
 		\%inserted_edges,
 		\%inserted_configs,
 		\%inserted_pbs_configs,

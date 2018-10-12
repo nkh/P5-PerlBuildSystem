@@ -1152,7 +1152,7 @@ The package name is automatically set by PBS and is used to keep all the subpbs 
 The classes are also set by PBS. They are used to define a precedence hierachy.
 The precedence order is  B<CURRENT> < B<PARENT> < B<LOCAL> < B<COMMAND_LINE> < B<PBS_FORCED>.
 
-I<AddConfig> uses the 'CURRENT' class, namespace 'User' by default. It's behaviour can be changed with argument attributes (see bellow).
+I<AddConfig> uses the 'CURRENT' class, namespace 'User' by default. It's behaviour can be changed with argument attributes (see below).
 If a variable exists in multiple classes, the one defined in the higher order class will be 
 returned by I<GetConfig>.
 

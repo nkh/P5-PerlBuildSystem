@@ -445,7 +445,7 @@ EOT
 		'',
 
 	'ns|no_stop'                      => \$pbs_config->{NO_STOP},
-		'Continues building even if a node couldn\'t be buid. You might want to use --bi instead.',
+		'Continues building even if a node couldn\'t be buid. See --bi.',
 		'',
 		
 	'nh|no_header'                    => \$pbs_config->{DISPLAY_NO_STEP_HEADER},

@@ -1125,7 +1125,7 @@ Run Example:
 
   AddRule 'object1',['object.o' => 'object.c:4.2.0'] ;
 
-You can give attributes to the nodes, the attribute is declare by following the node name with a colon and a textual attribute (see the example bellow).
+You can give attributes to the nodes, the attribute is declare by following the node name with a colon and a textual attribute (see the example below).
 When PBS finds such an attribute, it calls a user sub registrated via RegisterUserCheckSub.
 The user sub receives the following arguments:
 

@@ -72,7 +72,7 @@ $global_reset_escape_code    = '' ;
 
 sub InfoLabel
 {
-$global_error_escape_code    .= '[Error]' ;
+$global_error_escape_code    .= '[Error] ' ;
 $global_warning_escape_code  .= '[Warning] ' ;
 $global_warning2_escape_code .= '[Warning2] ' ;
 $global_info_escape_code     .= '[Info] ' ;
