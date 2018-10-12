@@ -90,7 +90,6 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			$builder_using_perl_time += $build_time 
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
 			
-			PBS::Depend::SynchronizeAfterBuild($built_node) ;
 			EnqueueNodeParents($pbs_config, $built_node, $build_queue) ;
 			}
 		else

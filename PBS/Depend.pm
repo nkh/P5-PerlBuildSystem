@@ -31,31 +31,6 @@ use PBS::Plugin;
 
 #-----------------------------------------------------------------------------------------
 
-sub SYNCHRONIZE
-{
-die "SYNCHRONIZE expected 3 arguments" unless 3 == @_ ;
-
-my
-(
-$unsynchronized_dependency_file_name,
-$dependency_file_name,
-$message_format,
-) = @_ ;
-
-return
-	(
-	bless 
-		(
-		{
-		SOURCE_FILE      => $unsynchronized_dependency_file_name,
-		DESTINATION_FILE => $dependency_file_name,
-		MESSAGE_FORMAT   => $message_format,
-		},
-		"PBS_SYNCHRONIZE",
-		)
-	) ;
-}
-
 sub FORCE_TRIGGER
 {
 my $reason = shift || die "Forced trigger must have a reason\n" ;
@@ -64,53 +39,6 @@ return
 	(
 	bless ( { MESSAGE => $reason }, "PBS_FORCE_TRIGGER" ) 
 	) ;
-}
-
-#-----------------------------------------------------------------------------------------
-
-sub SynchronizeAfterBuild
-{
-# called everytime a node is build.
-# check if any of the node dependencies needs synchronization
-
-my $node = shift ;
-
-for my $dependency_name (keys %$node)
-	{
-	next if $dependency_name =~ /^__/ ; # eliminate private data
-	
-	if(exists $node->{$dependency_name}{__SYNCHRONIZE})
-		{
-		my $dependents_built = $node->{$dependency_name}{__SYNCHRONIZE_DEPENDENTS_BUILD} ;
-		$dependents_built = defined $dependents_built ? $dependents_built : 0 ;
-		$dependents_built += 1 ; # this node
-		
-		my $number_of_dependents = 1 ;
-		if(exists $node->{$dependency_name}{__LINKED})
-			{
-			$number_of_dependents += $node->{$dependency_name}{__LINKED} ;
-			}
-			
-		if($dependents_built == $number_of_dependents)
-			{
-			my $synch_list = $node->{$dependency_name}{__SYNCHRONIZE} ;
-			for my $file_to_synchronize (keys %$synch_list)
-				{
-				my $message_format = $synch_list->{$file_to_synchronize}{MESSAGE_FORMAT} ;
-				PrintWarning sprintf($message_format, $dependency_name) unless $PBS::Shell::silent_commands ;
-				
-				unless(rename($file_to_synchronize, $synch_list->{$file_to_synchronize}{TO_FILE}))
-					{
-					PrintError "Error synchronizing '$file_to_synchronize' to '$synch_list->{$file_to_synchronize}{TO_FILE}': $!\n" ;
-					}
-				}
-			}
-		else	
-			{
-			$node->{$dependency_name}{__SYNCHRONIZE_DEPENDENTS_BUILD} = $dependents_built ;
-			}
-		}
-	}
 }
 
 #-------------------------------------------------------------------------------
@@ -172,7 +100,7 @@ for my $post_build_rule (@post_build_rules)
 		if($pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS})
 			{
 			my $post_build_command_info =  $post_build_rule->{NAME}
-								. $post_build_rule->{ORIGIN} ;
+							. $post_build_rule->{ORIGIN} ;
 								
 			PrintInfo("$node_name has matching post build command, '$post_build_command_info'\n") ;
 			}
@@ -269,9 +197,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				}
 			}
 			
-		#~ my $depender_message = $dependencies[0] || 'no depender message' ;
-		#~ PrintInfo("\t'$rule_info'  matched: $depender_message\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
-		
 		#----------------------------------------------------------------------------
 		# is it a subpbs definition?
 		#----------------------------------------------------------------------------
@@ -295,8 +220,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			{
 			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
  			}
-		
-		#~ warn DumpTree(\@dependencies, "dependencies:") ;
 		
 		# transform the node name into an internal structure and check for node attributes
 		@dependencies = map
@@ -333,8 +256,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				} @dependencies ;
 				
-		#~ warn DumpTree(\@dependencies, "dependencies:\") ;
-		
 		#-------------------------------------------------------------------------
 		# handle VIRTUAL, LOCAL OR FORCED rule type
 		#-------------------------------------------------------------------------
@@ -518,42 +439,7 @@ for my $dependency_name (keys %$tree)
 #-------------------------------------------------------------------------
 if(@sub_pbs)
 	{
-	if(@sub_pbs == 1)
-		{
-		if(@dependencies && exists $sub_pbs[0]{SUBPBS}{IGNORE_LOCAL_RULES} && $sub_pbs[0]{SUBPBS}{IGNORE_LOCAL_RULES} > 0)
-			{
-			PrintWarning
-				(
-				DumpTree(\@sub_pbs, "Sub Pbs rule:")
-				) ;
-				
-			PrintWarning("Forces removal of locally defined dependencies:\n") ;
-				
-			for my $dependency (@dependencies)
-				{
-				PrintWarning("    $dependency->{NAME}\n") ;
-				}
-			
-			# force subpbs by eliminating the dependencies
-			$tree->{__MATCHING_RULES} = [] ;
-			
-			for my $dependency (keys %$tree)
-				{
-				next if $dependency =~ /^__/ ;
-
-				delete $tree->{$dependency} ;
-				
-				unless(exists $inserted_nodes->{$dependency}{__LINKED})
-					{
-					delete $inserted_nodes->{$dependency}  ;
-					}
-				}
-				
-			@dependencies = () ;
-			%triggered_nodes  = () ;
-			}
-		}
-	else
+	unless (@sub_pbs == 1)
 		{
 		PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
 		PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;

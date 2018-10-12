@@ -635,7 +635,6 @@ RegisterRule
 	  NODE_REGEX         => $node_regex,
 	  PBSFILE            => $Pbsfile,
 	  PACKAGE            => $pbs_package,
-	  #, IGNORE_LOCAL_RULES => 1,
 	  @other_setup_data,
 	  },
 	undef,

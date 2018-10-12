@@ -9,8 +9,6 @@ AddRule 'subpbs_name',
 	NODE_REGEX         => '',
 	PBSFILE            => './Pbsfile.pl',
 	PACKAGE            => '',
-	
-	#~ IGNORE_LOCAL_RULES => 1,
 	} ;
 EOP
 

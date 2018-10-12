@@ -1089,11 +1089,11 @@ return($digest_file_name) ;
 
 #-------------------------------------------------------------------------------
 
-my $generate_digest_time = 0 ;
+my $generate_digest_time  = 0 ;
 my $generate_digest_calls = 0 ;
 my $generate_digest_write = 0 ;
-my $generate_digest_get = 0 ;
-my $generate_digest_dump = 0 ;
+my $generate_digest_get   = 0 ;
+my $generate_digest_dump  = 0 ;
 
 
 sub GetDigestGenerationStats
@@ -1108,7 +1108,6 @@ my $t0_generate_digest = [gettimeofday] ;
 my $node = shift ;
 
 my $digest_file_name = GetDigestFileName($node) ;
-#PrintInfo2 "GenerateNodeDigest $digest_file_name\n" ;
 
 if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 	{
@@ -1125,7 +1124,8 @@ my $package = $node->{__LOAD_PACKAGE} ;
 
 if(IsDigestToBeGenerated($package, $node))
 	{
-my $t0_generate_write = [gettimeofday] ;
+	my $t0_generate_write = [gettimeofday] ;
+
 	WriteDigest
 		(
 		$digest_file_name,
@@ -1135,7 +1135,7 @@ my $t0_generate_write = [gettimeofday] ;
 		1, # create path
 		) ;
 
-$generate_digest_write += tv_interval($t0_generate_write, [gettimeofday]) ;
+	$generate_digest_write += tv_interval($t0_generate_write, [gettimeofday]) ;
 	}
 
 $generate_digest_time += tv_interval($t0_generate_digest, [gettimeofday]) ;

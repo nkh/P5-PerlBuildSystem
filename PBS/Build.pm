@@ -239,11 +239,6 @@ for my $node (@$build_sequence)
 	
 	$progress_bar->update($node_build_index) if($pbs_config->{DISPLAY_PROGRESS_BAR} && $build_result != BUILD_FAILED) ;
 	
-	if($build_result == BUILD_SUCCESS)
-		{
-		PBS::Depend::SynchronizeAfterBuild($node) ;
-		}
-	
 	if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 		{
 		PrintWarning("--bi defined, continuing.\n") ;

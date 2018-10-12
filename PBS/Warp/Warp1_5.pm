@@ -742,7 +742,7 @@ sub TerminateCheckers
 my ($checkers) = @_ ;
 my $number_of_checkers = @$checkers ;
 
-PrintInfo "Parallel Check:  terminating Check processes [$number_of_checkers]\n" ;
+PrintInfo "Parallel check: terminating checkers [$number_of_checkers]\n" ;
 
 for my $checker (@$checkers)
 	{
