@@ -72,8 +72,6 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		$node_build_index += $started_builders ; 
 		}
 	
-	PrintInfo "todo: DISPLAY_JOB_TREE not implemented"  if $pbs_config->{DISPLAY_JOBS_TREE} ;
-
 	my @built_nodes = WaitForBuilderToFinish($pbs_config, $builders) ;
 	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occured
 		
@@ -124,8 +122,6 @@ if($number_of_failed_builders)
 	PrintError $error_output ;
 	}
 
-PrintInfo "todo: DISPLAY_JOB_TREE not implemented"  if $pbs_config->{DISPLAY_JOBS_TREE} ;
-	
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
 	print WARNING DumpTree(\%builder_stats, 'Parallel build: process statistics:', DISPLAY_ADDRESS => 0) ;
