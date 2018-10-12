@@ -105,7 +105,7 @@ sub GetLogFileNames
 {
 my ($node) = @_ ;
 
-my $redirection_base = $node->{__BUILD_NAME} // GetBuildName($node->{__NAME}, $node);
+my $redirection_base = $node->{__BUILD_NAME} // PBS::Rules::Builders::GetBuildName($node->{__NAME}, $node);
 my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
 
 $redirection_base = "${base_path}_PBS_BUILD_LOGS" ;
@@ -121,6 +121,8 @@ mkpath($path) unless(-e $path) ;
 return $redirection_base, $redirection_file, $redirection_file_log ;
 }
 
+#-------------------------------------------------------------------------------------------------------
+
 sub BuildNode
 {
 my 
@@ -129,7 +131,6 @@ my
 	$node_name,
 	$node_build_sequencer_info,
 	$pbs_config,
-	$build_sequence,
 	$inserted_nodes,
 	$shell,
 	$shell_origin,
@@ -137,15 +138,7 @@ my
 
 my $t0 = [gettimeofday] ;
 
-my $node ;
-for(@$build_sequence)
-	{
-	if($_->{__NAME} eq $node_name)
-		{
-		$node = $_ ;
-		last ;
-		}
-	}
+my $node = %$inserted_nodes{$node_name} ;
 
 my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNames($node) ;
 #all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
@@ -244,7 +237,7 @@ close(STDERR);
 open(STDERR, ">&OLDERR");
 }
 
-#~ #--------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 
 sub SendFile
 {

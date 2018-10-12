@@ -27,156 +27,39 @@ use PBS::Build ;
 use Socket;
 use IO::Select ;
 use PBS::ProgressBar ;
+use List::PriorityQueue ;
 
 $|++ ;
 
 #-------------------------------------------------------------------------------
 
-
 sub Build
 {
-=pod
-
-The parallelisation algorithm is simple and effective enough as most dependency trees have many dependencies 
-for each node making the graph look triangular to a very wide base triangular. Note that this is not the most
-effective parallelisation algorithm. Building the nodes that have parents with few children first and then their
-parents is more effective as it maximizes that number of build thread that are active, 
-
-
-This means that we build hight first instead for depth first. Since nodes have different build time, the
-parallelisation algorithm (in fact the prioritisation of the terminal nodes) should be dynamic to be optimal and 
-in that case, should take into account the load on the cpu building the node as build time is not only a factor
-of the CPU but also network and other I/O.
-
-keeping previous build time to build the longest nodes to build first can also make the end of the build more effective as it
-keeps the builder pool full.
-
-=cut
-
 my $t0 = [gettimeofday];
 
-my $pbs_config      = shift ;
-our $build_sequence = shift ;
-my $inserted_nodes  = shift ;
+my ($pbs_config, $build_sequence, $inserted_nodes)  = @_ ;
 
-my ($build_queue, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
-
-
-my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
-my $number_of_terminal_nodes = scalar(keys %$build_queue) ;
+my ($build_queue, $number_of_terminal_nodes, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
 my $distributor        = PBS::Distributor::CreateDistributor($pbs_config, $build_sequence) ;
 my $number_of_builders = GetNumberOfBuilders($number_of_terminal_nodes, $pbs_config, $distributor) ;
-my $builders           = StartBuilders($number_of_builders, $pbs_config, $distributor, $build_sequence, $inserted_nodes) ;
+my $builders           = StartBuilders($number_of_builders, $pbs_config, $distributor, $inserted_nodes) ;
 
-my $number_of_already_build_node = 0 ;
-my $number_of_failed_builders = 0 ;
-my $error_output = '' ;
+my ($number_of_already_build_node, $number_of_failed_builders, $error_output) = (0, 0, '') ;
+my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
-my %builder_stats ;
-my $builder_using_perl_time = 0 ;
-
+my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
 my $progress_bar = CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
 my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
 
-my $parallel_build_state = sub
+while ($number_of_nodes_to_build > $number_of_already_build_node)
 	{
-	my ($tree) = @_ ;
-
-	if('HASH' eq ref $tree)
-		{
-		my @keys_to_dump ;
-		
-		for(sort keys %$tree)
-			{
-			if(/^__/)
-				{
-				if
-				(
-				   (/^__BUILD_NAME$/  && defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD})
-				|| (/^__TRIGGERED$/   && defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON})
-				#~ || /^__VIRTUAL/
-				)
-					{
-					# display these
-					}
-				else
-					{
-					next ;
-					}
-				}
-				
-			my $replacement_key_name = my $key_name = $_ ;
-			my $keep_key = 1 ;
-
-			if( ! /^__/)
-				{
-				if('HASH' eq ref $tree->{$key_name})
-					{
-					# triggered
-					if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED} && exists $tree->{$key_name}{__TRIGGERED})
-						{
-						$replacement_key_name = "* $key_name" ;
-						}
-
-					# building 
-					if('HASH' eq ref $build_queue->{$key_name} && exists $build_queue->{$key_name}{PID})
-						{
-						$replacement_key_name = 
-							$PBS::Output::global_warning_escape_code
-							. $replacement_key_name
-							. ' [Building] ' 
-							. $PBS::Output::global_info_escape_code ;
-						}
-					else
-						{
-						# Queued 
-						if(exists $build_queue->{$key_name})
-							{
-							$replacement_key_name = 
-								$PBS::Output::global_user_escape_code
-								. $replacement_key_name
-								. ' [Queued] ' 
-								. $PBS::Output::global_info_escape_code ;
-							}
-						}
-					
-					# built
-					if(exists $tree->{$key_name}{__BUILD_DONE})
-						{
-						my $build_timestamp = 
-							exists $tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP} 
-								? " @ t:$tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP}"
-								: '' ;
-
-						$replacement_key_name = 
-							$PBS::Output::global_info2_escape_code
-							. $replacement_key_name
-							. " [done$build_timestamp]"
-							. $PBS::Output::global_info_escape_code ;
-
-						$keep_key = exists $tree->{$key_name}{__BUILD_PARALLEL_TIMESTAMP} ;
-						}
-					}
-				}
-			
-			push @keys_to_dump, [$key_name, $replacement_key_name] if $keep_key ;
-			}
-		
-		return('HASH', undef, @keys_to_dump) ;
-		}
-		
-	return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
-	} ;
-
-while(%$build_queue)
-	{
-	# start building a node if a process is free and no error occured
+	# start building a node if a process is free and no error occurred
 	unless($number_of_failed_builders)
 		{
-		my $started_builders = StartEnqueuedNodesBuild
+		my $started_builders = StartNodesBuild
 					(
 					$pbs_config,
 					$build_queue,
@@ -189,34 +72,34 @@ while(%$build_queue)
 		$node_build_index += $started_builders ; 
 		}
 	
-	PrintInfo DumpTree($root_node, 'Parallel build info:', FILTER => $parallel_build_state, DISPLAY_ADDRESS => 0) 
-		if $pbs_config->{DISPLAY_JOBS_TREE} ;
+	PrintInfo "todo: DISPLAY_JOB_TREE not implemented"  if $pbs_config->{DISPLAY_JOBS_TREE} ;
 
 	my @built_nodes = WaitForBuilderToFinish($pbs_config, $builders) ;
 	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occured
 		
-	for my $built_node_name (@built_nodes)
+	for my $built_node (@built_nodes)
 		{
-		$level_statistics->[$build_queue->{$built_node_name}{NODE}{__LEVEL} - 1]{done}++ ;
+		$level_statistics->[$built_node->{__LEVEL} - 1]{done}++ ;
 		
-		my ($build_result, $build_time, $node_error_output) = CollectNodeBuildResult($pbs_config, $built_node_name, $build_queue) ;
+		my ($build_result, $build_time, $node_error_output) =
+			 CollectNodeBuildResult($pbs_config, $built_node, $builders) ;
 		
 		$number_of_already_build_node++ ;
 		
 		if($build_result == BUILD_SUCCESS)
 			{
 			$progress_bar->update($number_of_already_build_node) if $progress_bar ;
-			$builder_using_perl_time += $build_time if PBS::Build::NodeBuilderUsesPerlSubs($build_queue->{$built_node_name}) ;
+			$builder_using_perl_time += $build_time 
+				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
 			
-			PBS::Depend::SynchronizeAfterBuild($build_queue->{$built_node_name}{NODE}) ;
-			EnqueueNodeParents($pbs_config, $build_queue->{$built_node_name}{NODE}, $build_queue) ;
+			PBS::Depend::SynchronizeAfterBuild($built_node) ;
+			EnqueueNodeParents($pbs_config, $built_node, $build_queue) ;
 			}
 		else
 			{
 			$error_output .= $node_error_output ;
 			$number_of_failed_builders++ ;
 			}
-
 
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 			{
@@ -230,8 +113,6 @@ while(%$build_queue)
 				PrintWarning( $index++ . ' = ' . ($level->{done} // 0) . '/' . $level->{nodes} . "\n" ) ; 
 				}
 			}
-		
-		delete $build_queue->{$built_node_name} ;
 		}
 	}
 
@@ -243,8 +124,7 @@ if($number_of_failed_builders)
 	PrintError $error_output ;
 	}
 
-PrintInfo DumpTree($root_node, 'Parallel build final state:', FILTER => $parallel_build_state, DISPLAY_ADDRESS => 0)
-	if $pbs_config->{DISPLAY_JOBS_TREE} ;
+PrintInfo "todo: DISPLAY_JOB_TREE not implemented"  if $pbs_config->{DISPLAY_JOBS_TREE} ;
 	
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
@@ -265,12 +145,13 @@ sub EnqueuTerminalNodes
 {
 my ($build_sequence, $pbs_config) = @_ ;
 
-my (%build_queue, @level_statistics) ;
+my ($build_queue, $number_of_terminal_nodes, @level_statistics) = (List::PriorityQueue->new, 0) ;
 my (@removed_nodes, @enqueued_nodes) ;
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Parallel build:  enqueuing terminal nodes:\n" ;
+	PrintInfo2 "Parallel build: computing nodes weight\n" ;
+	PrintInfo2 "Parallel build: enqueuing terminal nodes:\n" ;
 	}
 	
 for my $node (@$build_sequence)
@@ -289,6 +170,13 @@ for my $node (@$build_sequence)
 			}
 		}
 
+	if($node->{__LEVEL} != 0) # we hide PBS top node
+		{
+		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
+		}
+
+	$node->{__WEIGHT} = $node->{__LEVEL} << 8 | ($node->{__CHILDREN_TO_BUILD} // 0) ;
+
 	#enqueue node if it's terminal
 	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD})
 		{
@@ -296,15 +184,11 @@ for my $node (@$build_sequence)
 			{
 			local $PBS::Output::indentation_depth ;
 			$PBS::Output::indentation_depth++ ;
-			PrintInfo2 "$node->{__NAME}\n" ;
+			PrintInfo2 "$node->{__NAME} ($node->{__WEIGHT})\n" ;
 			}
 			
-		$build_queue{$node->{__NAME}} = {NODE => $node} ;
-		}
-
-	if($node->{__LEVEL} != 0) # we hide PBS top node
-		{
-		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
+		$number_of_terminal_nodes++ ;
+		$build_queue->insert($node, $node->{__WEIGHT}) ;
 		}
 	}
 	
@@ -317,7 +201,7 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
 	}
 			
 	
-return(\%build_queue, \@level_statistics) ;
+return($build_queue, $number_of_terminal_nodes, \@level_statistics) ;
 }
 
 #----------------------------------------------------------------------------------------------------------------------
@@ -357,7 +241,7 @@ return($number_of_builders ) ;
 
 sub StartBuilders
 {
-my ($number_of_builders, $pbs_config, $distributor, $build_sequence, $inserted_nodes)  = @_ ;
+my ($number_of_builders, $pbs_config, $distributor, $inserted_nodes)  = @_ ;
 
 my @builders ;
 for my$builder_index (0 .. ($number_of_builders - 1))
@@ -367,7 +251,6 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	my ($builder_channel) = StartBuilderProcess
 				(
 				$pbs_config,
-				$build_sequence,
 				$inserted_nodes,
 				$shell,
 				"[$builder_index] " . __PACKAGE__ . ' ' . __FILE__ . ':' . __LINE__,
@@ -395,6 +278,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 		BUILDER_CHANNEL  => $builder_channel,
 		SHELL            => $shell,
 		BUILDING         => 0,
+		NODE             => undef,
 		} ;
 	}
 
@@ -476,13 +360,12 @@ for (0 .. ($number_of_builders - 1))
 	{
 	if($builders->[$_]{BUILDING} == 1)
 		{
-		push @waiting_for_messages, "$builders->[$_]{NODE} on '" . $builders->[$_]{SHELL}->GetInfo() ;
+		push @waiting_for_messages, "$builders->[$_]{NODE}{__NAME} on '" . $builders->[$_]{SHELL}->GetInfo() ;
 		$select_all->add($builders->[$_]{BUILDER_CHANNEL}) ;
 		}
 	}
 
-
-my @build_nodes ;
+my @built_nodes ;
 
 if(@waiting_for_messages)
 	{
@@ -506,95 +389,75 @@ if(@waiting_for_messages)
 			{
 			if($socket_ready == $builders->[$_]{BUILDER_CHANNEL})
 				{
-				push @build_nodes, $builders->[$_]{NODE} ;
+				push @built_nodes, $builders->[$_]{NODE} ;
 				}
 			}
 		}
 	}
 
-return(@build_nodes) ;
+return(@built_nodes) ;
 }
 
 #----------------------------------------------------------------------------------------------------------------------
 my $build_parallel_timestamp = 0 ;
 
-sub StartEnqueuedNodesBuild
+sub StartNodesBuild
 {
 my ($pbs_config, $build_queue, $builders, $node_build_index, $number_of_nodes_to_build, $builder_stats) = @_ ;
 
-my $number_of_builders = @$builders ;
 my $started_builders = 0 ;
 
-if(defined $pbs_config->{DISPLAY_JOBS_INFO})
+PrintInfo2 "Parallel build: starting:\n" 
+	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
+
+# find which builder finished, start building on them
+for my $builder (@$builders)
 	{
-	PrintInfo2 "Parallel build: starting:\n" ;
-	}
+	next if $builder->{BUILDING} != 0 ; # skip active builders
+
+#PrintUser DumpTree $build_queue, 'build queue' ;
+
+	my $node_to_build = $build_queue->pop() ;
+
+	return 0 unless defined $node_to_build ;
 	
-for my $enqued_node (keys %$build_queue)
-	{
-	my $node_pid = $build_queue->{$enqued_node}{PID} ;
+	$started_builders++ ;
+
+	$builder->{BUILDING} = 1 ;
+	$builder->{NODE} = $node_to_build ;
 	
-	next if defined $node_pid ; # node is under build
+	$node_to_build->{__SHELL_ORIGIN} = __PACKAGE__ . __FILE__ . __LINE__ ;
 	
-	my $pid = undef ;
-	for (0 .. ($number_of_builders - 1))
+	if(defined $builder->{SHELL})
 		{
-		if($builders->[$_]{BUILDING} == 0)
-			{
-			$pid = $builders->[$_] ;
-			last ;
-			}
+		$node_to_build->{__SHELL_INFO} = $builder->{SHELL}->GetInfo() ;
 		}
-			
-	if($pid)
-		{
-		$started_builders++ ;
-		$build_queue->{$enqued_node}{PID} = $pid ;
-		$pid->{BUILDING} = 1 ;
-		$pid->{NODE} = $enqued_node ;
 		
-		# this info is for the root process. The modification we make here
-		# are not seen in the builder processes
-		$build_queue->{$enqued_node}{NODE}{__SHELL_ORIGIN} = __PACKAGE__ . __FILE__ . __LINE__ ;
-		
-		if(defined $pid->{SHELL})
-			{
-			$build_queue->{$enqued_node}{NODE}{__SHELL_INFO} = $pid->{SHELL}->GetInfo() ;
-			}
-			
-		# keep some stats on which builder ran
-		$builder_stats->{'PID ' . $pid->{PID}}{RUNS}++ ;
-		$builder_stats->{'PID ' . $pid->{PID}}{NAME} = $pid->{SHELL}->GetInfo() ;
-		
-		unless(exists $build_queue->{$enqued_node}{NODE}{__SHELL_OVERRIDE})
-			{
-			push @{$builder_stats->{'PID ' . $pid->{PID}}{NODES}}, $enqued_node ;
-			}
-		else
-			{
-			push @{$builder_stats->{'PID ' . $pid->{PID}}{NODES}}, "$enqued_node [L]";
-			}
-			
-		my $node_index = $started_builders + $node_build_index ;
-		SendIpcToBuildNode($pbs_config, $build_queue->{$enqued_node}{NODE}, $node_index, $number_of_nodes_to_build, $pid) ;
-		
-		# keep the sequence in which the node where build
-		$build_queue->{$enqued_node}{NODE}{__BUILD_PARALLEL_TIMESTAMP} = $build_parallel_timestamp++ ;
-		
-		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
-			{
-			my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
-			my $node_build_sequencer_info = "$node_index/$number_of_nodes_to_build, $percent_done%" ;
-			
-			local $PBS::Output::indentation_depth ;
-			$PBS::Output::indentation_depth++ ;
-			PrintInfo2 "$build_queue->{$enqued_node}{NODE}{__NAME} ($node_build_sequencer_info) in '@{[$pid->{SHELL}->GetInfo()]}' pid: $pid->{PID}\n" ;
-			}
+	# keep some stats on which builder ran
+	$builder_stats->{'PID ' . $builder->{PID}}{RUNS}++ ;
+	$builder_stats->{'PID ' . $builder->{PID}}{NAME} = $builder->{SHELL}->GetInfo() ;
 	
-		}
-	else
+	my $override = exists $node_to_build->{__SHELL_OVERRIDE}
+			? " [L] "
+			: '' ;
+
+	push @{$builder_stats->{'PID ' . $builder->{PID}}{NODES}}, 
+		"$node_to_build->{__NAME}$override" ;
+		
+	my $node_index = $started_builders + $node_build_index ;
+	SendIpcToBuildNode($pbs_config, $node_to_build, $node_index, $number_of_nodes_to_build, $builder) ;
+	
+	# keep the sequence in which the node where build
+	$node_to_build->{__BUILD_PARALLEL_TIMESTAMP} = $build_parallel_timestamp++ ;
+	
+	if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 		{
-		last ;
+		my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
+		my $node_build_sequencer_info = "$node_index/$number_of_nodes_to_build, $percent_done%" ;
+		
+		local $PBS::Output::indentation_depth ;
+		$PBS::Output::indentation_depth++ ;
+		PrintInfo2 "$node_to_build->{__NAME} ($node_build_sequencer_info) in '@{[$builder->{SHELL}->GetInfo()]}' pid: $builder->{PID}\n" ;
 		}
 	}
 
@@ -607,14 +470,14 @@ return($started_builders) ;
 
 sub SendIpcToBuildNode
 {
-my ($pbs_config, $node, $node_index, $number_of_nodes_to_build, $pid) = @_ ;
+my ($pbs_config, $node, $node_index, $number_of_nodes_to_build, $builder) = @_ ;
 my $node_name = $node->{__NAME} ; 
 
 $number_of_nodes_to_build = 1 if $number_of_nodes_to_build < 1 ;
 
 # IPC start the build
 my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build ) ;
-my $builder_channel = $pid->{BUILDER_CHANNEL} ;
+my $builder_channel = $builder->{BUILDER_CHANNEL} ;
 
 # leaks file handles !!!
 #~ print `lsof |  grep pbs | wc -l ` . $node_name ;
@@ -627,20 +490,30 @@ print $builder_channel "BUILD_NODE" . "__PBS_FORKED_BUILDER__"
 
 sub CollectNodeBuildResult
 {
-my ($pbs_config, $built_node_name, $build_queue) = @_ ;
+my ($pbs_config, $built_node, $builders) = @_ ;
 	
-my $built_node = $build_queue->{$built_node_name}{NODE} ;
+my $builder_channel ;
 
-my $pid = $build_queue->{$built_node_name}{PID} ;
-$pid->{BUILDING} = 0 ;
+for my $builder (@$builders)
+	{
+	if($builder->{NODE} == $built_node)
+		{
+		$builder_channel = $builder->{BUILDER_CHANNEL} ;
+		$builder->{BUILDING} = 0 ;
+		last ;
+		}
+	}
 
-my $builder_channel = $pid->{BUILDER_CHANNEL} ;
+unless ($builder_channel)
+	{
+	PrintError "Parallel build: can't find builder for built node '$built_node->{__NAME}'\n" ;
+	die "\n" ;
+	}
 
 my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, <$builder_channel> ;
 $build_result = BUILD_FAILED unless defined $build_result ;
 
-my $build_time = -1 ;
-my $error_output = '' ;
+my ($build_time, $error_output) = (-1, '') ;
 
 print "\n" unless $build_result == BUILD_SUCCESS ;
 
@@ -684,7 +557,7 @@ else
 		{
 		# the build failed, save the builder output to display later and stop building
 		PrintError "#------------------------------------------------------------------------------\n"
-			  ."Error building node '$built_node_name'! Error will be reported bellow.\n" ;
+			  ."Error building node '$built_node->{__NAME}'! Error will be reported bellow.\n" ;
 			  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)
@@ -697,7 +570,7 @@ else
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo "'$built_node_name': build result: $build_result, message: $build_message\n" ;
+	PrintInfo "'$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
 	}
 	
 return($build_result, $build_time, $error_output) ;
@@ -723,7 +596,7 @@ for my $parent (@{$node->{__PARENTS}})
 			PrintInfo2 "Parallel build: Enqueuing parent '$parent->{__NAME}'.\n" ;
 			}
 			
-		$build_queue->{$parent->{__NAME}} = {NODE => $parent} ;
+		$build_queue->insert($parent, $parent->{__WEIGHT}) ;
 		}
 	}
 }
@@ -737,16 +610,15 @@ my $number_of_builders = @$builders ;
 
 PrintInfo "Parallel build:  terminating build processes [$number_of_builders]\n" ;
 
-for my $builder_index (0 .. ($number_of_builders - 1))
+for my $builder (@$builders)
 	{
-	my $builder_channel = $builders->[$builder_index]{BUILDER_CHANNEL} ;
-	
-	print $builder_channel "STOP_PROCESS\n" ;
+	my $channel = $builder->{BUILDER_CHANNEL} ; 	
+	print $channel "STOP_PROCESS\n" ;
 	}
 	
-for (0 .. ($number_of_builders - 1))
+for my $builder (@$builders)
 	{
-	waitpid($builders->[$_], 0) ;
+	waitpid $builder->{PID}, 0 ;
 	}
 }
 

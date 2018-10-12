@@ -311,6 +311,7 @@ my $build = $class->new
 		'Sub::Name' => 0,
 		'Net::SCP' => 0,
 		#GDBM::File' => 0 ,
+		'List::PriorityQueue' => 0,
 
 		'Devel::Depend::Cpp'  => '0.10',
 		'Devel::Depend::Cl'   => '0.06',
