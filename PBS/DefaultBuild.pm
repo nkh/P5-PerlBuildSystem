@@ -59,7 +59,8 @@ my $dependency_rules = [PBS::Rules::ExtractRules($rules, @$rules_namespaces)];
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-PrintInfo("=> Depending: [$package_alias/$PBS::Output::indentation_depth]            \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+PrintInfo("Depend: $package_alias/$PBS::Output::indentation_depth              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+my $start_nodes = $PBS::Depend::BuildDependencyTree_calls ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -73,7 +74,10 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
-PrintInfo("<= Depend done [$package_alias/$PBS::Output::indentation_depth/$PBS::Depend::BuildDependencyTree_calls]\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+my $end_nodes = $PBS::Depend::BuildDependencyTree_calls ;
+my $added_nodes = $end_nodes - $start_nodes ;
+
+PrintInfo2("Depend: $package_alias/$PBS::Output::indentation_depth/$added_nodes/$end_nodes\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -85,11 +89,11 @@ return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
-PrintInfo "\e[KProcessed $pbs_runs Pbsfile$plural.\n" ;
+PrintInfo "\e[KDepend: $pbs_runs pbsfile$plural.\n" ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo(sprintf("Total dependency time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	PrintInfo(sprintf("Depend: time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
 
 PrintInfo("\nChecking:\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;

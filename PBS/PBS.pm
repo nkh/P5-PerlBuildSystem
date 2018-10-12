@@ -362,7 +362,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 			{
 			my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-			print INFO("PBS depend run '$pbs_runs' at depth '$PBS::Output::indentation_depth' [$number_of_nodes].                \r", 0) ;
+			print INFO("Depend: '$pbs_runs' at depth '$PBS::Output::indentation_depth' [$number_of_nodes].                \r", 0) ;
 			}
 		
 		($build_result, $build_message)
@@ -617,7 +617,7 @@ my $file_body = '' ; #?? can't let this variable undef or perl bugs out!
 
 if($type eq 'Pbsfile')
 	{
-	PrintInfo("==>Loading file '$file' into package '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	PrintInfo("Loading: '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{
