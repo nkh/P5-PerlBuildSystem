@@ -270,7 +270,7 @@ else
 			undef, # warp config
 			'[pre-build]',
 			) ;
-		} ;
+		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
 		
 	my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	eval

@@ -1154,6 +1154,10 @@ EOT
 		"specify which warp to use.",
 		'',
 		
+	'no_pre_build_warp'             => \$pbs_config->{NO_PRE_BUILD_WARP},
+		"no pre-build warp will be generated.",
+		'',
+		
 	'no_warp'             => \$pbs_config->{NO_WARP},
 		"no warp will be used.",
 		'',
