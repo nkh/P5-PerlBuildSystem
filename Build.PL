@@ -312,6 +312,7 @@ my $build = $class->new
 		'Net::SCP' => 0,
 		#GDBM::File' => 0 ,
 		'List::PriorityQueue' => 0,
+		'String::Truncate'     => 0,
 
 		'Devel::Depend::Cpp'  => '0.10',
 		'Devel::Depend::Cl'   => '0.06',

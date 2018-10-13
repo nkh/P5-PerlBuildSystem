@@ -1131,7 +1131,7 @@ if(IsDigestToBeGenerated($package, $node))
 
 	for my $dependency (grep { ! /^__/ } keys %$node)
 		{
-		$sources .= "\t'$dependency',\n" unless IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node->{$dependency}) ;
+		$sources .= "\t'$dependency' => 1,\n" unless IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node->{$dependency}) ;
 		}
 
 	$sources .= "\t} ;\n" ;

@@ -38,7 +38,7 @@ require Exporter;
 $VERSION = '0.05' ;
 
 our $colorize ;
-our $indentation = '    ' ;
+our $indentation = '   ' ;
 our $indentation_depth = 0 ;
 our $query_on_warning ;
 our $display_error_context ;

@@ -211,7 +211,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("[$PBS::Output::indentation_depth] '$node_name' has matching subpbs, rule $rule_index:$rule_info\n") ;
+				PrintInfo("[$PBS::Output::indentation_depth] Depend in subpbs: '$node_name' rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -291,28 +291,44 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				$rule_type .= '[B]'  if(defined $dependency_rules->[$rule_index]{BUILDER}) ;
 				$rule_type .= '[BO]' if($builder_override) ;
 				$rule_type .= '[S]'  if(defined $dependency_rules->[$rule_index]{NODE_SUBS}) ;
-				
+				$rule_type = " $rule_type" unless $rule_type eq '' ;
+
 				my @dependency_names = map {$_->{NAME} ;} grep {'' eq ref $_->{NAME}} @dependencies ;
 				
 				
 				my $forced_trigger = '' ;
 				if(grep {'PBS_FORCE_TRIGGER' eq ref $_->{NAME}} @dependencies) # use List::Utils::Any
 					{
-					$forced_trigger = 'FORCED_TRIGGER! ' ;
+					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
 					
-				my $dependency_info ;
+				use String::Truncate ;
+				my $em = String::Truncate::elide_with_defaults({ length => 28, truncate => 'middle' });
+				my $el = String::Truncate::elide_with_defaults({ length => 28, truncate => 'left' });
+
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					$dependency_info = "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger} rule $rule_index:$rule_info:$rule_type has dependencies:\n"
-								. "      " . join("\n      ", map {"'$_'"} @dependency_names) ;
+					my $dependency_info = "[$PBS::Output::indentation_depth] '" . $el->($node_name) . "'${node_type}${forced_trigger} rule $rule_index:" . $em->($rule_info) . $rule_type ;
+					
+					if(@dependency_names)
+						{
+						$dependency_info .= ":\n" ;
+						my $dependency_info_deps =  "     " . join("\n     ", map {"'" . $el->($_) . "'"} @dependency_names) ;
+						$dependency_info_deps .= "\n\n" ;
+			
+						PrintInfo($dependency_info) ;
+						PrintUser($dependency_info_deps) ;
+						}
+					else
+						{
+						$dependency_info .= ".\n\n" ;
+						PrintInfo($dependency_info) ;
+						}
 					}
 				else
 					{
-					$dependency_info = "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [@dependency_names], rule $rule_index:$rule_info:$rule_type" ;
+					PrintInfo "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info:$rule_type\n\n", 0) ;
 					}
-					
-				PrintInfo("$dependency_info\n") ;
 					
 				PrintWithContext
 					(
@@ -701,11 +717,10 @@ if(@has_matching_non_subpbs_rules)
 		Carp::croak ;
 		}
 		
-	# a node can be inserted from diffrent pbs file, still the result should be the same
-	# if the rules applied to the node are identical, we thus only remeber the pbsfile whith matching rules
+	# a node can be inserted from different pbsfile, still the result should be the same
+	# if the rules applied to the node are identical, we thus only remember the pbsfile with matching rules
 	$tree->{__DEPENDING_PBSFILE} = PBS::Digest::GetFileMD5($Pbsfile) ;
 	$tree->{__LOAD_PACKAGE} = $load_package;
-	#~ $tree->{__DEPENDING_PACKAGE} = $load_package;
 	
 	for my $dependency (keys %$tree)
 		{
@@ -749,8 +764,6 @@ if(@has_matching_non_subpbs_rules)
 				. " [Pbsfile: $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE}]"
 				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules\n"
 				) ;
-			
-			#~ warn DumpTree($tree->{$dependency}, "node depended elsewhere:") ;
 			
 			my $ignored_rules ='' ;
 			
@@ -816,15 +829,15 @@ else
 		# run subpbs
 		#-------------------------------------------------------------
 		
-		delete $inserted_nodes->{$node_name} ; # temporarely eliminate ourself from the existing nodes list
+		delete $inserted_nodes->{$node_name} ; # temporarily eliminate ourself from the existing nodes list
 		
 		my $tree_name = "sub_pbs$sub_pbs_name" ;
 		$tree_name =~ s/.\//_/g ;
 		
 		PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
 			
-		# Synchonize with elements from the subpbs definition, specially build and source dirs 
-		# we overide elements
+		# Synchronize with elements from the subpbs definition, specially build and source dirs 
+		# we override elements
 		my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
 		$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
 		$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
@@ -841,9 +854,6 @@ else
 					$pbs_config,
 					$load_package,
 					) ;
-		
-			
-		#~ PrintError(DumpTree($sub_pbs_config, "subpbs config for package $sub_pbs_name :")) ;
 		
 		my $already_inserted_nodes = $inserted_nodes ;
 		$already_inserted_nodes    = {} if(defined $sub_pbs_hash->{LOCAL_NODES}) ;
@@ -883,8 +893,6 @@ else
 			
 		# make ourself the real node again
 		$inserted_nodes->{$node_name} = $tree ;
-		
-		#~warn Data::Dumper->Dump($sub_tree, "sub_tree:\n") ;
 		}
 	else
 		{

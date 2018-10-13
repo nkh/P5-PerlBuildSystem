@@ -59,8 +59,9 @@ my $dependency_rules = [PBS::Rules::ExtractRules($rules, @$rules_namespaces)];
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-PrintInfo("Depend: $package_alias/$PBS::Output::indentation_depth              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
-my $start_nodes = $PBS::Depend::BuildDependencyTree_calls ;
+my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
+
+PrintInfo("Depend: $package_alias\[$PBS::Output::indentation_depth], nodes:$start_nodes              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -74,10 +75,10 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
-my $end_nodes = $PBS::Depend::BuildDependencyTree_calls ;
+my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 my $added_nodes = $end_nodes - $start_nodes ;
 
-PrintInfo2("Depend: $package_alias/$PBS::Output::indentation_depth/$added_nodes/$end_nodes\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+PrintInfo2("Depended: $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

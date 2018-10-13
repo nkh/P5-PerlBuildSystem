@@ -74,8 +74,8 @@ AddRuleTo 'BuiltIn', 'one source', [ '*/*.o' => \&OnlyOneDependency] ;
 
 PbsUse('Rules/C_depender') ; # for object dependencies cache generation 
 
-AddRuleTo 'BuiltIn', 'h_dpendencies', [ '*/*.o' =>  \&read_dependencies_cache] ;
-AddRuleTo 'BuiltIn', 'h_dpendencies_cache', [ '*/*.dependencies'], 'echo will be generate by compiler > %FILE_TO_BUILD' ;
+AddRuleTo 'BuiltIn', 'h_dependencies', [ '*/*.o' =>  \&read_dependencies_cache] ;
+AddRuleTo 'BuiltIn', 'h_dependencies_cache', [ '*/*.dependencies'], 'echo will be generate by compiler > %FILE_TO_BUILD' ;
 
 1 ;
 
