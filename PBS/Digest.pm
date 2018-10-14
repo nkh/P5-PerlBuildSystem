@@ -295,7 +295,7 @@ for (@files)
 		
 		my $file_md5 = GetFileMD5($_) ;
 		
-		# warp need this data to find out if it's been made invalid by aPbs filechange
+		# warp need this data to find out if it's been made invalid by a Pbsfile change
 		$package_dependencies{__PBS_WARP_DATA}{$_} = $file_md5 ;
 		}
 	else
@@ -466,6 +466,9 @@ for my $entry (values %$node)
 		$node_dependencies{$dependency_name} = GetFileMD5($dependency->{__BUILD_NAME}) ;
 		}
 	}
+
+my $pbsfile = $node->{__INSERTED_AT}{INSERTION_FILE} ;
+$node_dependencies{$pbsfile} = GetFileMD5($pbsfile) ;
 
 return(\%node_dependencies) ;
 }
@@ -745,7 +748,6 @@ if(IsDigestToBeGenerated($package, $node))
 	{
 	if(-e $digest_file_name)
 		{
-		# check with inotify/archive flag first
 		my $current_md5 ;
 		
 		unless(defined ($current_md5 = GetFileMD5($node->{__BUILD_NAME})))
@@ -772,11 +774,10 @@ if(IsDigestToBeGenerated($package, $node))
 			my ($digest_is_different, $why) =
 				$comparator->
 					(
+					$pbs_config,
 					$node->{__BUILD_NAME},
 					$node_digest,
 					$digest,
-					$pbs_config->{DISPLAY_DIGEST},
-					$pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
 					) ;
 					
 			if($digest_is_different)
@@ -877,10 +878,10 @@ return($file_is_modified) ;
 
 sub CompareDigests
 {
-my ($name, $expected_digest, $digest, $display_digest, $display_different_digest_only) = @_ ;
+my ($pbs_config, $name, $expected_digest, $digest) = @_ ;
 
-#~ print DumpTree $expected_digest, 'expected_digest' ;
-#~ print DumpTree $digest, 'digest' ;
+my ($display_digest, $display_different_digest_only) 
+	= ($pbs_config->{DISPLAY_DIGEST}, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY}) ;
 
 my $digest_is_different = 0 ;
 
@@ -892,6 +893,17 @@ for my $key( keys %$expected_digest)
 	{
 	if(exists $digest->{$key})
 		{
+		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+			{
+			if($key =~ /$trigger_regex/)
+				{
+				PrintUser "Trigger (digest_md5): $key =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				$digest->{$key} = "--trigger match  '$trigger_regex'" ;
+
+				last ;
+				}
+			}
+
 		if
 			(
 			   (defined $digest->{$key} && ! defined $expected_digest->{$key})
@@ -928,9 +940,6 @@ if($digest_is_different)
 	{
 	PrintInfo("Digests for file $name are different [$digest_is_different]:\n") if($display_digest) ;
 	
-	#~PrintInfo(Data::Dumper->Dump($digest, "digest:\n")) ;
-	#~PrintInfo(Data::Dumper->Dump($expected_digest, "expected_digest:\n")) ;
-	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
 		my $digest_value = $digest->{$key} || 'undef' ;
@@ -939,7 +948,6 @@ if($digest_is_different)
 		push @digest_different_text, $only_in_file_digest_text ;
 		
 		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
-		#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
 		}
 		
 	for my $key (@different_in_file_digest)
@@ -961,7 +969,6 @@ if($digest_is_different)
 		push @digest_different_text, $only_in_expected_digest_text ;
 		
 		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
-		#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
 		}
 	}
 else
@@ -979,10 +986,10 @@ return($digest_is_different, \@digest_different_text);
 
 sub DigestIsIncluded
 {
-my ($name, $expected_digest, $digest, $display_digest, $display_different_digest_only) = @_ ;
+my ($pbs_config, $name, $expected_digest, $digest) = @_ ;
 
-#~ print DumpTree $expected_digest, 'expected_digest' ;
-#~ print DumpTree $digest, 'digest' ;
+my ($display_digest, $display_different_digest_only) 
+	= ($pbs_config->{DISPLAY_DIGEST}, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY}) ;
 
 my $digest_is_different = 0 ;
 
@@ -1029,7 +1036,6 @@ if($digest_is_different)
 		push @digest_different_text, $only_in_file_digest_text ;
 		
 		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
-		#~ PrintWarning("\tkey '$key' exists only in file digest: $digest_value\n") ; # too verbose
 		}
 		
 	for my $key (@different_in_file_digest)
@@ -1051,7 +1057,6 @@ if($digest_is_different)
 		push @digest_different_text, $only_in_expected_digest_text ;
 		
 		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
-		#~ PrintError("\tkey '$key' exists only in expected digest: $expected_digest_value\n") ;
 		}
 	}
 else
