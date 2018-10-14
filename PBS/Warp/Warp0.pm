@@ -44,6 +44,7 @@ eval
 	($build_result, $build_message, $dependency_tree, $inserted_nodes)
 		= PBS::PBS::Pbs
 			(
+			[$pbs_config->{PBSFILE}],
 			$pbs_config->{PBSFILE},
 			'',    # parent package
 			$pbs_config,

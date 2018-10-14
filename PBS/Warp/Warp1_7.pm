@@ -36,6 +36,8 @@ use File::Slurp ;
 
 sub WarpPbs
 {
+die "pbsfile chain needs to be merged" ;
+ 
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 eval "use GDBM_File;" ;
@@ -111,11 +113,14 @@ if(-e $warp_file)
 		}
 		
 	# check if all pbs files are still the same
+=pod
+todo: remove and check warp dependencies at node level
 	if(0 == CheckFilesMD5($warp_configuration, 1))
 		{
 		PrintWarning("Warp: Differences in Pbsfiles. Warp file needs to be rebuilt.\n") ;
 		$run_in_warp_mode = 0 ;
 		}
+=cut
 	}
 else
 	{
@@ -166,10 +171,6 @@ if($run_in_warp_mode)
 		
 	if($number_of_removed_nodes)
 		{
-		if(defined $pbs_config->{DISPLAY_WARP_BUILD_SEQUENCE})
-			{
-			}
-			
 		eval "use PBS::PBS" ;
 		die $@ if $@ ;
 		
@@ -202,6 +203,7 @@ if($run_in_warp_mode)
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
+					[$pbs_config->{PBSFILE}],
 					$pbs_config->{PBSFILE},
 					'', # parent package
 					$pbs_config,
@@ -222,7 +224,7 @@ if($run_in_warp_mode)
 					(
 					$targets, $new_dependency_tree, $nodes,
 					$pbs_config, $warp_configuration,
-					) ;
+					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
 			# died during depend or check
@@ -234,7 +236,7 @@ if($run_in_warp_mode)
 				(
 				$targets, $new_dependency_tree, $nodes,
 				$pbs_config, $warp_configuration,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				
 				# force a refresh after we build files and generated events
 				# TODO: note that the synch should be by file not global
@@ -280,6 +282,7 @@ else
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
+				[$pbs_config->{PBSFILE}],
 				$pbs_config->{PBSFILE},
 				'', # parent package
 				$pbs_config,
@@ -302,7 +305,7 @@ else
 					$dependency_tree_snapshot,
 					$inserted_nodes_snapshot,
 					$pbs_config,
-					) ;
+					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
 			die $@ ;
@@ -315,7 +318,7 @@ else
 				$dependency_tree,
 				$inserted_nodes,
 				$pbs_config,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 			}
 			
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;

@@ -30,10 +30,11 @@ our @EXPORT = qw(
 		GetDigest
 		
 		GetFileMD5
-		CheckFilesMD5
 		) ;
 					
 our $VERSION = '0.05' ;
+our $display_md5_flush = 0 ;
+our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
 
 use PBS::PBSConfig ;
@@ -86,10 +87,25 @@ my $file = shift ;
 if(defined $file)
 	{
 	delete $md5_cache{$file} ;
+	PrintWarning sprintf "Digest: hash cache flush: $file\n" if $display_md5_flush ;
 	}
 else
 	{
 	%md5_cache = () ;
+	PrintError  "Digest: hash cache flush all.\n" if $display_md5_flush ;
+	}
+}
+
+sub FlushMd5CacheMulti
+{
+my $files = shift ;
+
+for my $file (@$files)
+	{
+	if(defined $file)
+		{
+		FlushMd5Cache($file) ;
+		}
 	}
 }
 
@@ -119,11 +135,9 @@ if(exists $md5_cache{$file})
 	{
 	$md5 = $md5_cache{$file}  ;
 	$cache_hits++ ;
-	#~ PrintInfo "cached $file\n" ;
 	}
 else
 	{
-	#~ PrintInfo "NON cached $file\n" ;
 	if(defined ($md5 = NonCached_GetFileMD5($file)))
 		{
 		$md5_cache{$file} = $md5 ;
@@ -131,9 +145,9 @@ else
 	}
 
 
-my $time += tv_interval($t0_md5, [gettimeofday]) ;
+my $time = tv_interval($t0_md5, [gettimeofday]) ;
 
-PrintInfo2(sprintf "md5 time: %.8f " . scalar(%md5_cache) . " file: $file\n", $time) if $display_md5_time ;
+PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
 
 my $md5_time += $time ;
 
@@ -142,35 +156,6 @@ return($md5) ;
 
 #-------------------------------------------------------------------------------
 # non cached MD5 functions
-#-------------------------------------------------------------------------------
-
-sub CheckFilesMD5
-{
-my $files_md5 = shift ;
-my $display_error = shift ;
-
-while (my($file, $md5) = each(%$files_md5))
-	{
-	my $file_md5 = NonCached_GetFileMD5($file) ; 
-	
-	if(defined $file_md5)
-		{
-		if($md5 ne $file_md5)
-			{
-			PrintError("Different md5 for file '$file'.\n") if $display_error;
-			return(0) ;
-			}
-		}
-	else
-		{
-		PrintError("Can't open '$file' to compute MD5 digest: $!\n") if $display_error;
-		return(0) ;
-		}
-	}
-	
-return(1) ; # all files ok.
-}
-
 #-------------------------------------------------------------------------------
 
 sub NonCached_GetFileMD5
@@ -204,8 +189,8 @@ if(-f $file_name && $fh->open($file_name))
 	my $md5sum = Digest::MD5->new->addfile($fh)->hexdigest ;
 	undef $fh ;
 	
-	my $time += tv_interval($t0_md5, [gettimeofday]) ;
-	PrintUser(sprintf "md5 time: %.8f " . scalar(%md5_cache) . " file: $file_name\n", $time) if $display_md5_time ;
+	my $time = tv_interval($t0_md5, [gettimeofday]) ;
+	PrintUser(sprintf "Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
 
 	return($md5sum) ;
 	}
@@ -225,6 +210,7 @@ sub xx_NonCached_GetFileMD5
 {
 my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
 
+my $t0_md5 = [gettimeofday] ;
 
 if(-f $file_name)
 	{
@@ -232,6 +218,9 @@ if(-f $file_name)
 
 	my $md5sum = xxhash32_hex($bin, 'PBS_xxHash') ;
 	
+	my $time = tv_interval($t0_md5, [gettimeofday]) ;
+	PrintUser(sprintf "Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
+
 	return($md5sum) ;
 	}
 else
@@ -290,13 +279,6 @@ for (@files)
 	
 	if(/^PBSFILE:/)
 		{
-		$file_name = "__PBSFILE" ;
-		s/^PBSFILE:// ;
-		
-		my $file_md5 = GetFileMD5($_) ;
-		
-		# warp need this data to find out if it's been made invalid by a Pbsfile change
-		$package_dependencies{__PBS_WARP_DATA}{$_} = $file_md5 ;
 		}
 	else
 		{
@@ -318,12 +300,6 @@ my $package = caller() ;
 $lib_name = "__PBS_LIB_PATH/$lib_name" ;
 
 $package_dependencies{$package}{$lib_name} = GetFileMD5($file_name) ;
-
-# warp need this data to find out if it's been made invalid by aPbsfile change
-$package_dependencies{__PBS_WARP_DATA}{$file_name} = $package_dependencies{$package}{$lib_name} ;
-
-#warp 1.6
-$package_dependencies{'__WARP1_6'}{$package}{$file_name} = $package_dependencies{$package}{$lib_name} ;
 }
 
 #-------------------------------------------------------------------------------
@@ -608,7 +584,7 @@ for my $name (keys %exclusion_patterns)
 		{
 		PrintWarning
 			(
-			"Overriding ExcludeFromDigest entry '$name' defined at $exclude_from_digest{$package}{$name}{ORIGIN}:\n"
+			"Digest: overriding ExcludeFromDigest entry '$name' defined at $exclude_from_digest{$package}{$name}{ORIGIN}:\n"
 			. "\t$exclude_from_digest{$package}{$name}{PATTERN} "
 			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
 			) ;
@@ -632,7 +608,7 @@ for my $name (keys %force_patterns)
 		{
 		PrintWarning
 			(
-			"Overriding ForceDigestGeneration entry '$name' defined at $force_digest{$package}{$name}{ORIGIN}:\n"
+			"Digest: overriding ForceDigestGeneration entry '$name' defined at $force_digest{$package}{$name}{ORIGIN}:\n"
 			. "\t$force_digest{$package}{$name}{PATTERN} "
 			. "with $force_patterns{$name} defined at $file_name:$line\n"
 			) ;
@@ -663,7 +639,7 @@ for my $name (keys %{$exclude_from_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning("'$node_name' excluded from digest generation by rule: '$name' [$exclude_from_digest{$package}{$name}{PATTERN}]") ;
+			PrintWarning("Digest: '$node_name' excluded from digest generation by rule: '$name' [$exclude_from_digest{$package}{$name}{PATTERN}]") ;
 			PrintWarning(" @ $exclude_from_digest{$package}{$name}{ORIGIN}") if defined $pbs_config->{ADD_ORIGIN} ;
 			PrintWarning(".\n") ;
 			}
@@ -679,7 +655,7 @@ for my $name (keys %{$force_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning("'$node_name' digest generation forced by rule: '$name'") ;
+			PrintWarning("Digest: '$node_name' digest generation forced by rule: '$name'") ;
 			PrintWarning(" @ $force_digest{$package}{$name}{ORIGIN}") if defined $pbs_config->{ADD_ORIGIN} ;
 			PrintWarning(".\n") ;
 			}
@@ -792,7 +768,7 @@ if(IsDigestToBeGenerated($package, $node))
 		}
 	else
 		{
-		PrintInfo("Digest file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
+		PrintInfo("Digest: file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
 		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ["Digest file '$digest_file_name' not found"], 1) ;
 		}
 	
@@ -830,7 +806,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			}
 		}
 
-	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{
@@ -838,7 +814,7 @@ else
 		{
 		unless($current_md5 eq $md5)
 			{
-			PrintDebug "\nCheck: MD5 got '$current_md5', expected '$md5' for '$file'\n"
+			PrintDebug "\nDigest: check hash,  got '$current_md5', expected '$md5' for '$file'\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 				
 			$file_is_modified++ ;
@@ -846,7 +822,7 @@ else
 		}
 	else
 		{
-		PrintDebug "\nCheck: $@, no file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
+		PrintDebug "\nDigest: no such file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
 		
 		$file_is_modified++ ;
 		}
@@ -861,14 +837,14 @@ else
 
 			$file_is_modified++ ;
 
-			PrintDebug "\nCheck: --triger match: $file\n"
+			PrintDebug "\nDigest: --triger match: $file\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 
 			last ;
 			}
 		}
 	
-	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 
 return($file_is_modified) ;
@@ -938,7 +914,7 @@ my @digest_different_text ;
 
 if($digest_is_different)
 	{
-	PrintInfo("Digests for file $name are different [$digest_is_different]:\n") if($display_digest) ;
+	PrintInfo("Digest: file: $name differences [$digest_is_different]:\n") if($display_digest) ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
@@ -973,7 +949,7 @@ if($digest_is_different)
 	}
 else
 	{
-	my $digest_is_identical = "Digest for file '$name' is identical" ;
+	my $digest_is_identical = "Digest: file '$name' no difference" ;
 	push @digest_different_text, $digest_is_identical ;
 	
 	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
@@ -1026,7 +1002,7 @@ my @digest_different_text ;
 
 if($digest_is_different)
 	{
-	PrintInfo("Digests for file $name are diffrent [$digest_is_different]:\n") if($display_digest) ;
+	PrintInfo("Digest: file $name differences [$digest_is_different]:\n") if($display_digest) ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
@@ -1061,7 +1037,7 @@ if($digest_is_different)
 	}
 else
 	{
-	my $digest_is_identical = "Digests for file '$name' are identical" ;
+	my $digest_is_identical = "Digests: file '$name' no differences" ;
 	push @digest_different_text, $digest_is_identical ;
 		
 	PrintInfo("$digest_is_identical.\n") if($display_digest && ! $display_different_digest_only) ;
@@ -1119,7 +1095,7 @@ if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 	{
 	if(-e $digest_file_name)
 		{
-		PrintInfo("Removing digest file: '$digest_file_name'. Node is virtual.\n") ;
+		PrintInfo("Digest: removing digest file: '$digest_file_name', node is virtual.\n") ;
 		unlink($digest_file_name) ;
 		}
 		
@@ -1164,7 +1140,7 @@ sub GetDigest
 my $t0_generate_digest_get = [gettimeofday] ;
 my $node = shift ;
 
-PrintDebug "$node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
+PrintDebug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
 
 #TODO: Add plugins to digest  map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
 # TODO: Add pbs install to digest

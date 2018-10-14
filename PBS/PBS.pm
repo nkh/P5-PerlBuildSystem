@@ -67,6 +67,7 @@ my $t0 = [gettimeofday];
 $PBS::Output::indentation_depth++ ;
 $pbs_runs++ ;
 
+my $pbsfile_chain        = shift // [] ;
 my $Pbsfile              = shift ;
 my $parent_package       = shift ;
 my $pbs_config           = shift ;
@@ -178,6 +179,7 @@ tie my %tree_hash, "Tie::Hash::Indexed" ;
 	__DEPENDENCY_TO => {PBS => "Perl Build System [$PBS::Output::indentation_depth]"},
 	__INSERTED_AT   => 
 				{
+				PBSFILE_CHAIN          => $pbsfile_chain,
 				INSERTION_FILE         => $Pbsfile,
 				INSERTION_PACKAGE      => 'PBS::PBS::Pbs',
 				INSERTION_LOAD_PACKAGE => 'Root load',
@@ -368,6 +370,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		($build_result, $build_message)
 			= PBS::DefaultBuild::DefaultBuild
 				(
+				$pbsfile_chain,
 				$Pbsfile,
 				$package,
 				$load_package,
@@ -697,6 +700,7 @@ PBS::PBS - Perl Build System.
 	use PBS::PBS ;
 	PBS::PBS::Pbs
 		(
+		[$pbs_config->{PBSFILE}],
 		$pbs_config->{PBSFILE},
 		'',    # parent package
 		$pbs_config,

@@ -647,7 +647,7 @@ sub TerminateBuilders
 my ($builders) = @_;
 my $number_of_builders = @$builders ;
 
-PrintInfo "Parallel build:  terminating build processes [$number_of_builders]\n" ;
+PrintInfo "Parallel build: terminating build processes [$number_of_builders]\n" ;
 
 for my $builder (@$builders)
 	{

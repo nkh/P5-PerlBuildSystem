@@ -926,7 +926,11 @@ EOT
 		'',
 
 	'display_trigger'                       => \$pbs_config->{DEBUG_DISPLAY_TRIGGER},
-		'(DF) how which files are processed and triggered',
+		'(DF) display which files are processed and triggered',
+		'',
+
+	'display_trigger_match_only'            => \$pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY},
+		'(DF) display only files which are triggered',
 		'',
 
 	'tnt|tree_node_triggered'           => \$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED},
@@ -1154,16 +1158,12 @@ EOT
 		"no pre-build warp will be generated.",
 		'',
 		
+	'no_post_build_warp'             => \$pbs_config->{NO_POST_BUILD_WARP},
+		"no post-build warp will be generated.",
+		'',
+		
 	'no_warp'             => \$pbs_config->{NO_WARP},
 		"no warp will be used.",
-		'',
-		
-	'dwt|display_warp_tree'            => \$pbs_config->{DISPLAY_WARP_TREE},
-		"Display the warp tree. Nodes to rebuild have a '*' prepended and are displayed in the error color.",
-		'',
-		
-	'dwbs|display_warp_build_sequence' => \$pbs_config->{DISPLAY_WARP_BUILD_SEQUENCE},
-		"Display the warp build sequence.",
 		'',
 		
 	'dww|display_warp_generated_warnings'  => \$pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS},

@@ -80,6 +80,7 @@ sub GetWarpConfiguration
 {
 my $pbs_config = shift ;
 my $warp_configuration = shift ;
+my $pbsfiles = shift ;
 
 my $pbs_prf = $pbs_config->{PBS_RESPONSE_FILE} ;
 
@@ -102,12 +103,6 @@ unless(defined $warp_configuration)
 	else
 		{
 		$warp_configuration = {} ;
-		}
-		
-	my $package_digest = PBS::Digest::GetPackageDigest('__PBS_WARP_DATA') ;
-	for my $entry (keys %$package_digest)
-		{
-		$warp_configuration->{$entry} = $package_digest->{$entry} ;
 		}
 	}
 

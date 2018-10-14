@@ -12,12 +12,12 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.07' ;
+our $VERSION = '0.09' ;
 
 #-------------------------------------------------------------------------------
 
 use PBS::Output ;
-use PBS::Log ;
+#use PBS::Log ;
 use PBS::Digest ;
 use PBS::Constants ;
 use PBS::Plugin;
@@ -35,6 +35,59 @@ use IO::Select ;
 
 #-------------------------------------------------------------------------------
 
+sub CheckWarpConfiguration
+{
+my ($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) = @_ ;
+
+for my $file (sort {$warp_dependents->{$b}{MAX_LEVEL} <=> $warp_dependents->{$a}{MAX_LEVEL} } keys %$warp_configuration)
+	{
+	# remove all level nodes and their parents
+	my @nodes_triggered ;
+ 
+	if ($IsFileModified->($pbs_config, $file, $warp_configuration->{$file}))
+		{
+		@nodes_triggered = 
+			grep{ exists $nodes->{$_} } 
+				map {$node_names->[$_]} @{$warp_dependents->{$file}{LEVEL}} ;
+
+		# remove all sub nodes
+		for my $sub_level (keys %{$warp_dependents->{$file}{SUB_LEVEL}})
+			{
+			push @nodes_triggered,
+				grep{ exists $nodes->{$_} } 
+					map {$node_names->[$_]} @{$warp_dependents->{$sub_level}{LEVEL}} ;
+			}
+		}
+
+	delete @{$nodes}{@nodes_triggered} ;
+
+	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
+		{
+		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
+			{
+			PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n"
+				if @nodes_triggered ;
+			}
+		else
+			{
+			PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n";
+			}
+		}
+	elsif (@nodes_triggered && $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
+		{
+		PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n"
+		}
+
+	if ($pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_triggered)
+		{
+		PrintInfo "Warp Prune:\n" ;
+		
+		PrintInfo2 $PBS::Output::indentation . "$_\n" for sort @nodes_triggered ;
+		}
+	}
+}
+
+
 sub WarpPbs
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
@@ -46,7 +99,7 @@ my $warp_file= "$warp_path/Pbsfile_$warp_signature.pl" ;
 $PBS::pbs_run_information->{WARP_1_5}{FILE} = $warp_file ;
 PrintInfo "Warp file name: '$warp_file'\n" if defined $pbs_config->{DISPLAY_WARP_FILE_NAME} ;
 
-my ($nodes, $node_names, $global_pbs_config, $insertion_file_names) ;
+my ($nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents) ;
 my ($version, $number_of_nodes_in_the_dependency_tree, $warp_configuration) ;
 
 my $run_in_warp_mode = 1 ;
@@ -56,11 +109,14 @@ my $t0_warp = [gettimeofday];
 
 # Loading of warp file can be eliminated if:
 # we add the pbsfiles to the watched files
-# we are registred with the watch server (it will have the nodes already)
+# we are registered with the watch server (it will have the nodes already)
+
+#todo: remove
+$PBS::Digest::display_md5_flush++ ;
 
 if(-e $warp_file)
 	{
-	($nodes, $node_names, $global_pbs_config, $insertion_file_names,
+	($nodes, $node_names, $global_pbs_config, $insertion_file_names,  $warp_dependents,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration)
 		= do $warp_file or do
 			{
@@ -106,13 +162,6 @@ if(-e $warp_file)
 		PrintWarning2("Warp: bad version. Warp file needs to be rebuilt.\n") ;
 		$run_in_warp_mode = 0 ;
 		}
-		
-	# check if all pbs files are still the same
-	if(0 == CheckFilesMD5($warp_configuration, 1))
-		{
-		PrintWarning("Warp: Differences in Pbsfiles. Warp file needs to be rebuilt.\n") ;
-		$run_in_warp_mode = 0 ;
-		}
 	}
 else
 	{
@@ -147,7 +196,10 @@ if($run_in_warp_mode)
 		}
 
 	$IsFileModified ||= \&PBS::Digest::IsFileModified ;
-	
+
+	# remove pbsfile triggered nodes and other global dependencies
+	CheckWarpConfiguration($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) ;
+
 	# check and remove all nodes that would trigger
 	my ($node_mismatch, $trigger_log)
 		 = $pbs_config->{JOBS} != 0
@@ -155,6 +207,9 @@ if($run_in_warp_mode)
 		  	: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
+
+#todo: remove
+$PBS::Digest::display_md5_compute++ ;
 
 	# rebuild the data PBS needs from the warp file for the nodes that have not triggered
 	for my $node (keys %$nodes)
@@ -210,10 +265,6 @@ if($run_in_warp_mode)
 		
 	if($number_of_removed_nodes)
 		{
-		if(defined $pbs_config->{DISPLAY_WARP_BUILD_SEQUENCE})
-			{
-			}
-			
 		eval "use PBS::PBS" ;
 		die $@ if $@ ;
 		
@@ -245,6 +296,7 @@ if($run_in_warp_mode)
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
+					[$pbs_config->{PBSFILE}],
 					$pbs_config->{PBSFILE},
 					'', # parent package
 					$pbs_config,
@@ -260,12 +312,12 @@ if($run_in_warp_mode)
 			{
 			if($@ =~ /^BUILD_FAILED/)
 				{
-				# this exception occures only when a Builder fails so we can generate a warp file
+				# this exception occurs only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
 					$targets, $new_dependency_tree, $nodes,
 					$pbs_config, $warp_configuration,
-					) ;
+					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
 			# died during depend or check
@@ -277,7 +329,7 @@ if($run_in_warp_mode)
 				(
 				$targets, $new_dependency_tree, $nodes,
 				$pbs_config, $warp_configuration,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				
 			# force a refresh after we build files and generated events
 			# TODO: note that the synch should be by file not global
@@ -323,6 +375,7 @@ else
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
+				[$pbs_config->{PBSFILE}],
 				$pbs_config->{PBSFILE},
 				'', # parent package
 				$pbs_config,
@@ -345,7 +398,7 @@ else
 					$dependency_tree_snapshot,
 					$inserted_nodes_snapshot,
 					$pbs_config,
-					) ;
+					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
 			die $@ ;
@@ -358,13 +411,30 @@ else
 				$dependency_tree,
 				$inserted_nodes,
 				$pbs_config,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 			}
 			
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	}
 
 return(@build_result) ;
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+sub FlushMd5CacheMulti
+{
+my ($file_triggered_names, $nodes) = @_ ;
+
+my @located_nodes = 
+	map
+	{
+	exists $nodes->{$_}{__LOCATION}
+		? $nodes->{$_}{__LOCATION} . substr($_, 1) 
+		: $_ ;
+	} @$file_triggered_names ;
+
+PBS::Digest::FlushMd5CacheMulti(\@located_nodes) ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -425,7 +495,11 @@ if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 		push @checker_finished, @finished
 		}
 
-	delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+	# remove from dependency graph
+	my @file_triggered_names = keys %all_nodes_triggered ;
+
+	FlushMd5CacheMulti(\@file_triggered_names, $nodes) ; # nodes must still be in $nodes
+	delete @{$nodes}{@file_triggered_names} ;
 	}
 else
 	{
@@ -469,9 +543,14 @@ else
 			push @checker_finished, @finished
 			}
 
-		delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+		# remove from dependency graph
+		my @file_triggered_names = keys %all_nodes_triggered ;
 
-		delete $nodes_per_level[$level] ; # done with the level
+		FlushMd5CacheMulti(\@file_triggered_names, $nodes) ; # nodes must still be in $nodes
+		delete @{$nodes}{@file_triggered_names} ;
+
+		# done with the level
+		delete $nodes_per_level[$level] ;
 
 		# remove trigger nodes from subsequent checks
 		for my $nodes_per_level (@nodes_per_level)
@@ -480,8 +559,6 @@ else
 			}
 		}
 	}
-
-
 
 TerminateCheckers($checkers) ;
 
@@ -651,8 +728,7 @@ while(defined (my $command_and_args = <$parent_channel>))
 			{
 			(undef, my @nodes_to_check) = @command_and_args ;
 
-			# the main process cache is synchronized with our cache
-			# flush it so we only have digests for the nodes to check
+			# checker caches are synchronized after process checks nodes, start with empty cache 
 			PBS::Digest::FlushMd5Cache() ;
 			
 			my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
@@ -800,7 +876,11 @@ if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 		$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
 		}
 
-	delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+	# remove from dependency graph
+	my @file_triggered_names = keys %all_nodes_triggered ;
+
+	FlushMd5CacheMulti(\@file_triggered_names, $nodes) ; # nodes must still be in $nodes
+	delete @{$nodes}{@file_triggered_names} ;
 	}
 else
 	{
@@ -823,9 +903,14 @@ else
 			$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
 			}
 
-		delete @{$nodes}{keys %all_nodes_triggered} ; # remove from dependency graph
+		# remove from dependency graph
+		my @file_triggered_names = keys %all_nodes_triggered ;
 
-		delete $nodes_per_level[$level] ; # done with the level
+		FlushMd5CacheMulti(\@file_triggered_names, $nodes) ; # nodes must still be in $nodes
+		delete @{$nodes}{@file_triggered_names} ;
+
+		# done with the level
+		delete $nodes_per_level[$level] ;
 
 		# remove trigger nodes from subsequent checks
 		for my $nodes_per_level (@nodes_per_level)
@@ -968,7 +1053,10 @@ sub GenerateWarpFile
 my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration, $warp_message) = @_ ;
 $warp_message //='' ;
 
-$warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ; #$warp_configuration can be undef or from a warp file
+use Data::TreeDumper ;
+PrintDebug DumpTree $inserted_nodes->{'./pbsfile_2/pbsfile_5/25.objects'}, 'node', MAX_DEPTH => 3 ;
+
+$warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ;
 
 PrintInfo("\e[KWarp: generation.$warp_message\n") ;
 my $t0_warp_generate =  [gettimeofday] ;
@@ -977,7 +1065,7 @@ my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targ
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_5';
 mkpath($warp_path) unless(-e $warp_path) ;
 
-PBS::Warp::GenerateWarpInfoFile('1.5',$warp_path, $warp_signature, $targets, $pbs_config) ;
+PBS::Warp::GenerateWarpInfoFile('1.5', $warp_path, $warp_signature, $targets, $pbs_config) ;
 
 my $warp_file= "$warp_path/Pbsfile_$warp_signature.pl" ;
 
@@ -989,7 +1077,7 @@ my $global_pbs_config = # cache to reduce warp file size
 	
 my $number_of_nodes_in_the_dependency_tree = keys %$inserted_nodes ;
 
-my ($nodes, $node_names, $insertion_file_names) = WarpifyTree1_5($inserted_nodes, $global_pbs_config) ;
+my ($nodes, $node_names, $insertion_file_names, $warp_dependents) = WarpifyTree1_5($warp_configuration, $inserted_nodes, $global_pbs_config) ;
 
 open(WARP, ">", $warp_file) or die qq[Can't open $warp_file: $!] ;
 print WARP PBS::Log::GetHeader('Warp', $pbs_config) ;
@@ -1011,7 +1099,14 @@ print WARP "\n\n" ;
 print WARP Data::Dumper->Dump([$insertion_file_names], ['insertion_file_names']) ;
 
 print WARP "\n\n" ;
+#$Data::Dumper::Indent = 0 ;
+print WARP Data::Dumper->Dump([$warp_dependents], ['warp_dependents']) ;
+$Data::Dumper::Indent = 1 ;
+
+print WARP "\n\n" ;
 print WARP Data::Dumper->Dump([$warp_configuration], ['warp_configuration']) ;
+
+
 print WARP "\n\n" ;
 print WARP Data::Dumper->Dump([$VERSION], ['version']) ;
 print WARP Data::Dumper->Dump([$number_of_nodes_in_the_dependency_tree], ['number_of_nodes_in_the_dependency_tree']) ;
@@ -1019,7 +1114,7 @@ print WARP Data::Dumper->Dump([$number_of_nodes_in_the_dependency_tree], ['numbe
 print WARP "\n\n" ;
 
 
-print WARP 'return $nodes, $node_names, $global_pbs_config, $insertion_file_names,
+print WARP 'return $nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration;';
 	
 close(WARP) ;
@@ -1036,13 +1131,16 @@ if($pbs_config->{DISPLAY_WARP_TIME})
 
 sub WarpifyTree1_5
 {
-my $inserted_nodes = shift ;
-my $global_pbs_config = shift ;
+my ($warp_configuration, $inserted_nodes, $global_pbs_config) = @_ ;
 
 my ($package, $file_name, $line) = caller() ;
 
 my (%nodes, @node_names, %nodes_index) ;
 my (@insertion_file_names, %insertion_file_index) ;
+
+my %warp_dependents ;
+
+my $t0_warpify = [gettimeofday];
 
 for my $node (keys %$inserted_nodes)
 	{
@@ -1136,6 +1234,7 @@ for my $node (keys %$inserted_nodes)
 				# this is a new node
 				if(defined $inserted_nodes->{$node}{__MD5} && $inserted_nodes->{$node}{__MD5} ne 'not built yet')
 					{
+					PrintUser "using new node md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
 					$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} ;
 					}
 				else
@@ -1153,6 +1252,7 @@ for my $node (keys %$inserted_nodes)
 				}
 			else
 				{
+				#PrintUser "using old md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
 				# use the old md5
 				$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} ;
 				}
@@ -1162,27 +1262,127 @@ for my $node (keys %$inserted_nodes)
 		{
 		$nodes{$node}{__MD5} = 'not built yet' ; 
 		}
-		
-	unless (exists $nodes_index{$node})
+	
+	my $node_index ;	
+	if (exists $nodes_index{$node})
+		{
+		$node_index = $nodes_index{$node} ;
+		}
+	else
 		{
 		push @node_names, $node ;
-		$nodes_index{$node} = $#node_names;
+		$node_index = $nodes_index{$node} = $#node_names;
 		}
-		
+
 	for my $dependency (keys %{$inserted_nodes->{$node}})
 		{
 		next if $dependency =~ /^__/ ;
-		
-		push @{$nodes{$dependency}{__DEPENDENT}}, $nodes_index{$node} ;
+		push @{$nodes{$dependency}{__DEPENDENT}}, $node_index ;
 		}
-		
+	
+	# h files have no pbsfile chain, temporary fix in place
+	$nodes{$node}{__INSERTED_AT}{PBSFILE_CHAIN} = $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [] ;
+	
+	my @pbsfile_chain = @{$inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
+
+	my $node_pbsfile = pop @pbsfile_chain ;
+
+	next unless defined $node_pbsfile ; # nodes inserted by pbs, ie: deppendencies
+
+	$warp_dependents{$node_pbsfile}{LEVEL}{$node} = $node_index ;
+	$warp_dependents{$node_pbsfile}{MAX_LEVEL} = @pbsfile_chain ;
+
+	for my $pbsfile (@pbsfile_chain)
+		{
+		# a pbsfile change means that we do not know if the warp graph is correct anymore
+		# as the change may have added or removed sub graphs
+
+		# a pbsfile change means that the nodes, above the current level, must be triggered (removing them)
+		# for a rebuild _and_ that the nodes below must be removes for the graph to be correct
+
+		# in this loop the pbsfile p2 is part of the chain, ie: N2: p1->p2->p3
+		# so we can trigger N2 if a pbsfile has changed.
+
+		# say that the graph is like this Nroot: N2
+		# when pbs checks Nroot, it finds it untriggered and the build is considered done,
+		# the Nroot need to be triggered too
+
+		# the right way to trigger nodes above is to follow the dependency chain and remove
+		# the nodes along the way (that's done when warp checking , this only builds the list)
+		# and remove all the nodes in the levels below
+
+		# nodes for pbsfile level and below, to remove
+		#$warp_dependents{$node_pbsfile}{PARENT_LEVEL}{$pbsfile}++ ;
+
+		$warp_dependents{$pbsfile}{SUB_LEVEL}{$node_pbsfile}++ ;
+		#$warp_dependents{$pbsfile}{SUB_LEVEL_NODES}{$node} = $node_index ;
+		}
+
 	if (exists $inserted_nodes->{$node}{__TRIGGER_INSERTED})
 		{
 		$nodes{$node}{__TRIGGER_INSERTED} = $inserted_nodes->{$node}{__TRIGGER_INSERTED} ;
 		}
 	}
+
+#todo: file dependencies, specially pbs libs should be added to the warp in the same way pbsfiles are
+
+my $t0_parent = [gettimeofday];
+
+# add nodes level above, to trigger
+for my $file (keys %warp_dependents)
+	{
+	$warp_configuration->{$file} = GetFileMD5($file) ;
+
+	my $dependents = $warp_dependents{$file} ;
+
+	for my $node ( keys %{ $dependents->{LEVEL} } )
+		{
+		for my $parent (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } GetParents($inserted_nodes->{$node})) 
+			{
+			$dependents->{LEVEL}{$parent} = $nodes_index{$parent} unless exists $dependents->{LEVEL}{$parent} ;
+			}
+		}
+
+	use Data::TreeDumper ;
+	#PrintInfo DumpTree $dependents, "$file dependents: + parents " . scalar(keys  %{$dependents->{LEVEL}}) ;
+
+	# turn dependencies names to indexes used in the warp file
+	$dependents->{LEVEL} = [values %{$dependents->{LEVEL}}] ;
+	}
+
+my $parent_time = tv_interval($t0_parent, [gettimeofday]) ;
+my $warpify_time = tv_interval($t0_warpify, [gettimeofday]) ;
+PrintInfo(sprintf("Warp parent time: %0.2f s.\n", $parent_time)) ;
+PrintInfo(sprintf("Warp warpify time: %0.2f s.\n", $warpify_time)) ;
 	
-return(\%nodes, \@node_names, \@insertion_file_names) ;
+#use Data::TreeDumper ;
+#PrintDebug DumpTree \%pbsfile_dependents_indexed, "indexed" ;
+
+return(\%nodes, \@node_names, \@insertion_file_names, \%warp_dependents) ;
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+use Memoize ;
+memoize('GetParents') ;
+
+sub GetParents
+{
+my ($node) = @_ ;
+
+my @parents ;
+
+if(exists $node->{__PARENTS})
+	{
+	push @parents, @{$node->{__PARENTS}} ;
+
+	for my $parent (@{$node->{__PARENTS}}) 
+		{
+		push @parents, GetParents($parent) ;
+		}
+	}
+
+return @parents ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------

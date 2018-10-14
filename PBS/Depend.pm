@@ -45,6 +45,7 @@ return
 
 sub CreateDependencyTree
 {
+my $pbsfile_chain    = shift // [] ;
 my $Pbsfile          = shift ;
 my $package_alias    = shift ;
 my $load_package     = PBS::PBS::CanonizePackageName(shift) ;
@@ -85,7 +86,8 @@ if
 	|| defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}
 	)
 	{
-	PrintInfo("Depending '$node_name'\n")  ;
+	PrintInfo("Depending: '$node_name'\n")
+		if ($node_name !~ /^__/) ;
 	}
 
 # check if the current node has matching post build rules
@@ -450,18 +452,12 @@ for my $dependency_name (keys %$tree)
 		}
 	}
 
-#-------------------------------------------------------------------------
-# handle IGNORE_LOCAL_RULES, ...
-#-------------------------------------------------------------------------
-if(@sub_pbs)
+if(@sub_pbs > 1)
 	{
-	unless (@sub_pbs == 1)
-		{
-		PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
-		PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
-		
-		Carp::croak  ;
-		}
+	PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
+	PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
+	
+	Carp::croak  ;
 	}
 	
 
@@ -548,6 +544,7 @@ for my $triggered_node_data (values %triggered_nodes)
 		__NAME               => $triggered_node_name,
 		__DEPENDENCY_TO      => {PBS => 'Perl Build System'},
 		__INSERTED_AT        => {
+					PBSFILE_CHAIN          => $pbsfile_chain,
 					INSERTION_FILE         => $Pbsfile,
 					INSERTION_PACKAGE      => $package_alias,
 					INSERTION_LOAD_PACKAGE => $load_package,
@@ -570,6 +567,7 @@ for my $triggered_node_data (values %triggered_nodes)
 	
 	CreateDependencyTree
 		(
+		$pbsfile_chain,
 		$Pbsfile,
 		$package_alias,
 		$load_package,
@@ -690,6 +688,7 @@ for my $dependency (@dependencies)
 		$tree->{$dependency_name}{__PBS_CONFIG}       = $pbs_config ;
 		
 		$tree->{$dependency_name}{__INSERTED_AT}      = {
+								PBSFILE_CHAIN          => $pbsfile_chain,
 								INSERTION_FILE         => $Pbsfile,
 								INSERTION_PACKAGE      => $package_alias,
 								INSERTION_LOAD_PACKAGE => $load_package,
@@ -784,7 +783,18 @@ if(@has_matching_non_subpbs_rules)
 			
 		unless(exists $tree->{$dependency}{__DEPENDED})
 			{
-			CreateDependencyTree($Pbsfile, $package_alias, $load_package, $pbs_config, $tree->{$dependency}, $config, $inserted_nodes, $dependency_rules) ;
+			CreateDependencyTree
+				(
+				$pbsfile_chain,
+				$Pbsfile,
+				$package_alias,
+				$load_package,
+				$pbs_config,
+				$tree->{$dependency},
+				$config,
+				$inserted_nodes,
+				$dependency_rules
+				) ;
 			}
 		}
 	}
@@ -803,7 +813,8 @@ else
 		# the node had no dependencie but a single subpbs matched
 		
 		my $sub_pbs_hash    = $sub_pbs[0]{SUBPBS} ;
-		my $sub_pbs_name    = $sub_pbs_hash->{PBSFILE} ;
+
+		my $unlocated_sub_pbs_name = my $sub_pbs_name = $sub_pbs_hash->{PBSFILE} ;
 		my $sub_pbs_package = $sub_pbs_hash->{PACKAGE} ;
 		
 		my $alias_message = '' ;
@@ -861,6 +872,7 @@ else
 		my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
 			= PBS::PBS::Pbs
 				(
+				[@$pbsfile_chain, $sub_pbs_name],
 				$sub_pbs_name,
 				$load_package,
 				$sub_pbs_config,

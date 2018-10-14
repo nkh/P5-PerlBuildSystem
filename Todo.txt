@@ -1,4 +1,16 @@
 
+
+parallel checker slower  on big project
+
+md5 not updated in warp but updated in digest in parallel build!
+
+warp regeneration too long time, //
+
+
+characters missing (-ddr to show top level)
+   __PBS_sub_pb_tes_test_pbsfile__pbsfile =~
+
+
 remove creator and PBS_FORCE_ type (only used by creators)
 	can probably be replaced by a mechanism like the new C depender
 

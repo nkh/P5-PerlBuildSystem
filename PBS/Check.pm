@@ -304,7 +304,12 @@ for my $dependency (keys %$tree)
 		if($tree->{$dependency}{__TRIGGERED})
 			{
 			$triggered = 1 ; # current node also need to be build
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => ''} ;
+
+			my $reason = $tree->{$dependency}{__TRIGGERED}[0]{NAME} ;
+			$reason .= ', ... (' . scalar(@{$tree->{$dependency}{__TRIGGERED}}) . ')'
+					if scalar(@{$tree->{$dependency}{__TRIGGERED}}) > 1 ;
+
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => $reason} ;
 			
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
@@ -330,7 +335,11 @@ for my $dependency (keys %$tree)
 		
 		if($subdependency_triggered)
 			{
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => ''} ;
+			my $reason = $tree->{$dependency}{__TRIGGERED}[0]{NAME} ;
+			$reason .= ', ... (' . scalar(@{$tree->{$dependency}{__TRIGGERED}}) . ')'
+					if scalar(@{$tree->{$dependency}{__TRIGGERED}}) > 1 ;
+
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => $reason} ;
 			$triggered++ ;
 			
 			# data used to parallelize build
@@ -354,7 +363,7 @@ for my $dependency (keys %$tree)
 			}
 		}
 
-	PrintInfo2 "Trigger: $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+	PrintInfo2 "Trigger: $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
 	}
 
 if(exists $tree->{__VIRTUAL})
@@ -406,7 +415,7 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 			}
 		}
 
-	PrintInfo2 "Trigger: $name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+	PrintInfo2 "Trigger: $name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
 	}
 
 # node is checked, add it to the build sequence if triggered

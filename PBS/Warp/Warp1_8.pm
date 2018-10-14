@@ -38,6 +38,7 @@ use constant RUN_IN_WARP_MODE => 1 ;
 
 sub WarpPbs
 {
+die "pbsfile chain needs to be merged" ;
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -75,10 +76,6 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 	{
 	if($number_of_removed_nodes)
 		{
-		if(defined $pbs_config->{DISPLAY_WARP_BUILD_SEQUENCE})
-			{
-			}
-			
 		eval "use PBS::PBS" ;
 		die $@ if $@ ;
 		
@@ -106,6 +103,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs
 					(
+					[$pbs_config->{PBSFILE}],
 					$pbs_config->{PBSFILE},
 					'',    # parent package
 					$pbs_config,
@@ -126,7 +124,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 					(
 					$targets, $new_dependency_tree, $nodes,
 					$pbs_config, $warp_configuration,
-					) ;
+					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
 			# died during depend or check
@@ -138,7 +136,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 				(
 				$targets, $new_dependency_tree, $nodes,
 				$pbs_config, $warp_configuration,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				
 			# force a refresh after we build files and generated events
 			# TODO: note that the synch should be by file not global or a single failure 
@@ -185,6 +183,7 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 		($build_result, $build_message, $dependency_tree, $inserted_nodes)
 			= PBS::PBS::Pbs
 				(
+				[$pbs_config->{PBSFILE}],
 				$pbs_config->{PBSFILE},
 				'',    # parent package
 				$pbs_config,
@@ -214,7 +213,7 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 				$dependency_tree_snapshot,
 				$inserted_nodes_snapshot,
 				$pbs_config,
-				) ;
+				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 			}
 			
 		die $@ ;
@@ -227,7 +226,7 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
-			) ;
+			)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 		}
 			
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
