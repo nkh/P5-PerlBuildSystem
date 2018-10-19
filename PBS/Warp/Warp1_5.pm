@@ -111,9 +111,6 @@ my $t0_warp = [gettimeofday];
 # we add the pbsfiles to the watched files
 # we are registered with the watch server (it will have the nodes already)
 
-#todo: remove
-$PBS::Digest::display_md5_flush++ ;
-
 if(-e $warp_file)
 	{
 	($nodes, $node_names, $global_pbs_config, $insertion_file_names,  $warp_dependents,
@@ -202,14 +199,11 @@ if($run_in_warp_mode)
 
 	# check and remove all nodes that would trigger
 	my ($node_mismatch, $trigger_log)
-		 = $pbs_config->{JOBS} != 0
+		 = $pbs_config->{WARP_CHECK_JOBS} != 0
 			? ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) 
 		  	: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
-
-#todo: remove
-$PBS::Digest::display_md5_compute++ ;
 
 	# rebuild the data PBS needs from the warp file for the nodes that have not triggered
 	for my $node (keys %$nodes)
@@ -456,7 +450,7 @@ for my $node (keys %$nodes)
 	}
 
 my ($number_trigger_nodes, $trigger_log) = (0, '') ;
-my $number_of_check_processes = $pbs_config->{JOBS} ;
+my $number_of_check_processes = $pbs_config->{WARP_CHECK_JOBS} ;
 	
 my $checkers = StartCheckers($number_of_check_processes, $pbs_config, $nodes, $node_names, $IsFileModified)  ;
 
@@ -1053,9 +1047,6 @@ sub GenerateWarpFile
 my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuration, $warp_message) = @_ ;
 $warp_message //='' ;
 
-use Data::TreeDumper ;
-PrintDebug DumpTree $inserted_nodes->{'./pbsfile_2/pbsfile_5/25.objects'}, 'node', MAX_DEPTH => 3 ;
-
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ;
 
 PrintInfo("\e[KWarp: generation.$warp_message\n") ;
@@ -1234,7 +1225,7 @@ for my $node (keys %$inserted_nodes)
 				# this is a new node
 				if(defined $inserted_nodes->{$node}{__MD5} && $inserted_nodes->{$node}{__MD5} ne 'not built yet')
 					{
-					PrintUser "using new node md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
+					#PrintUser "using new node md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
 					$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} ;
 					}
 				else

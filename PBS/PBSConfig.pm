@@ -239,6 +239,9 @@ else
 		}
 	}
 
+$pbs_config->{WARP_CHECK_JOBS} //= 4 ;
+$pbs_config->{WARP_CHECK_JOBS} = 4 if $pbs_config->{WARP_CHECK_JOBS} < 0 ;
+
 $pbs_config->{DISPLAY_WARP_CHECKED_NODESY}++ if $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 
 if(defined $pbs_config->{DISPLAY_PBS_TIME})

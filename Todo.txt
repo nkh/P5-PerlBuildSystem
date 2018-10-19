@@ -1,9 +1,4 @@
 
-
-parallel checker slower  on big project
-
-md5 not updated in warp but updated in digest in parallel build!
-
 warp regeneration too long time, //
 
 
