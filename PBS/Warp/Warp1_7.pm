@@ -144,7 +144,7 @@ if($run_in_warp_mode)
 			$PBS::pbs_run_information->{WARP_1_7}{VERIFICATION_TIME} = $warp_verification_time ;
 			
 			my $warp_total_time = tv_interval($t0_warp, [gettimeofday]) ;
-			PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_total_time)) ;
+			PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_total_time)) ;
 			$PBS::pbs_run_information->{WARP_1_7}{TOTAL_TIME} = $warp_total_time ;
 			}
 			
@@ -165,7 +165,7 @@ if($run_in_warp_mode)
 		$PBS::pbs_run_information->{WARP_1_7}{VERIFICATION_TIME} = $warp_verification_time ;
 		
 		my $warp_total_time = tv_interval($t0_warp, [gettimeofday]) ;
-		PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_total_time)) ;
+		PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_total_time)) ;
 		$PBS::pbs_run_information->{WARP_1_7}{TOTAL_TIME} = $warp_total_time ;
 		}
 		
@@ -581,7 +581,7 @@ GenerateWarpBlob($header, $blob, $warp_file) ;
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
 	my $warp_generation_time = tv_interval($t0_warp_generate, [gettimeofday]) ;
-	PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_generation_time)) ;
+	PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_generation_time)) ;
 	$PBS::pbs_run_information->{WARP_1_7}{GENERATION_TIME} = $warp_generation_time ;
 	}
 }

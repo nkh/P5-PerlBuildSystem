@@ -80,7 +80,7 @@ PBS::Depend::CreateDependencyTree
 my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 my $added_nodes = $end_nodes - $start_nodes ;
 
-PrintInfo2("Depended: $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+PrintInfo2("Depend: end $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -92,14 +92,13 @@ return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
-PrintInfo "\e[KDepend: $pbs_runs pbsfile$plural.\n" ;
+PrintInfo "\e[KDepend: pbsfile$plural: $pbs_runs\n" ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
 	PrintInfo(sprintf("Depend: time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
 
-PrintInfo("\nChecking:\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
 if($build_point eq '')
@@ -161,7 +160,7 @@ eval
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				PrintInfo("\nChecking Trigger Inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+				PrintInfo("\nCheck: trigger inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 				my @triggered_build_sequence ;
 				
 				PBS::Check::CheckDependencyTree
@@ -217,13 +216,6 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-unless($pbs_config->{DISPLAY_NO_STEP_HEADER})
-	{
-	PrintInfo("\nBuild: start") ;
-	PrintInfo(" @ '$build_point'") if $build_point ne '' ;
-	print "\n" ;
-	}
-
 # we must get the number of nodes in the tree from the tree itself as we might have multiple %inserted_nodes if
 # subpbses are run in LOCALE_NODES mode
 my $number_of_nodes_in_the_dependency_tree = 0 ;
@@ -244,7 +236,8 @@ my $node_counter = sub
 		
 DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_counter) ;
 		
-PrintInfo("Build: nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree nodes\n") ;
+my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
+PrintInfo("Build: ${build_at}nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree\n") ;
 
 my ($build_result, $build_message) ;
 

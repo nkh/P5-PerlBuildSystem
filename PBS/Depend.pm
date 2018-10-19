@@ -86,7 +86,7 @@ if
 	|| defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}
 	)
 	{
-	PrintInfo("Depending: '$node_name'\n")
+	PrintInfo("Depend: '$node_name'\n")
 		if ($node_name !~ /^__/) ;
 	}
 
@@ -104,7 +104,7 @@ for my $post_build_rule (@post_build_rules)
 			my $post_build_command_info =  $post_build_rule->{NAME}
 							. $post_build_rule->{ORIGIN} ;
 								
-			PrintInfo("$node_name has matching post build command, '$post_build_command_info'\n") ;
+			PrintInfo("Depend: $node_name has matching post build command, '$post_build_command_info'\n") ;
 			}
 		}
 	}
@@ -174,25 +174,25 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						}
 					else
 						{
-						die ERROR "Node sub is not a sub in array at rule $rule_info\n" ;
+						die ERROR "Build: node sub is not a sub in array at rule $rule_info\n" ;
 						}
 					}
 				}
 			else
 				{
-				die ERROR "Node sub is not a sub @ $rule_info\n" ;
+				die ERROR "Build: node sub is not a sub @ $rule_info\n" ;
 				}
 				
 			if(@$subs)
 				{
-				PrintInfo 'Running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'\n" 
+				PrintInfo 'Build: running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'\n" 
 					if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
 				my $index = -1 ;
 				for my $sub (@$subs)
 					{
 					$index++ ;
-					PrintInfo "Running node sub index '$index'\n" if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+					PrintInfo "Build: running node sub index '$index'\n" if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 					
 					$sub->($node_name, $config, $tree, $inserted_nodes) ;
 					}
@@ -213,7 +213,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("[$PBS::Output::indentation_depth] Depend in subpbs: '$node_name' rule $rule_index:$rule_info\n") ;
+				PrintInfo("[$PBS::Output::indentation_depth] Depend: '$node_name' in subpbs, rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -382,7 +382,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $rule_info =  $rule->{NAME} . $rule->{ORIGIN} ;
 									
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
-				PrintError( "Self referencial rule #$rule_index '$rule_info' for $node_name: $dependency_names.\n") ;
+				PrintError( "Depend: self referencial rule #$rule_index '$rule_info' for $node_name: $dependency_names.\n") ;
 				
 				PbsDisplayErrorWithContext($rule->{FILE}, $rule->{LINE}) ;
 				die "\n";
@@ -403,7 +403,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 											
 						PrintWarning
 							(
-							  "In Pbsfile : $Pbsfile, while at rule '$rule_info', node '$node_name':\n"
+							  "Depend: in pbsfile : $Pbsfile, while at rule '$rule_info', node '$node_name':\n"
 							. "    $dependency_name already inserted by rule "
 							. "'$inserting_rule_index:$inserting_rule_info'"
 							. ", Ignoring duplicate dependency.\n"
@@ -454,7 +454,7 @@ for my $dependency_name (keys %$tree)
 
 if(@sub_pbs > 1)
 	{
-	PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
+	PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
 	PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
 	
 	Carp::croak  ;
@@ -758,7 +758,7 @@ if(@has_matching_non_subpbs_rules)
 
 			PrintWarning
 				(
-				  "'$node_name' has dependency '$dependency' which was inserted at rule: "
+				  "Depend: '$node_name' has dependency '$dependency' which was inserted at rule: "
 				. "$tree->{$dependency}{__INSERTED_AT}{INSERTION_RULE} "
 				. " [Pbsfile: $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE}]"
 				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules\n"
@@ -778,7 +778,7 @@ if(@has_matching_non_subpbs_rules)
 					}
 				}
 				
-			PrintWarning("Ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
+			PrintWarning("Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
 			}
 			
 		unless(exists $tree->{$dependency}{__DEPENDED})
@@ -804,7 +804,7 @@ else
 		{
 		if(@sub_pbs != 1)
 			{
-			PrintError "In Pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
+			PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
 			PrintError(DumpTree(\@sub_pbs,, "Sub Pbs:")) ;
 			
 			Carp::croak  ;
@@ -828,11 +828,11 @@ else
 			if(defined $pbs_config->{SUBPBS_FILE_INFO})
 				{
 				my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
-				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depending '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
+				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
 				}
 			else
 				{
-				PrintWarning("Depending '$node_name' $alias_message with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
+				PrintWarning("Depend: '$node_name' $alias_message with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
 				}
 			}
 			
@@ -934,12 +934,12 @@ else
 				#source
 				if(@{$tree->{__MATCHING_RULES}})
 					{
-					PrintWarning "Source '$node_name' matched rules, rules from '$pbs_config->{PBSFILE}'.\n" ;
+					PrintWarning "Depend: '$node_name' matched rules, rules from '$pbs_config->{PBSFILE}'.\n" ;
 					}
 					
 				if($has_dependencies)
 					{
-					PrintWarning2 "Source '$node_name' has dependencies, rules from '$pbs_config->{PBSFILE}'.\n" ;
+					PrintWarning2 "Depend: '$node_name' has dependencies, rules from '$pbs_config->{PBSFILE}'.\n" ;
 					}
 				}
 			}
@@ -948,7 +948,7 @@ else
 	
 if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	{
-	PrintInfo2("** Immediate build of node $node_name **\n") ;
+	PrintInfo2("Depend: -- Immediate build of node $node_name --\n") ;
 	my(@build_sequence, %trigged_files) ;
 	
 	my $nodes_checker ;
@@ -978,17 +978,17 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			
 		if($build_result == BUILD_SUCCESS)
 			{
-			#~ PrintInfo2("** Immediate build of node '$node_name' Done **\n") ;
+			#~ PrintInfo2("Depend: -- Immediate build of node '$node_name' Done --\n") ;
 			}
 		else
 			{
-			PrintError("** Immediate build of node '$node_name' Failed **\n") ;
-			die "BUILD_FAILED" ;
+			PrintError("Depend: -- Immediate build of node '$node_name' Failed --\n") ;
+			die "BUILD_FAILED\n" ;
 			}
 		}
 	else
 		{
-		PrintInfo2("** Immediate build of node '$node_name' Skipped **\n") ;
+		PrintInfo2("Depend: -- Immediate build of node '$node_name' Skipped --\n") ;
 		}
 	}
 	

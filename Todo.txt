@@ -1,4 +1,8 @@
 
+-ni '.' loads of errors and build .c .h ...
+
+pbslibs in warp
+
 warp regeneration too long time, //
 
 

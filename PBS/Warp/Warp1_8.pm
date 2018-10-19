@@ -66,7 +66,7 @@ if($run_in_warp_mode == RUN_NOT_NEEDED)
 		$PBS::pbs_run_information->{WARP_1_8}{VERIFICATION_TIME} = $warp_verification_time ;
 		
 		my $warp_total_time = tv_interval($t0_warp, [gettimeofday]) ;
-		PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_total_time)) ;
+		PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_total_time)) ;
 		$PBS::pbs_run_information->{WARP_1_8}{TOTAL_TIME} = $warp_total_time ;
 		}
 		
@@ -257,7 +257,7 @@ GenerateNodesWarp($targets, $dependency_tree, $inserted_nodes, $pbs_config, $war
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
 	my $warp_generation_time = tv_interval($t0_warp_generate, [gettimeofday]) ;
-	PrintInfo(sprintf("Warp total time: %0.2f s.\n", $warp_generation_time)) ;
+	PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_generation_time)) ;
 	$PBS::pbs_run_information->{WARP_1_8}{GENERATION_TIME} = $warp_generation_time ;
 	}
 }

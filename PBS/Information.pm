@@ -67,26 +67,26 @@ use Term::Size::Any qw(chars) ;
 
 my $terminal_width = chars() || 10_000 ;
 
-my $columns = length("Node $type'$name':") ;
+my $columns = length("Build: $type'$name':") ;
 $columns = $columns < $terminal_width ? $columns : $terminal_width ;
 
-my $separator = INFO ('-' x $columns . "\n")  ;
+my $separator = WARNING ('-' x $columns . "\n")  ;
 
-my $node_header = "\n" . $separator ;
+my $node_header = "\n" ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= INFO3 ("Node $type'$name' [$build_name]:\n") ;
+	$node_header .= INFO3 ("Build: $type'$name' [$build_name]:\n") ;
 	}
 else
 	{
-	$node_header .= INFO3 ("Node $type'$name':\n") ;
+	$node_header .= INFO3 ("Build: $type'$name':\n") ;
 	}
 	
 $node_header .= $separator ;
 
 $node_info .= $node_header unless $no_output ;
-$log_node_info .= INFO ("Node $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
+$log_node_info .= INFO ("Build: $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
 
 #----------------------
 #insertion origin

@@ -31,9 +31,6 @@ use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
 
-my $pbs_run_index = 0 ; # depth of the PBS run
-my $display_pbs_run ;
-
 sub Pbs
 {
 my $t0 = [gettimeofday];
@@ -141,16 +138,6 @@ unless($switch_parse_ok)
 	}
 	
 
-$display_pbs_run++ if defined $pbs_config->{DISPLAY_PBS_RUN} ;
-PrintInfo2 "** PBS run $pbs_run_index **\n" if $display_pbs_run ;
-
-if(defined (my $lh = $pbs_config->{LOG_FH}))
-	{
-	print $lh "** PBS run $pbs_run_index **\n";
-	}
-
-$pbs_run_index++ ;
-
 print $parse_message ;
 
 for my $target (@$targets)
@@ -219,14 +206,6 @@ else
 	$build_success = 0 ;
 	}
 
-$pbs_run_index-- ;
-PrintInfo2 "** PBS run $pbs_run_index Done **\n" if $display_pbs_run ;
-
-if(defined (my $lh = $pbs_config->{LOG_FH}))
-	{
-	print $lh "** PBS run $pbs_run_index Done **\n";
-	}
-
 # move all stat into the nodes as they are build in different process
 # the stat displaying would need to traverse the tree, 
 
@@ -244,7 +223,7 @@ if($pbs_config->{DISPLAY_MD5_STATISTICS})
 if($pbs_config->{DISPLAY_PBS_TOTAL_TIME})
 	{
 	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
-	PrintInfo(sprintf("PBS time: %0.2f s.\n", $total_time_in_pbs)) ;
+	PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) ;
 	
 	$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs
 	}
@@ -277,7 +256,7 @@ for my $post_pbs (@{$pbs_config->{POST_PBS}})
 	PrintError("Couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
 	}
 
-return($build_success, 'PBS run ' . ($pbs_run_index + 1) . " building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;
+return($build_success, "PBS run building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;
 }
 
 #-------------------------------------------------------------------------------

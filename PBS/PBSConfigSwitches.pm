@@ -241,9 +241,7 @@ colorize PBS output.
 
 PBS has default colors but colorization is not turned on by default.
 
-Colors can be defined through switches (try pbs -h | grep color) or 
-by setting you colors in the environement variable 'PBS_FLAGS', ex:
-	export PBS_FLAGS='-c -ci green -ci2 blink green -ci3 black on_green -cw yellow -cw2 blink yellow -ce red -cd magneta -cs bold green -cu cyan'
+Colors can be defined through switches (try pbs -h | grep color) 
 
 Recognized colors are :
 	'bold'   
@@ -621,9 +619,6 @@ EOT
 		'',
 		
 	#----------------------------------------------------------------------------------
-	'dpr|display_pbs_run'             => \$pbs_config->{DISPLAY_PBS_RUN},
-		'Display the run level of PBS.',
-		'',
 		
 	'dpos|display_original_pbsfile_source'      => \$pbs_config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
 		'Display original Pbsfile source.',

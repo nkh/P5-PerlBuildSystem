@@ -102,7 +102,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 			{
-			PrintWarning "Build levels:\n" ;
+			PrintWarning "Build: nodes built per level:\n" ;
 			local $PBS::Output::indentation_depth ;
 			$PBS::Output::indentation_depth++ ;
 
@@ -119,23 +119,23 @@ TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
 	{
-	PrintError "#------------------------------------------------------------------------------\n";
-	PrintError "¤ Parallel build: Error\n" ;
-	PrintError "#------------------------------------------------------------------------------\n";
+	PrintError "Build: -------------------------------------------------------------------------\n";
+	PrintError "Build: build error\n" ;
+	PrintError "Build: -------------------------------------------------------------------------\n";
 	PrintError $error_output ;
 	}
 
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
-	print WARNING DumpTree(\%builder_stats, 'Parallel build: process statistics:', DISPLAY_ADDRESS => 0) ;
+	print WARNING DumpTree(\%builder_stats, 'Build: process statistics:', DISPLAY_ADDRESS => 0) ;
 	}
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
-	PrintInfo(sprintf("Parallel build time: %0.2f s. sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	PrintInfo(sprintf("Build: parallel build time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 
 	print(
-		($number_of_failed_builders ? ERROR("Parallel build: ") : INFO("Parallel build: "))
+		($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
 		. INFO("nodes to build: $number_of_nodes_to_build"
 		. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
 		. ($number_of_failed_builders
@@ -166,7 +166,7 @@ for my $parent (@{ $built_node->{__PARENTS} })
 	next if $parent->{__NAME} =~ /^__/ ;
 
 	$parent->{__HAS_FAILED_CHILD}++ ;
-	PrintWarning "excluding: '$parent->{__NAME}'\n" ;
+	PrintWarning "Build: excluding: '$parent->{__NAME}'\n" ;
 	$excluded++ ;
 
 	$excluded += MarkAllParentsAsFailed($pbs_config, $parent) ;
@@ -187,8 +187,8 @@ my (@removed_nodes, @enqueued_nodes) ;
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Parallel build: computing nodes weight\n" ;
-	PrintInfo2 "Parallel build: enqueuing terminal nodes:\n" ;
+	PrintInfo2 "Build: computing nodes weight\n" ;
+	PrintInfo2 "Build: enqueuing terminal nodes:\n" ;
 	}
 	
 for my $node (@$build_sequence)
@@ -231,7 +231,7 @@ for my $node (@$build_sequence)
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
 	{
-	PrintInfo2("Parallel build: removed nodes from sequence (build already done):\n") ;
+	PrintInfo2("Build: removed nodes from sequence (build already done):\n") ;
 	local $PBS::Output::indentation_depth ;
 	$PBS::Output::indentation_depth++ ;
 	PrintInfo2 "$_\n" for @removed_nodes ;
@@ -269,7 +269,7 @@ $number_of_builders ||= 1 ; #safeguard for user errors
 my $builder_plural = '' ; $builder_plural = 'es' if($number_of_builders > 1) ;
 my $build_process = "build process$builder_plural" ;
 
-PrintInfo("Parallel build: using $number_of_builders $build_process out of maximum $pbs_config->{JOBS} for $number_of_terminal_nodes terminal nodes.\n") ;
+PrintInfo("Build: using $number_of_builders $build_process out of maximum $pbs_config->{JOBS} for $number_of_terminal_nodes terminal nodes.\n") ;
 
 return($number_of_builders ) ;
 }
@@ -295,7 +295,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 				
 	unless(defined $builder_channel)
 		{
-		PrintError "Parallel build: Couldn't start builder #$_!\n" ;
+		PrintError "Build: Couldn't start build process #$_!\n" ;
 		die "\n" ;
 		}
 	
@@ -408,7 +408,7 @@ if(@waiting_for_messages)
 	{
 	if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 		{
-		PrintWarning "Waiting for:\n" ;
+		PrintWarning "Build: waiting for:\n" ;
 		
 		local $PBS::Output::indentation_depth ;
 		$PBS::Output::indentation_depth++ ;
@@ -444,7 +444,7 @@ my ($pbs_config, $build_queue, $builders, $node_build_index, $number_of_nodes_to
 
 my $started_builders = 0 ;
 
-PrintInfo2 "Parallel build: starting:\n" 
+PrintInfo2 "Build: starting:\n" 
 	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
 
 # find which builder finished, start building on them
@@ -544,7 +544,7 @@ for my $builder (@$builders)
 
 unless ($builder_channel)
 	{
-	PrintError "Parallel build: can't find builder for built node '$built_node->{__NAME}'\n" ;
+	PrintError "Build: can't find builder for built node '$built_node->{__NAME}'\n" ;
 	die "\n" ;
 	}
 
@@ -594,9 +594,9 @@ else
 	else
 		{
 		# the build failed, save the builder output to display later and stop building
-		PrintError "#------------------------------------------------------------------------------\n" ;
-		PrintError "# Build: Error '$built_node->{__NAME}', will be reported below.\n" ;
-		PrintError "#------------------------------------------------------------------------------\n" ;
+		PrintError "Build: -------------------------------------------------------------------------\n" ;
+		PrintError "Build: Error '$built_node->{__NAME}', will be reported below.\n" ;
+		PrintError "Build:--------------------------------------------------------------------------\n" ;
 			  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)
@@ -609,7 +609,7 @@ else
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo "'$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+	PrintInfo "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
 	}
 	
 return($build_result, $build_time, $error_output) ;
@@ -632,7 +632,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Parallel build: Enqueuing parent '$parent->{__NAME}'.\n" ;
+			PrintInfo2 "Build: enqueuing parent '$parent->{__NAME}'.\n" ;
 			}
 			
 		$build_queue->insert($parent, $parent->{__WEIGHT}) ;
@@ -647,7 +647,7 @@ sub TerminateBuilders
 my ($builders) = @_;
 my $number_of_builders = @$builders ;
 
-PrintInfo "Parallel build: terminating build processes [$number_of_builders]\n" ;
+PrintInfo "Build: terminating build processes [$number_of_builders]\n" ;
 
 for my $builder (@$builders)
 	{
