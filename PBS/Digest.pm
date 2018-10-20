@@ -147,6 +147,7 @@ else
 
 my $time = tv_interval($t0_md5, [gettimeofday]) ;
 
+$md5 //= '?' ;
 PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
 
 my $md5_time += $time ;

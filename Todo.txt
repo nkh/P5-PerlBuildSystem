@@ -1,10 +1,14 @@
 
--ni '.' loads of errors and build .c .h ...
+
+try to reproduce the case where warp regeneratioon removed the nodes after --trigger pbsfile
+
+-ni '.' loads of errors and build .c .h ... nodes
 
 pbslibs in warp
 
 warp regeneration too long time, //
-
+	# use JSON::XS
+	set  __DEPENDENTS for rebuild nodes dependencies only 
 
 characters missing (-ddr to show top level)
    __PBS_sub_pb_tes_test_pbsfile__pbsfile =~

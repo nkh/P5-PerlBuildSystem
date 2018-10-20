@@ -448,7 +448,7 @@ for my $node (keys %$nodes)
 		{
 		# rebuild the data PBS needs from the warp file
 		$nodes->{$node}{__NAME} = $node ;
-		$nodes->{$node}{__BUILD_DONE} = "Field set in warp 1.7" ;
+		$nodes->{$node}{__BUILD_DONE} = 'Warp 1.7' ;
 		$nodes->{$node}{__DEPENDED}++ ;
 		$nodes->{$node}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
 		
@@ -469,7 +469,7 @@ for my $node (keys %$nodes)
 				{
 				$nodes->{$dependent}{$node} = 
 						{
-						__BUILD_DONE => 'Field set in warp 1.7',
+						__BUILD_DONE => 'warp 1.7',
 						__CHECKED => 1,
 						} ;
 				}

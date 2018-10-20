@@ -429,7 +429,7 @@ for my $node_name (keys %$node_md5s)
 		__MD5         => $node_md5s->{$node_name}{__MD5},
 		__PBS_CONFIG  => {},
 		
-		__BUILD_DONE  => "Field set in warp 1.8",
+		__BUILD_DONE  => 'Warp 1.8',
 		__DEPENDED    => 1,
 		__CHECKED     => 1, # pbs will not check any node (and its subtree) which is marked as check,
 		__INSERTED_AT => $shared_insertion_data,

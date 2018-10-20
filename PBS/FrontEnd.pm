@@ -197,6 +197,55 @@ if(@$targets)
 	
 	$build_success = 0 if($@ || ($build_result != BUILD_SUCCESS)) ;
 
+	# move all stat into the nodes as they are build in different process
+	# the stat displaying would need to traverse the tree, after synchronizing from the build processes
+
+	if($pbs_config->{DISPLAY_MD5_STATISTICS})
+		{
+		my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;
+
+		PrintInfo "MD5 requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
+			. ", non cached: $md5_statistics->{NON_CACHED_REQUESTS} " 
+			. ", cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%), time: $md5_statistics->{MD5_TIME}\n" ;
+			
+		$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
+		}
+
+	if($pbs_config->{DISPLAY_PBS_TOTAL_TIME})
+		{
+		my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
+		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) ;
+		
+		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs
+		}
+
+	RunPluginSubs($pbs_config, 'PostPbs', $build_success, $pbs_config, $dependency_tree, $inserted_nodes) ;
+
+	my $run = 0 ;
+	for my $post_pbs (@{$pbs_config->{POST_PBS}})
+		{
+		$run++ ;
+		
+		eval
+			{
+			PBS::PBS::LoadFileInPackage
+				(
+				'',
+				$post_pbs,
+				"PBS::POST_PBS_$run",
+				$pbs_config,
+				"use strict ;\nuse warnings ;\n"
+				  . "use PBS::Output ;\n"
+				  . "my \$pbs_config = \$pbs_config ;\n"
+				  . "my \$build_success = \$PBS::FrontEnd::build_success ;\n"
+				  . "my \$dependency_tree = \$PBS::FrontEnd::dependency_tree ;\n"
+				  . "my \$inserted_nodes = \$PBS::FrontEnd::inserted_nodes ; \n"
+				  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n",
+				) ;
+			} ;
+
+		PrintError("Couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
+		}
 	}
 else
 	{
@@ -204,56 +253,6 @@ else
 	PBS::PBSConfigSwitches::DisplayUserHelp($pbs_config->{PBSFILE}, 1, 0) ;
 		
 	$build_success = 0 ;
-	}
-
-# move all stat into the nodes as they are build in different process
-# the stat displaying would need to traverse the tree, 
-
-if($pbs_config->{DISPLAY_MD5_STATISTICS})
-	{
-	my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;
-
-	PrintInfo "MD5 requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
-		. ", non cached: $md5_statistics->{NON_CACHED_REQUESTS} " 
-		. ", cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%), time: $md5_statistics->{MD5_TIME}\n" ;
-		
-	$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
-	}
-
-if($pbs_config->{DISPLAY_PBS_TOTAL_TIME})
-	{
-	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
-	PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) ;
-	
-	$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs
-	}
-
-RunPluginSubs($pbs_config, 'PostPbs', $build_success, $pbs_config, $dependency_tree, $inserted_nodes) ;
-
-my $run = 0 ;
-for my $post_pbs (@{$pbs_config->{POST_PBS}})
-	{
-	$run++ ;
-	
-	eval
-		{
-		PBS::PBS::LoadFileInPackage
-			(
-			'',
-			$post_pbs,
-			"PBS::POST_PBS_$run",
-			$pbs_config,
-			"use strict ;\nuse warnings ;\n"
-			  . "use PBS::Output ;\n"
-			  . "my \$pbs_config = \$pbs_config ;\n"
-			  . "my \$build_success = \$PBS::FrontEnd::build_success ;\n"
-			  . "my \$dependency_tree = \$PBS::FrontEnd::dependency_tree ;\n"
-			  . "my \$inserted_nodes = \$PBS::FrontEnd::inserted_nodes ; \n"
-			  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n",
-			) ;
-		} ;
-
-	PrintError("Couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
 	}
 
 return($build_success, "PBS run building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;

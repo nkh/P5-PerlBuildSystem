@@ -26,6 +26,8 @@ use PBS::Warp;
 use Cwd ;
 use File::Path;
 use Data::Dumper ;
+use JSON::XS ;
+
 use Data::Compare ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use POSIX qw(strftime);
@@ -39,7 +41,7 @@ sub CheckWarpConfiguration
 {
 my ($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) = @_ ;
 
-for my $file (sort {$warp_dependents->{$b}{MAX_LEVEL} <=> $warp_dependents->{$a}{MAX_LEVEL} } keys %$warp_configuration)
+for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_dependents->{$a}{MAX_LEVEL} // 0)} keys %$warp_configuration)
 	{
 	# remove all level nodes and their parents
 	my @nodes_triggered ;
@@ -209,7 +211,7 @@ if($run_in_warp_mode)
 	for my $node (keys %$nodes)
 		{
 		$nodes->{$node}{__NAME} = $node ;
-		$nodes->{$node}{__BUILD_DONE} = "Field set in warp 1.5" ;
+		$nodes->{$node}{__BUILD_DONE} = 'Warp 1.5' ;
 		$nodes->{$node}{__DEPENDED}++ ;
 		$nodes->{$node}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
 		
@@ -231,7 +233,7 @@ if($run_in_warp_mode)
 				{
 				$nodes->{$dependent}{$node} =
 					{
-					__BUILD_DONE => 'Field set in warp 1.5',
+					__BUILD_DONE => 'Warp 1.5',
 					__CHECKED => 1,
 					} ;
 				}
@@ -1065,7 +1067,7 @@ my $global_pbs_config = # cache to reduce warp file size
 	BUILD_DIRECTORY    => $pbs_config->{BUILD_DIRECTORY},
 	SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES},
 	} ;
-	
+
 my $number_of_nodes_in_the_dependency_tree = keys %$inserted_nodes ;
 
 my ($nodes, $node_names, $insertion_file_names, $warp_dependents) = WarpifyTree1_5($warp_configuration, $inserted_nodes, $global_pbs_config) ;
@@ -1079,35 +1081,24 @@ local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
 local $Data::Dumper::Sortkeys = 1 ; 
 
-print WARP Data::Dumper->Dump([$global_pbs_config], ['global_pbs_config']) ;
+my $js = JSON::XS->new->pretty(1) ;
 
-print WARP Data::Dumper->Dump([ $nodes], ['nodes']) ;
-
-print WARP "\n" ;
-print WARP Data::Dumper->Dump([$node_names], ['node_names']) ;
-
-print WARP "\n\n" ;
-print WARP Data::Dumper->Dump([$insertion_file_names], ['insertion_file_names']) ;
-
-print WARP "\n\n" ;
-#$Data::Dumper::Indent = 0 ;
-print WARP Data::Dumper->Dump([$warp_dependents], ['warp_dependents']) ;
-$Data::Dumper::Indent = 1 ;
-
-print WARP "\n\n" ;
-print WARP Data::Dumper->Dump([$warp_configuration], ['warp_configuration']) ;
-
+print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
+print WARP '$nodes = decode_json qq{' . $js->encode( $nodes ) . "} ;\n\n" ;
+print WARP '$node_names = decode_json qq{' . $js->encode( $node_names ) . "} ;\n\n" ;
+print WARP '$insertion_file_names = decode_json qq{' . $js->encode( $insertion_file_names ) . "} ;\n\n" ;
+print WARP '$warp_dependents = decode_json qq{' . $js->encode( $warp_dependents ) . "} ;\n\n" ;
+print WARP '$warp_configuration = decode_json qq{' . $js->encode( $warp_configuration ) . "} ;\n\n" ;
 
 print WARP "\n\n" ;
 print WARP Data::Dumper->Dump([$VERSION], ['version']) ;
 print WARP Data::Dumper->Dump([$number_of_nodes_in_the_dependency_tree], ['number_of_nodes_in_the_dependency_tree']) ;
-
 print WARP "\n\n" ;
 
 
 print WARP 'return $nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration;';
-	
+
 close(WARP) ;
 
 my $warp_write_time = tv_interval($t0_warp_write, [gettimeofday]) ;
@@ -1135,10 +1126,29 @@ my (@insertion_file_names, %insertion_file_index) ;
 my %warp_dependents ;
 
 my $t0_warpify = [gettimeofday];
+my $pbsfile_chain = 0 ;
+my $new_nodes = 0 ;
 
 for my $node (keys %$inserted_nodes)
 	{
-	# this doesn't work with LOCAL_NODES
+	if(exists $inserted_nodes->{$node}{__BUILD_DONE} && $inserted_nodes->{$node}{__BUILD_DONE} eq 'Warp 1.5')
+		{
+		# try to reuse the inserted nodes directly in writing the warp file
+		# inserted nodes is itself mainly warp revivified nodes
+
+		#$nodes{$node} = $inserted_nodes->{$node} ;
+		#delete @{$nodes{$node}}{'__NAME', '__BUILD_DONE', '__DEPENDED', '__CHECKED', '__PBS_CONFIG', '__INSERTED_AT', '__DEPENDED_AT'} ;
+		# remove dependencies
+	
+		#todo: node can be linked to by new node and its pbsfile chain needs to be updated
+
+		next ;
+		}
+	else
+		{
+		$new_nodes++ ;
+		}
+
 	if(exists $inserted_nodes->{$node}{__VIRTUAL})
 		{
 		$nodes{$node}{__VIRTUAL} = 1 ;
@@ -1268,24 +1278,28 @@ for my $node (keys %$inserted_nodes)
 		$node_index = $nodes_index{$node} = $#node_names;
 		}
 
-	for my $dependency (keys %{$inserted_nodes->{$node}})
+	if(exists $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_TIME})
 		{
-		next if $dependency =~ /^__/ ;
-		push @{$nodes{$dependency}{__DEPENDENT}}, $node_index ;
+		for my $dependency (keys %{$inserted_nodes->{$node}})
+			{
+			next if $dependency =~ /^__/ ;
+			push @{$nodes{$dependency}{__DEPENDENT}}, $node_index ;
+			}
 		}
-	
-	# h files have no pbsfile chain, temporary fix in place
+
+	# h files have no pbsfile chain, fix in place
 	$nodes{$node}{__INSERTED_AT}{PBSFILE_CHAIN} = $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [] ;
 	
 	my @pbsfile_chain = @{$inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
 
 	my $node_pbsfile = pop @pbsfile_chain ;
 
-	next unless defined $node_pbsfile ; # nodes inserted by pbs, ie: deppendencies
+	next unless defined $node_pbsfile ; # top level nodes and nodes inserted by pbs, ie: deppendencies
 
 	$warp_dependents{$node_pbsfile}{LEVEL}{$node} = $node_index ;
 	$warp_dependents{$node_pbsfile}{MAX_LEVEL} = @pbsfile_chain ;
 
+my $t0_parent = [gettimeofday];
 	for my $pbsfile (@pbsfile_chain)
 		{
 		# a pbsfile change means that we do not know if the warp graph is correct anymore
@@ -1311,12 +1325,15 @@ for my $node (keys %$inserted_nodes)
 		$warp_dependents{$pbsfile}{SUB_LEVEL}{$node_pbsfile}++ ;
 		#$warp_dependents{$pbsfile}{SUB_LEVEL_NODES}{$node} = $node_index ;
 		}
+$pbsfile_chain += tv_interval($t0_parent, [gettimeofday]) ;
 
 	if (exists $inserted_nodes->{$node}{__TRIGGER_INSERTED})
 		{
 		$nodes{$node}{__TRIGGER_INSERTED} = $inserted_nodes->{$node}{__TRIGGER_INSERTED} ;
 		}
 	}
+PrintInfo(sprintf("Warp: pbsfile chain time: %0.2f s.\n", $pbsfile_chain)) ;
+PrintUser "Warp: warpify nodes: " . scalar (keys %$inserted_nodes) . ", new_nodes = $new_nodes\n" ;
 
 #todo: file dependencies, specially pbs libs should be added to the warp in the same way pbsfiles are
 
