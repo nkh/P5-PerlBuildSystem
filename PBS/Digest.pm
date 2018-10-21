@@ -278,15 +278,9 @@ for (@files)
 	{
 	my $file_name = $_ ;
 	
-	if(/^PBSFILE:/)
-		{
-		}
-	else
-		{
-		$file_name = "__FILE:$file_name" ;
+	$file_name = "__FILE:$file_name" ;
 		
-		$package_dependencies{$package}{$file_name} = GetFileMD5($_) ;
-		}
+	$package_dependencies{$package}{$file_name} = GetFileMD5($_) ;
 	}
 }
 
@@ -398,13 +392,13 @@ for my $config_variable (@_)
 
 #-------------------------------------------------------------------------------
 
-sub GetNodeDigest
+sub GetNodeDigestNoChildren
 {
-my $node = shift ;
+my ($node) = @_ ;
 
 my $node_name = $node->{__NAME} ;
-my $node_package = $node->{__LOAD_PACKAGE} ;
-my %node_config = %{$node->{__CONFIG}} ;
+my $node_package = $node->{__LOAD_PACKAGE} // '?' ;
+my %node_config = %{$node->{__CONFIG} // {}} ;
 
 my %node_dependencies ;
 
@@ -422,7 +416,16 @@ if(exists $node_config_variable_dependencies{$node_package})
 			if($node_name =~ $_->{REGEX}) ;
 		}
 	}
+
+return \%node_dependencies ;
+}
 	
+sub GetNodeDigest
+{
+my ($node) = @_ ;
+
+my %node_dependencies = %{GetNodeDigestNoChildren($node)} ;
+
 # add node children to digest
 for my $entry (values %$node)
 	{

@@ -116,7 +116,7 @@ sub GenerateWarpInfoFile
 my ($warp_type, $warp_path, $warp_signature, $targets, $pbs_config) = @_ ;
 
 (my $original_arguments = $pbs_config->{ORIGINAL_ARGV}) =~ s/[^0-9a-zA-Z_-]/_/g ;
-my $warp_info_file= "$warp_path/Pbsfile_${warp_signature}_${original_arguments}" ;
+my $warp_info_file= "$warp_path/pbsfile_${warp_signature}_${original_arguments}" ;
 
 # limit length
 if(length($warp_info_file) > 240)

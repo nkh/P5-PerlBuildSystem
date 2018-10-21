@@ -216,7 +216,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 				}
 			else
 				{
-				PrintError("Only a composite target is allowed\n") ;
+				PrintError("Only one composite target is supported\n") ;
 				die ;
 				}
 			}
@@ -256,10 +256,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		use Digest::MD5 qw(md5_hex) ;
 		my $pbsfile_digest = md5_hex($pbs_config->{PBSFILE_CONTENT}) ;
 		$add_pbsfile_digest = "PBS::Digest::AddVariableDependencies(PBSFILE => '$pbsfile_digest') ;\n"
-		}
-	else
-		{
-		$add_pbsfile_digest = "PBS::Digest::AddFileDependencies('PBSFILE:$Pbsfile') ;\n"
 		}
 		
 	LoadFileInPackage
@@ -302,17 +298,17 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			if($dependent eq $dependency_tree_name)
 				{
 				my @targets = map 
+						{
+						if(file_name_is_absolute($_) || /^\.\//)
 							{
-							if(file_name_is_absolute($_) || /^\.\//)
-								{
-								"$_" ;
-								}
-							else
-								{
-								PrintDebug "Found a target without './' $_\n" ;
-								"./$_" ;
-								}
-							} @$targets ;
+							"$_" ;
+							}
+						else
+							{
+							PrintDebug "Found a target without './' $_\n" ;
+							"./$_" ;
+							}
+						} @$targets ;
 				
 				return([1, @targets]) ;
 				}
@@ -476,12 +472,14 @@ for my $source_name (@{[@_]})
 	{
 	unless(defined $source_name)
 		{
-		die  ERROR("PbsUse must be given a name. Called @ $file_name:$line.\n")  ;
+		PrintError "PbsUse must be given a name. Called @ $file_name:$line.\n"  ;
+		die "\n" ;
 		}
 		
 	if('' ne ref $source_name)
 		{
-		die  ERROR("PbsUse only accepts strings as input. Called @ $file_name:$line.\n")  ;
+		PrintError "PbsUse only accepts strings as input. Called @ $file_name:$line.\n"  ;
+		die "\n" ;
 		}
 		
 	my $t0 = [gettimeofday];
@@ -496,7 +494,7 @@ for my $source_name (@{[@_]})
 	unless(defined $pbs_config->{LIB_PATH})
 		{
 		PrintError("Can't search for '$source_name', PBS lib path is not defined (PBS_LIB_PATH)!\n") ;
-		die ;
+		die "\n" ;
 		}
 	
 	if(file_name_is_absolute($source_name))
@@ -525,7 +523,7 @@ for my $source_name (@{[@_]})
 		{
 		my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
 		
-		die  ERROR("Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.\n")  ;
+		die  ERROR("Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.") . "\n" ;
 		}
 	
 	$pbs_use_level++ ; # indent the PbsUse output to make the hierachy more visible
@@ -550,14 +548,22 @@ for my $source_name (@{[@_]})
 			$add_as_package_dependency = "PBS::Digest::AddPbsLibDependencies('$located_source_name', '$source_name') ;\n" ;
 			}
 			
-		LoadFileInPackage
-			(
-			'',
-			$located_source_name,
-			$package,
-			$pbs_config,
-			"use PBS::Constants ;\n" . $add_as_package_dependency,
-			) ;
+		eval
+			{
+			LoadFileInPackage
+				(
+				'',
+				$located_source_name,
+				$package,
+				$pbs_config,
+				"use PBS::Constants ;\n" . $add_as_package_dependency,
+				) ;
+			} ;
+
+		if($@)
+			{
+			die ERROR("PbsUse error @ $file_name:$line:\n\n$@\n") . "\n"  ;
+			}
 			
 		$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
 		}
@@ -616,7 +622,7 @@ my $pbs_config = shift ;
 my $pre_code   = shift || '' ;
 my $post_code  = shift || '' ;
 
-my $file_body = '' ; #?? can't let this variable undef or perl bugs out!
+my $file_body = '' ; 
 
 if($type eq 'Pbsfile')
 	{

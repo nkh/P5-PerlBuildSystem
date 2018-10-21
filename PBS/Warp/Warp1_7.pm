@@ -45,7 +45,7 @@ die ERROR("Warp 1.7 needs module GDBM_File which is not installed:\n\n$@\n") if 
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_7';
-my $warp_file= "$warp_path/Pbsfile_$warp_signature.blob" ;
+my $warp_file= "$warp_path/pbsfile_$warp_signature.blob" ;
 
 $PBS::pbs_run_information->{WARP_1_7}{FILE} = $warp_file ;
 PrintInfo "Warp file name: '$warp_file'\n" if defined $pbs_config->{DISPLAY_WARP_FILE_NAME} ;
@@ -124,7 +124,7 @@ todo: remove and check warp dependencies at node level
 	}
 else
 	{
-	PrintWarning("Warp file '_warp1_7/Pbsfile_$warp_signature.blob' doesn't exist.\n") ;
+	PrintWarning("Warp file '_warp1_7/pbsfile_$warp_signature.blob' doesn't exist.\n") ;
 	$run_in_warp_mode = 0 ;
 	}
 
@@ -550,7 +550,7 @@ mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.7', $warp_path, $warp_signature, $targets, $pbs_config) ;
 
-my $warp_file= "$warp_path/Pbsfile_$warp_signature.blob" ;
+my $warp_file= "$warp_path/pbsfile_$warp_signature.blob" ;
 
 my $header = PBS::Log::GetHeader('Warp', $pbs_config) ;
 

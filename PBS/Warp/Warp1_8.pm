@@ -43,7 +43,7 @@ my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
-my $warp_file = "$warp_path/Pbsfile_$warp_signature.pl" ;
+my $warp_file = "$warp_path/pbsfile_$warp_signature.pl" ;
 
 $PBS::pbs_run_information->{WARP_1_8}{FILE} = $warp_file ;
 PrintInfo "Warp file name: '$warp_file'\n" if defined $pbs_config->{DISPLAY_WARP_FILE_NAME} ;
@@ -276,7 +276,7 @@ mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.8', $warp_path, $warp_signature, $targets, $pbs_config) ;
 
-my $md5_file= "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
+my $md5_file= "$warp_path/pbsfile_${warp_signature}_md5.pl" ;
 open(MD5, ">", $md5_file) or die qq[Can't open $md5_file: $!] ;
 
 my %pbsfile_md5s = %$warp_configuration ;
@@ -357,7 +357,7 @@ my ($targets, $pbs_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path     = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
-my $node_md5_file = "$warp_path/Pbsfile_${warp_signature}_md5.pl" ;
+my $node_md5_file = "$warp_path/pbsfile_${warp_signature}_md5.pl" ;
 
 my $run_in_warp_mode = RUN_IN_WARP_MODE ;
 
@@ -366,7 +366,7 @@ my $t0 =  [gettimeofday] ;
 
 if(! -e $node_md5_file)
 	{
-	PrintWarning "Warp file '_warp1_8/Pbsfile_${warp_signature}_md5.pl' doesn't exist!\n" ;
+	PrintWarning "Warp file '_warp1_8/pbsfile_${warp_signature}_md5.pl' doesn't exist!\n" ;
 	return(RUN_IN_NORMAL_MODE) ;
 	}
 	
