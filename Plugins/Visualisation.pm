@@ -6,11 +6,11 @@ This plugin handles the following PBS defined switches:
 
 =over 2
 
-=item  --a
+=item --a
 
-=item  --dni
+=item --ni
 
-=item  --dar
+=item --dar
 
 =item --dac
 
@@ -77,17 +77,39 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 
 if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
+	my @ni_regex_matched = (0) x @{$pbs_config->{DISPLAY_NODE_INFO}} ;
+
 	for my $node_name (sort keys %$inserted_nodes)
 		{
+		my $ni_regex_index = 0 ;
+
 		for my $node_info_regex (@{$pbs_config->{DISPLAY_NODE_INFO}})
 			{
 			if($inserted_nodes->{$node_name}{__NAME} =~ /$node_info_regex/)
 				{
+				$ni_regex_matched[$ni_regex_index] = 1 ;
+
 				PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) ;
 				last ;
 				}
+			$ni_regex_index++ ;
 			}
 		}
+
+	my $no_ni_regex_matched = 1 ;
+	for (my $ni_regex_index = 0 ; $ni_regex_index < @ni_regex_matched ; $ni_regex_index++)
+		{
+		if($ni_regex_matched[$ni_regex_index])
+			{
+			$no_ni_regex_matched = 0 ;
+			}
+		else
+			{
+			PrintWarning("Info: --ni $pbs_config->{DISPLAY_NODE_INFO}[$ni_regex_index] doesn't match any node in the graph.\n") ;
+			}
+		}
+		
+	PrintWarning("Info: no --ni switch matched.\n") if $no_ni_regex_matched ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})

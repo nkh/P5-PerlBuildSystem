@@ -78,7 +78,7 @@ eval
 		) ;
 	} ;
 	
-die ERROR("Couldn't load plugin from '$plugin':\n   $@") if $@ ;
+do { PrintError("Couldn't load plugin from '$plugin'.$@") ; die "\n" }  if $@ ;
 $plugin_load_package++ ;
 }
 

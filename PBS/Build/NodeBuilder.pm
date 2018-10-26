@@ -53,20 +53,6 @@ for my $trigger (@{ $node->{__TRIGGERED} })
 # note that rebuilding the graph still has to be done! The changes to the pbsfiles may not 
 # have an impact on the node to build but it may have on its position in the graph
 
-# the right way to check this is not by checking if the pbsfile only has changed
-# as some changes in the pbsfile may not have impact on the node to be build
-# but by comparing all the  contents of  digest, minus the pbsfile
-if($number_of_differences == 1 &&  $reason->[0] =~ q{key '__DEPENDING_PBSFILE' is different} )
-	{
-	if((! $PBS::Shell::silent_commands))
-		{
-		#PrintWarning "Node doesn't need to be build. Only Pbsfile difference.\n" ;
-		}
-	
-	#expecting people to write correct build systems is dangerous :)	
-	#return(0, 'only pbsfile difference, regenerate_digest') ;
-	}
-
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
 
 for my $triggered_dependency (@$triggered_dependencies)

@@ -550,10 +550,6 @@ EOT
 		'Display the Pbs build post build commands.',
 		'',
 
-	'nil|node_information_located'  => \$pbs_config->{DISPLAY_NODE_INFO_LOCATED},
-		'Display node information located in addition to relative node name.',
-		'',
-
 	'o|origin'                        => \$pbs_config->{ADD_ORIGIN},
 		'PBS will also display the origin of rules in addition to their names.',
 		<<EOT,

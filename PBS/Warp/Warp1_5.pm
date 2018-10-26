@@ -345,7 +345,7 @@ return(@build_result) ;
 sub CheckWarpConfiguration
 {
 my ($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) = @_ ;
-my $trigger_log_warp ;
+my $trigger_log_warp  = '' ;
 
 for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_dependents->{$a}{MAX_LEVEL} // 0)} keys %$warp_configuration)
 	{

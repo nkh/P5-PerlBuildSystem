@@ -650,6 +650,7 @@ for my $dependency (@dependencies)
 		{
 		# a new node is born
 		my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
+		my $rule_file = $dependency_rules->[$rule_index]{FILE} ;
 		my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
 		my $rule_info = $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
@@ -694,6 +695,7 @@ for my $dependency (@dependencies)
 								INSERTION_LOAD_PACKAGE => $load_package,
 								INSERTION_RULE         => $rule_info,
 								INSERTION_RULE_NAME    => $rule_name,
+								INSERTION_RULE_FILE    => $rule_file,
 								INSERTION_RULE_LINE    => $rule_line,
 								INSERTION_TIME         => $time,
 								INSERTING_NODE         => $tree->{__NAME},

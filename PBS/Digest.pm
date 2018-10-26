@@ -935,7 +935,7 @@ if($digest_is_different)
 		my $digest_value = $digest->{$key} || 'undef' ;
 		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
 		
-		my $different_digest_text = "key '$key' is different: $digest_value <=> $expected_digest_value" ;
+		my $different_digest_text = "$key: $digest_value != $expected_digest_value" ;
 		push @digest_different_text, $different_digest_text ;
 		
 		PrintError("\t$different_digest_text\n") if($display_digest) ;
@@ -1023,7 +1023,7 @@ if($digest_is_different)
 		my $digest_value = $digest->{$key} || 'undef' ;
 		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
 		
-		my $different_digest_text = "key '$key' is different: $digest_value <=> $expected_digest_value" ;
+		my $different_digest_text = "$key: $digest_value != $expected_digest_value" ;
 		push @digest_different_text, $different_digest_text ;
 		
 		PrintError("\t$different_digest_text\n") if($display_digest) ;
