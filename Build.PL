@@ -54,7 +54,6 @@ PBS/Log.pm
 PBS/Warp.pm
 PBS/Warp/Warp0.pm
 PBS/Warp/Warp1_5.pm
-PBS/Warp/Warp1_7.pm
 PBS/Warp/Warp1_8.pm
 PBS/SubpbsResult.pm
 PBS/Watch/InotifyWatcher.pm
@@ -310,7 +309,6 @@ my $build = $class->new
 		'Sub::Identify' => 0,
 		'Sub::Name' => 0,
 		'Net::SCP' => 0,
-		#GDBM::File' => 0 ,
 		'List::PriorityQueue' => 0,
 		'String::Truncate'     => 0,
 

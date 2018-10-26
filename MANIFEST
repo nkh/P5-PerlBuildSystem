@@ -79,7 +79,6 @@ PBS/Log.pm
 PBS/Warp.pm
 PBS/Warp/Warp0.pm
 PBS/Warp/Warp1_5.pm
-PBS/Warp/Warp1_7.pm
 PBS/Warp/Warp1_8.pm
 PBS/SubpbsResult.pm
 PBS/Watch/Client.pm
@@ -369,7 +368,6 @@ t/PBS.pm
 t/AllTests.pm
 t/run_many_times.t
 t/with_warp_1_5.t
-t/with_warp_1_7.t
 t/without_warp.t
 t/TestClassTemplate.pm
 t/documentation.pod
