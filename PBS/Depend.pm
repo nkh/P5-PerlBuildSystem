@@ -843,7 +843,8 @@ else
 		delete $inserted_nodes->{$node_name} ; # temporarily eliminate ourself from the existing nodes list
 		
 		my $tree_name = "sub_pbs$sub_pbs_name" ;
-		$tree_name =~ s/.\//_/g ;
+		$tree_name =~ s~^\./~_~ ;
+		$tree_name =~ s~/~_~g ;
 		
 		PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
 			

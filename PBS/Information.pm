@@ -42,12 +42,13 @@ return if((! defined $pbs_config->{CREATE_LOG}) && $no_output) ;
 # header
 #----------------------
 my $type ='' ;
-if($file_tree->{__VIRTUAL} || $file_tree->{__FORCED} || $file_tree->{__LOCAL})
+if($file_tree->{__VIRTUAL} || $file_tree->{__FORCED} || $file_tree->{__WARP_NODE} || $file_tree->{__LOCAL})
 	{
 	$type .= '[' ;
 	$type .= 'V' if($file_tree->{__VIRTUAL}) ;
 	$type .= 'F' if($file_tree->{__FORCED}) ;
 	$type .= 'L' if($file_tree->{__LOCAL}) ;
+	$type .= 'W' if($file_tree->{__WARP_NODE}) ;
 	$type .= '] ' ;
 	}
 	
@@ -67,7 +68,7 @@ use Term::Size::Any qw(chars) ;
 
 my $terminal_width = chars() || 10_000 ;
 
-my $columns = length("Build: $type'$name':") ;
+my $columns = length("Node: $type'$name':") ;
 $columns = $columns < $terminal_width ? $columns : $terminal_width ;
 
 my $separator = WARNING ('-' x $columns . "\n")  ;
@@ -76,17 +77,17 @@ my $node_header = "\n" ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= INFO3 ("Build: $type'$name' [$build_name]:\n") ;
+	$node_header .= INFO3 ("Node: $type'$name' [$build_name]:\n") ;
 	}
 else
 	{
-	$node_header .= INFO3 ("Build: $type'$name':\n") ;
+	$node_header .= INFO3 ("Node: $type'$name':\n") ;
 	}
 	
 $node_header .= $separator ;
 
 $node_info .= $node_header unless $no_output ;
-$log_node_info .= INFO ("Build: $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
+$log_node_info .= INFO ("Node: $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
 
 #----------------------
 #insertion origin
@@ -140,11 +141,12 @@ my @display_triggered_dependencies_located ;
 
 if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
 	{
-	for (keys %$file_tree)
+	for (sort keys %$file_tree)
 		{
 		next if($_ =~ /^__/) ;
 		
-		push @dependencies, $file_tree->{$_}{__NAME} ;
+		#push @dependencies, $file_tree->{$_}{__NAME} ;
+		push @dependencies, $_ ;
 		
 		push @located_dependencies, $file_tree->{$_}{__BUILD_NAME}
 			if(exists $file_tree->{$_}{__BUILD_NAME}) ;

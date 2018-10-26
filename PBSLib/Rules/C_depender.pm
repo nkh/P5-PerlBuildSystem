@@ -133,6 +133,9 @@ my $insertion_data =
 	{
 	INSERTING_NODE => $node->{__NAME},
 	INSERTION_RULE => 'c_depender',
+	INSERTION_RULE_NAME => 'c_depender',
+	INSERTION_RULE_LINE => __LINE__,
+	INSERTION_RULE_FILE => __FILE__,
 	INSERTION_FILE => __FILE__ . ':' . __LINE__,
 	INSERTION_PACKAGE=> 'NA',
 	INSERTION_TIME => Time::HiRes::time,
@@ -171,7 +174,6 @@ write_file $dependency_file, $cache ;
 # make sure object file digest doesn't use the temporary dependency file hash 
 PBS::Digest::FlushMd5Cache($dependency_file) ;
 PBS::Digest::FlushMd5Cache($node->{__BUILD_NAME}) ;
-#PBS::Digest::FlushMd5Cache() ;
 
 $inserted_nodes->{$dependency_name}{__MD5} = GetFileMD5($dependency_file) ;  
 

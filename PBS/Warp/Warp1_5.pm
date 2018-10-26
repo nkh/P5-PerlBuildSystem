@@ -124,13 +124,15 @@ if($run_in_warp_mode)
 	$IsFileModified ||= \&PBS::Digest::IsFileModified ;
 
 	# remove pbsfile triggered nodes and other global dependencies
-	CheckWarpConfiguration($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) ;
+	my $trigger_log_warp = CheckWarpConfiguration($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) ;
 
 	# check and remove all nodes that would trigger
 	my ($node_mismatch, $trigger_log)
 		 = $pbs_config->{WARP_CHECK_JOBS} != 0
 			? ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) 
 		  	: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
+
+	$trigger_log .= "\n" . $trigger_log_warp ;
 
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
 
@@ -146,7 +148,9 @@ if($run_in_warp_mode)
 		
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A Warp 1.5' ;
-		
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_NAME} = 'N/A' ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;
+
 		unless(exists $nodes->{$node}{__DEPENDED_AT})
 			{
 			$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
@@ -341,6 +345,7 @@ return(@build_result) ;
 sub CheckWarpConfiguration
 {
 my ($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) = @_ ;
+my $trigger_log_warp ;
 
 for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_dependents->{$a}{MAX_LEVEL} // 0)} keys %$warp_configuration)
 	{
@@ -353,6 +358,8 @@ for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_depende
 			grep{ exists $nodes->{$_} } 
 				map {$node_names->[$_]} keys %{$warp_dependents->{$file}{LEVEL}} ;
 
+		$trigger_log_warp .= "{ PBSFILE_NAME => '$file', NODES => " . scalar(@nodes_triggered) . "},\n" ;
+
 		# remove all sub nodes
 		for my $sub_level (map {$node_names->[$_]} keys %{$warp_dependents->{$file}{SUB_LEVEL}})
 			{
@@ -360,9 +367,9 @@ for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_depende
 				grep{ exists $nodes->{$_} } 
 					map {$node_names->[$_]} keys %{$warp_dependents->{$sub_level}{LEVEL}} ;
 			}
-		}
 
-	delete @{$nodes}{@nodes_triggered} ;
+		delete @{$nodes}{@nodes_triggered} ;
+		}
 
 	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
 		{
@@ -388,6 +395,8 @@ for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_depende
 		PrintInfo2 $PBS::Output::indentation . "$_\n" for sort @nodes_triggered ;
 		}
 	}
+
+return $trigger_log_warp ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
