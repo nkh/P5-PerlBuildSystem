@@ -68,6 +68,7 @@ $PBS::Output::indentation_depth++ ;
 $pbs_runs++ ;
 
 my $pbsfile_chain        = shift // [] ;
+my $pbsfile_rule_name    = shift ;
 my $Pbsfile              = shift ;
 my $parent_package       = shift ;
 my $pbs_config           = shift ;
@@ -285,12 +286,12 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		
 	PBS::Rules::RegisterRule
 		(
-		'PBS_INTERNAL_' . __FILE__,
-		__LINE__,
+		$pbsfile_rule_name,
+		'',
 		$load_package,
 		'BuiltIn',
 		[VIRTUAL, '__INTERNAL'],
-		'__ROOT',
+		'PBS',
 		sub
 			{
 			my $dependent = shift ;
@@ -707,6 +708,7 @@ PBS::PBS - Perl Build System.
 	PBS::PBS::Pbs
 		(
 		[$pbs_config->{PBSFILE}],
+		'ROOT',
 		$pbs_config->{PBSFILE},
 		'',    # parent package
 		$pbs_config,

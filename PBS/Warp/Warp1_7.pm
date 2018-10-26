@@ -204,6 +204,7 @@ if($run_in_warp_mode)
 				= PBS::PBS::Pbs
 					(
 					[$pbs_config->{PBSFILE}],
+					'ROOT_WARP1_7',
 					$pbs_config->{PBSFILE},
 					'', # parent package
 					$pbs_config,
@@ -283,6 +284,7 @@ else
 			= PBS::PBS::Pbs
 				(
 				[$pbs_config->{PBSFILE}],
+				'ROOT',
 				$pbs_config->{PBSFILE},
 				'', # parent package
 				$pbs_config,

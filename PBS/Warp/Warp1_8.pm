@@ -104,6 +104,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 				= PBS::PBS::Pbs
 					(
 					[$pbs_config->{PBSFILE}],
+					'ROOT_WARP1_8',
 					$pbs_config->{PBSFILE},
 					'',    # parent package
 					$pbs_config,
@@ -184,6 +185,7 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 			= PBS::PBS::Pbs
 				(
 				[$pbs_config->{PBSFILE}],
+				'ROOT',
 				$pbs_config->{PBSFILE},
 				'',    # parent package
 				$pbs_config,

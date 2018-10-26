@@ -137,7 +137,6 @@ unless($switch_parse_ok)
 	return(0, $parse_message) ;
 	}
 	
-
 print $parse_message ;
 
 for my $target (@$targets)

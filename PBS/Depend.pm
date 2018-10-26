@@ -876,6 +876,7 @@ else
 			= PBS::PBS::Pbs
 				(
 				[@$pbsfile_chain, $sub_pbs_name],
+				'SUBPBS',
 				$sub_pbs_name,
 				$load_package,
 				$sub_pbs_config,
