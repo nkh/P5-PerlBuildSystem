@@ -384,15 +384,9 @@ my $number_of_files = scalar(keys %$node_md5s) ;
 $PBS::pbs_run_information->{WARP_1_8}{VERSION} = $version ;
 $PBS::pbs_run_information->{WARP_1_8}{NODES_IN_DEPENDENCY_GRAPH} = $number_of_files ;
 
-unless(defined $version)
+if(! defined $version || $version != $VERSION)
 	{
-	PrintWarning("Warp: bad version (undefined). Warp file needs to be rebuilt.\n") ;
-	return(RUN_IN_NORMAL_MODE) ;
-	}
-	
-unless($version == $VERSION)
-	{
-	PrintWarning("Warp: bad version. Warp file needs to be rebuilt.\n") ;
+	PrintWarning2("Warp: version mismatch.\n") ;
 	return(RUN_IN_NORMAL_MODE) ;
 	}
 

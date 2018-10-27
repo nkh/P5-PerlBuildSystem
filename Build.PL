@@ -14,6 +14,7 @@ PBS/Build/Threaded.pm
 PBS/Build/Forked.pm
 PBS/Build/ForkedNodeBuilder.pm
 PBS/Build/LightWeightServer.pm
+PBS/Check/ForkedCheck.pm
 PBS/Check.pm
 PBS/Cyclic.pm
 PBS/Config.pm

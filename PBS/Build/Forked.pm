@@ -582,13 +582,17 @@ else
 	if($build_result == BUILD_SUCCESS)
 		{
 		$built_node->{__BUILD_DONE} = "PBS::Build::Forked Done." ;
-		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
-		
-		# collect builder output and display it
-		while(<$builder_channel>)
+
+		unless($no_output)
 			{
-			last if /__PBS_FORKED_BUILDER__/ ;
-			print $_ unless $no_output ;
+			print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
+
+			# collect builder output and display it
+			while(<$builder_channel>)
+				{
+				last if /__PBS_FORKED_BUILDER__/ ;
+				print $_ unless $no_output ;
+				}
 			}
 		}
 	else

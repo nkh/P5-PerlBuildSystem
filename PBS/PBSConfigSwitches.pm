@@ -1161,8 +1161,8 @@ EOT
 		"When doing a warp build, linking info and local rule match info are disable. this switch re-enables them.",
 		'',
 		
-	'wcj|warp_check_jobs=i'                      => \$pbs_config->{WARP_CHECK_JOBS},
-		'Maximum number of hash checker run in parallel.',
+	'cj|check_jobs=i'                      => \$pbs_config->{CHECK_JOBS},
+		'Maximum number of checker run in parallel.',
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
 		
 	'display_warp_checked_nodes'  => \$pbs_config->{DISPLAY_WARP_CHECKED_NODES},
