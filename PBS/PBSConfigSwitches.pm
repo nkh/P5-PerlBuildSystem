@@ -569,6 +569,10 @@ EOT
 		'0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.',
 		'',
 		
+	'cj|check_jobs=i'                      => \$pbs_config->{CHECK_JOBS},
+		'Maximum number of checker run in parallel.',
+		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
+
 	'ubs|use_build_server=s'   => \$pbs_config->{LIGHT_WEIGHT_FORK},
 		'If set, Pbs will connect to a build server for all the nodes that use shell commands to build'
 			. "\n this expects the address of the build server. ex : localhost:12_000 ",
@@ -1160,10 +1164,6 @@ EOT
 	'dww|display_warp_generated_warnings'  => \$pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS},
 		"When doing a warp build, linking info and local rule match info are disable. this switch re-enables them.",
 		'',
-		
-	'cj|check_jobs=i'                      => \$pbs_config->{CHECK_JOBS},
-		'Maximum number of checker run in parallel.',
-		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
 		
 	'display_warp_checked_nodes'  => \$pbs_config->{DISPLAY_WARP_CHECKED_NODES},
 		"Display which nodes are contained in the warp tree and their status.",

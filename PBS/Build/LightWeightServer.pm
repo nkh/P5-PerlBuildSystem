@@ -114,12 +114,12 @@ PBS::Build::Forked::TerminateBuilders($builders) ;
 if($number_of_failed_builders)
 	{
 	PrintError "** Failed build@{[$number_of_failed_builders > 1 ? 's' : '']} **\n" ;
-	print $error_output ;
+	print STDERR $error_output ;
 	}
 	
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
-	print WARNING DumpTree(\%builder_stats, '** Builder process statistics: **', DISPLAY_ADDRESS => 0) ;
+	print STDERR WARNING DumpTree(\%builder_stats, '** Builder process statistics: **', DISPLAY_ADDRESS => 0) ;
 	}
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})

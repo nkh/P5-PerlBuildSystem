@@ -217,7 +217,7 @@ if(defined $node)
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;
 		
 		#add exception message to the command output
-		print ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
+		print STDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		}
 	
 	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)

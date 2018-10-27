@@ -147,7 +147,7 @@ eval
 		\%trigged_nodes,
 		) ;
 	
-	print ' ' x 30 . "\r" ;
+	print STDERR ' ' x 30 . "\r" ;
 	
 	# check if any triggered top node has been left outside the build
 	for my $node_name (keys %$inserted_nodes)

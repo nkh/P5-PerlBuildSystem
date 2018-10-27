@@ -90,7 +90,7 @@ for my $shell_command (@_)
 		
 			if($?)
 				{
-				print $output if $output;
+				print STDERR $output if $output;
 				
 				die bless
 					{

@@ -192,7 +192,7 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 		PrintWarning "set at $tree->{__SHELL_ORIGIN}" ;
 		}
 		
-	print "\n" ;
+	print STDERR "\n" ;
 	}
 	
 my $command_index = 0 ;
@@ -201,7 +201,7 @@ my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} &&
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
 	$command_index++ ;
-	print "\n" if $command_index > 1 ;
+	print STDERR "\n" if $command_index > 1 ;
 
 	my $command_information = '' ;
 	$command_information = "Running command $command_index of " . scalar(@$shell_commands) . ', ' if @$shell_commands > 1 ;
@@ -300,7 +300,7 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 		PrintWarning "set at $tree->{__SHELL_ORIGIN}" ;
 		}
 		
-	print "\n" ;
+	print STDERR "\n" ;
 	}
 	
 my $perl_sub_name = sub_name($builder) ;

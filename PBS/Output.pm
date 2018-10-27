@@ -96,7 +96,7 @@ eval {$escape_code = Term::ANSIColor::color($color) ;} ;
 
 if($@)
 	{
-	print "Invalid color definition '$switch: $color', using default color.\n" ;
+	print STDERR "Invalid color definition '$switch: $color', using default color.\n" ;
 	}
 else
 	{
@@ -267,53 +267,32 @@ _print(\*STDERR, \&ERROR, @_ );
 
 sub PrintWarning 
 {
-#~ my ($package, undef, $line) = caller() ;
-#~ print "Warning from $package:$line\n" ;
-
 _print(\*STDOUT, \&WARNING, @_) ;
-
-if(defined $PBS::Output::query_on_warning)
-	{
-	print "Continue [return|y|yes]? " ;
-	my $answer = <STDIN> ;
-	chomp $answer ;
-	
-	die unless ($answer =~ /^(y(es)*)*$/i) ;
-	}
 }
 
 sub PrintWarning2
 {
-_print(\*STDOUT, \&WARNING2, @_) ;
-
-if(defined $PBS::Output::query_on_warning)
-	{
-	print "Continue [return|y|yes]? " ;
-	my $answer = <STDIN> ;
-	chomp $answer ;
-	
-	die unless ($answer =~ /^(y(es)*)*$/i) ;
-	}
+_print(\*STDERR, \&WARNING2, @_) ;
 }
 
 sub PrintInfo
 {
-_print(\*STDOUT, \&INFO, @_ );
+_print(\*STDERR, \&INFO, @_ );
 }
 
 sub PrintInfo2
 {
-_print(\*STDOUT, \&INFO2, @_) ;
+_print(\*STDERR, \&INFO2, @_) ;
 }
 
 sub PrintUser
 {
-_print(\*STDOUT, \&USER, @_) ;
+_print(\*STDERR, \&USER, @_) ;
 }
 
 sub PrintShell 
 {
-_print(\*STDOUT, \&SHELL, @_) ;
+_print(\*STDERR, \&SHELL, @_) ;
 }
 
 sub PrintDebug

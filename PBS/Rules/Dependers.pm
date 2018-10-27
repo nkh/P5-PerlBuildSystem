@@ -68,7 +68,7 @@ for (ref $depender_definition)
 		} ;
 		
 	# DEFAULT
-		print ERROR("Invalid depender definition '$depender_definition' at rule '$name' at '$file_name:$line'.\n") ;
+		print STDERR ERROR("Invalid depender definition '$depender_definition' at rule '$name' at '$file_name:$line'.\n") ;
 		PbsDisplayErrorWithContext($file_name, $line) ;
 		die ;
 	}

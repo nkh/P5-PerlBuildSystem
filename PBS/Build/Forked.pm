@@ -127,14 +127,14 @@ if($number_of_failed_builders)
 
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
-	print WARNING DumpTree(\%builder_stats, 'Build: process statistics:', DISPLAY_ADDRESS => 0) ;
+	print STDERR WARNING DumpTree(\%builder_stats, 'Build: process statistics:', DISPLAY_ADDRESS => 0) ;
 	}
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
 	PrintInfo(sprintf("Build: parallel build time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 
-	print(
+	print STDERR (
 		($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
 		. INFO("nodes to build: $number_of_nodes_to_build"
 		. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
@@ -414,7 +414,7 @@ if(@waiting_for_messages)
 		$PBS::Output::indentation_depth++ ;
 		
 		PrintWarning "$_\n" for(@waiting_for_messages) ;
-		print "\n" ;
+		print STDERR "\n" ;
 		}
 		
 	# block till we get end of build from a builder thread
@@ -499,7 +499,7 @@ for my $builder (@$builders)
 		}
 	}
 
-print "\n" if(defined $pbs_config->{DISPLAY_JOBS_INFO}) ;
+print STDERR "\n" if(defined $pbs_config->{DISPLAY_JOBS_INFO}) ;
 
 return($started_builders) ;
 }
@@ -553,7 +553,7 @@ $build_result = BUILD_FAILED unless defined $build_result ;
 
 my ($build_time, $error_output) = (-1, '') ;
 
-print "\n" unless $build_result == BUILD_SUCCESS ;
+print STDERR "\n" unless $build_result == BUILD_SUCCESS ;
 
 if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 	{
@@ -563,7 +563,7 @@ if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 	while(<$builder_channel>)
 		{
 		last if /__PBS_FORKED_BUILDER__/ ;
-		print $_ ;
+		print STDERR $_ ;
 		}
 	}
 else
@@ -591,7 +591,7 @@ else
 			while(<$builder_channel>)
 				{
 				last if /__PBS_FORKED_BUILDER__/ ;
-				print $_ unless $no_output ;
+				print STDERR $_ unless $no_output ;
 				}
 			}
 		}

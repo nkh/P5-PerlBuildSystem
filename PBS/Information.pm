@@ -402,7 +402,7 @@ for (keys %$tree)
 
 if(@matches)
 	{
-	PrintInfo("PBS found:\n") ;
+	PrintInfo("PBS: found nodes:\n") ;
 	
 	for (@matches)
 		{

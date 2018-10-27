@@ -63,14 +63,14 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 			DumpTree
 				(
 				$inserted_nodes->{$local_child}{__DEPENDENCY_TO},
-				"\n'$local_child' ancestors:",
-				FILTER => $DependenciesOnly,
+				"\n$local_child ancestors:",
+				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0,
 				)
 			) ;
 		}
 	else
 		{
-		PrintWarning("No such element '$pbs_config->{DEBUG_DISPLAY_PARENT}'\n") ;
+		PrintError("PBS: ancestor query, no such node '$pbs_config->{DEBUG_DISPLAY_PARENT}'\n") ;
 		DisplayCloseMatches($pbs_config->{DEBUG_DISPLAY_PARENT}, $inserted_nodes) ;
 		}
 	}

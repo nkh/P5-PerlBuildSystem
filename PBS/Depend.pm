@@ -315,7 +315,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					if(@dependency_names)
 						{
 						$dependency_info .= ":\n" ;
-						my $dependency_info_deps =  "     " . join("\n     ", map {"'" . $el->($_) . "'"} @dependency_names) ;
+						my $dependency_info_deps =  $PBS::Output::indentation . join("\n     ", map {"'" . $el->($_) . "'"} @dependency_names) ;
 						$dependency_info_deps .= "\n\n" ;
 			
 						PrintInfo($dependency_info) ;
@@ -434,8 +434,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	else
 		{
 		# not triggered
-		my $depender_message = $dependencies[0] || 'no depender message' ;
-		PrintInfo("\t$rule_info  didn't match '$node_name': $depender_message\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+		my $depender_message = $dependencies[0] // 'No match' ;
+		PrintError("$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}
 	}
 	
@@ -474,7 +474,7 @@ for my $dependency (@dependencies)
 	use Carp ;
 	unless('HASH' eq ref $dependency)
 		{
-		print $dependency ;
+		print STDERR $dependency ;
 		confess  ;
 		}
 	

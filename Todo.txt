@@ -1,4 +1,9 @@
 
+more colors
+	rgb/256
+	classes with defaults, from plugins
+	default background color per class
+
 Add to docs:
 	PBSFILE_CONTENTS is added as a variable dependency, those are not checked in warp
 		OK if the content is generated in pbsfiles
@@ -10,6 +15,8 @@ remove creator and PBS_FORCE_ type (only used by creators)
 
 do not put all the big files in the same sub processes (duh!)
 	checking the size of all the node may cost more than checking them in the same process
+
+#write everything to stderr
 
 #more check optimization
 	do not put all the big files in the same sub processes (duh!)

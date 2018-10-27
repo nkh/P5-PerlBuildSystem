@@ -137,7 +137,7 @@ unless($switch_parse_ok)
 	return(0, $parse_message) ;
 	}
 	
-print $parse_message ;
+print STDERR $parse_message ;
 
 for my $target (@$targets)
 	{
@@ -420,9 +420,9 @@ my $version = PBS::Version::GetVersion() ;
 
 print <<EOH ;
 
-This is the Perl Build System, PBS, version $version
+PBS version $version
 
-Copyright 2002-2016, Nadim Khemir
+Copyright 2002-2018, Nadim Khemir
 
 Send all suggestions and inqueries to <nadim.khemir\@gmail.com>.
 
