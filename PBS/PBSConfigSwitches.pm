@@ -117,8 +117,6 @@ sub GetSwitches
 {
 my $pbs_config = shift || {} ;
 
-$PBS::Output::colorize++ ;
-
 $pbs_config->{DO_BUILD} = 1 ;
 $pbs_config->{TRIGGER} = [] ;
 
@@ -221,27 +219,18 @@ EOH
 		'Tell the choosen wizards to show help.',
 		'',
 		
-	'v|version'                       => \$pbs_config->{DISPLAY_VERSION},
+	'v|version'                     => \$pbs_config->{DISPLAY_VERSION},
 		'Displays Pbs version.',
 		'',
 		
-	'no_color'                        => \&PBS::Output::NoColors,
-		'Removes colors from output. Usefull when redirecting to a file.',
-		'',
-		
-	'info_label'             => \&PBS::Output::InfoLabel,
+	'info_label'                    => \&PBS::Output::InfoLabel,
 		'Adds a text label specifying the type of output.',
 		'',
 		
-	'c|colorize'                      => \$PBS::Output::colorize,
-		'Colorize output.',
+	'c|color=i'                     => \&PBS::Output::SetOutputColorDepth,
+		'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors',
 		<<EOT,
-If Term::AnsiColor is installed on your system, use this switch to 
-colorize PBS output.
-
-PBS has default colors but colorization is not turned on by default.
-
-Colors can be defined through switches (try pbs -h | grep color) 
+Term::AnsiColor is used  to color output.
 
 Recognized colors are :
 	'bold'   
@@ -259,43 +248,23 @@ Recognized colors are :
 	'cyan'    'on_cyan'  
 	'white'   'on_white'
 
-Check 'Term::AnsiColor' for more information. 
+	or RGB5 values, check 'Term::AnsiColor' for more information. 
 EOT
-	'ce|color_error=s'                => \&PBS::Output::SetOutputColor,
-		'Set the error color.',
-		'',
 
-	'cw|color_warning=s'              => \&PBS::Output::SetOutputColor,
-		'Set the warning color.',
-		'',
-
-	'cw2|color_warning2=s'            => \&PBS::Output::SetOutputColor,
-		'Set the alternate warning color.',
-		'',
-
-	'ci|color_info=s'                 => \&PBS::Output::SetOutputColor,
-		'Set the information color.',
-		'',
-
-	'ci2|color_info2=s'               => \&PBS::Output::SetOutputColor,
-		'Set the information2 color.',
-		'',
-
-	'ci3|color_info3=s'               => \&PBS::Output::SetOutputColor,
-		'Set the information3 color.',
-		'',
-
-	'cu|color_user=s'                 => \&PBS::Output::SetOutputColor,
-		'Set the user color.',
-		'',
-
-	'cs|color_shell=s'                => \&PBS::Output::SetOutputColor,
-		'Set the shell color.',
-		'',
-
-	'cd|color_debug=s'                => \&PBS::Output::SetOutputColor,
-		'Set the debugger color.',
-		'',
+	'cs|color_set=s'                => \&PBS::Output::SetOutputColor,
+		"Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'",
+		<<EOT,
+Color names used in Pbs:
+	error
+	warning
+	warning_2
+	info
+	info_2
+	info_3
+	user
+	shell
+	debug
+EOT
 
 	'output_indentation=s'            => \$PBS::Output::indentation,
 		'set the text used to indent the output. This is repeated "subpbs level" times.',

@@ -374,17 +374,25 @@ for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_depende
 		{
 		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
 			{
-			PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n"
+			PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n"
 				if @nodes_triggered ;
 			}
 		else
 			{
-			PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n";
+			if (@nodes_triggered)
+				{
+				PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n" ;
+				}
+			else
+				{
+				PrintInfo "Warp: checking '$file', OK\n" ;
+				}
 			}
 		}
-	elsif (@nodes_triggered && $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
+	elsif ($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
 		{
-		PrintInfo "Warp: checking '$file', removed nodes: " . scalar(@nodes_triggered) . "\n"
+		PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n"
+			if @nodes_triggered ;
 		}
 
 	if ($pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_triggered)

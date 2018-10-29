@@ -109,6 +109,8 @@ for my $post_build_rule (@post_build_rules)
 		}
 	}
 
+my $rules_matching = 0 ;
+
 # find the dependencies by applying the rules
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
@@ -151,6 +153,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	
 	if($triggered)
 		{
+		$rules_matching++ ;
+
 		$tree->{__DEPENDED}++ ; # depend sub tree once only flag
 		$tree->{__DEPENDED_AT} = $Pbsfile ;
 		
@@ -213,7 +217,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("[$PBS::Output::indentation_depth] Depend: '$node_name' in subpbs, rule $rule_index:$rule_info\n") ;
+				PrintInfo("\t[[Subpbs]] rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -305,17 +309,17 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 					
 				use String::Truncate ;
-				my $em = String::Truncate::elide_with_defaults({ length => 28, truncate => 'middle' });
-				my $el = String::Truncate::elide_with_defaults({ length => 28, truncate => 'left' });
+				my $em = String::Truncate::elide_with_defaults({ length => 35, truncate => 'middle' });
+				my $el = String::Truncate::elide_with_defaults({ length => 35, truncate => 'left' });
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					my $dependency_info = "[$PBS::Output::indentation_depth] '" . $el->($node_name) . "'${node_type}${forced_trigger} rule $rule_index:" . $em->($rule_info) . $rule_type ;
+					my $dependency_info = "\t[$rules_matching] '" . $el->($node_name) . "'${node_type}${forced_trigger} rule $rule_index:" . $em->($rule_info) . $rule_type ;
 					
 					if(@dependency_names)
 						{
 						$dependency_info .= ":\n" ;
-						my $dependency_info_deps =  $PBS::Output::indentation . join("\n     ", map {"'" . $el->($_) . "'"} @dependency_names) ;
+						my $dependency_info_deps =  $PBS::Output::indentation . join("\n\t", map {"'" . $el->($_) . "'"} @dependency_names) ;
 						$dependency_info_deps .= "\n\n" ;
 			
 						PrintInfo($dependency_info) ;
@@ -329,7 +333,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					PrintInfo "[$PBS::Output::indentation_depth] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info:$rule_type\n\n", 0) ;
+					PrintInfo "\t[$rules_matching] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info:$rule_type\n\n", 0) ;
 					}
 					
 				PrintWithContext
@@ -435,7 +439,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		{
 		# not triggered
 		my $depender_message = $dependencies[0] // 'No match' ;
-		PrintError("$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+		print STDERR COLOR('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}
 	}
 	

@@ -133,7 +133,7 @@ return(0, $pbs_config_message) unless $pbs_config_ok ;
 
 unless($switch_parse_ok)
 	{
-	# defered to get a chance to display PBS help
+	# deferred to get a chance to display PBS help
 	return(0, $parse_message) ;
 	}
 	

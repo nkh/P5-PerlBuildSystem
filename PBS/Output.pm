@@ -20,9 +20,6 @@ BEGIN
 	}
 };
 
-use Term::ANSIColor qw(:constants) ;
-$Term::ANSIColor::AUTORESET = 1 ;
-
 use vars qw($VERSION @ISA @EXPORT) ;
 
 require Exporter;
@@ -30,65 +27,61 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG
+		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG COLOR
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		) ;
 		
-$VERSION = '0.05' ;
-
-our $colorize ;
-our $indentation = '   ' ;
-our $indentation_depth = 0 ;
-our $query_on_warning ;
-our $display_error_context ;
-
-our $global_error_escape_code    = '' ;
-our $global_warning_escape_code  = '' ;
-our $global_warning2_escape_code = '' ;
-our $global_info_escape_code     = '' ;
-our $global_info2_escape_code    = '' ;
-our $global_info3_escape_code    = '' ;
-our $global_user_escape_code     = '' ;
-our $global_shell_escape_code    = '' ;
-our $global_debug_escape_code    = '' ;
-our $global_reset_escape_code    = Term::ANSIColor::color('reset') ;
+$VERSION = '0.06' ;
 
 #-------------------------------------------------------------------------------
 
-sub NoColors
+use Term::ANSIColor qw(:constants) ;
+$Term::ANSIColor::AUTORESET = 1 ;
+
+
+#-------------------------------------------------------------------------------
+
+our $indentation = '   ' ;
+our $indentation_depth = 0 ;
+our $display_error_context  = 0 ;
+
+my $cd = 16 ; # color_depth
+my %cc ;
+
+sub SetDefaultColors
 {
-$global_error_escape_code    = '' ;
-$global_warning_escape_code  = '' ;
-$global_warning2_escape_code = '' ;
-$global_info_escape_code     = '' ;
-$global_info2_escape_code    = '' ;
-$global_info3_escape_code    = '' ;
-$global_user_escape_code     = '' ;
-$global_shell_escape_code    = '' ;
-$global_debug_escape_code    = '' ;
-$global_reset_escape_code    = '' ;
+my ($default_colors) = @_ ;
+$default_colors //= {} ;
+
+for my $depth (keys %$default_colors)
+	{
+	$cc{$depth} = { %{$default_colors->{$depth} // {}}, %{$cc{$depth} // {}} } ;
+	}
 }
+
+#-------------------------------------------------------------------------------
 
 sub InfoLabel
 {
-$global_error_escape_code    .= '[Error] ' ;
-$global_warning_escape_code  .= '[Warning] ' ;
-$global_warning2_escape_code .= '[Warning2] ' ;
-$global_info_escape_code     .= '[Info] ' ;
-$global_info2_escape_code    .= '[Info2] ' ;
-$global_info3_escape_code    .= '[Info3] ' ;
-$global_user_escape_code     .= '[User] ' ;
-$global_shell_escape_code    .= '[Shell] ' ;
-$global_debug_escape_code    .= '[Debug] ' ;
-$global_reset_escape_code    .= '' ;
+for my $color (keys %{$cc{$cd}})
+	{
+	next if $color eq 'reset' ;
+
+	$cc{$cd}{$color} .= '[' . ucfirst($color) . '] ' ; 
+	}
 }
 
 
+#-------------------------------------------------------------------------------
+
+sub SetOutputColorDepth { $cd = $_[1] if $_[1] == 2 || $_[1] == 16 || $_[1] == 256 }
+
 sub SetOutputColor
 {
-my $switch = shift ;
-my $color  = shift ;
+return if $cd == 2 ;
+
+my ($color_name, $color) = split(':', $_[1]) ;
 
 my $escape_code = '' ;
 
@@ -96,209 +89,65 @@ eval {$escape_code = Term::ANSIColor::color($color) ;} ;
 
 if($@)
 	{
-	print STDERR "Invalid color definition '$switch: $color', using default color.\n" ;
+	print STDERR "PBS config: invalid color definition '$color_name: $color'.\n" ;
 	}
 else
 	{
-	$global_error_escape_code    = $escape_code if ($switch eq 'ce'  || $switch eq 'color_error') ;
-	$global_warning_escape_code  = $escape_code if ($switch eq 'cw'  || $switch eq 'color_warning') ;
-	$global_warning2_escape_code = $escape_code if ($switch eq 'cw2' || $switch eq 'color_warning2') ;
-	$global_info_escape_code     = $escape_code if ($switch eq 'ci'  || $switch eq 'color_info') ;
-	$global_info2_escape_code    = $escape_code if ($switch eq 'ci2' || $switch eq 'color_info2') ;
-	$global_info3_escape_code    = $escape_code if ($switch eq 'ci3' || $switch eq 'color_info3') ;
-	$global_user_escape_code     = $escape_code if ($switch eq 'cu'  || $switch eq 'color_user') ;
-	$global_shell_escape_code    = $escape_code if ($switch eq 'cs'  || $switch eq 'color_shell') ;
-	$global_debug_escape_code    = $escape_code if ($switch eq 'cd'  || $switch eq 'color_debugger') ;
+	$cc{$cd}{$color_name} = $escape_code ; 
 	}
 }
 
-sub ERROR
+#-------------------------------------------------------------------------------
+
+sub COLOR
 {
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+die $@ if $@ ;
 
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
+my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $depth) ;
 
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef' ${[caller]} ]") ;
+my $string = $indent . ($_[1] // 'undef') ;
 $string =~ s/\n(.)/\n$indent$1/g ;
 
-return $global_error_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
+return ($cc{$cd}{$_[0]} // '') . $string . $cc{$cd}{reset} ;
 }
 
-sub WARNING
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+sub ERROR { return COLOR('error', @_) }
+sub WARNING  { return COLOR('warning', @_) }
+sub WARNING2 { return COLOR('warning_2', @_) }
+sub INFO { return COLOR('info', @_) }
+sub INFO2 { return COLOR('info_2', @_) }
+sub INFO3 { return COLOR('info_3', @_) }
+sub USER { return COLOR('user', @_) }
+sub SHELL { return COLOR('shell', @_) }
+sub DEBUG { return COLOR('debug', @_) }
 
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $indentation_depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_warning_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub WARNING2
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_warning2_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub INFO
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_info_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub INFO2
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_info2_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub INFO3
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_info3_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub USER
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_user_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub SHELL
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_shell_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
-
-sub DEBUG
-{
-my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-
-my $indent = '' ;
-$indent = $PBS::Output::indentation x $depth unless (defined $_[1] && $_[1] == 0) ;
-
-my $string = $indent . (defined $_[0] ? $_[0] : "[PBS::Output received 'undef'!]") ;
-$string =~ s/\n(.)/\n$indent$1/g ;
-
-return $global_debug_escape_code . $string . $global_reset_escape_code if (defined $PBS::Output::colorize) ;
-return($string) ;
-}
 
 #-------------------------------------------------------------------------------
+
 sub _print
 {
 my ($glob, $color_and_depth, @data) = @_ ;
 
 for (@data)
 	{
-	$_ = '' unless defined $_ ;
-	#~ print "\n$_\n" ;
+	$_ //= '' ;
 	
 	s/^(\t+)/$indentation x length($1)/gsme ;
-	
-	#~ print "\n$_\n" ;
 	
 	print $glob $color_and_depth->($_) ;
 	
 	}
 }
 
-#-------------------------------------------------------------------------------
-
-sub PrintError 
-{
-_print(\*STDERR, \&ERROR, @_ );
-}
-
-sub PrintWarning 
-{
-_print(\*STDOUT, \&WARNING, @_) ;
-}
-
-sub PrintWarning2
-{
-_print(\*STDERR, \&WARNING2, @_) ;
-}
-
-sub PrintInfo
-{
-_print(\*STDERR, \&INFO, @_ );
-}
-
-sub PrintInfo2
-{
-_print(\*STDERR, \&INFO2, @_) ;
-}
-
-sub PrintUser
-{
-_print(\*STDERR, \&USER, @_) ;
-}
-
-sub PrintShell 
-{
-_print(\*STDERR, \&SHELL, @_) ;
-}
-
-sub PrintDebug
-{
-_print(\*STDERR, \&DEBUG, @_) ;
-}
+sub PrintError {_print(\*STDERR, \&ERROR, @_);}
+sub PrintWarning {_print(\*STDERR, \&WARNING, @_) ;}
+sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_) ;}
+sub PrintInfo{_print(\*STDERR, \&INFO, @_ );}
+sub PrintInfo2{_print(\*STDERR, \&INFO2, @_) ;}
+sub PrintUser{_print(\*STDERR, \&USER, @_) ;}
+sub PrintShell {_print(\*STDERR, \&SHELL, @_) ;}
+sub PrintDebug{_print(\*STDERR, \&DEBUG, @_) ;}
 
 #-------------------------------------------------------------------------------
 
@@ -337,7 +186,6 @@ for(1 .. $top_context)
 my $center_line_text = <FILE> ;
 $line_with_context .= $center_line_colorizing_sub->("$.> $center_line_text") if defined $center_line_text ;
 
-
 for(1 .. $number_of_context_lines)
 	{
 	my $text = <FILE> ;
@@ -354,12 +202,14 @@ return($line_with_context) ;
 }
 
 #-------------------------------------------------------------------------------
+
 sub PrintWithContext
 {
 _print(\*STDERR, \&ERROR, GetLineWithContext(@_)) ;
 }
 
 #-------------------------------------------------------------------------------
+
 sub PbsDisplayErrorWithContext
 {
 PrintWithContext($_[0], 1, 4, $_[1], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
@@ -380,7 +230,7 @@ PBS::Output -
 
 =head1 DESCRIPTION
 
-if B<Term::ANSIColor> is installed in your system, the output generated by B<PBS::Output> functions will be colorized.
+if B<Term::ANSIColor> is installed in your system, the output generated by B<PBS::Output> functions will be colored.
 the colors are controlled through I<SetOutputColor> which is itself (in B<PBS> case) controled through command
 line switches.
 

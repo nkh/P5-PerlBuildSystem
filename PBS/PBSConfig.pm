@@ -26,6 +26,7 @@ use File::Slurp ;
 use PBS::Output ;
 use PBS::Log ;
 use PBS::Constants ;
+use PBS::Plugin ;
 use PBS::PBSConfigSwitches ;
 
 #-------------------------------------------------------------------------------
@@ -43,7 +44,7 @@ if(ref $configuration eq 'HASH')
 	}
 else
 	{
-	PrintError("RegisterPbsConfig: switches are to be encapsulated within a hash reference!\n") ;
+	PrintError("PBS config: RegisterPbsConfig: switches must be a hash reference.\n") ;
 	}
 }
 
@@ -59,7 +60,7 @@ if(defined $pbs_configuration{$package})
 	}
 else
 	{
-	PrintError("GetPbsConfig: no configuration for package '$package'! Returning empty set.\n") ;
+	PrintError("PBS config: GetPbsConfig: no configuration for package '$package'. Returning empty set.\n") ;
 	Carp::confess ;
 	return({}) ;
 	}
@@ -77,7 +78,7 @@ if(defined $pbs_configuration{$package})
 	}
 else
 	{
-	PrintError("GetBuildDirectory: no configuration for package '$package'! Returning empty string.\n") ;
+	PrintError("PBS config: GetBuildDirectory: no configuration for package '$package'. Returning empty string.\n") ;
 	Carp::confess ;
 	return('') ;
 	}
@@ -92,10 +93,10 @@ my $package  = shift || caller() ;
 if(defined $pbs_configuration{$package})
 	{
 	return([@{$pbs_configuration{$package}{SOURCE_DIRECTORIES}}]) ;
-	}
+}
 else
 	{
-	PrintError("GetSourceDirectories: no configuration for package '$package'! Returning empty list.\n") ;
+	PrintError("PBS config: GetSourceDirectories: no configuration for package '$package'. Returning empty list.\n") ;
 	Carp::confess ;
 	return([]) ;
 	}
@@ -112,27 +113,10 @@ $pbs_config ||= {} ;
 
 my $success_message = '' ;
 
-local @ARGV = ( # default colors
-		'-ci'  => 'green',
-		'-ci2' => 'bright_blue',
-		'-ci3' => 'cyan',
-		'-cw'  => 'yellow',
-		'-cw2' => 'bright_yellow',
-		'-ce'  => 'red',
-		'-cd'  => 'magenta',
-		'-cs'  => 'cyan',
-		'-cu'  => 'cyan',
-		) ;
-		
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
 
 my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($pbs_config) ;
-unless(GetOptions(@flags))
-	{
-	return([0, "Error in default colors configuration." . __FILE__ . ':' . __LINE__ . "\n"], $pbs_config, @ARGV) ;
-	}
-
-@ARGV = @$switches_to_parse ;
+local @ARGV = @$switches_to_parse ;
 
 # tweak option parsing so we can mix switches with targets
 my $contains_switch ;
@@ -142,7 +126,6 @@ do
 	{
 	while(@ARGV && $ARGV[0] !~ /^-/)
 		{
-		#~ print "target => $ARGV[0] \n" ;
 		push @targets, shift @ARGV ;
 		}
 		
@@ -156,10 +139,13 @@ do
 			
 	unless(GetOptions(@flags))
 		{
-		return(0, "Try perl pbs.pl -h.\n", $pbs_config, @ARGV) unless $ignore_error;
+		return(0, "PBS: Try perl pbs.pl -h.\n", $pbs_config, @ARGV) unless $ignore_error;
 		}
 	}
 while($contains_switch) ;
+
+my %cc = RunUniquePluginSub({}, 'GetColorDefinitions') ;
+PBS::Output::SetDefaultColors(\%cc) ;
 
 $pbs_config->{TARGETS} = \@targets ;
  
@@ -319,14 +305,10 @@ $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG}++ if(defined $pbs_config->
 
 for my $cluster_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 	{
-	#~ print "$cluster_node_regex " ;
-	
 	$cluster_node_regex = './' . $cluster_node_regex unless ($cluster_node_regex =~ /^\.|\//) ;
 	$cluster_node_regex =~ s/\./\\./g ;
 	$cluster_node_regex =~ s/\*/.*/g ;
 	$cluster_node_regex = '^' . $cluster_node_regex . '$' ;
-	
-	#~ print "=> $cluster_node_regex\n" ;
 	}
 
 if(defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
@@ -345,18 +327,14 @@ if(defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
 
 for my $exclude_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_EXCLUDE}})
 	{
-	#~ print "$exclude_node_regex => " ;
 	$exclude_node_regex =~ s/\./\\./g ;
 	$exclude_node_regex =~ s/\*/.\*/g ;
-	#~ print "$exclude_node_regex\n" ;
 	}
 
 for my $include_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_INCLUDE}})
 	{
-	#~ print "$include_node_regex => " ;
 	$include_node_regex =~ s/\./\\./g ;
 	$include_node_regex =~ s/\*/.\*/g ;
-	#~ print "$include_node_regex\n" ;
 	}
 	
 #-------------------------------------------------------------------------------
@@ -420,7 +398,7 @@ $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ||= 3 ;
 # build or not switches
 if($pbs_config->{NO_BUILD} && $pbs_config->{FORCE_BUILD})
 	{
-	PrintWarning "Both --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
+	PrintWarning "PBS config: --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
 	$pbs_config->{FORCE_BUILD} = 0 ;
 	}
 	
@@ -595,7 +573,7 @@ if(defined $pbs_config->{PBSFILE})
 	
 	if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 		{
-		PrintInfo "Using pbsfile '$pbsfile' (given as argument).\n" ;
+		PrintInfo "PBS config: Using pbsfile '$pbsfile' (was given as argument).\n" ;
 		}
 	}
 else
@@ -619,12 +597,12 @@ else
 			($pbsfile) = keys %existing_pbsfile ;
 			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 				{
-				PrintInfo "Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
+				PrintInfo "PBS config: Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
 				}
 			}
 		else
 			{
-			$error_message = "PBS has found the following Pbsfiles:\n" ;
+			$error_message = "PBS config: found the following Pbsfiles:\n" ;
 			
 			for my $found_pbsfile (keys %existing_pbsfile)
 				{
@@ -636,7 +614,7 @@ else
 		}
 	else
 		{
-		$error_message = "No 'Pbsfile' to define build.\n" ;
+		$error_message = "PBS config: No 'Pbsfile' to define build.\n" ;
 		}
 	}
 

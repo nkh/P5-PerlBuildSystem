@@ -143,7 +143,7 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-PrintInfo "Calling '$plugin_sub_name' from '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+PrintInfo "Plugin: '$plugin_sub_name' called at '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 
 for my $plugin_path (sort keys %loaded_plugins)
 	{
@@ -157,14 +157,14 @@ for my $plugin_path (sort keys %loaded_plugins)
 	
 	if($plugin_sub)
 		{
-		PrintInfo "Running '$plugin_sub_name' in plugin '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		PrintInfo "\trunning in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		
 		eval {$plugin_sub->(@plugin_arguments)} ;
-		die ERROR "Error Running plugin sub '$plugin_sub_name':\n$@" if $@ ;
+		die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
 		}
 	else
 		{
-		PrintWarning "Couldn't find '$plugin_sub_name' in plugin '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		}
 	}
 }
@@ -181,7 +181,7 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-PrintInfo "Calling unique '$plugin_sub_name' from '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+PrintInfo "Plugin: '$plugin_sub_name' called at '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 
 my (@found_plugin, $plugin_path, $plugin_sub) ;
 my ($plugin_sub_to_run, $plugin_to_run_path) ;
@@ -199,27 +199,27 @@ for $plugin_path (sort keys %loaded_plugins)
 		{
 		$plugin_sub_to_run = $plugin_sub ;
 		$plugin_to_run_path = $plugin_path ;
-		PrintInfo "Found unique '$plugin_sub_name' in plugin '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		PrintInfo "\tfound in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		}
 	else
 		{
-		PrintWarning "Couldn't find unique '$plugin_sub_name' in plugin '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		}
 	}
 	
 if(@found_plugin > 1)
 	{
-	die ERROR "Error: Found more than one plugin for unique '$plugin_sub_name'\n" . join("\n", @found_plugin) . "\n" ;
+	die ERROR "Plugin: error, found more than one plugin for unique '$plugin_sub_name'\n" . join("\n", @found_plugin) . "\n" ;
 	}
 
 if($plugin_sub_to_run)
 	{
-	PrintInfo "Running unique '$plugin_sub_name' in plugin '$plugin_to_run_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+	PrintInfo "Plugin: running '$plugin_sub_name''\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 	
 	if(! defined wantarray)
 		{
 		eval {$plugin_sub_to_run->(@plugin_arguments)} ;
-		die ERROR "Error Running unique plugin sub '$plugin_sub_name':\n$@" if $@ ;
+		die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
 		}
 	else
 		{
@@ -227,7 +227,7 @@ if($plugin_sub_to_run)
 			{
 			my @results ;
 			eval {@results = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR "Error Running unique plugin sub '$plugin_sub_name':\n$@" if $@ ;
+			die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
 			
 			return(@results) ;
 			}
@@ -235,7 +235,7 @@ if($plugin_sub_to_run)
 			{
 			my $result ;
 			eval {$result = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR "Error Running unique plugin sub '$plugin_sub_name':\n$@" if $@ ;
+			die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
 			
 			return($result) ;
 			}
@@ -243,7 +243,7 @@ if($plugin_sub_to_run)
 	}
 else
 	{
-	PrintWarning "Couldn't find unique Plugin '$plugin_sub_name'.\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+	PrintWarning "Plugin: couldn't find '$plugin_sub_name'.\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 	return ;
 	}
 }

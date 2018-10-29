@@ -20,19 +20,20 @@ script/generate_project.pl
 script/find_deepest.pl
 script/remove_deepest.sh
 
-Plugins/PostPbs.pm
-Plugins/FileWatchClient.pm
-Plugins/CreateLog.pm
+Plugins/CheckNodeName.pm
+Plugins/ColorDefinitions.pm
 Plugins/CreateDump.pm
-Plugins/PackageVisualisation.pm
-Plugins/GraphGeneration.pm
-Plugins/TreeVisualisation.pm
-Plugins/Visualisation.pm
+Plugins/CreateLog.pm
 Plugins/EvaluateShellCommand.pm
 Plugins/ExpandObjects.pm
-Plugins/CheckNodeName.pm
-Plugins/SimplifyRule.pm
+Plugins/FileWatchClient.pm
+Plugins/GraphGeneration.pm
 Plugins/MyOptions.pm
+Plugins/PackageVisualisation.pm
+Plugins/PostPbs.pm
+Plugins/SimplifyRule.pm
+Plugins/TreeVisualisation.pm
+Plugins/Visualisation.pm
 
 PBS/Build.pm
 PBS/Build/NodeBuilder.pm
