@@ -581,39 +581,6 @@ will be passed the argument '-O2'.
 
 The last defined argument for a node/file is passed to the builder. PBS will warn you if multiple arguments are selected.
 
-=head3 Node Attribute Checking
-
-You can give attributes to the nodes, the attribute is declare by following the node name with a colon and a textual attribute (see the example below). When B<PBS> finds such an attribute,
-it calls a user sub registrated via I<RegisterUserCheckSub>. The user sub receives the following arguments:
-
-=over 2 
-
-=item 1 The full name for the node (path and name)
-
-=item 2 The attribute declared in the rule
-
-=back
-
-The sub should return a file full name (path/name) this is most often the first argument it receives, or die with an error message. The node attribute could be used to, for example,
-verify the version of a node.
-
-	Ex:
-	PBS::Rules::AddRule 'all_lib',['all' => 'x.lib:1.0', 'y.lib']
-
-	RegisterUserCheckSub
-	(
-	sub
-		{
-		my ($full_name, $user_attribute) = @_ ;
-		
-		# open file and extract version from it
-		# die if the version is no equal to $user_attribute
-		
-		return($_[0]) ; # must return a file name
-		}
-	) ;
-
-
 
 =head2 Complete rules example
 

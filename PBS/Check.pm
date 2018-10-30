@@ -1,6 +1,5 @@
 
 package PBS::Check ;
-use PBS::Debug ;
 
 use strict ;
 use warnings ;
@@ -14,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(CheckDependencyTree RegisterUserCheckSub) ;
+our @EXPORT = qw(CheckDependencyTree) ;
 our $VERSION = '0.04' ;
 
 use File::Basename ;
@@ -22,29 +21,9 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Cyclic ;
 use PBS::Output ;
-use PBS::Constants ;
 use PBS::Digest ;
 
 #-------------------------------------------------------------------------------
-
-my %global_user_check_subs = ();
-
-sub RegisterUserCheckSub
-{
-my $sub = shift ;
-my $package = caller() ;
-
-$global_user_check_subs{$package} = $sub ;
-}
-
-sub GetUserCheckSub
-{
-my $package = shift ;
-return(undef) unless defined $package ;
-return($global_user_check_subs{$package}) ;
-}
-
-#-----------------------------------------------------------------------------
 
 my $checked_dependency_tree = 0 ;
 
@@ -54,7 +33,7 @@ sub CheckDependencyTree
 # generates a build sequence
 
 $checked_dependency_tree++ ;
-PrintInfo "$checked_dependency_tree\r"  unless $checked_dependency_tree % 100 ;
+PrintInfo "$checked_dependency_tree\r" unless $checked_dependency_tree % 100 ;
 
 my $tree                     = shift ;
 my $node_level               = shift ;
@@ -154,57 +133,6 @@ else
 	{
 	$tree->{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
 	}
-
-if(defined $tree->{__USER_ATTRIBUTE})
-	{
-	my $insertion_package ;
-	
-	if(exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA})
-		{
-		$insertion_package = $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_LOAD_PACKAGE} ;
-		}
-	else
-		{
-		$insertion_package = $tree->{__INSERTED_AT}{INSERTION_LOAD_PACKAGE} ;
-		}
-	
-	my $user_attribute = $tree->{__USER_ATTRIBUTE} ;
-	my $user_check     = GetUserCheckSub($insertion_package) ;
-	
-	if(defined $user_check)
-		{
-		# we allow the user check to change the location of the file
-		my ($user_full_name) = $user_check->($full_name, $user_attribute, $tree) ;
-		
-		my ($user_name, $user_path, $user_ext) = File::Basename::fileparse($user_full_name,('\..*')) ;
-		my ($pbs_name, $pbs_path, $pbs_ext)    = File::Basename::fileparse($full_name,('\..*')) ;
-		
-		# but the name must stay the same
-		if($user_name ne $pbs_name || $user_ext ne $pbs_ext)
-			{
-			die ERROR("PBS Doesn't allow to change '$name' name to '$user_full_name'!\n") ;
-			}
-			
-		if($user_full_name ne $full_name)
-			{
-			# location was changed
-			$full_name = $user_full_name ;
-			
-			if($user_path ne $build_directory)
-				{
-				$tree->{__ALTERNATE_SOURCE_DIRECTORY} = $user_path ;
-				}
-			}
-		#else
-			# keep the file PBS has found
-		}
-	else
-		{
-		my $definition_location = $tree->{__INSERTED_AT}{INSERTION_FILE} ;
-		die ERROR("Node/File '$name', from '$definition_location', has a user attribute '$user_attribute' but no handler!\n") ;
-		}
-	}
-	
 
 $full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
 my $is_virtual = exists $tree->{__VIRTUAL} ;
@@ -444,16 +372,6 @@ if($triggered)
 		delete $tree->{__ALTERNATE_SOURCE_DIRECTORY} ;
 		}
 		
-	# files with full path should be build in a shadow directory under the build directory
-	#~ if(file_name_is_absolute($tree->{__NAME}))
-		#~ {
-		#~ my ($volume,$directories,$file) = splitpath($tree->{__NAME});
-		
-		#~ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
-			#~ {
-			#~ $full_name = "$build_directory/ROOT${directories}$file" ;
-			#~ }
-		#~ }
 		
 	$files_in_build_sequence->{$name} = $tree ;
 	push @$build_sequence, $tree  ;
