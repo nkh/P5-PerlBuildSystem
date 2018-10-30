@@ -1,4 +1,38 @@
 
+
+binary repository
+	client
+		
+
+	server
+		? replace  --source_directory for binaries
+
+		homebrew
+			http server vs adhoc
+			forking?
+			crawls output directories, links to them
+			
+			
+
+
+		the shiny with a web page
+			plugin to do the mangling
+				run as proxy server or within pbs
+
+	local cache
+	precognito mode
+		knows about things that are being build
+		blocking / asynchronous
+
+	spreading the word
+		synch with other repos
+		address book
+
+	administrative work
+		backups
+		removal of old objects
+			
+
 Add to docs:
 	PBSFILE_CONTENTS is added as a variable dependency, those are not checked in warp
 		OK if the content is generated in pbsfiles

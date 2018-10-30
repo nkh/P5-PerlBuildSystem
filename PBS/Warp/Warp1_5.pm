@@ -455,16 +455,12 @@ if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 
 	my %all_nodes_triggered ;
 
-	for my $slice (distribute(scalar @terminal_nodes, $sub_process))
-		{
-		my @nodes_to_check = @terminal_nodes[$slice->[0] .. $slice->[1]] ;
-		my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified)  ;
+	my ($nodes_triggered, $trigger_nodes) =  _CheckNodes($pbs_config, $nodes, \@terminal_nodes , $node_names, $IsFileModified)  ;
 
-		$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
+	$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
 
-		$number_trigger_nodes += @$trigger_nodes ;
-		$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
-		}
+	$number_trigger_nodes += @$trigger_nodes ;
+	$trigger_log .= "{ NAME => '$_'},\n" for @$trigger_nodes ;
 
 	# remove from dependency graph
 	my @file_triggered_names = keys %all_nodes_triggered ;
@@ -697,7 +693,7 @@ for my $node (keys %$inserted_nodes)
 	{
 	if(exists $inserted_nodes->{$node}{__WARP_NODE})
 		{
-		# try to reuse the inserted nodes directly in writing the warp file
+		# reuse the inserted nodes directly in writing the warp file
 		# inserted nodes is itself mainly warp revivified nodes
 
 		$nodes{$node} = $inserted_nodes->{$node} ;
@@ -722,8 +718,6 @@ for my $node (keys %$inserted_nodes)
 		
 		delete $nodes{$node}{__INSERTED_AT}{INSERTION_RULE} ; 
 		
-		# let our dependent nodes know about their dependencies
-		# this is needed when regenerating the warp file from partial warp data
 		for my $dependent (keys %{$nodes{$node}})
 			{
 			delete $nodes{$node}{$dependent} unless 0 == index($dependent, '__') ;
@@ -907,7 +901,12 @@ for my $node (keys %$inserted_nodes)
 		
 		my $node_pbsfile = pop @pbsfile_chain ;
 
-		next unless defined $node_pbsfile ; # top level nodes and nodes inserted by pbs, ie: deppendencies
+		unless( defined $node_pbsfile)
+			{
+			# top level nodes and nodes inserted by pbs, ie: deppendencies
+			$nodes{$node}{__WARP_NODE}++ ;
+			next ;
+			}
 
 		$warp_dependents->{$node_names->[$node_pbsfile]}{LEVEL}{$node_index}++ ;
 		$warp_dependents->{$node_names->[$node_pbsfile]}{MAX_LEVEL} = @pbsfile_chain ;
@@ -1055,9 +1054,9 @@ for my $node (keys %$inserted_nodes)
 					}
 				}
 			}
-		}
 
-	$nodes{$node}{__WARP_NODE}++ ;
+		$nodes{$node}{__WARP_NODE}++ ;
+		}
 	}
 
 PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new_nodes = $new_nodes\n" ;
