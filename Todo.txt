@@ -1,4 +1,106 @@
 
+fix error in build process dies on split! 
+	Forked line 551, Pbsfiles/hello_fail
+ 
+Fix cyclic pbsfile test
+	COLOR get an undefined variable to display
+	cycles displayed twice
+	unhandled type REGEX
+	at home/ndim ..../ module.pm
+
+Fix other examples
+	make run
+	document
+	remove
+
+Roadmap
+	Warp
+		Meso warp
+
+		load/regeneration 
+			faster
+				smaller size (15 MB for 12_000 nodes)
+				less data
+				on demand regeneration
+					we regenerate the nodes but very few are reused in non warp run
+
+		
+		distribution
+
+
+	Depend
+		rule caching
+			between runs
+			between packages
+
+		parallel rule running		
+			
+		distribution and parallelization
+
+		* linking configuration check
+
+		rethink package dependencies
+
+	check
+		distribution and parallelization
+		
+		separate check hash, generate build sequence, create parent information
+
+	build
+		distribute
+
+		generate meso data for nodes/pbsfile/packages
+
+		light weight build node (just run commands know nothing about context)
+			gearman
+
+	Watch server
+		make robust using lib or other external server
+
+	graph generation
+		variants in the same graph
+
+		remove local nodes 
+
+	debugger
+		interface
+			rocky bernstein
+
+		breakpoint
+			variable access or modification
+						
+			grep output
+				can be done today by a breakpoint
+
+	Repository
+		expand --source_directory to accept external binary repos
+		
+		make difference between source and binary repositories 
+
+		
+	General
+		PBS 2.0
+			more implementation
+			work on the requirements
+
+		Zero ENV
+
+		rename pbs switches
+
+		rename/alias ExcludeFromDigestGeneration
+
+
+move package dependent digest data to package
+	rather than in Digest.pm
+		GetPackageDigest($package)
+		$package::GetDigest()
+
+
+	when applying rules, apply rule_package_dependency which adds node or package dependency to the node directly
+		store in __PACKAGE_DEPENDENCY
+
+		makes sense to have the dependencies directly in the node
+		simplifies warp generation
 
 binary repository
 	client

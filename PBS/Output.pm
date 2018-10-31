@@ -109,7 +109,7 @@ my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $de
 my $string = $indent . ($_[1] // 'undef') ;
 $string =~ s/\n(.)/\n$indent$1/g ;
 
-return ($cc{$cd}{$_[0]} // '') . $string . $cc{$cd}{reset} ;
+return ($cc{$cd}{$_[0]} // '') . $string . ($cc{$cd}{reset} // '') ;
 }
 
 sub ERROR { return COLOR('error', @_) }

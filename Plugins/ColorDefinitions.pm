@@ -24,6 +24,9 @@ return
 		user      => '',
 		shell     => '',
 		debug     => '',
+
+		no_match  => '',
+
 		reset     => '',
 		},
 	16 => 

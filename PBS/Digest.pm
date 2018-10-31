@@ -1163,7 +1163,6 @@ return $d ;
 #-------------------------------------------------------------------------------
 
 use File::Path ;
-use POSIX qw(strftime);
 
 sub WriteDigest
 {
@@ -1181,7 +1180,8 @@ if($create_path)
 	
 open NODE_DIGEST, ">", $digest_file_name  or die ERROR("Can't open '$digest_file_name' for writting: $!") . "\n" ;
 
-my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime;
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
 
 my $HOSTNAME = $ENV{HOSTNAME} // 'no_host' ;
 my $user = PBS::PBSConfig::GetUserName() ;

@@ -28,7 +28,6 @@ use JSON::XS ;
 
 use Data::Compare ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
-use POSIX qw(strftime);
 use File::Slurp ;
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -147,6 +146,7 @@ if($run_in_warp_mode)
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A Warp 1.5' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_NAME} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE}] ;
 
 		unless(exists $nodes->{$node}{__DEPENDED_AT})
 			{
@@ -168,7 +168,9 @@ if($run_in_warp_mode)
 			}
 		}
 
-	my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
+
 	write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
 
 	if($pbs_config->{DISPLAY_WARP_TIME})
@@ -681,14 +683,10 @@ $node_names //= [] ;
 $nodes_index //= {} ;
 $warp_dependents //= {} ;
 
-use Data::TreeDumper ;
-#PrintUser DumpTree $nodes_index, 'node indexes', DISPLAY_ROOT_ADDRESS => 1 ;
-
 my (@insertion_file_names, %insertion_file_index, %libs) ;
 
 my $new_nodes = 0 ;
 
-#PrintDebug  DumpTree$warp_dependents, 'warp dependents:' ;
 for my $node (keys %$inserted_nodes)
 	{
 	if(exists $inserted_nodes->{$node}{__WARP_NODE})
@@ -704,10 +702,20 @@ for my $node (keys %$inserted_nodes)
 				__PBS_CONFIG
 				)} ;
 
-		# remove dependencies, warp nodes have no dependencies!
 
 		my $insertion_file = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
 		
+		my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
+
+		unless (exists $insertion_file_index{$inserting_node})
+			{
+			push @insertion_file_names, $inserting_node ;
+			$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+			}
+
+		$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
+
+		# remove dependencies
 		unless (exists $insertion_file_index{$insertion_file})
 			{
 			push @insertion_file_names, $insertion_file ;
@@ -758,15 +766,30 @@ for my $node (keys %$inserted_nodes)
 			($nodes{$node}{__LOCATION}) = ($inserted_nodes->{$node}{__BUILD_NAME} =~ /^(.*)$1$/) ;
 			}
 			
-		#this can also be reduced for a +/- 10% reduction
 		if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
 			&& exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
 			{
-			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+			my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} ;
+
+			unless (exists $insertion_file_index{$inserting_node})
+				{
+				push @insertion_file_names, $inserting_node ;
+				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				}
+			
+			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
 			}
 		else
 			{
-			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
+			my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
+
+			unless (exists $insertion_file_index{$inserting_node})
+				{
+				push @insertion_file_names, $inserting_node ;
+				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				}
+
+			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
 			}
 		
 		if(exists $inserted_nodes->{$node}{__DEPENDED_AT})
@@ -901,7 +924,7 @@ for my $node (keys %$inserted_nodes)
 		
 		my $node_pbsfile = pop @pbsfile_chain ;
 
-		unless( defined $node_pbsfile)
+		unless(defined $node_pbsfile)
 			{
 			# top level nodes and nodes inserted by pbs, ie: deppendencies
 			$nodes{$node}{__WARP_NODE}++ ;
@@ -964,6 +987,13 @@ for my $node (keys %$inserted_nodes)
 							{
 							$new_nodes++ ;
 
+			my $inserting_node = $node_pbsfile ;
+
+			unless (exists $insertion_file_index{$inserting_node})
+				{
+				push @insertion_file_names, $inserting_node ;
+				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				}
 							$nodes{$1} =
 								{
 								__MD5 => $package_digest->{$package_dependency},
@@ -971,7 +1001,7 @@ for my $node (keys %$inserted_nodes)
 									{
 									INSERTION_FILE => 0,
 									PBSFILE_CHAIN => $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [],
-									INSERTING_NODE => $node_pbsfile,
+									INSERTING_NODE => $insertion_file_index{$inserting_node},
 									},
 								__TERMINAL => 1,
 								__WARP_NODE => 1,
@@ -1021,6 +1051,13 @@ for my $node (keys %$inserted_nodes)
 							{
 							$new_nodes++ ;
 
+			my $inserting_node = $node_pbsfile ;
+
+			unless (exists $insertion_file_index{$inserting_node})
+				{
+				push @insertion_file_names, $inserting_node ;
+				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				}
 							$nodes{$lib} =
 								{
 								__MD5 => $package_digest->{$package_dependency} // '?',
@@ -1028,7 +1065,7 @@ for my $node (keys %$inserted_nodes)
 									{
 									INSERTION_FILE => 0,
 									PBSFILE_CHAIN => $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [],
-									INSERTING_NODE => $node_pbsfile,
+									INSERTING_NODE => $insertion_file_index{$inserting_node},
 									},
 								__TERMINAL => 1,
 								__WARP_NODE => 1,

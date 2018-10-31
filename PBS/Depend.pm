@@ -114,11 +114,12 @@ my $rules_matching = 0 ;
 # find the dependencies by applying the rules
 for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	{
-	my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
-	my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
-	my $rule_info = $rule_name . INFO2(" @ $dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}", 0) ;
+	my $dependency_rule = $dependency_rules->[$rule_index] ;
+	my $rule_name = $dependency_rule->{NAME} ;
+	my $rule_line = $dependency_rule->{LINE} ;
+	my $rule_info = $rule_name . INFO2(" @ $dependency_rule->{FILE}:$rule_line", 0) ;
 	
-	my $depender  = $dependency_rules->[$rule_index]{DEPENDER} ;
+	my $depender  = $dependency_rule->{DEPENDER} ;
    
 	#DEBUG	
 	my %debug_data ;
@@ -139,7 +140,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		$DB::single = 1 if(PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
 		}
 		
-	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $dependency_rules->[$rule_index]) ;
+	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $dependency_rule) ;
 	
 	my ($triggered, @dependencies ) = @$dependency_result ;
 	
@@ -158,7 +159,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		$tree->{__DEPENDED}++ ; # depend sub tree once only flag
 		$tree->{__DEPENDED_AT} = $Pbsfile ;
 		
-		my $subs_list = $dependency_rules->[$rule_index]{NODE_SUBS} ;
+		my $subs_list = $dependency_rule->{NODE_SUBS} ;
 		
 		if(defined $subs_list)
 			{
@@ -189,7 +190,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				
 			if(@$subs)
 				{
-				PrintInfo 'Build: running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'\n" 
+				PrintInfo 'Build: running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n" 
 					if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
 				my $index = -1 ;
@@ -208,11 +209,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		#----------------------------------------------------------------------------
 		if(@dependencies && 'HASH' eq ref $dependencies[0])
 			{
-			$dependencies[0]{__RULE_NAME} = $dependency_rules->[$rule_index]{NAME} ;
+			$dependencies[0]{__RULE_NAME} = $dependency_rule->{NAME} ;
 			push @sub_pbs, 
 				{
 				SUBPBS => $dependencies[0],
-				RULE   => $dependency_rules->[$rule_index],
+				RULE   => $dependency_rule,
 				} ;
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
@@ -224,7 +225,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			}
 		else
 			{
-			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rules->[$rule_index]{FILE}:$dependency_rules->[$rule_index]{LINE}'" ;
+			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rule->{FILE}:$dependency_rule->{LINE}'" ;
  			}
 		
 		# transform the node name into an internal structure and check for node attributes
@@ -267,7 +268,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		#-------------------------------------------------------------------------
 		my %types = map { $_, 1 } (VIRTUAL, LOCAL, FORCED, IMMEDIATE_BUILD) ;
 		
-		for my $rule_type (@{$dependency_rules->[$rule_index]{TYPE}})
+		for my $rule_type (@{$dependency_rule->{TYPE}})
 			{
 			$tree->{$rule_type} = 1 if(exists $types{$rule_type}) ;
 			}
@@ -288,15 +289,15 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				$node_type = '[' . $node_type . '] ' if $node_type ne '' ;
 				
-				my $rule_info =  $dependency_rules->[$rule_index]{NAME}
+				my $rule_info =  $dependency_rule->{NAME}
 						. (defined $pbs_config->{ADD_ORIGIN} 
-							? $dependency_rules->[$rule_index]{ORIGIN}
-							: ':' .$dependency_rules->[$rule_index]{FILE}) ;
+							? $dependency_rule->{ORIGIN}
+							: ':' . $dependency_rule->{FILE} . ':' . $dependency_rule->{LINE}) ;
 
 				my $rule_type = '' ;
-				$rule_type .= '[B]'  if(defined $dependency_rules->[$rule_index]{BUILDER}) ;
+				$rule_type .= '[B]'  if(defined $dependency_rule->{BUILDER}) ;
 				$rule_type .= '[BO]' if($builder_override) ;
-				$rule_type .= '[S]'  if(defined $dependency_rules->[$rule_index]{NODE_SUBS}) ;
+				$rule_type .= '[S]'  if(defined $dependency_rule->{NODE_SUBS}) ;
 				$rule_type = " $rule_type" unless $rule_type eq '' ;
 
 				my @dependency_names = map {$_->{NAME} ;} grep {'' eq ref $_->{NAME}} @dependencies ;
@@ -318,7 +319,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 					if(@dependency_names)
 						{
-						$dependency_info .= ":\n" ;
+						$dependency_info .= "\n" ;
 						my $dependency_info_deps =  $PBS::Output::indentation . join("\n\t", map {"'" . $el->($_) . "'"} @dependency_names) ;
 						$dependency_info_deps .= "\n\n" ;
 			
@@ -333,14 +334,14 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					PrintInfo "\t[$rules_matching] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info:$rule_type\n\n", 0) ;
+					PrintInfo "\t[$rules_matching] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info$rule_type\n\n", 0) ;
 					}
 					
 				PrintWithContext
 					(
-					$dependency_rules->[$rule_index]{FILE},
+					$dependency_rule->{FILE},
 					1, 2, #context  size
-					$dependency_rules->[$rule_index]{LINE},
+					$dependency_rule->{LINE},
 					\&INFO,
 					) if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 				}
@@ -378,17 +379,16 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				
 			next if $dependency_name =~ /^__/ ;
 			
-			RunPluginSubs($pbs_config, 'CheckNodeName', $dependency_name, $dependency_rules->[$rule_index]) ;
+			RunPluginSubs($pbs_config, 'CheckNodeName', $dependency_name, $dependency_rule) ;
 			
 			if($node_name eq $dependency_name)
 				{
-				my $rule      = $dependency_rules->[$rule_index] ;
-				my $rule_info =  $rule->{NAME} . $rule->{ORIGIN} ;
+				my $rule_info = $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
 									
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
 				PrintError( "Depend: self referencial rule #$rule_index '$rule_info' for $node_name: $dependency_names.\n") ;
 				
-				PbsDisplayErrorWithContext($rule->{FILE}, $rule->{LINE}) ;
+				PbsDisplayErrorWithContext($dependency_rule->{FILE}, $dependency_rule->{LINE}) ;
 				die "\n";
 				}
 			
@@ -398,12 +398,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					unless (defined $pbs_config->{NO_DUPLICATE_INFO})
 						{
-						my $rule_info =  $dependency_rules->[$rule_index]{NAME}
-											. $dependency_rules->[$rule_index]{ORIGIN} ;
+						my $rule_info = $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
 											
 						my $inserting_rule_index = $tree->{$dependency_name}{RULE_INDEX} ;
 						my $inserting_rule_info  =  $dependency_rules->[$inserting_rule_index]{NAME}
-											             . $dependency_rules->[$inserting_rule_index]{ORIGIN} ;
+										. $dependency_rules->[$inserting_rule_index]{ORIGIN} ;
 											
 						PrintWarning
 							(

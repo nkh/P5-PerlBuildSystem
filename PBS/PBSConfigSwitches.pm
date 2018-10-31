@@ -207,7 +207,7 @@ EOH
 		'Interactive PBS documentation display and search.',
 		'',
 		
-	'w|wizard:s'                      => \$pbs_config->{WIZARD},
+	'wizard:s'                      => \$pbs_config->{WIZARD},
 		'Starts a wizard.',
 		'',
 		
@@ -1114,7 +1114,7 @@ EOT
 		"Display the time spend in warp creation or use.",
 		'',
 		
-	'warp=s'             => \$pbs_config->{WARP},
+	'w|warp=s'             => \$pbs_config->{WARP},
 		"specify which warp to use.",
 		'',
 		

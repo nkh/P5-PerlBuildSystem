@@ -19,15 +19,15 @@ our $VERSION = '0.04' ;
 
 use PBS::Output ;
 use PBS::Digest ;
-use PBS::Constants ;
-use PBS::Plugin;
+#use PBS::Constants ;
+#use PBS::Plugin;
 use PBS::Warp;
 
 use Cwd ;
 use File::Path;
 use Data::Dumper ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
-use POSIX qw(strftime);
+#use POSIX qw(strftime);
 use File::Slurp ;
 
 use constant RUN_NOT_NEEDED => -1 ;
@@ -487,7 +487,9 @@ for my $node_name (sort keys %$node_md5s)
 		}
 	}
 
-my $now_string = strftime "%d_%b_%H_%M_%S", gmtime;
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
+
 write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
 		
 

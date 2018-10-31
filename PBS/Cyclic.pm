@@ -24,9 +24,7 @@ use Devel::Cycle ;
 
 sub GetUserCyclicText
 {
-my $cyclic_tree_root = shift ;
-my $inserted_nodes   = shift ;
-my $pbs_config       = shift ;
+my ($cyclic_tree_root, $inserted_nodes, $pbs_config) = @_ ;
 
 my $number_of_cycles = 0 ;
 my $all_cycles = '' ;
@@ -49,19 +47,20 @@ my $cycle_display_sub = sub
 			$cycle .= "$indent'$name' " 
 				."inserted at rule: '$inserted_nodes->{$name}{__INSERTED_AT}{INSERTION_RULE}'\n" ;
 
-			$indent .= ' ' ;
+			$indent .= '   ' ;
 			$root_node = $cycle unless defined $root_node ;
 			}
 		else
 			{
-			return ; # unintresting
+			return ; # uninteresting
 			}
 		}
 		
-	$all_cycles .= $cycle . $indent . $root_node . "\n" ;
+	$all_cycles .= $cycle . $indent . $root_node ;
 	$number_of_cycles++ ;
 	} ;
 	
+local $SIG{'__WARN__'} = sub {} ;
 find_cycle($cyclic_tree_root, $cycle_display_sub);
 
 return($number_of_cycles, $all_cycles) ;

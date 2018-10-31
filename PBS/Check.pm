@@ -79,7 +79,9 @@ if(exists $tree->{__CYCLIC_FLAG})
 		if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 			{
 			my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config) ; 
-			die ERROR "Cycles dependencies detected ($number_of_cycles):\n$cycles" ;
+			print STDERR ERROR("\nCycles dependencies detected ($number_of_cycles):\n$cycles") ;
+
+			die "\n" ;
 			}
 		
 		if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
