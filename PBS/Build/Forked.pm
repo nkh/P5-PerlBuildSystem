@@ -73,7 +73,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		}
 	
 	my @built_nodes = WaitForBuilderToFinish($pbs_config, $builders) ;
-	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occured
+	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
 		
 	for my $built_node (@built_nodes)
 		{
@@ -548,7 +548,8 @@ unless ($builder_channel)
 	die "\n" ;
 	}
 
-my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, <$builder_channel> ;
+my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, (<$builder_channel> // "0__PBS_FORKED_BUILDER__No message\n") ;
+#my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, <$builder_channel> ;
 $build_result = BUILD_FAILED unless defined $build_result ;
 
 my ($build_time, $error_output) = (-1, '') ;

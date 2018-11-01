@@ -95,8 +95,6 @@ my %rule_type ;
 unless($builder_uses_perl_sub)
 	{
 	my $shell_command_generator =
-		# nadim 12 june 2005, let's try to minimize  memory consumption
-		# more can be done but this was an easy testl
 		sub 
 		{
 		return
@@ -182,7 +180,7 @@ if(exists $tree->{__SHELL_OVERRIDE})
 		}
 	}
 	
-$tree->{__SHELL_INFO} = $node_shell->GetInfo() ; # :-) doesn't help as this might not be in the root process
+$tree->{__SHELL_INFO} = $node_shell->GetInfo() ; 
 if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	{
 	PrintWarning "Using shell$is_node_local_shell: '$tree->{__SHELL_INFO}' " ;

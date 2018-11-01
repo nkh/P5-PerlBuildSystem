@@ -31,7 +31,7 @@ my $parent_channel = shift ; # communication channel to/from parent
 my $pbs_config     = $_[0] ;
 
 my ($build_log, $build_output) ; # file names for the last build
-my $build_time ; #last node build time
+my ($build_result, $build_message, $build_time) ; #last node build info
 
 while(defined (my $command_and_args = <$parent_channel>))
 	{
@@ -70,7 +70,11 @@ while(defined (my $command_and_args = <$parent_channel>))
 			my ($node_name, $node_build_sequencer_info) ;
 			
 			(undef, $node_name, $node_build_sequencer_info) = @command_and_args ;
-			($build_log, $build_output, $build_time) = BuildNode($parent_channel, $node_name, $node_build_sequencer_info, @_) ;
+
+			($build_result, $build_message, $build_log, $build_output, $build_time)
+				= BuildNode($parent_channel, $node_name, $node_build_sequencer_info, @_) ;
+
+			print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 			
 			last ;
 			} ;
@@ -200,6 +204,7 @@ if(defined $node)
 		$PBS::Shell::silent_commands_output = 0 ; 
 		}
                
+	print OLDERR "*building $node_name\n" ;
 	eval 
 		{
 		($build_result, $build_message) =
@@ -211,30 +216,30 @@ if(defined $node)
 				$node_build_sequencer_info
 				) ;
 		} ;
-		
+
 	if($@)
 		{
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;
 		
-		#add exception message to the command output
+		print OLDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		print STDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
 		}
 	
 	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)
 		if(defined $pbs_config->{CREATE_LOG_HTML}) ;
 
-	# status
-	print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
-	
-	return($redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
+	close(STDERR);
+	open(STDERR, ">&OLDERR");
+
+	return($build_result, $build_message, $redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
 	}
 else
 	{
+	close(STDERR);
+	open(STDERR, ">&OLDERR");
+
 	die ERROR "ForkedBuilder: Couldn't find node '$node_name' in build_sequence.\n" ;
 	}
-	
-close(STDERR);
-open(STDERR, ">&OLDERR");
 }
 
 #--------------------------------------------------------------------------------------------

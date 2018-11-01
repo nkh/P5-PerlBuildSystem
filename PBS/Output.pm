@@ -101,8 +101,6 @@ else
 
 sub COLOR
 {
-die $@ if $@ ;
-
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
 my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $depth) ;
 

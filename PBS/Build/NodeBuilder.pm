@@ -173,7 +173,7 @@ if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 		{
 		PrintShell "Skipping node build, no dependency change\n" ;
 		
-		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly skipped build.") ;	
+		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No dependency change.") ;	
 		}
 	}
 
@@ -188,7 +188,7 @@ if($node_needs_rebuild)
 		
 		if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 			{
-			($build_result, $build_message) = (BUILD_FAILED, "Builder skipped because of --bi.") ;
+			($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
 			}
 		else
 			{

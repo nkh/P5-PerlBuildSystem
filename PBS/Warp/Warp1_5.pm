@@ -987,13 +987,14 @@ for my $node (keys %$inserted_nodes)
 							{
 							$new_nodes++ ;
 
-			my $inserting_node = $node_pbsfile ;
+							my $inserting_node = $node_pbsfile ;
 
-			unless (exists $insertion_file_index{$inserting_node})
-				{
-				push @insertion_file_names, $inserting_node ;
-				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
-				}
+							unless (exists $insertion_file_index{$inserting_node})
+								{
+								push @insertion_file_names, $inserting_node ;
+								$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+								}
+
 							$nodes{$1} =
 								{
 								__MD5 => $package_digest->{$package_dependency},
@@ -1051,13 +1052,14 @@ for my $node (keys %$inserted_nodes)
 							{
 							$new_nodes++ ;
 
-			my $inserting_node = $node_pbsfile ;
+							my $inserting_node = $node_pbsfile ;
 
-			unless (exists $insertion_file_index{$inserting_node})
-				{
-				push @insertion_file_names, $inserting_node ;
-				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
-				}
+							unless (exists $insertion_file_index{$inserting_node})
+								{
+								push @insertion_file_names, $inserting_node ;
+								$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+								}
+
 							$nodes{$lib} =
 								{
 								__MD5 => $package_digest->{$package_dependency} // '?',

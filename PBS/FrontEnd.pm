@@ -46,13 +46,13 @@ my ($targets) = $pbs_config->{TARGETS} ;
 
 if($pbs_config->{DISPLAY_LIB_PATH})
 	{
-	print 'Pbs lib paths:' . join(':', @{$pbs_config->{LIB_PATH}}) . "\n" ;
+	print 'PBS: lib paths:' . join(':', @{$pbs_config->{LIB_PATH}}) . "\n" ;
 	return(1) ;
 	}
 
 if($pbs_config->{DISPLAY_PLUGIN_PATH})
 	{
-	print 'Pbs plugin paths: ' . join(':', @{$pbs_config->{PLUGIN_PATH}}) . "\n" ;
+	print 'PBS: plugin paths: ' . join(':', @{$pbs_config->{PLUGIN_PATH}}) . "\n" ;
 	return(1) ;
 	}
 
@@ -143,12 +143,12 @@ for my $target (@$targets)
 	{
 	if($target =~ /^\@/ || $target =~ /\@$/ || $target =~ /\@/ > 1)
 		{
-		die "Invalid composite target definition\n" ;
+		die "PBS: invalid composite target definition\n" ;
 		}
 
 	if($target =~ /@/)
 		{
-		die "Only one composite target allowed\n" if @$targets > 1 ;
+		die "PBS: only one composite target allowed\n" if @$targets > 1 ;
 		}
 	}
 	
@@ -243,18 +243,18 @@ if(@$targets)
 				) ;
 			} ;
 
-		PrintError("Couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
+		PrintError("PBS: couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
 		}
 	}
 else
 	{
-	PrintError("No targets given on the command line!\n") ;
+	PrintError("PBS: no targets given on the command line!\n") ;
 	PBS::PBSConfigSwitches::DisplayUserHelp($pbs_config->{PBSFILE}, 1, 0) ;
 		
 	$build_success = 0 ;
 	}
 
-return($build_success, "PBS run building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;
+return($build_success, "PBS: building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;
 }
 
 #-------------------------------------------------------------------------------
