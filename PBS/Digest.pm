@@ -147,7 +147,6 @@ else
 
 my $time = tv_interval($t0_md5, [gettimeofday]) ;
 
-$md5 //= '?' ;
 PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
 
 my $md5_time += $time ;
@@ -1146,7 +1145,7 @@ my $node = shift ;
 
 PrintDebug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
 
-#TODO: Add plugins to digest  map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
+# TODO: Add plugins to digest  map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
 # TODO: Add pbs install to digest
 
 my $package_digest = GetPackageDigest($node->{__LOAD_PACKAGE}) ;
