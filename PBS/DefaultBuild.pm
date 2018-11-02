@@ -216,28 +216,8 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-# we must get the number of nodes in the tree from the tree itself as we might have multiple %inserted_nodes if
-# subpbses are run in LOCALE_NODES mode
-my $number_of_nodes_in_the_dependency_tree = 0 ;
-my $node_counter = sub 
-			{
-			my $tree = shift ;
-			if('HASH' eq ref $tree && exists $tree->{__NAME})
-				{
-				$number_of_nodes_in_the_dependency_tree++ if($tree->{__NAME} !~ /^__/) ;
-				
-				return('HASH', $tree, grep {! /^__/} keys %$tree) ; # tweak to run faster
-				}
-			else
-				{
-				return(undef) ; # prune
-				}
-			} ;
-		
-DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_counter) ;
-		
 my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
-PrintInfo("Build: ${build_at}nodes in the dependency tree: $number_of_nodes_in_the_dependency_tree\n") ;
+PrintInfo("Build: ${build_at}nodes in the dependency tree: " . scalar(keys %$inserted_nodes) . "\n") ;
 
 my ($build_result, $build_message) ;
 
