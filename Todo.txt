@@ -1,14 +1,5 @@
 
-fix error in build process dies on split! 
-	Forked line 551, Pbsfiles/hello_fail
- 
-Fix cyclic pbsfile test
-	COLOR get an undefined variable to display
-	cycles displayed twice
-	unhandled type REGEX
-	at home/ndim ..../ module.pm
-
-Fix other examples
+Fix all examples in pbsfiles
 	make run
 	document
 	remove
@@ -90,7 +81,7 @@ Roadmap
 		rename/alias ExcludeFromDigestGeneration
 
 
-move package dependent digest data to package
+move package dependent digest data to runtime package
 	rather than in Digest.pm
 		GetPackageDigest($package)
 		$package::GetDigest()
@@ -146,6 +137,15 @@ remove creator and PBS_FORCE_ type (only used by creators)
 
 do not put all the big files in the same sub processes (duh!)
 	checking the size of all the node may cost more than checking them in the same process
+
+#fix error in build process dies on split! 
+	Forked line 551, Pbsfiles/hello_fail
+ 
+#Fix cyclic pbsfile test
+	COLOR get an undefined variable to display
+	cycles displayed twice
+	unhandled type REGEX
+	at home/ndim ..../ module.pm
 
 #more colors
 	rgb/256

@@ -204,7 +204,6 @@ if(defined $node)
 		$PBS::Shell::silent_commands_output = 0 ; 
 		}
                
-	print OLDERR "*building $node_name\n" ;
 	eval 
 		{
 		($build_result, $build_message) =

@@ -57,7 +57,7 @@ if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 		{
 		# slice and send node list to check, $checker->Check(@node_list)  ;
 		my @nodes_to_check = @terminal_nodes[$slice->[0] .. $slice->[1]] ;
-		StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check)  ;
+		StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check, '')  ;
 		}
 
 	my %all_nodes_triggered ;
@@ -104,7 +104,7 @@ else
 			{
 			# slice and send node list to check, $checker->Check(@node_list)  ;
 			my @nodes_to_check = @{$nodes_per_level[$level]}[$slice->[0] .. $slice->[1]] ;
-			StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check)  ;
+			StartCheckingNodes(@$checkers[$checker_index++], \@nodes_to_check, $level)  ;
 			}
 
 		my %all_nodes_triggered ;
@@ -146,7 +146,7 @@ else
 		}
 	}
 
-TerminateCheckers($checkers) ;
+TerminateCheckers($pbs_config, $checkers) ;
 
 return ($number_trigger_nodes, $trigger_log) ;
 }
@@ -313,13 +313,13 @@ while(defined (my $command_and_args = <$parent_channel>))
 			
 		/^CHECK_NODES$/ and do
 			{
-			(undef, my @nodes_to_check) = @command_and_args ;
+			(undef, my $level, my @nodes_to_check) = @command_and_args ;
 
 			# checker caches are synchronized after process checks nodes, start with empty cache 
 			PBS::Digest::FlushMd5Cache() ;
 			
 			my ($nodes_triggered, $trigger_nodes) =
-				$node_checker->($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified) ;
+				$node_checker->($pbs_config, $nodes, \@nodes_to_check , $node_names, $IsFileModified, $level) ;
 
 			my (%s1, %s2) ;
 			my @nodes_triggered = grep { !$s1{$_}++ } @$nodes_triggered ;
@@ -358,13 +358,13 @@ exit ;
 
 sub StartCheckingNodes
 {
-my ($pid, $nodes_to_check) = @_ ;
+my ($pid, $nodes_to_check, $level) = @_ ;
 
 # IPC start the build
 my $checker_channel = $pid->{CHECKER_CHANNEL} ;
 $pid->{CHECKING} = 1 ;
 
-print $checker_channel "CHECK_NODES" . "__PBS_FORKED_CHECKER__"
+print $checker_channel "CHECK_NODES" . "__PBS_FORKED_CHECKER__" . $level . "__PBS_FORKED_CHECKER__"
 			. join("__PBS_FORKED_CHECKER__", @$nodes_to_check)
 			. "__PBS_FORKED_CHECKER__\n" ;
 }
@@ -403,10 +403,10 @@ return \@nodes_triggered, \@trigger_nodes ;
 
 sub TerminateCheckers
 {
-my ($checkers) = @_ ;
+my ($pbs_config, $checkers) = @_ ;
 my $number_of_checkers = @$checkers ;
 
-PrintInfo "Warp: terminating checker processes [$number_of_checkers]\n" ;
+PrintInfo "Warp: terminating checker processes [$number_of_checkers]\n" if $pbs_config->{DISPLAY_JOBS_INFO} ;
 
 for my $checker (@$checkers)
 	{

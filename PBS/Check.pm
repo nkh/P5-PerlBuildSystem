@@ -32,37 +32,19 @@ sub CheckDependencyTree
 # also checks the tree for cyclic dependencies
 # generates a build sequence
 
-$checked_dependency_tree++ ;
-PrintInfo "$checked_dependency_tree\r" unless $checked_dependency_tree % 100 ;
+my ($tree, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $node_checker_rule, $build_sequence, $files_in_build_sequence)  = @_ ;
 
-my $tree                     = shift ;
-my $node_level               = shift ;
-my $inserted_nodes           = shift ; # this is to be considered read only
-my $pbs_config               = shift ;
-my $config                   = shift ; 
-my $trigger_rule             = shift ;
-my $node_checker_rule        = shift ;
+return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
+	
+PrintInfo "$checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
 
-my $build_sequence           = shift || [] ; # output
-my $files_in_build_sequence  = shift || {} ; # output
+$build_sequence //= [] ; 
+$files_in_build_sequence //= {} ;
 
-my $build_directory          = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
-my $source_directories       = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ; 
+my $build_directory    = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
+my $source_directories = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ; 
 
 my $triggered = 0 ; 
-	
-if(exists $tree->{__CHECKED})
-	{
-	# linked nodes are checked once only
-	if(exists $tree->{__TRIGGERED})
-		{
-		return(1) ;
-		}
-	else
-		{
-		return(0) ;
-		}
-	}
 	
 $tree->{__LEVEL} = $node_level ;
 my $name = $tree->{__NAME} ;
@@ -79,9 +61,9 @@ if(exists $tree->{__CYCLIC_FLAG})
 		if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 			{
 			my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config) ; 
-			print STDERR ERROR("\nCycles dependencies detected ($number_of_cycles):\n$cycles") ;
+			print STDERR ERROR("\e[KCyclic dependencies detected ($number_of_cycles):\n$cycles") ;
 
-			die "\n" ;
+			die "DEPENDENCY_CYCLE_DETECTED\n" ;
 			}
 		
 		if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})

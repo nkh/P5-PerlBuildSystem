@@ -132,9 +132,13 @@ if($run_in_warp_mode)
 
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
 
+	my $rebuilt = 0 ;
 	# rebuild the data PBS needs from the warp file for the nodes that have not triggered
 	for my $node (keys %$nodes)
 		{
+		PrintInfo2 "\e[KWarp: rebuilt node $rebuilt\r" if $rebuilt % 100 ;
+		$rebuilt++ ;
+
 		$nodes->{$node}{__NAME} = $node ;
 		$nodes->{$node}{__BUILD_DONE} = 'Warp 1.5' ;
 		$nodes->{$node}{__DEPENDED}++ ;
@@ -148,23 +152,13 @@ if($run_in_warp_mode)
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE}] ;
 
-		unless(exists $nodes->{$node}{__DEPENDED_AT})
-			{
-			$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
-			}
+		$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} unless exists $nodes->{$node}{__DEPENDED_AT} ;
 			
 		# let our dependent nodes know about their dependencies
 		# this is needed when regenerating the warp file from partial warp data
 		for my $dependent (map {$node_names->[$_]} keys %{$nodes->{$node}{__DEPENDENT}})
 			{
-			if(exists $nodes->{$dependent})
-				{
-				$nodes->{$dependent}{$node} =
-					{
-					__BUILD_DONE => 'Warp 1.5',
-					__CHECKED => 1,
-					} ;
-				}
+			$nodes->{$dependent}{$node} = $nodes->{$node} if(exists $nodes->{$dependent})
 			}
 		}
 
@@ -480,7 +474,7 @@ else
 		my %all_nodes_triggered ;
 
 		my ($nodes_triggered, $trigger_nodes) =
-			_CheckNodes($pbs_config, $nodes, $nodes_per_level[$level] , $node_names, $IsFileModified)  ;
+			_CheckNodes($pbs_config, $nodes, $nodes_per_level[$level] , $node_names, $IsFileModified, $level)  ;
 
 		$all_nodes_triggered{$_}++ for @{$nodes_triggered} ;
 
@@ -509,16 +503,18 @@ return ($number_trigger_nodes, $trigger_log) ;
 
 sub _CheckNodes
 {
-my ($pbs_config, $nodes, $nodes_to_check, $node_names, $IsFileModified) = @_ ;
+my ($pbs_config, $nodes, $nodes_to_check, $node_names, $IsFileModified, $level) = @_ ;
+
+$level  = defined $level && $level ne '' ? "<$level>" : '' ;
 
 my ($number_of_removed_nodes, $node_verified) = (0, 0) ;
 my (@trigger_nodes, @nodes_triggered) ;
 
 for my $node (@$nodes_to_check)
 	{
-	PrintInfo "Warp: verified nodes: $node_verified\r"
+	PrintInfo "Warp: verified nodes: $level$node_verified\r"
 		if ! $pbs_config->{QUIET}
-		   && ($node_verified + $number_of_removed_nodes) % 3330 ;
+		   && ($node_verified + $number_of_removed_nodes) % 30 ;
 		
 	$node_verified++ ;
 	

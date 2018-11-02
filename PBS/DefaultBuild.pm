@@ -187,10 +187,7 @@ eval
 	PrintInfo $stat_message ;
 	} ;
 
-if($pbs_config->{DISPLAY_CHECK_TIME})
-	{
-	PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) ;
-	}
+PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
 
 # die later if check failed (ex: cyclic tree), run visualisation plugins first
 my $check_failed = $@ ;
@@ -198,13 +195,16 @@ my $check_failed = $@ ;
 # ie: -tt options
 RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
-if(defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->{INTERMEDIATE_WARP_WRITE})
+if($check_failed !~ /^DEPENDENCY_CYCLE_DETECTED/ && defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->{INTERMEDIATE_WARP_WRITE})
 	{
 	$pbs_config->{INTERMEDIATE_WARP_WRITE}->($dependency_tree, $inserted_nodes) ;
 	}
 
-#~ return(BUILD_FAILED, $check_failed) if $check_failed ;
-die $check_failed if $check_failed ;
+if ($check_failed)
+	{
+	PrintError "PBS: error: $check_failed" ;
+	die "\n" ;
+	}
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 #-------------------------------------------------------------------------------
 
 my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
-PrintInfo("Build: ${build_at}nodes in the dependency tree: " . scalar(keys %$inserted_nodes) . "\n") ;
+#PrintInfo("Build: ${build_at}nodes in the dependency tree: " . scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) . "\n") ;
 
 my ($build_result, $build_message) ;
 

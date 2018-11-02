@@ -352,7 +352,7 @@ else
 	{
 	if(!defined $pbs_config->{JOBS} || $pbs_config->{JOBS} < 0)
 		{
-		$pbs_config->{JOBS} = 1 ; 
+		$pbs_config->{JOBS} = 8 ; 
 		}
 	}
 
