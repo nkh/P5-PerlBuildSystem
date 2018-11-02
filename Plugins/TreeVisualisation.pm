@@ -18,9 +18,13 @@ And add the following functionality:
 
 =over 2
 
+=item --tnto, Display only triggering nodes
+
 =item --tnonh, removes header files from the tree dump
 
 =item --tnonr, removes files matching the passed regex
+
+=item --tww, set the wrap width
 
 =item --tww, set the wrap width
 
@@ -38,9 +42,15 @@ my $no_header_files_display ;
 my @display_filter_regexes ;
 my $tree_color_levels ;
 my $wrap_width ;
+my $tnto ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
+	'tnto',
+	\$tnto,
+	"Display only triggering nodes.",
+	'',
+	
 	'tnonh',
 	\$no_header_files_display,
 	"Do not display header files in the tree dump.",
@@ -122,6 +132,10 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				next if $excluded ;
 				
 				
+				# handle --tnto
+				next if $tnto and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
+				
+				
 				my $key_name = [$_, $_] ;
 				if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
 					{
@@ -192,6 +206,9 @@ else
 								}
 							}
 							
+						# handle --tnto
+						next if $tnto and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
+						
 						# remove empty entries
 						for my $reference_type (ref $tree->{$_})
 							{
