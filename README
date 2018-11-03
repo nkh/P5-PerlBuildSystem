@@ -1,10 +1,7 @@
 PBS/PBS version 
 ===============
 
-Older presentation available at L<http://khemir.net/pnw_2004/>
-
-
-B<PBS>/I<pbs.pl> is a build utility/module in the same spirit as  'make'.
+B<PBS>/I<pbs.pl> is a build utility/module in the same spirit as 'make'.
 
 PBS is among the new generation build systems:
 
@@ -33,89 +30,21 @@ I<pbs.pl> is a build utility which uses Perl exclusively for defining rules.
 
 If you have used 'make', I<pbs> should be easy to understand and use.
 
-This is a beta (a developper) release of I<pbs> but this software has been
-used for three years and I use it right now in a very serious project which
-has 800 pbsfiles, 11000 nodes and  3 millions C code lines.
-
-I<pbs> will continue to grow and I hope to get some help from the Open source 
-community. I<pbs> has a limiting licence please read I<licence.txt>.
-
-The biggest limitation is the lack of documentation but we are working on this
-issue. You can have a look at the slide presentation I made at the Nordic
-Perl Workshop in 2004. Some things have changed since then but it will give you
-a nice overview.
+This software has been used for three years and I use it right now in a project
+which has 800 pbsfiles, 11000 nodes and  3 millions C code lines.
 
 I<pbs> has a test suite consisting of over 700 tests. We still work to make the 
 coverage better.
 
 Look at the test directory for some simple examples.
 
-I hope this release will tickle your curiosity anf that we will hear from you.
-
-TODO
-
-Short time:
-
-Write documentation.
-Gather some help.
-Create a web site, a mailing list, a bug tracker, faq, irc, ...
-
-Long time:
-
-Reduce the memory usage.
-Perfect the test suite.
-More speed (though the caching scheme we use today is very satisfying)
-Find some solutions for making it faster on windows (same code big difference!)
-
-Create a companion configuration and installation utility.
-
-I am already planning next version of PBS (the 1.XX series) and there is some
-material to think about in the TODO file.
+I hope this release will tickle your curiosity and that we will hear from you.
 
 CAUTION
 
-Backup your source code! An error in your build sytem or in this build utility
+Backup your source code! An error in your build system or in this build utility
 might leave you without anything to work on.
 
-
-DEPENDENCIES
-
-This module requires these other modules and libraries:
-
-Data::TreeDumper    => '0.20',
-Getopt::Long        => '2.32',
-Cwd                 => '2.06',
-Data::Dumper        => '2.12',
-File::Basename      => '2.71',
-Tie::Hash::Indexed  => '0.03',
-Devel::Depend::Cpp  => '0.05',
-Devel::Depend::Cl   => '0.01',
-Devel::Cycle        => '0',
-File::MkTemp        => '0',
-GraphViz            => '0',
-Math::Pari          => '0',
-Net::Telnet         => '0',
-Net::SSH::Perl      => '0',
-Pod::Simple::Search => '0',
-Data::Compare       => '0',
-Test::Class         => '0',
-Test::Cmd           => '0',
-Term::ProgressBar   => '0',
-File::Copy::Recursive => '0',
-File::Spec          => '0',
-
-Term::ANSIColor => ?
-Text::Balanced => ?
-
-* Math::Pari is required for remote compilation via SSH. This might not install
-easily on Windows.
-
-* Devel::Depend::Cpp is needed to depend C source on linux.
-
-* Devel::Depend::Cl is needed to depend C source on windows.
-
-* Data::TreeDumper on CPAN works in linux only. Mail me for a patch
-or wait a short time for the comming update (within hours or days)
 
 COVERAGE (0.28_11)
 
@@ -162,5 +91,5 @@ BUG REPORTS
 
 http://rt.cpan.org/NoAuth/ReportBug.html?Queue=PerlBuildSystem
 
-Copyright (C) 2003-2008 Khemir Nadim ibn Hamouda. <nadim@khemir.net>
+Copyright (C) 2003-2018 Khemir Nadim ibn Hamouda. <nadim@khemir.net>
 

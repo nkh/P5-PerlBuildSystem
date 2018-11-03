@@ -9,7 +9,6 @@ use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
 use Carp ;
-use Tie::Hash::Indexed ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Spec::Functions qw(:ALL) ;
 #$Data::TreeDumper::Displaycallerlocation++ ;
@@ -120,11 +119,7 @@ $Pbs_runs{$package} = 1 unless (exists $Pbs_runs{$package}) ;
 my $load_package = 'PBS::Runs::' . $package . '_' . $Pbs_runs{$package}++ ;
 $pbs_config->{LOAD_PACKAGE} = $load_package ;
 
-unless(defined $inserted_nodes)
-	{
-	tie my %tied_inserted_nodes, "Tie::Hash::Indexed" ;
-	$inserted_nodes = \%tied_inserted_nodes ;
-	}
+$inserted_nodes //= {} ;
 
 my $display_all_pbs_config = 0 ;
 
@@ -173,8 +168,7 @@ else
 $dependency_tree_name =~ s/\//_/g ;
 $dependency_tree_name = "__PBS_" . $dependency_tree_name ;
 
-tie my %tree_hash, "Tie::Hash::Indexed" ;
-%tree_hash = 
+my %tree_hash = 
 	(
 	__NAME          => $dependency_tree_name,
 	__DEPENDENCY_TO => {PBS => "Perl Build System [$PBS::Output::indentation_depth]"},

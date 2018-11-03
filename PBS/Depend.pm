@@ -10,7 +10,6 @@ use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
 use Time::HiRes ;
-use Tie::Hash::Indexed ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
 
@@ -76,7 +75,7 @@ my $has_dependencies = 0 ;
 my @has_matching_non_subpbs_rules ;
 my @sub_pbs ; # list of subpbs matching this node
 
-tie my %triggered_nodes, 'Tie::Hash::Indexed';
+my %triggered_nodes ;
 
 my @post_build_rules = PBS::PostBuild::GetPostBuildRules($load_package) ;
 
@@ -310,8 +309,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 					
 				use String::Truncate ;
-				my $em = String::Truncate::elide_with_defaults({ length => 35, truncate => 'middle' });
-				my $el = String::Truncate::elide_with_defaults({ length => 35, truncate => 'left' });
+				my $em = String::Truncate::elide_with_defaults({ length => 45, truncate => 'middle' });
+				my $el = String::Truncate::elide_with_defaults({ length => 45, truncate => 'middle' });
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
@@ -540,7 +539,7 @@ for my $triggered_node_data (values %triggered_nodes)
 	
 	my $time = Time::HiRes::time() ;
 	
-	tie my %triggered_node_tree, "Tie::Hash::Indexed" ;
+	my %triggered_node_tree ;
 	
 	%triggered_node_tree = 
 		(
@@ -563,7 +562,6 @@ for my $triggered_node_data (values %triggered_nodes)
 		__PBS_CONFIG       => $pbs_config,
 		__TRIGGER_INSERTED => $triggering_node_name,
 		__MATCHING_RULES   => [],
-		#~__USER_ATTRIBUTE   => $dependency->[DEPENDENCY_USER_ATTRIBUTE],
 		) ;
 		
 	$inserted_nodes->{$triggered_node_name} = \%triggered_node_tree ;
@@ -679,7 +677,7 @@ for my $dependency (@dependencies)
 			$DB::single = 1 if(PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
 			}
 		
-		tie my %dependency_tree_hash, "Tie::Hash::Indexed" ;
+		my %dependency_tree_hash ;
 		
 		$tree->{$dependency_name}                     = \%dependency_tree_hash ;
 		$tree->{$dependency_name}{__MATCHING_RULES}   = [] ;
