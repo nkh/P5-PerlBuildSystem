@@ -217,7 +217,12 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 #-------------------------------------------------------------------------------
 
 my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
-#PrintInfo("Build: ${build_at}nodes in the dependency tree: " . scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) . "\n") ;
+
+my $nodes = scalar(keys %$inserted_nodes) ;
+my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
+my $warp_nodes = $nodes - $non_warp_nodes ;
+
+PrintInfo("Depend: ${build_at}nodes in the dependency tree: $nodes [W:$warp_nodes, R:$non_warp_nodes]\n") ;
 
 my ($build_result, $build_message) ;
 
