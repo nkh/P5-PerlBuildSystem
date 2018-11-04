@@ -217,7 +217,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("\t[[Subpbs]] rule $rule_index:$rule_info\n") ;
+				PrintInfo("\t[Subpbs] rule $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -309,8 +309,12 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 					
 				use String::Truncate ;
-				my $em = String::Truncate::elide_with_defaults({ length => 45, truncate => 'middle' });
-				my $el = String::Truncate::elide_with_defaults({ length => 45, truncate => 'middle' });
+				use Term::Size::Any qw(chars) ;
+
+				my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
+
+				my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+				my $el = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{

@@ -111,8 +111,8 @@ for my $shell_command (@_)
 					error => 'Shell command failed!' ,
 					command => $shell_command,
 					errno => $?,
-					errno_string => '',
-					#~ errno_string => $!,
+					#errno_string => '',
+					errno_string => $!,
 					}, __PACKAGE__ ;
 				}
 			}

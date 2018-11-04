@@ -456,16 +456,8 @@ PBS::Rules::Creator - Helps with creator generation
 
 =head1 SYNOPSIS
 
-  my $creator = GenerateCreator
-  		(
-  		# commands (as for a builder)
-  		[
-  		  "touch %FILE_TO_BUILD %DEPENDENCY_LIST" 
-  		, sub { PrintDebug DumpTree(\@_, 'Creator sub:', MAX_DEPTH => 2) ; return(1, "OK") }
-  		] ,
-  		) ;
-  
-  AddRule 'A creator', [[$creator] => 'A' => 'dependency_to_A', 'dependency_2_to_A'] ;
+  AddRule [CREATOR], 'A creator', ['A' => 'dependency_to_A', 'dependency_2_to_A']
+	=> \&builder or shell command ;
 
 
 =head1 DESCRIPTION

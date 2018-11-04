@@ -81,7 +81,7 @@ for my $field_to_replace (keys %pbs_repositories_replacements)
 	}
 
 #other %VARIABLES
-my $file_to_build = $tree->{__BUILD_NAME} || GetBuildName($tree->{__NAME}, $tree);
+my $file_to_build = $tree->{__BUILD_NAME} || PBS::Rules::Builders::GetBuildName($tree->{__NAME}, $tree);
 
 my @dependencies ;
 unless(defined $dependencies)

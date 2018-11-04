@@ -298,7 +298,6 @@ my $build = $class->new
 		'Data::Dumper'        => '2.12',
 		'Data::Compare'       => '0',
 		'File::Basename'      => '2.71',
-		'Tie::Hash::Indexed'  => '0.03',
 		'Devel::Cycle'        => '0',
 		'File::MkTemp'        => '0',
 		'Pod::Simple::Search' => '0',

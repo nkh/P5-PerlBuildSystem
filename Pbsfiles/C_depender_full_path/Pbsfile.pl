@@ -21,12 +21,12 @@ PbsUse('Rules/C') ;
 
 AddRule [VIRTUAL], 'all', ['all' => 'a.out'], BuildOk('') ;
 
-AddRule 'a.out', ['a.out' => '/devel/perl_modules/PerlBuildSystem/Pbsfiles/C_depender_full_path/main.o', 'world.o']
+AddRule 'a.out', ['a.out' => '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/C_depender_full_path/main.o', 'world.o']
 	, "%CC -o %FILE_TO_BUILD %DEPENDENCY_LIST" ;
 
 
 AddRule [VIRTUAL, FORCED], 'test', ['test' => 'a.out'],
 		[
-		sub {PrintUser("Running test\n") ;}
-		, "%DEPENDENCY_LIST"
+		sub {PrintUser("Running test\n") ; (1, 'test message')}
+		#, "%DEPENDENCY_LIST"
 		] ;

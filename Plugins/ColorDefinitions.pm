@@ -37,7 +37,7 @@ return
 		info_2    => Term::ANSIColor::color('bright_blue'),
 		info_3    => Term::ANSIColor::color('cyan'),
 		shell     => Term::ANSIColor::color('cyan'),
-		user      => Term::ANSIColor::color('cyan'),
+		user      => Term::ANSIColor::color('bright_cyan'),
 		warning   => Term::ANSIColor::color('yellow'),
 		warning_2 => Term::ANSIColor::color('bright_yellow'),
 
@@ -53,7 +53,7 @@ return
 		info_2    => Term::ANSIColor::color('bright_blue'),
 		info_3    => Term::ANSIColor::color('cyan'),
 		shell     => Term::ANSIColor::color('cyan'),
-		user      => Term::ANSIColor::color('cyan'),
+		user      => Term::ANSIColor::color('bright_cyan'),
 		warning   => Term::ANSIColor::color('yellow'),
 		warning_2 => Term::ANSIColor::color('bright_yellow'),
 
