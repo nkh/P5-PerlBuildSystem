@@ -1,4 +1,42 @@
 
+Creator vs immediate build
+	Creator, file that need to exists before depending a node
+		often a file that itself points to other dependencies
+
+		often a single file but mechanism should be good enough to handle complicated dependencies
+			a: b at dependency time but
+			b:c and b:d at dependency time
+			d: needs to exist
+
+	C: "list that is included in C"(LIC)
+	LIC: processed "files in a diretory"
+
+		
+build display types
+	display of build nodes
+		build.o
+		build.o
+		...
+		info (process, nodes,...) [progress bar]	
+
+	display of build nodes
+		[high level action]:[sub actions] 
+
+			next sub actions doesn't create a new line, new lines appear only when a new high level action is executed
+
+		eg:
+
+		building library "some lib 1": compiling "some source", "some source 2", ...
+		building library "some lib 2": compiling "some source"
+		linking "some app": ...
+		generating documentation: ...
+
+	display of build nodes
+		[information ...] 
+		[build process 1]:[actions] 
+		[build process 2]:[actions] 
+		[build process 3]:[actions] 
+
 Fix all examples in pbsfiles
 	make run
 	document

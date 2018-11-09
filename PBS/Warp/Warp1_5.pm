@@ -512,7 +512,7 @@ my (@trigger_nodes, @nodes_triggered) ;
 
 for my $node (@$nodes_to_check)
 	{
-	PrintInfo "Warp: verified nodes: $level$node_verified\r"
+	PrintInfo "\e[KWarp: verified nodes: $level$node_verified\r"
 		if ! $pbs_config->{QUIET}
 		   && ($node_verified + $number_of_removed_nodes) % 30 ;
 		

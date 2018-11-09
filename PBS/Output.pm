@@ -28,7 +28,7 @@ require Exporter;
 @EXPORT  = qw
 		(
 		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG COLOR
-		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintUser PrintShell PrintDebug
+		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		) ;
 		
@@ -143,6 +143,7 @@ sub PrintWarning {_print(\*STDERR, \&WARNING, @_) ;}
 sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_) ;}
 sub PrintInfo{_print(\*STDERR, \&INFO, @_ );}
 sub PrintInfo2{_print(\*STDERR, \&INFO2, @_) ;}
+sub PrintInfo3{_print(\*STDERR, \&INFO3, @_) ;}
 sub PrintUser{_print(\*STDERR, \&USER, @_) ;}
 sub PrintShell {_print(\*STDERR, \&SHELL, @_) ;}
 sub PrintDebug{_print(\*STDERR, \&DEBUG, @_) ;}

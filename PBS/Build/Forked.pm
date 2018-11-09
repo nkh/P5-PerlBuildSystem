@@ -86,7 +86,12 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		
 		if($build_result == BUILD_SUCCESS)
 			{
-			$progress_bar->update($number_of_already_build_node) if $progress_bar ;
+			if($progress_bar)
+				{
+				PrintInfo3 "\r\e[K$built_node->{__NAME}\n" if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;
+				$progress_bar->update($number_of_already_build_node) ;
+				} ;
+
 			$builder_using_perl_time += $build_time 
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
 			
