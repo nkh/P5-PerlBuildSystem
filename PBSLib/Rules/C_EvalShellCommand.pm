@@ -13,7 +13,7 @@ my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
 if($$shell_command_ref =~ /%C_SOURCE/)
 	{
-	PrintDebug "'Eval %C_SOURCE' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+	PrintDebug __FILE__. ':' . __LINE__ . " [%C_SOURCE]\n\t$$shell_command_ref\n"
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 
 	my $c_source = '' ;
@@ -25,40 +25,40 @@ if($$shell_command_ref =~ /%C_SOURCE/)
 
 	$$shell_command_ref =~ s/%C_SOURCE/$c_source/ ;
 
-	PrintDebug "\t=> $$shell_command_ref\n\n" 
+	PrintInfo3 "\t$$shell_command_ref\n\n" 
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 	}
 
 if($$shell_command_ref =~ /%CFLAGS_INCLUDE/)
 	{
-	PrintDebug "'Eval %CFLAGS_INCLUDE' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+	PrintDebug __FILE__. ':' . __LINE__ . " [%CFLAGS_INCLUDE]\n\t$$shell_command_ref\n"
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 
 	my $cflags_include = GetCFileIncludePaths($tree);
 	
 	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/ ;
 
-	PrintDebug "\t=> $$shell_command_ref\n\n" 
+	PrintInfo3 "\t$$shell_command_ref\n\n" 
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 	}
 
 if($$shell_command_ref =~ /%C_DEPENDER/)
 	{
-	PrintDebug "'Eval %C_DEPENDER' for '$tree->{__NAME}':\n\t   $$shell_command_ref\n"
+	PrintDebug __FILE__. ':' . __LINE__ . " [%C_DEPENDER]\n\t$$shell_command_ref\n"
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 
 	my $c_depender = $tree->{__CONFIG}{C_DEPENDER} ;
 
 	unless(defined $c_depender)
 		{
-		PrintWarning("\t\t'C_DEPENDER' isn't defined.\n") ;
+		PrintWarning("\t'C_DEPENDER' isn't defined.\n") ;
 		}
 	else
 		{
 		$$shell_command_ref =~ s/%C_DEPENDER/$c_depender/ ;
 		}
 
-	PrintDebug "\t=> $$shell_command_ref\n\n" 
+	PrintInfo3 "\t$$shell_command_ref\n\n" 
 		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 	}
 }

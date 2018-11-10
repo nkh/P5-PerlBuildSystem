@@ -74,11 +74,11 @@ my $node_header = "\n" ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= INFO3 ("Node: $type'$name' [$build_name]:\n") ;
+	$node_header .= WARNING ("Node: $type'$name' [$build_name]:\n") ;
 	}
 else
 	{
-	$node_header .= INFO3 ("Node: $type'$name':\n") ;
+	$node_header .= WARNING ("Node: $type'$name':\n") ;
 	}
 	
 $node_header .= $separator ;

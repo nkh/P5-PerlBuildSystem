@@ -12,33 +12,6 @@ Creator vs immediate build
 	LIC: processed "files in a diretory"
 
 		
-build display types
-	#display of build nodes
-		build.o
-		build.o
-		...
-		info (process, nodes,...) [progress bar]	
-
-	!display of build nodes
-		[high level action]:[sub actions] 
-
-			next sub actions doesn't create a new line, new lines appear only when a new high level action is executed
-
-		eg:
-
-		building library "some lib 1": compiling "some source", "some source 2", ...
-		building library "some lib 2": compiling "some source"
-		linking "some app": ...
-		generating documentation: ...
-
-		=> PBS2, REH_BUILD_DISPLAY(xxx) for specific high level nodes
-
-	display of build nodes
-		[information ...] 
-		[build process 1]:[actions] 
-		[build process 2]:[actions] 
-		[build process 3]:[actions] 
-
 Fix all examples in pbsfiles
 	make run
 	document
@@ -55,7 +28,6 @@ Roadmap
 				on demand regeneration
 					we regenerate the nodes but very few are reused in non warp run
 
-		
 		distribution
 
 
@@ -177,6 +149,33 @@ remove creator and PBS_FORCE_ type (only used by creators)
 
 do not put all the big files in the same sub processes (duh!)
 	checking the size of all the node may cost more than checking them in the same process
+
+#build display types
+	#display of build nodes
+		build.o
+		build.o
+		...
+		info (process, nodes,...) [progress bar]	
+
+	!display of build nodes
+		[high level action]:[sub actions] 
+
+			next sub actions doesn't create a new line, new lines appear only when a new high level action is executed
+
+		eg:
+
+		building library "some lib 1": compiling "some source", "some source 2", ...
+		building library "some lib 2": compiling "some source"
+		linking "some app": ...
+		generating documentation: ...
+
+		=> PBS2, REH_BUILD_DISPLAY(xxx) for specific high level nodes
+
+	#display of build nodes
+		[information ...] 
+		[build process 1]:[actions] 
+		[build process 2]:[actions] 
+		[build process 3]:[actions] 
 
 #fix error in build process dies on split! 
 	Forked line 551, Pbsfiles/hello_fail

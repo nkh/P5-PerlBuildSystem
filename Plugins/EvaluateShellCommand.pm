@@ -138,8 +138,11 @@ $$shell_command_ref =~ s/\%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY/$dependency_
 $$shell_command_ref =~ s/\%TRIGGERED_DEPENDENCY_LIST/$triggered_dependency_list/g ;
 $$shell_command_ref =~ s/\%DEPENDENCY_LIST/$dependency_list/g ;
 
-PrintDebug "'Eval %FILE_TO_BUILD, etc... for '$tree->{__NAME}':\n\t   $source_entry\n\t=> $$shell_command_ref\n\n"
-	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} && $source_entry ne $$shell_command_ref ;
+if ($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} && $source_entry ne $$shell_command_ref)
+	{
+	PrintDebug __FILE__. ':' . __LINE__ . " [EvaluateShellCommand]\n\t$source_entry\n" ;
+	PrintInfo3 "\t$$shell_command_ref\n\n"
+	}
 }
 
 #-------------------------------------------------------------------------------

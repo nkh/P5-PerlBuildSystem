@@ -892,7 +892,7 @@ return($entry) unless defined $entry ;
 return($entry)  unless $entry =~ /%/ ;
 
 my $source_entry = $entry ;
-PrintDebug "'PBS::CONFIG::EvalConfig' for '$tree->{__NAME}':\n\t   $source_entry\n"
+PrintDebug __FILE__ . ':' . __LINE__ . " [EvalConfig]\n\t$source_entry\n"
 	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 my $undefined_config = 0 ;
@@ -907,14 +907,14 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} doesn't exist at $origin\n") ;
+		PrintWarning("\t\$config->{$1} doesn't exist at $origin\n") ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} isn't defined at $origin\n") ;
+		PrintWarning("\t\$config->{$1} isn't defined at $origin\n") ;
 		$undefined_config++ ;
 		}
 	}
@@ -933,13 +933,13 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\t'$element' doesn't exist at $origin\n") ;
+		PrintWarning("\tconfiguration variable '%$element' doesn't exist at $origin\n") ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\t'$element' isn't defined at $origin\n") ;
+		PrintWarning("\tconfiguration variable '%$element' isn't defined at $origin\n") ;
 		}
 	}
 	
@@ -948,7 +948,7 @@ $entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : "%$1"/eg ;
 
 $entry =~ s/__PBS__PERCENT__/\%/g ;
 
-PrintDebug "\t=> $entry\n\n"
+PrintInfo3 "\t$entry\n\n"
 	 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 		&& $source_entry ne $entry ;
 

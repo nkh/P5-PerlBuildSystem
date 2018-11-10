@@ -19,7 +19,6 @@ use Data::TreeDumper;
 use File::MkTemp;
 use File::Path;
 use FileHandle;
-#use POSIX qw(strftime);
 use Cwd ;
 use Term::ANSIColor qw(:constants) ;
 
@@ -85,7 +84,7 @@ mkpath($log_path) unless(-e $log_path) ;
 
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
-p
+
 $pbs_config->{LOG_NAME} = $log_path . mktemp("${now_string}_PBS_LOG_XXXXXXX", $log_path) ;
 
 my $lh = new FileHandle "> $pbs_config->{LOG_NAME}" || die "Can't create log file! $@.\n" ;
