@@ -180,6 +180,9 @@ my $success_message = '' ;
 
 #force options
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ ;
+$pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;
+$pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PER_BUILD_PROCESS} ;
+	
 $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION}++ ;
 
 # check the options

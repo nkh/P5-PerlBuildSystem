@@ -1037,8 +1037,12 @@ EOT
 	'dpb|display_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR},
 		"Force silent build mode and displays a progress bar. This is Pbs default, see --ndpb.",
 		'',
-	'dpbf|display_progress_bar_file'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_FILE},
+	'dpb2|display_progress_bar_file'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_FILE},
 		"Built node names are displayed above the progress bar",
+		'',
+
+	'dpb3|display_progress_per_build_process'  => \$pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS},
+		"A progress per build process is displayed above the progress bar",
 		'',
 
 	'ndpb|display_no_progress_bar'    => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR},

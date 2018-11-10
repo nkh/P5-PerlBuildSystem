@@ -12,6 +12,8 @@ use Data::TreeDumper ;
 use Time::HiRes ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
+use String::Truncate ;
+use Term::Size::Any qw(chars) ;
 
 require Exporter ;
 
@@ -107,6 +109,11 @@ for my $post_build_rule (@post_build_rules)
 			}
 		}
 	}
+
+my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
+
+my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+my $el = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $rules_matching = 0 ;
 
@@ -308,14 +315,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
 					
-				use String::Truncate ;
-				use Term::Size::Any qw(chars) ;
-
-				my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
-
-				my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
-				my $el = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
-
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
 					my $dependency_info = "\t[$rules_matching] '" . $el->($node_name) . "'${node_type}${forced_trigger} rule $rule_index:" . $em->($rule_info) . $rule_type ;
@@ -327,7 +326,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						$dependency_info_deps .= "\n\n" ;
 			
 						PrintInfo($dependency_info) ;
-						PrintUser($dependency_info_deps) ;
+						PrintInfo3($dependency_info_deps) ;
 						}
 					else
 						{

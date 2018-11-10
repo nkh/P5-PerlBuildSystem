@@ -13,13 +13,13 @@ Creator vs immediate build
 
 		
 build display types
-	display of build nodes
+	#display of build nodes
 		build.o
 		build.o
 		...
 		info (process, nodes,...) [progress bar]	
 
-	display of build nodes
+	!display of build nodes
 		[high level action]:[sub actions] 
 
 			next sub actions doesn't create a new line, new lines appear only when a new high level action is executed
@@ -30,6 +30,8 @@ build display types
 		building library "some lib 2": compiling "some source"
 		linking "some app": ...
 		generating documentation: ...
+
+		=> PBS2, REH_BUILD_DISPLAY(xxx) for specific high level nodes
 
 	display of build nodes
 		[information ...] 

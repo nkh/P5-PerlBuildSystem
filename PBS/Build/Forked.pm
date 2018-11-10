@@ -28,6 +28,8 @@ use Socket;
 use IO::Select ;
 use PBS::ProgressBar ;
 use List::PriorityQueue ;
+use String::Truncate ;
+use Term::Size::Any qw(chars) ;
 
 $|++ ;
 
@@ -49,10 +51,19 @@ my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
 my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
-my $progress_bar = CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
 my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
+
+if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+	{
+	PrintInfo3 "Builder $_\n" for (0 .. ($number_of_builders - 1)) ;
+	}
+
+my $progress_bar = CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
+
+my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
+my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 while ($number_of_nodes_to_build > $number_of_already_build_node)
 	{
@@ -72,11 +83,14 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		$node_build_index += $started_builders ; 
 		}
 	
-	my @built_nodes = WaitForBuilderToFinish($pbs_config, $builders) ;
-	@built_nodes || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
+	my @builders = WaitForBuilderToFinish($pbs_config, $builders) ;
+	@builders || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
 		
-	for my $built_node (@built_nodes)
+
+	for my $builder (@builders)
 		{
+		my $built_node = $builder->{NODE} ;
+
 		$level_statistics->[$built_node->{__LEVEL} - 1]{done}++ ;
 		
 		my ($build_result, $build_time, $node_error_output) =
@@ -88,9 +102,26 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			{
 			if($progress_bar)
 				{
-				PrintInfo3 "\r\e[K$built_node->{__NAME}\n" if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;
+				if($pbs_config->{DISPLAY_PROGRESS_BAR_FILE})
+					{
+					PrintInfo3 "\r\e[K$built_node->{__NAME}\n" ;
+					}
+				elsif($pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+					{
+					for ($number_of_builders)
+						{
+						my $distance = $number_of_builders - $builder->{INDEX} ;  
+
+						PrintInfo2 "\e[${distance}A"
+								. "\r\e[K"
+								. $em ->("Builder $builder->{INDEX}: $built_node->{__NAME}")
+								. "\e[${distance}B" ;
+
+						}
+					}
+
 				$progress_bar->update($number_of_already_build_node) ;
-				} ;
+				} 
 
 			$builder_using_perl_time += $build_time 
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
@@ -316,11 +347,12 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	
 	$builders[$builder_index] = 
 		{
-		PID              => $child_pid,
-		BUILDER_CHANNEL  => $builder_channel,
-		SHELL            => $shell,
-		BUILDING         => 0,
-		NODE             => undef,
+		INDEX    => $builder_index,
+		PID      => $child_pid,
+		CHANNEL  => $builder_channel,
+		SHELL    => $shell,
+		BUILDING => 0,
+		NODE     => undef,
 		} ;
 	}
 
@@ -403,7 +435,7 @@ for (0 .. ($number_of_builders - 1))
 	if($builders->[$_]{BUILDING} == 1)
 		{
 		push @waiting_for_messages, "$builders->[$_]{NODE}{__NAME} on '" . $builders->[$_]{SHELL}->GetInfo() ;
-		$select_all->add($builders->[$_]{BUILDER_CHANNEL}) ;
+		$select_all->add($builders->[$_]{CHANNEL}) ;
 		}
 	}
 
@@ -429,9 +461,9 @@ if(@waiting_for_messages)
 		{
 		for my $socket_ready (@sockets_ready)
 			{
-			if($socket_ready == $builders->[$_]{BUILDER_CHANNEL})
+			if($socket_ready == $builders->[$_]{CHANNEL})
 				{
-				push @built_nodes, $builders->[$_]{NODE} ;
+				push @built_nodes, $builders->[$_] ;
 				}
 			}
 		}
@@ -451,6 +483,9 @@ my $started_builders = 0 ;
 
 PrintInfo2 "Build: starting:\n" 
 	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
+
+my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
+my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 # find which builder finished, start building on them
 for my $builder (@$builders)
@@ -493,6 +528,16 @@ for my $builder (@$builders)
 	# keep the sequence in which the node where build
 	$node_to_build->{__BUILD_PARALLEL_TIMESTAMP} = $build_parallel_timestamp++ ;
 	
+	my $distance = @$builders - $builder->{INDEX} ;  
+
+	if($pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+		{
+		PrintInfo3 "\e[${distance}A"
+				. "\r\e[K"
+				. $em ->("Builder $builder->{INDEX}: $node_to_build->{__NAME}")
+				. "\e[${distance}B" ;
+		}
+
 	if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 		{
 		my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
@@ -520,7 +565,7 @@ $number_of_nodes_to_build = 1 if $number_of_nodes_to_build < 1 ;
 
 # IPC start the build
 my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build ) ;
-my $builder_channel = $builder->{BUILDER_CHANNEL} ;
+my $builder_channel = $builder->{CHANNEL} ;
 
 # leaks file handles !!!
 #~ print `lsof |  grep pbs | wc -l ` . $node_name ;
@@ -541,7 +586,7 @@ for my $builder (@$builders)
 	{
 	if($builder->{NODE} == $built_node)
 		{
-		$builder_channel = $builder->{BUILDER_CHANNEL} ;
+		$builder_channel = $builder->{CHANNEL} ;
 		$builder->{BUILDING} = 0 ;
 		last ;
 		}
@@ -661,7 +706,7 @@ PrintInfo "Build: terminating build processes [$number_of_builders]\n" ;
 
 for my $builder (@$builders)
 	{
-	my $channel = $builder->{BUILDER_CHANNEL} ; 	
+	my $channel = $builder->{CHANNEL} ; 	
 	print $channel "STOP_PROCESS\n" ;
 	}
 	

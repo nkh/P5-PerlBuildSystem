@@ -1,4 +1,20 @@
 
+Move dependencies to __DEPENDENCIES
+
+graph generation
+	node display filters
+		per node
+			rules decide which nodes get which filters, this is not part of the pbsfiles (but can be)
+			but use the same mechanism, eg: the nodes, even if they already are in the graph (depended) get
+			subject to a set of rules that define how, and if, a node will be be displayed
+
+			the rules also create graph nodes (plural) where the nodes are inserted, this allows the creation of multiple graphs
+			
+			the graphs can be rendered differently, eg: table, CSV, image, ...
+			
+			nodes can belong to multiple graphs and be displayed differently in each
+
+
 target naming
 	given the rule:
 		A => B, C(A)
