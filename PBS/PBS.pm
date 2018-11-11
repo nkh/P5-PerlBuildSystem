@@ -81,6 +81,22 @@ my $inserted_nodes       = shift ;
 my $dependency_tree_name = shift || die ;
 my $depend_and_build     = shift ;
 
+
+for (keys %ENV)
+	{
+	my $keep = 0 ;
+
+	for my $keep_regex ( @{$pbs_config->{KEEP_ENVIRONMENT}})
+		{
+		if (/$keep_regex/)
+			{
+			$keep++ ; last ;
+			}
+		}
+	
+	delete $ENV{$_} unless $keep; 
+	}
+
 unless('' eq ref $package && '' ne $package)
 	{
 	PrintError("Invalid 'PACKAGE' at $Pbsfile\n") ;

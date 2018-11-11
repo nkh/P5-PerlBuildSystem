@@ -133,6 +133,7 @@ $pbs_config->{LIB_PATH} ||= [] ;
 $pbs_config->{DISPLAY_BUILD_INFO} ||= [] ;
 $pbs_config->{DISPLAY_NODE_INFO} ||= [] ;
 $pbs_config->{USER_OPTIONS} ||= {} ;
+$pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
 $pbs_config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
 $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} ||= [] ;
@@ -1098,6 +1099,10 @@ EOT
 		'',
 		
 	'D=s'                             => $pbs_config->{COMMAND_LINE_DEFINITIONS},
+		'Command line definitions.',
+		'',
+
+	'ke|keep_environment=s'              => $pbs_config->{KEEP_ENVIRONMENT},
 		'Command line definitions.',
 		'',
 
