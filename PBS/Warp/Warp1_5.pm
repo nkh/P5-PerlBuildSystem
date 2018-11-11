@@ -759,7 +759,7 @@ for my $node (keys %$inserted_nodes)
 
 		if(!exists $inserted_nodes->{$node}{__VIRTUAL} && $node =~ /^\.(.*)/)
 			{
-			($nodes{$node}{__LOCATION}) = ($inserted_nodes->{$node}{__BUILD_NAME} =~ /^(.*)$1$/) ;
+			($nodes{$node}{__LOCATION}) = (($inserted_nodes->{$node}{__BUILD_NAME} // '')  =~ /^(.*)$1$/) ;
 			}
 			
 		if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}

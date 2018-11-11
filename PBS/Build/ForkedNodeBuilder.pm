@@ -148,7 +148,7 @@ my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNam
 #all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
 #once the build is finished, the output is send to the master process
 
-local *STDOUT ;
+open(OLDOUT, ">&STDOUT") ;
 open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
 STDOUT->autoflush(1) ;
 
@@ -227,8 +227,9 @@ if(defined $node)
 	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)
 		if(defined $pbs_config->{CREATE_LOG_HTML}) ;
 
-	close(STDERR);
+	close(STDERR) ;
 	open(STDERR, ">&OLDERR");
+	open(STDOUT, ">&OLDOUT");
 
 	return($build_result, $build_message, $redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
 	}
@@ -236,6 +237,7 @@ else
 	{
 	close(STDERR);
 	open(STDERR, ">&OLDERR");
+	open(STDOUT, ">&OLDOUT");
 
 	die ERROR "ForkedBuilder: Couldn't find node '$node_name' in build_sequence.\n" ;
 	}

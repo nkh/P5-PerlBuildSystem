@@ -155,15 +155,15 @@ TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
 	{
-	PrintError "Build: -------------------------------------------------------------------------\n";
-	PrintError "Build: build error\n" ;
-	PrintError "Build: -------------------------------------------------------------------------\n";
+	my $plural = ('','')[$number_of_failed_builders] // 's' ;
+
+	PrintError "Build: $number_of_failed_builders error$plural:\n" ;
 	PrintError $error_output ;
 	}
 
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	{
-	print STDERR WARNING DumpTree(\%builder_stats, 'Build: process statistics:', DISPLAY_ADDRESS => 0) ;
+	PrintWarning DumpTree(\%builder_stats, 'Build: process statistics:', DISPLAY_ADDRESS => 0) ;
 	}
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
@@ -201,8 +201,10 @@ for my $parent (@{ $built_node->{__PARENTS} })
 	{
 	next if $parent->{__NAME} =~ /^__/ ;
 
+	next if exists $parent->{__HAS_FAILED_CHILD} ;
+
 	$parent->{__HAS_FAILED_CHILD}++ ;
-	PrintWarning "Build: excluding: '$parent->{__NAME}'\n" ;
+	PrintWarning "Build: excluding node '$parent->{__NAME}'\n" if $pbs_config->{NO_STOP} ;
 	$excluded++ ;
 
 	$excluded += MarkAllParentsAsFailed($pbs_config, $parent) ;
@@ -599,7 +601,6 @@ unless ($builder_channel)
 	}
 
 my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, (<$builder_channel> // "0__PBS_FORKED_BUILDER__No message\n") ;
-#my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, <$builder_channel> ;
 $build_result = BUILD_FAILED unless defined $build_result ;
 
 my ($build_time, $error_output) = (-1, '') ;
@@ -649,9 +650,7 @@ else
 	else
 		{
 		# the build failed, save the builder output to display later and stop building
-		PrintError "Build: -------------------------------------------------------------------------\n" ;
-		PrintError "Build: Error '$built_node->{__NAME}', will be reported below.\n" ;
-		PrintError "Build:--------------------------------------------------------------------------\n" ;
+		PrintError "Build: '$built_node->{__NAME}', error will be reported below.\n" ;
 			  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)
