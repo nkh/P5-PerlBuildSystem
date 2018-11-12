@@ -50,7 +50,7 @@ my $builders           = StartBuilders($number_of_builders, $pbs_config, $distri
 my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error_output) = (0, 0, 0, '') ;
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
-my $number_of_nodes_to_build = scalar(@$build_sequence) - 1 ; # -1 as PBS root is never build
+my $number_of_nodes_to_build = scalar(grep {$_->{__NAME} !~ /^__/} @$build_sequence) ; # remove PBS root
 my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
