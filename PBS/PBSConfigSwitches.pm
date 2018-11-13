@@ -1102,17 +1102,25 @@ EOT
 		'Command line definitions.',
 		'',
 
-	'ke|keep_environment=s'              => $pbs_config->{KEEP_ENVIRONMENT},
-		'Command line definitions.',
+	'ke|keep_environment=s'           => $pbs_config->{KEEP_ENVIRONMENT},
+		"Pbs empties %ENV, user --ke 'regex' to keep specific variables.",
+		'',
+
+	'display_environment_info'       => \$pbs_config->{DISPLAY_ENVIRONMENT_INFO},
+		"Display a short information line about the environment variables",
+		'',
+
+	'display_environment'            => \$pbs_config->{DISPLAY_ENVIRONMENT},
+		"Display a short information line about the environment variables",
 		'',
 
 	#----------------------------------------------------------------------------------
 	
-	'debug:s'                             => \&PBS::Debug::EnableDebugger,
+	'debug:s'                         => \&PBS::Debug::EnableDebugger,
 		'Enable debug support A startup file defining breakpoints can be given.',
 		'',
 	
-	'dump'                             => \$pbs_config->{DUMP},
+	'dump'                            => \$pbs_config->{DUMP},
 		'Dump an evaluable tree.',
 		'',
 		

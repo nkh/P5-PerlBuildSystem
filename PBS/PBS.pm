@@ -82,20 +82,35 @@ my $dependency_tree_name = shift || die ;
 my $depend_and_build     = shift ;
 
 
-for (keys %ENV)
+my $original_ENV_size = scalar(keys %ENV) ;
+
+for (sort keys %ENV)
 	{
-	my $keep = 0 ;
+	my $keep ;
 
 	for my $keep_regex ( @{$pbs_config->{KEEP_ENVIRONMENT}})
 		{
 		if (/$keep_regex/)
 			{
-			$keep++ ; last ;
+			$keep = $keep_regex ; last ;
 			}
 		}
-	
-	delete $ENV{$_} unless $keep; 
+
+	if(defined $keep)
+		{
+		PrintInfo3 "ENV: keeping  '$_'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		}
+	else
+		{ 
+		PrintWarning "ENV: removing '$_'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		delete $ENV{$_} ;
+		}
 	}
+
+my $ENV_size = scalar(keys %ENV) ;
+my $ENV_removed = $original_ENV_size - $ENV_size ;
+
+PrintInfo "ENV: kept: $ENV_size, removed: $ENV_removed\n" if $pbs_config->{DISPLAY_ENVIRONMENT_INFO} && $pbs_runs == 1 ;	
 
 unless('' eq ref $package && '' ne $package)
 	{
@@ -316,7 +331,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 							}
 						else
 							{
-							PrintDebug "Found a target without './' $_\n" ;
+							PrintDebug "Found a target without './' $_\n" if $build_point eq '' ;
 							"./$_" ;
 							}
 						} @$targets ;
