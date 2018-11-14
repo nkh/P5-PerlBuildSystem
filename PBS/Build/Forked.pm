@@ -30,6 +30,8 @@ use PBS::ProgressBar ;
 use List::PriorityQueue ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
+use Term::ANSIColor qw( :constants color) ;
+use Text::ANSI::Util qw( ta_highlight );
 
 $|++ ;
 
@@ -578,6 +580,9 @@ print $builder_channel "BUILD_NODE" . "__PBS_FORKED_BUILDER__"
 
 #---------------------------------------------------------------------------------------------------------------
 
+my @bg_color_classes = ([qw ( on_grey1 on_grey1)], [qw( on_grey3 on_grey3)]) ;
+my $bg_color_class = 0 ;
+
 sub CollectNodeBuildResult
 {
 my ($pbs_config, $built_node, $builders) = @_ ;
@@ -630,7 +635,13 @@ else
 		}
 	
 	my $no_output = defined $PBS::Shell::silent_commands && defined $PBS::Shell::silent_commands_output ;
-	
+
+
+my @bg_colors = @{$bg_color_classes[$bg_color_class]} ;
+$bg_color_class ^= 1 ;
+
+my $bg_color = 0 ;
+
 	if($build_result == BUILD_SUCCESS)
 		{
 		$built_node->{__BUILD_DONE} = "PBS::Build::Forked Done." ;
@@ -643,7 +654,14 @@ else
 			while(<$builder_channel>)
 				{
 				last if /__PBS_FORKED_BUILDER__/ ;
-				print STDERR $_ unless $no_output ;
+
+				#$bg_color ^= 1 if /Running command/ ; # change color for each sub command
+
+				chomp ;
+
+				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, color($bg_colors[$bg_color])) : $_ ;
+
+				print STDERR "$o\n" unless $no_output ;
 				}
 			}
 		}

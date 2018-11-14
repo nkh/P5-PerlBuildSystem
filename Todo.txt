@@ -1,37 +1,3 @@
-Box shell command option
-
-	some build commands generate a lot of output, IE: running make, make the output more manageable by
-
-		optiond format: --box_output_type			 
-			
-		indent the output
-			indent, increment $pbs_indent 
-
-		!box the output
-			that adds too much noise, indentation and color are less intrusive
-
-		color the output of each command separately
-			change background color
-
-			handle commands that use color themselves
-			
-			color the indentation only
-
-		keep a build buffer per command rather than node
-	
-		shorten output and add link to the output (editor or web page)
-			sets --keep_build_buffer and displays build buffer name
-
-	apply per package, node, globally
-		via a regex for Pbs
-		via REH for Pbs2
-
-		--box_output regex (which node to box)
-
-	#--silent_command and --silent_command_output take regexes
-		add --verbose_command and --verbose_command_output
-		=> --bnir
-
 Creator vs immediate build
 	Creator, file that need to exists before depending a node
 		often a file that itself points to other dependencies
@@ -182,6 +148,45 @@ remove creator and PBS_FORCE_ type (only used by creators)
 
 do not put all the big files in the same sub processes (duh!)
 	checking the size of all the node may cost more than checking them in the same process
+
+#Box shell command option
+
+	some build commands generate a lot of output, IE: running make, make the output more manageable by
+
+		optiond format: --box_output_type			 
+			
+		!indent the output
+			indent, increment $pbs_indent 
+
+		!box the output
+			that adds too much noise, indentation and color are less intrusive
+
+		color the output of each command separately
+			change background color
+				light shade of grey (color in colordefinitions.pm)
+					successive commands in different shades of grey
+
+				light shade of another color
+
+			
+			#handle commands that use color themselves
+			
+			!color the indentation only
+
+		!keep a build buffer per command rather than node
+	
+		shorten output and add link to the output (editor or web page)
+			sets --keep_build_buffer and displays build buffer name
+
+	#apply per package, node, globally
+		via a regex for Pbs
+		via REH for Pbs2
+
+		!--box_output regex (which node to box)
+
+	#--silent_command and --silent_command_output take regexes
+		add --verbose_command and --verbose_command_output
+		=> --bnir
 
 #make -bni standard even when displaying a progress bar
 

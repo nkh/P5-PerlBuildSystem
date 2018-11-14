@@ -1054,6 +1054,10 @@ EOT
 		'Shows the result returned by the builder.',
 		'',
 		
+	'box_node' => \$pbs_config->{BOX_NODE},
+		'Display a colored margin for each node display.',
+		'',
+
 	'bnir|build_and_display_node_information_regex=s' => $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
 		'On display information for matching nodes.',
 		'',
