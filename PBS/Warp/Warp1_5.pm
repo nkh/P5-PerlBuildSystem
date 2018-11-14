@@ -226,7 +226,7 @@ if($run_in_warp_mode)
 				# this exception occurs only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					$targets, $new_dependency_tree, $nodes,
+					$warp_file, $targets, $new_dependency_tree, $nodes,
 					$pbs_config, $warp_configuration, undef, $node_names, \%nodes_index,
 					$warp_dependents
 					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
@@ -239,7 +239,7 @@ if($run_in_warp_mode)
 			{
 			GenerateWarpFile
 				(
-				$targets, $new_dependency_tree, $nodes,
+				$warp_file, $targets, $new_dependency_tree, $nodes,
 				$pbs_config, $warp_configuration, undef, $node_names, \%nodes_index,
 				$warp_dependents
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
@@ -271,6 +271,7 @@ else
 		
 		GenerateWarpFile
 			(
+			$warp_file,
 			$targets,
 			$dependency_tree,
 			$inserted_nodes,
@@ -309,6 +310,7 @@ else
 				# this exception occurs only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
+					$warp_file,
 					$targets,
 					$dependency_tree_snapshot,
 					$inserted_nodes_snapshot,
@@ -322,6 +324,7 @@ else
 			{
 			GenerateWarpFile
 				(
+				$warp_file,
 				$targets,
 				$dependency_tree,
 				$inserted_nodes,
@@ -331,6 +334,8 @@ else
 			
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	}
+
+print "\r\e[K" ;
 
 return(@build_result) ;
 }
@@ -598,7 +603,7 @@ return (\@nodes_triggered, \@trigger_nodes) ;
 
 sub GenerateWarpFile
 {
-my ($targets, $dependency_tree, $inserted_nodes,
+my ($warp_file, $targets, $dependency_tree, $inserted_nodes,
 	$pbs_config,
 	$warp_configuration,
 	$warp_message,
@@ -618,8 +623,6 @@ my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_5';
 mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.5', $warp_path, $warp_signature, $targets, $pbs_config) ;
-
-my $warp_file= "$warp_path/pbsfile_$warp_signature.pl" ;
 
 my $global_pbs_config = # cache to reduce warp file size
 	{
@@ -759,7 +762,10 @@ for my $node (keys %$inserted_nodes)
 
 		if(!exists $inserted_nodes->{$node}{__VIRTUAL} && $node =~ /^\.(.*)/)
 			{
-			($nodes{$node}{__LOCATION}) = (($inserted_nodes->{$node}{__BUILD_NAME} // '')  =~ /^(.*)$1$/) ;
+			($nodes{$node}{__LOCATION}) = ($inserted_nodes->{$node}{__BUILD_NAME} // '')  =~ /^(.*)$1$/ ;
+
+			delete $nodes{$node}{__LOCATION} if $nodes{$node}{__LOCATION} eq '.' ;
+			delete $nodes{$node}{__LOCATION} unless defined $nodes{$node}{__LOCATION} ;
 			}
 			
 		if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
@@ -1094,7 +1100,7 @@ for my $node (keys %$inserted_nodes)
 		}
 	}
 
-PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new_nodes = $new_nodes\n" ;
+PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes = $new_nodes\n" ;
 
 # add nodes level above, to trigger
 for my $file (keys %$warp_dependents)

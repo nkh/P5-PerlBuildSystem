@@ -216,6 +216,8 @@ if(defined $pbs_config->{QUIET})
 	$pbs_config->{DISPLAY_PROGRESS_BAR} = 0 ;
 	}
 
+$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}++ if $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+
 if(defined $pbs_config->{NO_WARP})
 	{
 	$pbs_config->{WARP} = 0 ;

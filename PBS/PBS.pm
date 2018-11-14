@@ -447,7 +447,7 @@ use File::Path ;
 mkpath($pbs_config->{BUILD_DIRECTORY}) unless(-e $pbs_config->{BUILD_DIRECTORY}) ;
 mkpath($path) unless(-e $path) ;
 
-PrintInfo "Saving Parent Config in '$config_file_name'\n" ;
+PrintInfo "Config: saved in '$config_file_name'\n" ;
 
 open(CONFIG, ">", $config_file_name) or die qq[Can't open '$config_file_name': $!] ;
 

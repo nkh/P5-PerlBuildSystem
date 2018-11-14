@@ -62,7 +62,38 @@ sub RunPerlSub
 my $self = shift ;
 my $perl_sub = shift ;
 
-$perl_sub->(@_) ;
+#my ($config, $file_to_build, $dependencies, $triggering_dependencies, $node, $inserted_nodes) = @_ ;
+
+if($PBS::Shell::silent_commands_output)
+	{
+	my ($out, $err, @r) = ('', '') ; 
+
+	no warnings 'once';
+	open(OLDOUT, ">&STDOUT") ; 
+	open(OLDERR, ">&STDERR") ;
+
+	{
+	close(STDOUT);
+	open STDOUT, '>>', \$out or die "Can't redirect STDOUT to variable: $!";
+
+	close(STDERR);
+	open STDERR, '>>', \$out or die "Can't redirect STDERR to variable: $!" ;
+
+	@r = $perl_sub->(@_) ;
+	}
+
+	open(STDERR, ">&OLDERR");
+	open(STDOUT, ">&OLDOUT");
+
+	#print STDOUT $out ;
+	#print STDERR $err ;
+
+	@r ;
+	}
+else
+	{
+	$perl_sub->(@_) ;
+	}
 }
 
 #-------------------------------------------------------------------------------

@@ -131,6 +131,7 @@ $pbs_config->{SOURCE_DIRECTORIES} ||= [] ;
 $pbs_config->{PLUGIN_PATH} ||= [] ;
 $pbs_config->{LIB_PATH} ||= [] ;
 $pbs_config->{DISPLAY_BUILD_INFO} ||= [] ;
+$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX} ||= [] ;
 $pbs_config->{DISPLAY_NODE_INFO} ||= [] ;
 $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
@@ -1022,11 +1023,10 @@ EOT
 		'(DF) List the nodes to be build.',
 		'',
 		
-	#----------------------------------------------------------------------------------
 	'f|files|nodes'                   => \$pbs_config->{DISPLAY_FILE_LOCATION},
 		'Show all the nodes in the dependency tree and their final location.',
 		'',
-	#----------------------------------------------------------------------------------
+
 	'bi|build_info=s'                 => $pbs_config->{DISPLAY_BUILD_INFO},
 		'Options: --b --d --bc --br. A file or \'*\' can be specified. No Builds are done.',
 		'',
@@ -1054,6 +1054,10 @@ EOT
 		'Shows the result returned by the builder.',
 		'',
 		
+	'bnir|build_and_display_node_information_regex=s' => $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
+		'On display information for matching nodes.',
+		'',
+
 	'bni|build_and_display_node_information' => \$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO},
 		'Display information about the node to be build.',
 		<<EOT,
@@ -1072,7 +1076,6 @@ You may want to also add:
 'nil|node_information_located'
 EOT
 
-	#----------------------------------------------------------------------------------
 	'verbosity=s'                 => $pbs_config->{VERBOSITY},
 		'Used in user defined modules.',
 		<<EOT,
@@ -1196,6 +1199,8 @@ return(@flags_and_help, @registred_flags_and_help_pointing_to_pbs_config) ;
 
 #-------------------------------------------------------------------------------
 
+my $message_displayed = 0 ; # called twice but want a single message
+
 sub LoadConfig
 {
 my ($switch, $file_name, $pbs_config) = @_ ;
@@ -1204,13 +1209,16 @@ $pbs_config->{LOAD_CONFIG} = $file_name ;
 
 my ($loaded_pbs_config, $loaded_config) = do $file_name ;
 
-if(! defined $loaded_config|| ! defined $loaded_pbs_config)
+if(! defined $loaded_config || ! defined $loaded_pbs_config)
 	{
-	die WARNING2 "Error in configuration file'$file_name'!\n" ;
+	die WARNING2 "Config: error loading file'$file_name'\n" ;
 	}
 else
 	{
 	# add the configs
+	PrintInfo "Config: loading '$file_name'\n" unless $message_displayed ;
+	$message_displayed++ ;
+
 	$pbs_config->{LOADED_CONFIG} = $loaded_config ;
 	}
 }

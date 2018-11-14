@@ -139,7 +139,25 @@ my $node_build_sequencer_info = shift ;
 
 my $t0 = [gettimeofday];
 
-use Data::TreeDumper ;
+my $display_node = 0 ;
+
+if (0 != @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}})
+	{
+	for my $regex (@{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}})
+		{
+		if($file_tree->{__NAME} =~ $regex)
+			{
+			$display_node++ ; last ;
+			}
+		}
+	}
+else
+	{
+	$display_node++ ;
+	}
+
+local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
+local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
 
 if(defined $pbs_config->{DISPLAY_BUILD_SEQUENCER_INFO} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	{
@@ -148,12 +166,19 @@ if(defined $pbs_config->{DISPLAY_BUILD_SEQUENCER_INFO} && ! $pbs_config->{DISPLA
 
 if
 	(
-	   defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
-	|| defined $pbs_config->{DISPLAY_BUILD_INFO}
-	|| defined $pbs_config->{CREATE_LOG}
+	$display_node
+	&&  ( defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
+		|| defined $pbs_config->{DISPLAY_BUILD_INFO}
+		|| defined $pbs_config->{CREATE_LOG}
+		)
 	)
 	{
 	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config) ;
+	}
+else
+	{
+	$PBS::Shell::silent_commands = 1 ;
+	$PBS::Shell::silent_commands_output = 1 ;
 	}
 
 my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly built.") ;	
@@ -446,24 +471,25 @@ eval # rules might throw an exception
 
 if($@)
 	{
+	$build_result = BUILD_FAILED ;
+
 	if('' ne ref $@ && $@->isa('PBS::Shell'))
 		{
-		$build_result = BUILD_FAILED ;
-		
-		$build_message = "\n\t" . $@->{error} . "\n" ;
-		$build_message .= "\tCommand   : '" . $@->{command} . "'\n" if defined $PBS::Shell::silent_commands ;
-		$build_message .=  "\tErrno     : " . $@->{errno} . "\n\tErrno text: " . $@->{errno_string} . "\n" ;
+		$build_message =
+			 ERROR(
+				"\n\t" . $@->{error} . "\n"
+				. (defined $PBS::Shell::silent_commands ? "\tCommand   : '" . $@->{command} . "'\n" : '')
+				. "\tErrno     : " . $@->{errno} . "\n\tErrno text: " . $@->{errno_string} . "\n"
+				) ;
 		}
 	else
 		{
-		$build_result = BUILD_FAILED ;
-		
 		my $rule_info = 
 			"'" . $rule_used_to_build->{DEFINITION}{NAME} . "' at '"
 			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
 			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 		
-		$build_message = "\n\t Building $build_name '$rule_info': Exception type: $@" ;
+		$build_message = ERROR("\n\t Building $build_name '$rule_info': Exception type: $@") ;
 		}
 	}
 
@@ -475,7 +501,7 @@ if($build_result == BUILD_FAILED)
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
 			
-	$build_message .="\n\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
+	$build_message .= ERROR "\n\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
 	$file_tree->{__BUILD_FAILED} = $build_message ;
 	}
 

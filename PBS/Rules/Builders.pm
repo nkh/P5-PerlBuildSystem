@@ -194,7 +194,9 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	}
 	
 my $command_index = 0 ;
-my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} ;
+my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} 
+					&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} 
+					&& ! $PBS::Shell::silent_commands ;
 
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
@@ -212,7 +214,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		$perl_sub_name .= " $file:$line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 
 		PrintInfo2 $command_information . "sub: $perl_sub_name\n"
-			if $display_command_information || $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
+			if $display_command_information || ($tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} && ! $PBS::Shell::silent_commands) ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		
@@ -307,8 +309,9 @@ my ($sub_file, $sub_line) = get_code_location($builder) ;
 $perl_sub_name .= " $sub_file:$sub_line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 
 PrintInfo2 "Running sub: $perl_sub_name\n"
-	if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} 
-		|| ($tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER}) ;
+	if ($tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} 
+		|| ($tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER})) 
+		&& ! $PBS::Shell::silent_commands ;
 
 return
 	(

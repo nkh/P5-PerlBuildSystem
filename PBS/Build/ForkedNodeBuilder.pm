@@ -182,12 +182,12 @@ if(defined $node)
 	# when building in parallel, we can put as much possible in the log even if
 	# the progress bar is displayed, when it isn't, it's up to the user what gets in
 	local $node->{__PBS_CONFIG} = $node->{__PBS_CONFIG} ;
-	local $PBS::Shell::silent_commands ;
-	local $PBS::Shell::silent_commands_output ; 
+	local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
+	local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ; 
 
 	if($node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR})
 		{
-		$node->{__PBS_CONFIG}{DISPLAY_NODE_INFO}++ ;
+		$node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_ORIGIN}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_DEPENDENCIES}++ ;

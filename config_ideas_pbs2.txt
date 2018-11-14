@@ -1,3 +1,7 @@
+
+visualizattion of configuration change
+	http://pages.cs.wisc.edu/~adwait/cdms.pdf
+
 add warning when conflicting defines are given on the cli and/or prf
 
 Save/Load config
