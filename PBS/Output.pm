@@ -104,10 +104,13 @@ sub COLOR
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
 my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $depth) ;
 
-my $string = $indent . ($_[1] // 'undef') ;
-$string =~ s/\n(.)/\n$indent$1/g ;
+my $color = $cc{$cd}{$_[0]} // '' ;
+my $reset = $cc{$cd}{reset} // '' ;
 
-return ($cc{$cd}{$_[0]} // '') . $string . ($cc{$cd}{reset} // '') ;
+my $string = $indent . ($_[1] // 'undef') ;
+$string =~ s/\n(.)/$reset\n$color$indent$1/g ;
+
+return $color. $string . $reset ;
 }
 
 sub ERROR { return COLOR('error', @_) }
