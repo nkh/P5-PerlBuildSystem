@@ -393,6 +393,10 @@ EOT
 		'PBS will load the given config before running the Pbsfile.',
 		'see --save_config.',
 		
+	'no_config_inheritance'           =>  \$pbs_config->{NO_CONFIG_INHERITANCE},
+		'Configuration variables are not iherited by child nodes/package.',
+		'',
+		
 	'fb|force_build'                  => \$pbs_config->{FORCE_BUILD},
 		'Debug flags cancel the build pass, this flag re-enables the build pass.',
 		'',
@@ -1336,11 +1340,9 @@ my $narrow_display  = shift ;
 my @flags_and_help = GetSwitches() ;
 
 PrintInfo <<EOH ;
-PerlBuildSystem:
+Usage: pbs [-p Pbsfile[.pl]] [[-switch]...] target [target ...]
 	
-	pbs [-p Pbsfile[.pl]] [[-switch]...] target [target ...]
-	
-switches:
+OPTIONS:
 EOH
 
 my $max_length = 0 ;

@@ -44,7 +44,7 @@ if(ref $configuration eq 'HASH')
 	}
 else
 	{
-	PrintError("PBS config: RegisterPbsConfig: switches must be a hash reference.\n") ;
+	PrintError("Config: RegisterPbsConfig: switches must be a hash reference.\n") ;
 	}
 }
 
@@ -60,7 +60,7 @@ if(defined $pbs_configuration{$package})
 	}
 else
 	{
-	PrintError("PBS config: GetPbsConfig: no configuration for package '$package'. Returning empty set.\n") ;
+	PrintError("Config: GetPbsConfig: no configuration for package '$package'. Returning empty set.\n") ;
 	Carp::confess ;
 	return({}) ;
 	}
@@ -78,7 +78,7 @@ if(defined $pbs_configuration{$package})
 	}
 else
 	{
-	PrintError("PBS config: GetBuildDirectory: no configuration for package '$package'. Returning empty string.\n") ;
+	PrintError("Config: GetBuildDirectory: no configuration for package '$package'. Returning empty string.\n") ;
 	Carp::confess ;
 	return('') ;
 	}
@@ -96,7 +96,7 @@ if(defined $pbs_configuration{$package})
 }
 else
 	{
-	PrintError("PBS config: GetSourceDirectories: no configuration for package '$package'. Returning empty list.\n") ;
+	PrintError("Config: GetSourceDirectories: no configuration for package '$package'. Returning empty list.\n") ;
 	Carp::confess ;
 	return([]) ;
 	}
@@ -403,7 +403,7 @@ $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ||= 3 ;
 # build or not switches
 if($pbs_config->{NO_BUILD} && $pbs_config->{FORCE_BUILD})
 	{
-	PrintWarning "PBS config: --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
+	PrintWarning "Config: --force_build and --no_build switch are given, --no_build takes precedence.\n" ;
 	$pbs_config->{FORCE_BUILD} = 0 ;
 	}
 	
@@ -421,6 +421,9 @@ unless($pbs_config->{FORCE_BUILD})
 			}
 		}
 	}
+
+PrintInfo "Config: --no_config_inheritance\n" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
+
 #--------------------------------------------------------------------------------
 
 $Data::TreeDumper::Startlevel = 1 ;
@@ -578,7 +581,7 @@ if(defined $pbs_config->{PBSFILE})
 	
 	if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 		{
-		PrintInfo "PBS config: Using pbsfile '$pbsfile' (was given as argument).\n" ;
+		PrintInfo "Config: Using pbsfile '$pbsfile' (was given as argument).\n" ;
 		}
 	}
 else
@@ -602,7 +605,7 @@ else
 			($pbsfile) = keys %existing_pbsfile ;
 			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 				{
-				PrintInfo "PBS config: Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
+				PrintInfo "Config: Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
 				}
 			}
 		else

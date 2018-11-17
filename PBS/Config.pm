@@ -996,16 +996,19 @@ $PBS::Output::indentation_depth++ ;
 
 my %sub_config ;
 
-if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE})
+if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CONFIG_INHERITANCE})
 	{
-	my $title = "PACKAGE_CONFIG_NO_INHERITANCE for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
-        PrintWarning "$title\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
+	my $warning = "Config: no inheritance for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
+	$warning .= "[PACKAGE_CONFIG_NO_INHERITANCE]" if $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} ;
+	$warning .= "[--no_config_iheritance]" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
+
+	PrintWarning "$warning\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
 
 	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
 		{
 		%sub_config = %{$sub_pbs_hash->{PACKAGE_CONFIG}} ;
 
-		my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+		my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
 		if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 	        	{

@@ -1,4 +1,30 @@
 
+
+REH SHELL and ENV
+	as ENV is stripped off we need a way to bring it back for applications 
+	running under some SHELL
+
+	setting ENV is done by rules which allows us to selectively apply ENV to a 
+	node build
+
+	there is a need to control which rules set environment variables (the same need
+	we have to control which rules bring which dependencies, also a node
+	environment control problem) 
+		how to define node environment and what rules are active within it
+		how external environment impacts the node environment
+			in pbs rules are controlled by running in a specific package
+			but that separated parts of the graph not the nodes within that
+			part
+
+			still in pbs (without --neo_config) configuration are global even
+			if they are hierarchically inherited
+
+		how to visualize the rules changing the environment
+		how to control the of the interaction between rules
+			how one rule can stop other rules
+  
+	
+
 Create a clear display framework
 	in pbs, redirection is in multiple files to handle multiple options
 	it is difficult to change and get an overview of
