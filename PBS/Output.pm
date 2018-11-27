@@ -30,6 +30,7 @@ require Exporter;
 		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG COLOR
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
+		GetColor
 		) ;
 		
 $VERSION = '0.06' ;
@@ -46,7 +47,7 @@ our $indentation = '   ' ;
 our $indentation_depth = 0 ;
 our $display_error_context  = 0 ;
 
-my $cd = 16 ; # color_depth
+my $cd = 256 ; # color_depth
 my %cc ;
 
 sub SetDefaultColors
@@ -58,6 +59,11 @@ for my $depth (keys %$default_colors)
 	{
 	$cc{$depth} = { %{$default_colors->{$depth} // {}}, %{$cc{$depth} // {}} } ;
 	}
+}
+
+sub GetColor
+{
+$cc{$cd}{$_[0]} // '' ; 
 }
 
 #-------------------------------------------------------------------------------
@@ -137,7 +143,6 @@ for (@data)
 	s/^(\t+)/$indentation x length($1)/gsme ;
 	
 	print $glob $color_and_depth->($_) ;
-	
 	}
 }
 

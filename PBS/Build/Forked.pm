@@ -580,7 +580,7 @@ print $builder_channel "BUILD_NODE" . "__PBS_FORKED_BUILDER__"
 
 #---------------------------------------------------------------------------------------------------------------
 
-my @bg_color_classes = ([qw ( on_grey1 on_grey1 )], [qw( on_grey3 on_grey3 )]) ;
+my @bg_color_classes = ([qw ( box_1_1 box_1_2 )], [qw ( box_2_1 box_2_2 )]) ;
 my $bg_color_class = 0 ;
 
 sub CollectNodeBuildResult
@@ -659,7 +659,7 @@ my $bg_color = 0 ;
 
 				chomp ;
 
-				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, color($bg_colors[$bg_color])) : $_ ;
+				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
 				print STDERR "$o\n" unless $no_output ;
 				}

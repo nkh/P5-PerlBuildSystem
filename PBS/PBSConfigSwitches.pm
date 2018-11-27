@@ -1342,7 +1342,7 @@ my @flags_and_help = GetSwitches() ;
 PrintInfo <<EOH ;
 Usage: pbs [-p Pbsfile[.pl]] [[-switch]...] target [target ...]
 	
-OPTIONS:
+Options:
 EOH
 
 my $max_length = 0 ;

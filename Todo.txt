@@ -1,3 +1,6 @@
+
+multiple plugin and lib path
+
 Creator vs immediate build
 	Creator, file that need to exists before depending a node
 		often a file that itself points to other dependencies
