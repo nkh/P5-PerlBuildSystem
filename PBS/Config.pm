@@ -892,7 +892,8 @@ return($entry) unless defined $entry ;
 return($entry)  unless $entry =~ /%/ ;
 
 my $source_entry = $entry ;
-PrintDebug __FILE__ . ':' . __LINE__ . " [EvalConfig]\n\t$source_entry\n"
+
+PrintInfo2 __FILE__ . ':' . __LINE__ . " [EvalConfig]\n" 
 	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 my $undefined_config = 0 ;
@@ -917,6 +918,9 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 		PrintWarning("\t\$config->{$1} isn't defined at $origin\n") ;
 		$undefined_config++ ;
 		}
+
+	PrintDebug "\t$element => $config->{$element}\n"
+		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 
 return($entry) if $undefined_config ;
@@ -941,18 +945,20 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 		{
 		PrintWarning("\tconfiguration variable '%$element' isn't defined at $origin\n") ;
 		}
+
+	PrintDebug "\t$element => $config->{$element}\n"
+		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 	
 
 $entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : "%$1"/eg ;
 
 $entry =~ s/__PBS__PERCENT__/\%/g ;
+		
 
-PrintInfo3 "\t$entry\n\n"
-	 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
-		&& $source_entry ne $entry ;
+print "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
-return($entry) ;
+return $entry ;
 }
 
 #-------------------------------------------------------------------------------

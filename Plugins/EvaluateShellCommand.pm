@@ -51,6 +51,9 @@ sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
+PrintInfo2 __FILE__ . ':' . __LINE__ . " [EvaluateShellCommand]\n" 
+	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+
 my $source_entry = $$shell_command_ref ;
 
 my @repository_paths = PBS::Build::NodeBuilder::GetNodeRepositories($tree) ;
@@ -67,7 +70,8 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 	my $replacement = '';
 	for my $repository_path (@repository_paths)
 		{
-		#PrintDebug "\t\trepository: $repository_path\n" ;
+		PrintDebug "\tPBS_REPOSITORIES => $repository_path\n"
+			if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 			
 		$replacement .= "$prefix$repository_path ";
 		}
@@ -126,23 +130,28 @@ my $triggered_dependency_list = join ' ', @triggered_dependencies ;
 my ($basename, $path, $ext) = File::Basename::fileparse($file_to_build, ('\..*')) ;
 $path =~ s/\/$// ;
 
-$$shell_command_ref=~ s/\%BUILD_DIRECTORY/$build_directory/g ;
-
-$$shell_command_ref =~ s/\%FILE_TO_BUILD_PATH/$path/g ;
-$$shell_command_ref =~ s/\%FILE_TO_BUILD_NAME/$basename$ext/g ;
-$$shell_command_ref =~ s/\%FILE_TO_BUILD_BASENAME/$basename/g ;
-$$shell_command_ref =~ s/\%FILE_TO_BUILD_NO_EXT/$path\/$basename/g ;
-$$shell_command_ref =~ s/\%FILE_TO_BUILD/$file_to_build/g ;
-
-$$shell_command_ref =~ s/\%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY/$dependency_list_relative_build_directory/g ;
-$$shell_command_ref =~ s/\%TRIGGERED_DEPENDENCY_LIST/$triggered_dependency_list/g ;
-$$shell_command_ref =~ s/\%DEPENDENCY_LIST/$dependency_list/g ;
-
-if ($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} && $source_entry ne $$shell_command_ref)
+for 
+	(
+	[ BUILD_DIRECTORY                          => $build_directory ],
+	[ FILE_TO_BUILD_PATH                       => $path ],
+	[ FILE_TO_BUILD_NAME                       => "$basename$ext" ],
+	[ FILE_TO_BUILD_BASENAME                   => $basename ],
+	[ FILE_TO_BUILD_NO_EXT                     => "$path\/$basename"],
+	[ FILE_TO_BUILD                            => $file_to_build ],
+	[ DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY => $dependency_list_relative_build_directory],
+	[ TRIGGERED_DEPENDENCY_LIST                => $triggered_dependency_list],
+	[ DEPENDENCY_LIST                          => $dependency_list],
+	)
 	{
-	PrintDebug __FILE__. ':' . __LINE__ . " [EvaluateShellCommand]\n\t$source_entry\n" ;
-	PrintInfo3 "\t$$shell_command_ref\n\n"
+	if($$shell_command_ref =~ m/\%$_->[0]/)
+		{
+		PrintDebug "\t$_->[0] => $_->[1]\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	
+		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
+		}
 	}
+
+print "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 }
 
 #-------------------------------------------------------------------------------

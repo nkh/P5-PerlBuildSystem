@@ -1,4 +1,7 @@
 
+REH_USER_TARGET
+	"targets" target which queries the registered rules and displays the user targets
+	https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
 REH SHELL and ENV
 	as ENV is stripped off we need a way to bring it back for applications 

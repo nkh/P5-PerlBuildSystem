@@ -11,11 +11,11 @@ sub C_eval
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
+PrintInfo2 __FILE__. ':' . __LINE__ . "\n"
+	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+
 if($$shell_command_ref =~ /%C_SOURCE/)
 	{
-	PrintDebug __FILE__. ':' . __LINE__ . " [%C_SOURCE]\n\t$$shell_command_ref\n"
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
-
 	my $c_source = '' ;
 
 	for my $dependency (grep { ! /^__/ } keys %$tree)
@@ -23,30 +23,20 @@ if($$shell_command_ref =~ /%C_SOURCE/)
 		$c_source .= "$dependency" if $dependency =~ /\. c (?:pp)? /x ;
 		}
 
-	$$shell_command_ref =~ s/%C_SOURCE/$c_source/ ;
-
-	PrintInfo3 "\t$$shell_command_ref\n\n" 
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+	PrintDebug "\tC_SOURCE => $c_source\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	$$shell_command_ref =~ s/%C_SOURCE/$c_source/g ;
 	}
 
 if($$shell_command_ref =~ /%CFLAGS_INCLUDE/)
 	{
-	PrintDebug __FILE__. ':' . __LINE__ . " [%CFLAGS_INCLUDE]\n\t$$shell_command_ref\n"
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
-
 	my $cflags_include = GetCFileIncludePaths($tree);
 	
-	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/ ;
-
-	PrintInfo3 "\t$$shell_command_ref\n\n" 
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
+	PrintDebug "\tCFLAGS_INCLUDE => $cflags_include\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/g ;
 	}
 
 if($$shell_command_ref =~ /%C_DEPENDER/)
 	{
-	PrintDebug __FILE__. ':' . __LINE__ . " [%C_DEPENDER]\n\t$$shell_command_ref\n"
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
-
 	my $c_depender = $tree->{__CONFIG}{C_DEPENDER} ;
 
 	unless(defined $c_depender)
@@ -55,12 +45,12 @@ if($$shell_command_ref =~ /%C_DEPENDER/)
 		}
 	else
 		{
-		$$shell_command_ref =~ s/%C_DEPENDER/$c_depender/ ;
+		PrintDebug "\tC_DEPENDER => $c_depender\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+		$$shell_command_ref =~ s/%C_DEPENDER/$c_depender/g ;
 		}
-
-	PrintInfo3 "\t$$shell_command_ref\n\n" 
-		if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 	}
+
+print "\n" if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 }
 
 #-------------------------------------------------------------------------------
