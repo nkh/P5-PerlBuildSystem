@@ -55,6 +55,8 @@ my $run_in_warp_mode = 1 ;
 # we add the pbsfiles to the watched files
 # we are registered with the watch server (it will have the nodes already)
 
+my $warp_load_time = 0 ;
+
 if(-e $warp_file)
 	{
 	($nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents,
@@ -65,13 +67,8 @@ if(-e $warp_file)
 			die "\n" ;
 			} ;
 
-	if($pbs_config->{DISPLAY_WARP_TIME})
-		{
-		my $warp_load_time = tv_interval($t0_warp, [gettimeofday]) ;
-		
-		PrintInfo(sprintf("Warp: load time: %0.2f s.\n", $warp_load_time)) ;
-		}
-		
+	$warp_load_time = tv_interval($t0_warp, [gettimeofday]) ;
+
 	$t0_warp_check = [gettimeofday];
 	
 	PrintInfo "Warp: checking $number_of_nodes_in_the_dependency_tree nodes.\n" unless $pbs_config->{QUIET} ;
@@ -107,10 +104,13 @@ if($run_in_warp_mode)
 		if($pbs_config->{DISPLAY_WARP_TIME})
 			{
 			my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
-			PrintInfo(sprintf("Warp: verification time: %0.2f s.\n", $warp_verification_time)) ;
-			
 			my $warp_total_time = tv_interval($t0_warp, [gettimeofday]) ;
-			PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_total_time)) ;
+
+			PrintInfo
+				sprintf
+					(
+					"Warp: load time: %0.2f s., verification time: %0.2f s.\n",
+					$warp_load_time, $warp_verification_time, $warp_total_time) ;
 			}
 			
 		PrintInfo("\e[KWarp: Up to date\n") unless $pbs_config->{QUIET} ;
@@ -169,13 +169,17 @@ if($run_in_warp_mode)
 
 	if($pbs_config->{DISPLAY_WARP_TIME})
 		{
-		PrintInfo(sprintf("Warp: verification time: %0.2f s.\n", tv_interval($t0_warp_check, [gettimeofday]))) ;
-		
+		my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
+
 		my $info = "[$nodes_in_warp/trigger:$node_mismatch/removed:$number_of_removed_nodes]" ;
 
-		PrintInfo(sprintf("Warp: total time: %0.2f s. $info\n", tv_interval($t0_warp, [gettimeofday]))) ;
+		PrintInfo
+			sprintf
+				(
+				"Warp: $info, load time: %0.2f s., check time: %0.2f s.\n",
+				$warp_load_time, $warp_verification_time) ;
 		}
-		
+
 	if($number_of_removed_nodes)
 		{
 		unless($pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS})
@@ -615,7 +619,7 @@ $warp_message //='' ;
 
 $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ;
 
-PrintInfo("\e[KWarp: generation.$warp_message\n") ;
+PrintInfo("\e[KWarp: generation.$warp_message\n") unless $pbs_config->{QUIET} ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -1100,7 +1104,7 @@ for my $node (keys %$inserted_nodes)
 		}
 	}
 
-PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes = $new_nodes\n" ;
+PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" ;
 
 # add nodes level above, to trigger
 for my $file (keys %$warp_dependents)

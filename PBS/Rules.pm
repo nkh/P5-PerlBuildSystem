@@ -560,22 +560,19 @@ sub BuildOk
 # Syntactic sugar, this function can be called instead for 
 # defining a closure or giving a sub ref
 
-my $message = shift || 'no user message' ;
-my $print   = shift || (! defined $PBS::Shell::silent_commands_output) ; 
+my $message = shift ;
+my $print   = shift ; 
 
 my ($package, $file_name, $line) = caller() ;
 
-my $build_ok = subname _BuildOk => sub
+return subname BuildOk => sub
 	{
-	my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
+	#my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
 	
-	PrintInfo("PBS::BuildOk: $message \n") if $print ;
-	return(1, $message) ;
+	PrintInfo3("BuildOk: $message\n") if defined $message ;
+	return(1, $message // 'BuildOk: no message') ;
 	} ;
-
-return $build_ok ; 
 }
-
 
 #-------------------------------------------------------------------------------
 sub AddSubpbsRules

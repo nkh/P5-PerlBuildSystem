@@ -1075,21 +1075,21 @@ EOT
 		'',
 
 	'bni|build_and_display_node_information' => \$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO},
-		'Display information about the node to be build.',
+		'Display information about the node to be build; see also --bn|build_node_information.',
 		<<EOT,
-Adds the following switches to the run:
-'no|node_origin'
-'nd|node_dependencies'
-'nc|node_build_cause' 
-'nr|node_build_rule' 
-'nb|node_builder'
-'npbc|node_build_post_build_commands'
+these switches are turned on:
+	'no|node_origin'
+	'nd|nod_dependencies'
+	'nc|node_build_cause' 
+	'nr|node_build_rule' 
+	'nb|node_builder'
+	'npbc|node_build_post_build_commands'
 
 You may want to also add:
-
-'nbn|node_build_name' 
-'nconf|node_config'
-'nil|node_information_located'
+	'np|mode_parents'
+	'nbn|node_build_name' 
+	'nconf|node_config'
+	'nil|node_information_located'
 EOT
 
 	'verbosity=s'                 => $pbs_config->{VERBOSITY},

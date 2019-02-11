@@ -97,12 +97,11 @@ else
 		}
 		
 	my $perl_vs_shellcommands = ", $node_builders_using_perl_subs P, $node_builders_not_using_perl_subs S" ;
-	my $plural = $number_of_nodes_to_build > 1 ? 's' : '' ;
-	PrintInfo("Build: $number_of_nodes_to_build node$plural scheduled for build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
+	PrintInfo("Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
 
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
-		print $lh INFO "Build: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands] node$plural scheduled for build.\n" ;
+		print $lh INFO "Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n" ;
 		}
 		
 	# display which --bi don't match

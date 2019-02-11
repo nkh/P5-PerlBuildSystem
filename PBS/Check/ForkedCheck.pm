@@ -32,6 +32,8 @@ my ($pbs_config, $nodes, $node_names, $IsFileModified, $node_checker) = @_ ;
 # location for MD5 computation
 for my $node (keys %$nodes)
 	{
+	$nodes->{$node}{__MD5} //= '' ;
+
 	if('VIRTUAL' ne $nodes->{$node}{__MD5})
 		{
 		# rebuild the build name
@@ -45,7 +47,6 @@ my ($number_trigger_nodes, $trigger_log) = (0, '') ;
 my $number_of_check_processes = $pbs_config->{CHECK_JOBS} ;
 	
 my $checkers = StartCheckers($number_of_check_processes, $pbs_config, $nodes, $node_names, $IsFileModified, $node_checker)  ;
-
 
 if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	{

@@ -92,12 +92,23 @@ return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
-PrintInfo "\e[KDepend: pbsfile$plural: $pbs_runs\n" ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo(sprintf("Depend: time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	PrintInfo(sprintf("\e[KDepend: pbsfile$plural: $pbs_runs, time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
+else
+	{
+	PrintInfo "\e[KDepend: pbsfile$plural: $pbs_runs\n" ;
+	}
+
+my $nodes = scalar(keys %$inserted_nodes) ;
+my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
+my $warp_nodes = $nodes - $non_warp_nodes ;
+
+my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
+
+PrintInfo("Depend: ${build_at}nodes in the dependency tree: $nodes [W:$warp_nodes, R:$non_warp_nodes]\n") ;
 
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
@@ -216,14 +227,6 @@ return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AN
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
-
-my $nodes = scalar(keys %$inserted_nodes) ;
-my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
-my $warp_nodes = $nodes - $non_warp_nodes ;
-
-PrintInfo("Depend: ${build_at}nodes in the dependency tree: $nodes [W:$warp_nodes, R:$non_warp_nodes]\n") ;
-
 my ($build_result, $build_message) ;
 
 if($pbs_config->{DO_BUILD})
@@ -233,7 +236,7 @@ if($pbs_config->{DO_BUILD})
 
 	if($build_result == BUILD_SUCCESS)
 		{
-		PrintInfo("Build: done\n") ;
+		PrintInfo("Build: done\n") unless $pbs_config->{QUIET} ;
 		}
 	else
 		{
@@ -253,17 +256,18 @@ if($pbs_config->{DO_BUILD})
 		if
 			(
 			(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
-
 			&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
 			)
 			{
-			PrintInfo "Build: running post build commands.\n" unless $post_build_commands ;
+			PrintInfo "\r\e[KBuild: running post build command: $post_build_commands" ;
 			$post_build_commands++ ;
 
 			PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
 			$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
 			}
 		}
+
+	print "\n" if $post_build_commands ;
 
 	PrintInfo
 		(

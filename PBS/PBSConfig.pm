@@ -287,7 +287,7 @@ $pbs_config->{DISPLAY_DIGEST}++ if defined $pbs_config->{DISPLAY_DIFFERENT_DIGES
 
 $pbs_config->{DISPLAY_SEARCH_INFO}++ if defined $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
 
-if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_BUILD_INFO}} || @{$pbs_config->{DISPLAY_NODE_INFO}})
+if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
 	undef $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} if (@{$pbs_config->{DISPLAY_BUILD_INFO}}) ;
 	
@@ -301,6 +301,8 @@ if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY
 	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 	}
 	
+$pbs_config->{DISPLAY_NODE_ORIGIN}++ if defined $pbs_config->{DISPLAY_NODE_PARENTS} ;
+
 # ------------------------------------------------------------------------------
 
 $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_ROOT_BUILD_DIRECTORY} = undef if(defined $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY}) ;

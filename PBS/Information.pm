@@ -203,7 +203,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 			}
 		else
 			{
-			$current_node_info .= INFO ("${tab}${tab}$_\n") ;
+			$current_node_info .= INFO ("${tab}${tab}$_\n") if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
 			}
 
 		}
@@ -213,7 +213,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 		for keys %triggered_dependencies ;
 		
 	$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG});
-	$node_info     .= $current_node_info if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
+	$node_info     .= $current_node_info ;
 	}
 	
 #----------------------
@@ -420,7 +420,7 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 	print $lh $log_node_info, "\n" if defined $lh ;
 	}
 
-if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
+if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_iNODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
 	print STDOUT $node_info ;
 	}

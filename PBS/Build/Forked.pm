@@ -182,7 +182,7 @@ if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 		. ($excluded
 			? WARNING(", excluded: $excluded\n")
 			: INFO ("\n"))
-		) ;
+		) if $number_of_failed_builders ;
 	}
 
 return(!$number_of_failed_builders) ;
@@ -306,10 +306,7 @@ if($number_of_builders > $number_of_terminal_nodes)
 
 $number_of_builders ||= 1 ; #safeguard for user errors
 
-my $builder_plural = '' ; $builder_plural = 'es' if($number_of_builders > 1) ;
-my $build_process = "build process$builder_plural" ;
-
-PrintInfo("Build: using $number_of_builders $build_process out of maximum $pbs_config->{JOBS} for $number_of_terminal_nodes terminal nodes.\n") ;
+PrintInfo("Build: process: $number_of_builders, max: $pbs_config->{JOBS}, terminal nodes: $number_of_terminal_nodes\n") ;
 
 return($number_of_builders ) ;
 }
@@ -719,7 +716,7 @@ sub TerminateBuilders
 my ($builders) = @_;
 my $number_of_builders = @$builders ;
 
-PrintInfo "Build: terminating build processes [$number_of_builders]\n" ;
+#PrintInfo "Build: terminating build processes [$number_of_builders]\n" ;
 
 for my $builder (@$builders)
 	{

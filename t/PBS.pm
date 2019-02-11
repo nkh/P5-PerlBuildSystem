@@ -303,7 +303,7 @@ sub build {
     #~ use Data::TreeDumper ;
     #~ diag DumpTree [$self, \@_, "$flags $flags_global $build_dir $target"], 'build arguments:' ;
     
-    $self->SUPER::run(@_, args => "$flags $flags_global $build_dir $target");
+    $self->SUPER::run(@_, args => "-ke . $flags $flags_global $build_dir $target");
 }
 
 =over
