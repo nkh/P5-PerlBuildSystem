@@ -51,7 +51,7 @@ sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
-PrintInfo2 __FILE__ . ':' . __LINE__ . " [EvaluateShellCommand]\n" 
+PrintInfo2 "\t" .__FILE__ . ':' . __LINE__ . " [EvaluateShellCommand]\n" 
 	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 my $source_entry = $$shell_command_ref ;
@@ -145,7 +145,7 @@ for
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)
 		{
-		PrintDebug "\t$_->[0] => $_->[1]\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+		PrintDebug "\t\t$_->[0] => $_->[1]\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
 		}

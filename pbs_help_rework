@@ -1,7 +1,69 @@
+pbs command
+	setup: 
+	wizard:
+	colors
+	statistics
 
-build command
+build system
+	warp
+
+	pbsfile
+		statistics:
+
+	post build:
+	triggers:
+
+	depend
+		configuration
+		rules 
+			setup
+			running
+
+		dependencies
+			node
+
+		graph
+
+	check
+		digest
+		errors
+
+	build
+		jobs:
+		post build
+
+
+
+
+
+
+
+
+
+pbs command
 =============
 --v|version                                      : Displays Pbs version.
+--l|create_log                                   : PBS will creat a simple log for the current run.
+log
+--ll|display_last_log=s                          : PBS dump the last log in the given build directory.
+log_display_last
+
+--h|help                                         : Displays this help.
+--help_switch=s                               : Displays help for the given switch.
+--help_narrow_display                        : Writes the flag name and its explanation on separate lines.
+--d|display_pod_documenation:s                   : Interactive PBS documentation display and search.
+help_interactive
+
+--pp|pbsfile_pod                                *: Displays a user defined help. See 'Online help' in pbs.pod
+help_user_from_pbsfile
+--pbs2pod                                       *: Extracts the pod contained in the Pbsfile (except user documentation POD).
+help_build_system_from_pbsfile
+--raw_pod                                        : -pbsfile_pod or -pbs2pod is dumped in raw pod format.
+help_raw_pod_format
+
+
+--p|pbsfile=s                                    : Pbsfile use to defines the build.
+--debug:s                                        : Enable debug support A startup file defining breakpoints can be given.
 
 --prf|pbs_response_file=s                        : File containing switch definitions and targets.
 --naprf|no_anonymous_pbs_response_file           : Use only a response file named after the user or the one given on the command line.
@@ -9,64 +71,20 @@ prf_no_anonymous
 --nprf|no_pbs_response_file                      : Don't use any response file.
 prf_none
 
---dpt|display_pbs_time                           : Display where time is spend in PBS.
-pbs_display_time
-
---dptt|display_pbs_total_time                    : Display How much time is spend in PBS.
-pbs_displaytotal_time
-
---debug:s                                        : Enable debug support A startup file defining breakpoints can be given.
---verbosity=s                                   *: Used in user defined modules.
-
---h|help                                         : Displays this help.
---hs|help_switch=s                               : Displays help for the given switch.
---hnd|help_narrow_display                        : Writes the flag name and its explanation on separate lines.
+--verbosity=s  **remove**                        *: Used in user defined modules.
 
 --generate_bash_completion_script                : Output a bash completion script and exits.
 bash_completion_generate_scrip
 
---l|create_log                                   : PBS will creat a simple log for the current run.
-log
---ll|display_last_log=s                          : PBS dump the last log in the given build directory.
-log_display_last
---dump                                           : Dump an evaluable tree.
 
---output_indentation=s                           : set the text used to indent the output. This is repeated "subpbs level" times.
+--output_indentation=s      **remove **          : set the text used to indent the output. This is repeated "subpbs level" times.
 --nh|no_header                                   : PBS won't display the steps it is at. (Depend, Check, Build).
-
-color:
-------
---c|colorize                                    *: Colorize output.
-color
---no_colorization                                : Removes colors from output. Usefull when redirecting to a file.
-color_none
---ce|color_error=s                               : Set the error color.
-no short option
-
---cw|color_warning=s                             : Set the warning color.
---cw2|color_warning2=s                           : Set the alternate warning color.
---ci|color_info=s                                : Set the information color.
---ci2|color_info2=s                              : Set the alternate information color.
---cu|color_user=s                                : Set the user color.
---cs|color_shell=s                               : Set the shell color.
---cd|color_debug=s                               : Set the debugger color.
-
-
-wizard:
--------
---w|wizard:s                                     : Starts a wizard.
---wi|display_wizard_info                         : Shows Informatin about the found wizards.
-wizard_display_info
---wh|display_wizard_help                         : Tell the choosen wizards to show help.
-wizard_display_help
---qow|query_on_warning                           : When displaying a warning, Pbs will query you for continue or stop.
-
-build system
-============
+! misnamed, only place it is used is when depending files, get a spinner while loading pbsfile rather than, indented, multiple lines 
+usefull when using --display_pbsuse which could set it automatically
 
 setup: 
 ------
---nub|no_user_build                              : User defined Build() is ignored if present.
+--nub|no_user_build  **remove **                 : User defined Build() is ignored if present.
 user_build_none
 
 --no_default_path_warning                        : will not display a warning when using the distribution's PBS lib and plugins.
@@ -84,6 +102,9 @@ plugin_display_load_info
 --display_plugin_runs                            : displays which plugins subs are run.
 plugin_display_run
 
+build system
+============
+
 warp:
 -----
 --warp=s                                         : specify which warp to use.
@@ -96,15 +117,9 @@ warp:
 --display_warp_checked_nodes                     : Display which nodes are contained in the warp tree.
 --display_warp_triggered_nodes                   : Display which nodes are removed from the warp tree and why.
 
-pbsfile
--------
+pbsfile :
+--------
 --dpr|display_pbs_run                            : Display the run level of PBS.
---p|pbsfile=s                                    : Pebsfile use to defines the build.
---pp|pbsfile_pod                                *: Displays a user defined help. See 'Online help' in pbs.pod
---pbs2pod                                       *: Extracts the pod contained in the Pbsfile (except user documentation POD).
---raw_pod                                        : -pbsfile_pod or -pbs2pod is dumped in raw pod format.
---d|display_pod_documenation:s                   : Interactive PBS documentation display and search.
-
 
 --display_subpbs_search_info                     : Display information about how the subpbs files are found.
 --display_all_subpbs_alternatives                : Display all the subpbs files that could match.
@@ -120,6 +135,12 @@ pbsfile
 --nsi|no_subpbs_info                             : Dependency information will be displayed on the same line for all depend.
 
 statistics:
+--dpt|display_pbs_time                           : Display where time is spend in PBS.
+pbs_display_time
+
+--dptt|display_pbs_total_time                    : Display How much time is spend in PBS.
+pbs_displaytotal_time
+
 --dpu|display_pbsuse                             : displays which pbs module is loaded by a 'PbsUse'.
 --dpuv|display_pbsuse_verbose                    : displays which pbs module is loaded by a 'PbsUse' (full path) and where the the PbsUse call was made.
 --dput|display_pbsuse_time                       : displays the time spend in 'PbsUse' for each pbsfile.
@@ -178,6 +199,9 @@ rule running
 
 dependencies
 ------------
+--sd|source_directory=s                         *: Directory where source files can be found. Can be used multiple times.
+--dsd|display_source_directory                   : display all the source directories (given through the -sd switch ot the Pebsfile).
+
 --dde|display_depend_end                         : Display when a depend ends.
 --ndi|no_duplicate_info                          : PBS won't display which dependency are duplicated for a node.
 --no_external_link                               : Dependencies Linking from other Pbsfile stops the build if any local rule can match.
@@ -221,8 +245,75 @@ node_display_locate_info_all
 --npbc|node_build_post_build_commands            : Display the post build commands for each node.
 --nil|node_information_located                   : Display node information located in addition to relative node name.
 
+check
+-----
+digest:
+--display_digest_exclusion                       : Display when an exclusion or inclusion rule for a node matches.
+--display_digest                                 : Display the expected and the actual digest for each node.
+--dddo|display_different_digest_only             : Only display when a digest are diffrent.
+--display_md5_statistic                          : displays 'MD5' statistic.
+
+--use_watch_server                               : Uses file watch server to speed up file verification.
+--watch_server_double_check_with_md5             : As use_watch_server but also does and md5 verification.
+--watch_server_verbose                           : Will display what files the server has been notfied for.
+
+errors:
+--display_cyclic_tree                            : (DF) Display the portion of the dependency tree that is cyclic
+--no_source_cyclic_warning                       : No warning is displayed if a cycle involving source files is found.
+--die_source_cyclic_warning                      : Die if a cycle involving source files is found (default is warn).
+
+build
+-----
+builders:
+--dbi|display_builder_info                       : Displays if a node is build by a perl sub or shell commands.
+--time_builders                                  : Displays the total time a builders took to run.
+--kpbb|keep_pbs_build_buffers                   *: PBS will not remove the output buffers generated by build processes.
+--display_shell_info                             : Displays which shell executes a command.
+
+jobs:
+--j|jobs=i                                       : Maximum number of commands run in parallel.
+--jdoe|jobs_die_on_errors=i                      : 0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.
+--ubs|use_build_server=s                        *: If set, Pbs will connect to a build server for all the nodes that use shell commands to build
+ this expects the address of the build server. ex : localhost:12_000 
+--distribute=s                                  *: Define where to distribute the build.
+--dji|display_jobs_info                          : PBS will display extra information about the parallel build.
+--djr|display_jobs_running                       : PBS will display which nodes are under build.
+
+--no_build                                       : Cancel the build pass. Only the dependency and check passes are run.
+--fb|force_build                                 : Debug flags cancel the build pass, this flag re-enables the build pass.
+build_force
+--build_directory=s                              : Directory where the build is to be done.
+--mandatory_build_directory                      : PBS will not run unless a build directory is given.
+
+--check_dependencies_at_build_time               : Skipps the node build if no dependencies have changed or where rebuild to the same state.
+--ns|no_stop                                     : Continues building even if a node couldn't be buid. You might want to use --bi instead.
+--sc|silent_commands                             : shell commands are not echoed to the console.
+--sco|silent_commands_output                     : shell commands output are not displayed, except if an error occures.
+
+
+--dbsi|display_build_sequencer_info              : Display information about which node is build.
+--dbs|display_build_sequence                     : (DF) Dumps the build sequence data.
+--dbsno|display_build_sequence_name_only         : (DF) Displays the node_names for the build sequence.
+--evaluate_shell_command_verbose                 : Will display the transformation this plugin does.
+--bre|build_result                               : Shows the result returned by the builder.
+
+--bi|build_info=s                                : Options: --b --d --bc --br. A file or '*' can be specified. No Builds are done.
+--bni|build_and_display_node_information        *: Display information about the node to be build.
+
+--nbh|no_build_header                            : Don't display the name of the node to be build.
+--dpb|display_progress_bar                       : Force silent build mode and displays a progress bar. This is Pbs default, see --ndpb.
+--ndpb|display_no_progress_bar                   : Force verbose build mode and displays a progress bar.
+
+
+
+post build
+----------
+--post_pbs=s                                     : Run the given perl script after pbs. Usefull to generate reports, etc.
+
 graph
 -----
+--dump                                           : Dump an evaluable tree.
+
 --dm|dump_maxdepth=i                             : Maximum depth of the structures displayed by pbs.
 --di|dump_indentation=i                          : Data dump indent style (0-1-2).
 
@@ -270,72 +361,31 @@ graph
 --gtg_printer|generate_tree_graph_printer        : Non triggerring edges are displayed as dashed lines.
 
 
-check
------
-digest:
---display_digest_exclusion                       : Display when an exclusion or inclusion rule for a node matches.
---display_digest                                 : Display the expected and the actual digest for each node.
---dddo|display_different_digest_only             : Only display when a digest are diffrent.
---display_md5_statistic                          : displays 'MD5' statistic.
+wizard:
+-------
+--w|wizard:s                                     : Starts a wizard.
+--wi|display_wizard_info                         : Shows Informatin about the found wizards.
+wizard_display_info
+--wh|display_wizard_help                         : Tell the choosen wizards to show help.
+wizard_display_help
+--qow|query_on_warning                           : When displaying a warning, Pbs will query you for continue or stop.
 
---use_watch_server                               : Uses file watch server to speed up file verification.
---watch_server_double_check_with_md5             : As use_watch_server but also does and md5 verification.
---watch_server_verbose                           : Will display what files the server has been notfied for.
+color:
+------
+--c|colorize                                    *: Colorize output.
+color
+--no_colorization                                : Removes colors from output. Usefull when redirecting to a file.
+color_none
+--ce|color_error=s                               : Set the error color.
+no short option
 
-errors:
---display_cyclic_tree                            : (DF) Display the portion of the dependency tree that is cyclic
---no_source_cyclic_warning                       : No warning is displayed if a cycle involving source files is found.
---die_source_cyclic_warning                      : Die if a cycle involving source files is found (default is warn).
+--cw|color_warning=s                             : Set the warning color.
+--cw2|color_warning2=s                           : Set the alternate warning color.
+--ci|color_info=s                                : Set the information color.
+--ci2|color_info2=s                              : Set the alternate information color.
+--cu|color_user=s                                : Set the user color.
+--cs|color_shell=s                               : Set the shell color.
+--cd|color_debug=s                               : Set the debugger color.
 
-
-build
------
---no_build                                       : Cancel the build pass. Only the dependency and check passes are run.
---fb|force_build                                 : Debug flags cancel the build pass, this flag re-enables the build pass.
-build_force
---build_directory=s                              : Directory where the build is to be done.
---mandatory_build_directory                      : PBS will not run unless a build directory is given.
-
---sd|source_directory=s                         *: Directory where source files can be found. Can be used multiple times.
---dsd|display_source_directory                   : display all the source directories (given through the -sd switch ot the Pebsfile).
---check_dependencies_at_build_time               : Skipps the node build if no dependencies have changed or where rebuild to the same state.
---ns|no_stop                                     : Continues building even if a node couldn't be buid. You might want to use --bi instead.
---sc|silent_commands                             : shell commands are not echoed to the console.
---sco|silent_commands_output                     : shell commands output are not displayed, except if an error occures.
-
-
---dbsi|display_build_sequencer_info              : Display information about which node is build.
---dbs|display_build_sequence                     : (DF) Dumps the build sequence data.
---dbsno|display_build_sequence_name_only         : (DF) Displays the node_names for the build sequence.
---evaluate_shell_command_verbose                 : Will display the transformation this plugin does.
---bre|build_result                               : Shows the result returned by the builder.
-
---bi|build_info=s                                : Options: --b --d --bc --br. A file or '*' can be specified. No Builds are done.
---bni|build_and_display_node_information        *: Display information about the node to be build.
-
---nbh|no_build_header                            : Don't display the name of the node to be build.
---dpb|display_progress_bar                       : Force silent build mode and displays a progress bar. This is Pbs default, see --ndpb.
---ndpb|display_no_progress_bar                   : Force verbose build mode and displays a progress bar.
-
-jobs:
---j|jobs=i                                       : Maximum number of commands run in parallel.
---jdoe|jobs_die_on_errors=i                      : 0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.
---ubs|use_build_server=s                        *: If set, Pbs will connect to a build server for all the nodes that use shell commands to build
- this expects the address of the build server. ex : localhost:12_000 
---distribute=s                                  *: Define where to distribute the build.
---dji|display_jobs_info                          : PBS will display extra information about the parallel build.
---djr|display_jobs_running                       : PBS will display which nodes are under build.
-
-builders:
---dbi|display_builder_info                       : Displays if a node is build by a perl sub or shell commands.
---time_builders                                  : Displays the total time a builders took to run.
---kpbb|keep_pbs_build_buffers                   *: PBS will not remove the output buffers generated by build processes.
---display_shell_info                             : Displays which shell executes a command.
-
-
-
-post build
-----------
---post_pbs=s                                     : Run the given perl script after pbs. Usefull to generate reports, etc.
 
 

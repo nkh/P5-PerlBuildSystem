@@ -555,8 +555,8 @@ for my $source_name (@{[@_]})
 	$pbs_use_level++ ; # indent the PbsUse output to make the hierachy more visible
 	my $indentation = '   ' x $pbs_use_level ;
 	
-	PrintInfo("${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'\n") if(defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE}) ;
-	PrintInfo("${indentation}PbsUse: '$source_name'\n") if(defined $pbs_config->{DISPLAY_PBSUSE}) ;
+	PrintInfo2("${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'\n") if(defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE}) ;
+	PrintInfo2("${indentation}PbsUse: '$source_name'\n") if(defined $pbs_config->{DISPLAY_PBSUSE}) ;
 	
 	
 	if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})

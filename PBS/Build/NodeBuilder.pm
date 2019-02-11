@@ -177,6 +177,7 @@ if
 	}
 else
 	{
+	print PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 	$PBS::Shell::silent_commands = 1 ;
 	$PBS::Shell::silent_commands_output = 1 ;
 	}

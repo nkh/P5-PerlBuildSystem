@@ -22,20 +22,16 @@ use PBS::Constants ;
 
 #-------------------------------------------------------------------------------
 
-sub DisplayNodeInformation
+sub GetNodeHeader
 {
 my ($file_tree, $pbs_config) = @_ ;
 
 my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
-my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
-
-my $no_output = defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ? 1 : 0 ;
-
-return if((! defined $pbs_config->{CREATE_LOG}) && $no_output) ;
 
 #----------------------
 # header
 #----------------------
+
 my $type = '' ;
 if($file_tree->{__VIRTUAL} || $file_tree->{__FORCED} || $file_tree->{__WARP_NODE} || $file_tree->{__LOCAL})
 	{
@@ -83,6 +79,22 @@ else
 	
 $node_header .= $separator ;
 
+return $node_header, $type, $tab ;
+}
+
+sub DisplayNodeInformation
+{
+my ($file_tree, $pbs_config) = @_ ;
+
+my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
+my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
+
+my $no_output = defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ? 1 : 0 ;
+
+return if((! defined $pbs_config->{CREATE_LOG}) && $no_output) ;
+
+my ($node_header, $type, $tab)  = GetNodeHeader($file_tree, $pbs_config) ;
+
 $node_info .= $node_header unless $no_output ;
 $log_node_info .= INFO ("Node: $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
 
@@ -124,6 +136,38 @@ if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_ORIGI
 				) ;	
 
 	$current_node_info .= INFO "$inserted\n" ;
+
+	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
+	$node_info     .= $current_node_info if defined $pbs_config->{DISPLAY_NODE_ORIGIN} ;
+	}
+	
+#----------------------
+# parents
+#----------------------
+if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_PARENTS})
+	{
+	#$current_node_info = INFO "\tdependent:" . join(', ',  GetParentsNames($file_tree)) . "\n" ;
+	
+	my $DependenciesOnly = sub
+				{
+				my $tree = shift ;
+				
+				if('HASH' eq ref $tree)
+					{
+					return( 'HASH', undef, sort grep {! /^__/} keys %$tree) ;
+					}
+				
+				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+				} ;
+							
+	$current_node_info =
+		INFO
+			DumpTree
+				(
+				$file_tree->{__DEPENDENCY_TO},
+				"dependents tree:",
+				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0, INDENTATION => "\t",
+				) ;
 
 	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
 	$node_info     .= $current_node_info if defined $pbs_config->{DISPLAY_NODE_ORIGIN} ;

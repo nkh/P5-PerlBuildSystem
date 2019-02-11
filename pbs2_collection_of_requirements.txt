@@ -1,4 +1,14 @@
 
+templatized output
+	eg: output for when a node is build (-bni) corresponds to a template that the user can modify
+		access to basic element/color, and options, are provided
+
+		a bit like the code that does the visualization but elements are computed and made available to user
+			may be less efficient
+
+		we can start by using templates internally and moving display code to plugins
+			note that node visualization is already a plugin
+		
 REH_USER_TARGET
 	"targets" target which queries the registered rules and displays the user targets
 	https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html

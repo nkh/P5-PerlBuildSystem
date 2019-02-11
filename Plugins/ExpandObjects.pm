@@ -18,7 +18,7 @@ my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
 my $evaluate_shell_command_verbose = $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
-PrintInfo2 __FILE__ . ':' . __LINE__ . "\n" if $evaluate_shell_command_verbose ;
+my $expanded_variables = 0 ;
 
 if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_OBJECTS_EXPANDED/)
 	{
@@ -36,12 +36,15 @@ if($$shell_command_ref =~ /([^\s]+)?\%DEPENDENCY_LIST_OBJECTS_EXPANDED/)
 			}
 		}
 	
-	PrintDebug "\tDEPENDENCY_LIST_OBJECTS_EXPANDED => $expanded_dependency_list\n" if $evaluate_shell_command_verbose ; 
+	$expanded_variables++ ;
+
+	PrintInfo2 "\t" . __FILE__ . ':' . __LINE__ . "\n" if $evaluate_shell_command_verbose && $expanded_variables == 1 ;
+	PrintDebug "\t\tDEPENDENCY_LIST_OBJECTS_EXPANDED => $expanded_dependency_list\n" if $evaluate_shell_command_verbose ; 
 
 	$$shell_command_ref =~ s/\%DEPENDENCY_LIST_OBJECTS_EXPANDED/$expanded_dependency_list/g ;
 	}
 
-print "\n" if $evaluate_shell_command_verbose ; 
+print "\n" if $evaluate_shell_command_verbose && $expanded_variables ; 
 }
 
 sub GetFiles

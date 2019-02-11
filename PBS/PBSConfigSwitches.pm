@@ -493,6 +493,10 @@ EOT
 		'Display where the node has been inserted in the dependency tree.',
 		'',
 		
+	'np|node_parents'            => \$pbs_config->{DISPLAY_NODE_PARENTS},
+		"Display the node's parents.",
+		'',
+		
 	'nd|node_dependencies'            => \$pbs_config->{DISPLAY_NODE_DEPENDENCIES},
 		'Display the dependencies for a node.',
 		'',
@@ -1063,7 +1067,11 @@ EOT
 		'',
 
 	'bnir|build_and_display_node_information_regex=s' => $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
-		'On display information for matching nodes.',
+		'Only display information for matching nodes.',
+		'',
+
+	'bni_result' => \$pbs_config->{BUILD_DISPLAY_RESULT},
+		'display node header and build result even if not matched by --bnir.',
 		'',
 
 	'bni|build_and_display_node_information' => \$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO},
