@@ -110,7 +110,7 @@ for my $post_build_rule (@post_build_rules)
 		}
 	}
 
-my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
+my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
 
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 my $el = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });

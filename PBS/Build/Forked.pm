@@ -64,7 +64,7 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_PER_BUI
 
 my $progress_bar = CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
 
-my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
+my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 while ($number_of_nodes_to_build > $number_of_already_build_node)
@@ -485,7 +485,7 @@ my $started_builders = 0 ;
 PrintInfo2 "Build: starting:\n" 
 	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
 
-my $available = chars() - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
+my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 # find which builder finished, start building on them

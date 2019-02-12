@@ -98,11 +98,11 @@ for (sort keys %ENV)
 
 	if(defined $keep)
 		{
-		PrintInfo3 "ENV: keeping  '$_'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		PrintInfo3 "ENV: keeping  '$_' => " . INFO2("'$ENV{$_}'\n") if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
 		}
 	else
 		{ 
-		PrintWarning "ENV: removing '$_'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		PrintWarning "ENV: removing '$_' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
 		delete $ENV{$_} ;
 		}
 	}
