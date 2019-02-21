@@ -9,18 +9,26 @@ use PBS::Debug ;
 PBS::Debug::AddBreakpoint
 	(
 	'debug breakpoint name here',
-	#~ RULE_REGEX => ''
-	#~ NODE_REGEX => '',
-	#~ PACKAGE_REGEX => '',
-	#~ PBSFILE_REGEX => '',
-	#~ DEPEND => 1,
-	#~ TRIGGERED => 1,
-	#~ PRE => 1,
-	#~ POST => 1,
-	#~ BUILD => 1,
-	#~ INSERT => 1,
-	#~ USE_DEBUGGER => 1,
-	#~ ACTIVE => 1,
+
+	ACTIVE => 1,
+	USE_DEBUGGER => 0,
+	
+	TYPE => 'BUILD',
+	#TYPE => 'POST_BUILD',
+	#TYPE => 'TREE',
+	#TYPE => 'INSERT',
+	#TYPE => 'VARIABLE',
+	#TYPE => 'DEPEND',
+	
+	#RULE_REGEX => '',
+	#NODE_REGEX => '',
+	#PACKAGE_REGEX => '',
+	#PBSFILE_REGEX => '',
+	
+	#PRE => 1,
+	#POST => 1,
+	#TRIGGERED => 1,
+
 	ACTIONS =>
 		[
 		sub

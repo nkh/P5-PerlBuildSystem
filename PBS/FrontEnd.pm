@@ -42,6 +42,8 @@ my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
 my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+for ( @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($_) }
+  
 my ($targets) = $pbs_config->{TARGETS} ;
 
 if($pbs_config->{DISPLAY_LIB_PATH})

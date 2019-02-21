@@ -146,6 +146,7 @@ $pbs_config->{VERBOSITY} ||= [] ;
 $pbs_config->{POST_PBS} ||= [] ;
 $pbs_config->{DISPLAY_TREE_FILTER} ||= [] ;
 $pbs_config->{DISPLAY_TEXT_TREE_REGEX} ||= [] ;
+$pbs_config->{BREAKPOINTS} ||= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $pbs_config) ;} ;
 
@@ -1126,16 +1127,20 @@ EOT
 		'',
 
 	'display_environment_info'       => \$pbs_config->{DISPLAY_ENVIRONMENT_INFO},
-		"Display a short information line about the environment variables",
+		"Display a statistics about environment variables",
 		'',
 
 	'display_environment'            => \$pbs_config->{DISPLAY_ENVIRONMENT},
-		"Display a short information line about the environment variables",
+		"Display which environment variables are kept and discarded",
+		'',
+
+	'display_environment_kept'       => \$pbs_config->{DISPLAY_ENVIRONMENT_KEPT},
+		"Only display the evironment variables kept",
 		'',
 
 	#----------------------------------------------------------------------------------
 	
-	'debug:s'                         => \&PBS::Debug::EnableDebugger,
+	'debug:s'                         => $pbs_config->{BREAKPOINTS},
 		'Enable debug support A startup file defining breakpoints can be given.',
 		'',
 	

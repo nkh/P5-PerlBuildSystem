@@ -15,6 +15,6 @@ AddRule 'sub2>4',
 	PBSFILE => './3.pl',
 	PACKAGE => '3',
 	#~ COMMAND_LINE_DEFINITIONS => {'hi' => 'there'},
-	BUILD_DIRECTORY => '/here/', #example to see difference in graph
+	BUILD_DIRECTORY => 'here', #example to see difference in graph
 	} ;
 

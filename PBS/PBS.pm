@@ -102,7 +102,7 @@ for (sort keys %ENV)
 		}
 	else
 		{ 
-		PrintWarning "ENV: removing '$_' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		PrintWarning "ENV: removing '$_' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $pbs_runs == 1 ;
 		delete $ENV{$_} ;
 		}
 	}

@@ -1,6 +1,63 @@
 
-display what's being build in a short dynamic tree form
+!display what's being build in a short dynamic tree form
 	to avoid the guessing when, ie, working with Robin
+
+	=> ridiculous idea!
+
+	wait!
+		we have a graph, we know what nodes are being build or are completely build
+		what we don't know is which nodes are interesting
+			some build systems treat nodes after their types (euurk), ie: executable
+
+			we need a mechanism to remove nodes from the graph display (short form)
+				do we love regexes or subs ?!
+				less attributes but it's OK to write a node sub (if I remember how to)
+
+
+		create a new graph, which ignore unimportant nodes
+			or maybe filter the whole graph
+
+		graph must be less than a page to be of any use
+
+		update state when nodes are updated
+			just a few states are interesting
+				nothing being done
+				dependencies being built (is %tage of interest?)
+				node is build
+			
+		update fast enough
+			which means no traversal when nodes are build
+				callback?
+			most difficult is dependencies being built and %tage
+				the important node can update itself when build		
+
+	=> still ridiculous!
+		who cares what's being build?!
+
+		if a specific part is of particular interest just build that one till it works then the whole system
+
+		of interest:
+			what's been built if the build failed
+				and not really sure it's of any interest really
+				
+				we need a list of what's been build
+					filtered
+					colored
+					displayed hierarchically 
+					
+					=> perfect job for a post pbs, custom written 
+	
+			what the failed build is part of (--np fixes that part)
+
+			some color on some nodes in all output
+				pbs ... 2>&1 | h whatnot # quick fix, more than good enough
+
+			Have some node flash information about their build state
+				post node build
+				break point
+				added to the builder directly
+			
+
 
 3834 /1/test2 pbs -ke . -ndpb -tno -tnt -gtg_html xxx -w 0 --gtg_html_frame
 Depend: pbsfiles: 5

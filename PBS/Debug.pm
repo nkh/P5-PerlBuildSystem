@@ -46,11 +46,12 @@ our $debug_enabled = 0 ;
 
 sub EnableDebugger
 {
-my $switch = shift ;
-my $file= shift ; # can contains breakpoint definitions
+my ($file) = @_ ; # file can contains breakpoint definitions
 
 if($file ne '')
 	{
+	PrintInfo "Debug: loading '$file'\n" ;
+
 	unless (my $return = do $file ) 
 		{
 		die ERROR "couldn't parse '$file ': $@" if $@;
@@ -281,9 +282,13 @@ my %breakpoints ;
 
 sub AddBreakpoint
 {
+my ($package, $file_name, $line) = caller() ;
+
 my $breakpoint_name = shift ;
 
-PrintWarning("Redefining breakpoint '$breakpoint_name'.\n") if(exists $breakpoints{$breakpoint_name}) ;
+PrintInfo "Debug: adding breakpoint: '$breakpoint_name'\n" ;
+
+PrintWarning("Debug: redefining breakpoint '$breakpoint_name' @ '$file_name:$line'.\n") if(exists $breakpoints{$breakpoint_name}) ;
 
 $breakpoints{$breakpoint_name} = {@_} ;
 }
@@ -486,7 +491,6 @@ for my $breakpoint_name (keys %breakpoints)
 		}
 	}
 	
-
 return($use_debugger) ;
 }
 
@@ -574,10 +578,10 @@ and their aliases
 
 =head2 Breakpoint position
 
-Some breakpoints cab be triggered before or after (or both) something happends in the system.
+Some breakpoints cab be triggered before or after (or both) something happens in the system.
 
-if PRE is set, the breakpoints triggers before the action takes place. The breakpoint is triggered after the action takes
-place if after the action if POST is set. This allows you to take a snapshot before something happends and compare after it has happened.
+If PRE is set, the breakpoints triggers before the action takes place. The breakpoint is triggered after the action takes
+place if after the action if POST is set. This allows you to take a snapshot before something happens and compare after it has happened.
 
 =head2 Types
 
