@@ -195,7 +195,7 @@ if($config->{GENERATE_TREE_GRAPH_HTML})
 	PBS::Graph::Html::GenerateHtmlGraph(\%html_data) ;
 	}
 
-if($config->{GENERATE_TREE_GRAPH_CANONICAL})
+if(defined $config->{GENERATE_TREE_GRAPH_CANONICAL})
 	{
 	$config->{GENERATE_TREE_GRAPH_CANONICAL} .= '.dot' unless $config->{GENERATE_TREE_GRAPH_CANONICAL} =~ /\.dot$/ ;
 	PrintInfo("Graph: dot file: '$config->{GENERATE_TREE_GRAPH_CANONICAL}'.\n") ;
@@ -205,39 +205,42 @@ if($config->{GENERATE_TREE_GRAPH_CANONICAL})
 my $gtg_format = $config->{GENERATE_TREE_GRAPH_FORMAT} // 'svg' ;
 $gtg_format = lc $gtg_format ;
 
-if($gtg_format eq 'svg')
+if($config->{GENERATE_TREE_GRAPH})
 	{
-	$config->{GENERATE_TREE_GRAPH} .= '.svg' unless $config->{GENERATE_TREE_GRAPH} =~ /\.svg$/ ;
-	PrintInfo("Graph: svg file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
-	if(open(SVG, ">", $config->{GENERATE_TREE_GRAPH}))
+	if($gtg_format eq 'svg')
 		{
-		print SVG $graph->as_svg() ;
-		close SVG ;
+		$config->{GENERATE_TREE_GRAPH} .= '.svg' unless $config->{GENERATE_TREE_GRAPH} =~ /\.svg$/ ;
+		PrintInfo("Graph: svg file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
+		if(open(SVG, ">", $config->{GENERATE_TREE_GRAPH}))
+			{
+			print SVG $graph->as_svg() ;
+			close SVG ;
+			}
+		else
+			{
+			PrintErro("Graph: can't open '$config->{GENERATE_TREE_GRAPH}' : $!") ;
+			}
 		}
-	else
+	elsif($gtg_format eq 'ps')
 		{
-		PrintErro("Graph: can't open '$config->{GENERATE_TREE_GRAPH}' : $!") ;
+		$config->{GENERATE_TREE_GRAPH} .= '.ps' unless $config->{GENERATE_TREE_GRAPH} =~ /\.ps$/ ;
+		PrintInfo("Graph:  postscript file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
+		if(open(PS, ">", $config->{GENERATE_TREE_GRAPH}))
+			{
+			print PS $graph->as_ps() ;
+			close PS ;
+			}
+		else
+			{
+			PrintErro("Graph: can't open '$config->{GENERATE_TREE_GRAPH}' : $!") ;
+			}
 		}
-	}
-elsif($gtg_format eq 'ps')
-	{
-	$config->{GENERATE_TREE_GRAPH} .= '.ps' unless $config->{GENERATE_TREE_GRAPH} =~ /\.ps$/ ;
-	PrintInfo("Graph:  postscript file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
-	if(open(PS, ">", $config->{GENERATE_TREE_GRAPH}))
+	elsif($gtg_format eq 'png')
 		{
-		print PS $graph->as_ps() ;
-		close PS ;
+		$config->{GENERATE_TREE_GRAPH} .= '.png' unless $config->{GENERATE_TREE_GRAPH} =~ /\.png$/ ;
+		PrintInfo("Graph: png file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
+		$graph->as_png($config->{GENERATE_TREE_GRAPH}) ;
 		}
-	else
-		{
-		PrintErro("Graph: can't open '$config->{GENERATE_TREE_GRAPH}' : $!") ;
-		}
-	}
-elsif($gtg_format eq 'png')
-	{
-	$config->{GENERATE_TREE_GRAPH} .= '.png' unless $config->{GENERATE_TREE_GRAPH} =~ /\.png$/ ;
-	PrintInfo("Graph: png file: '$config->{GENERATE_TREE_GRAPH}'.\n") ;
-	$graph->as_png($config->{GENERATE_TREE_GRAPH}) ;
 	}
 
 if($config->{GENERATE_TREE_GRAPH_SNAPSHOTS})

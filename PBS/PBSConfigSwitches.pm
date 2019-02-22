@@ -1143,7 +1143,11 @@ EOT
 	'debug:s'                         => $pbs_config->{BREAKPOINTS},
 		'Enable debug support A startup file defining breakpoints can be given.',
 		'',
-	
+
+	'debug_display_breakpoint_header'                         => \$pbs_config->{DISPLAY_BREAKPOINT_HEADER},
+		'Display a message when a breakpoint is run.',
+		'',
+
 	'dump'                            => \$pbs_config->{DUMP},
 		'Dump an evaluable tree.',
 		'',

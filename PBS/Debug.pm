@@ -50,7 +50,7 @@ my ($file) = @_ ; # file can contains breakpoint definitions
 
 if($file ne '')
 	{
-	PrintInfo "Debug: loading '$file'\n" ;
+	PrintDebug "Debug: loading '$file'\n" ;
 
 	unless (my $return = do $file ) 
 		{
@@ -286,11 +286,11 @@ my ($package, $file_name, $line) = caller() ;
 
 my $breakpoint_name = shift ;
 
-PrintInfo "Debug: adding breakpoint: '$breakpoint_name'\n" ;
+PrintDebug "Debug: adding breakpoint: '$breakpoint_name'\n" ;
 
 PrintWarning("Debug: redefining breakpoint '$breakpoint_name' @ '$file_name:$line'.\n") if(exists $breakpoints{$breakpoint_name}) ;
 
-$breakpoints{$breakpoint_name} = {@_} ;
+$breakpoints{$breakpoint_name} = {ORIGIN => "$file_name:$line", @_} ;
 }
 
 #----------------------------------------------------------------------
@@ -403,6 +403,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 
 sub CheckBreakpoint
 {
+my $pbs_config = shift ;
 my %point = @_ ;
 
 return(0) unless $debug_enabled ;
@@ -482,6 +483,7 @@ for my $breakpoint_name (keys %breakpoints)
 
 	for my $action (@{$breakpoint->{ACTIONS}})
 		{
+		PrintDebug "Debug: running '$breakpoint_name' from $breakpoint->{ORIGIN}\n" if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
 		$action->(%point, BREAKPOINT_NAME => $breakpoint_name) ;
 		}
 		

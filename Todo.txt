@@ -54,48 +54,13 @@
 
 			Have some node flash information about their build state
 				post node build
+					=> a tad late
+
 				break point
+					pbs -ke . --trigger 246 -fb --debug ./bp  -ndpb -bnir 'xxxx'
+
 				added to the builder directly
 			
-
-
-3834 /1/test2 pbs -ke . -ndpb -tno -tnt -gtg_html xxx -w 0 --gtg_html_frame
-Depend: pbsfiles: 5
-Depend: time: 0.08 s.
-Check: total time: 0.02 s.
-
-Graph: starting generation
-Graph: generating html data.
-Generating html graph documentation.
-Use of uninitialized value in pattern match (m//) at /home/nadim/perl5/lib/perl5/PBS/Graph.pm line 210.
-
-3815 /1/test2 pbs -ke .
-Warp: load time: 0.00 s.
-Warp: checking 136 nodes.
-Use of uninitialized value in string ne at /home/nadim/perl5/lib/perl5/PBS/Check/ForkedCheck.pm line 35.
-Use of uninitialized value in string ne at /home/nadim/perl5/lib/perl5/PBS/Warp/Warp1_5.pm line 537, <$to_parent> line 10.
-Use of uninitialized value $md5 in string eq at /home/nadim/perl5/lib/perl5/PBS/Digest.pm line 818, <$to_parent> line 10.
-Warp: verification time: 0.02 s.
-Warp: total time: 0.02 s. [136/trigger:1/removed:28]
-Warp: running PBS in warp mode. 28 nodes to rebuild.
-Depend: pbsfile: 1
-Depend: time: 0.01 s.
-Check: total time: 0.00 s.
-Depend: nodes in the dependency tree: 135 [W:108, R:27]
-Build: 9 nodes scheduled for build [2V, 3 P, 6 S]
-Build: using 3 build processes out of maximum 3 for 6 terminal nodes.
-100% [==========================================================================================================]D 0h00m00sBuild: terminating build processes [3]
-Build: parallel build time: 0.10 s, sub time: 0.01 s.
-Build: nodes to build: 9, success: 9, failures: 0
-Build: done
-Build: running post build commands.
-Warp: generation.
-Warp: nodes: 136, new nodes = 27
-Warp: total time: 0.03 s.
-PBS: time: 0.22 s.
-
-
-
 
 
 multiple plugin and lib path

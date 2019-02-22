@@ -143,7 +143,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			CONFIG         => $config,
 			) ;
 			
-		$DB::single = 1 if(PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
+		$DB::single = 1 if(PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 		}
 		
 	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $dependency_rule) ;
@@ -156,7 +156,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		}
 
 	#DEBUG	
-	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, POST => 1, TRIGGERED => $triggered, DEPENDENCIES => \@dependencies)) ;
+	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, TRIGGERED => $triggered, DEPENDENCIES => \@dependencies)) ;
 	
 	if($triggered)
 		{
@@ -677,7 +677,7 @@ for my $dependency (@dependencies)
 				) ;
 			
 			#DEBUG	
-			$DB::single = 1 if(PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
+			$DB::single = 1 if(PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 			}
 		
 		my %dependency_tree_hash ;
@@ -708,7 +708,7 @@ for my $dependency (@dependencies)
 		$inserted_nodes->{$dependency_name} = $tree->{$dependency_name} ;
 			
 		#DEBUG
-		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, POST => 1)) ;
+		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1)) ;
 		}
 	}
 	
@@ -1012,7 +1012,7 @@ if($PBS::Debug::debug_enabled)
 		INSERTED_FILES => $inserted_nodes,
 		) ;
 		
-	$DB::single = 1 if (PBS::Debug::CheckBreakpoint(%debug_data)) ;
+	$DB::single = 1 if (PBS::Debug::CheckBreakpoint($pbs_config, %debug_data)) ;
 	}
 }
 

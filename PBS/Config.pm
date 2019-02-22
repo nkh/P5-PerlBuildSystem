@@ -634,7 +634,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		) ;
 	
 	#DEBUG	
-	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data)) ;
+	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data)) ;
 
 	# Always merge variables of class PBS_FORCED, regardless of parent config/locked etc.
 	if($class eq '__PBS_FORCED')

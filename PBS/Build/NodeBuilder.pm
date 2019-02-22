@@ -440,7 +440,7 @@ eval # rules might throw an exception
 		) ;
 		
 	#DEBUG HOOK, jump into perl debugger if so asked
-	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
+	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 	
 	($build_result, $build_message) = $builder->
 						(
@@ -467,7 +467,7 @@ eval # rules might throw an exception
 	$build_message ||= 'no message returned by builder' ;
 	
 	#DEBUG HOOK
-	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message)) ;
+	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message)) ;
 	} ;
 
 if($@)
@@ -592,7 +592,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 			) ;
 		
 		#DEBUG HOOK
-		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, PRE => 1)) ;
+		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 		
 		($build_result, $build_message) = $post_build_command->{BUILDER}
 							(
@@ -606,7 +606,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 							) ;
 							
 		#DEBUG HOOK
-		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint(%debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message)) ;
+		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message)) ;
 		} ;
 		
 	my $rule_info = $post_build_command->{NAME} . $post_build_command->{ORIGIN} ;

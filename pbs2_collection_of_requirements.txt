@@ -9,6 +9,16 @@ templatized output
 		we can start by using templates internally and moving display code to plugins
 			note that node visualization is already a plugin
 		
+		breakpoints + bni + bnir 'no_match' is a workaround
+
+
+REH_BREAKPOINT
+	a bit like a pbs1 breakpoint, called back on events
+	REH_EVENT?
+
+	possibility to alias the name and arguments easily
+		REH_ON_BUILD => REH_EVENT(TYPE => 'BUILD', POST => 1, PROCESS => sub { ...})
+
 REH_USER_TARGET
 	"targets" target which queries the registered rules and displays the user targets
 	https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
