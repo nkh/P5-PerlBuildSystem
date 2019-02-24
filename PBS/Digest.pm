@@ -196,7 +196,7 @@ if(-f $file_name && $fh->open($file_name))
 	}
 else
 	{
-	#PrintWarning  "Warning: can't read file '$file_name' to generate MD5\n";
+	PrintWarning  "Digest: Warning: can't read file '$file_name' to generate MD5\n";
 	return ;
 	}
 }
@@ -1055,7 +1055,8 @@ sub GetDigestFileName
 {
 my ($node) = @_ ;
 
-my $file_name = $node->{__BUILD_NAME} ;
+my $file_name = $node->{__BUILD_NAME} // (PBS::Check::LocateSource($node->{__NAME}, $node->{__PBS_CONFIG}{BUILD_DIRECTORY}))[0] ;
+
 my $digest_file_name = $file_name . '.pbs_md5' ;
 
 # files with full path get their digest file in the same path as the 

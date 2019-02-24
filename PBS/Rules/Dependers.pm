@@ -357,6 +357,68 @@ return($dependencies_evaluator) ;
 
 #-------------------------------------------------------------------------------
 
+sub BuildDependentRegex
+{
+# Given a simplified dependent definition, this sub creates a perl regex
+
+my $dependent_regex_definition = shift ;
+my $error_message   = '' ;
+
+return(0, 'Empty Regex definition') if $dependent_regex_definition eq '' ;
+
+my ($dependent_name, $dependent_path, $dependent_ext) = File::Basename::fileparse($dependent_regex_definition,('\..*')) ;
+$dependent_path =~ s|\\|/|g;
+
+my $dependent_regex = $dependent_name . $dependent_ext ;
+unless(defined $dependent_regex)
+	{
+	$error_message = "Invalid dependency definition" ;
+	}
+	
+my $dependent_path_regex = $dependent_path ;
+$dependent_path_regex =~ s/(?<!\\)\./\\./g ;
+
+if($dependent_path_regex =~ tr/\*/\*/ > 1)
+	{
+	$error_message = "Error: only one '*' allowed in path specification $dependent_regex." ;
+	}
+	
+$dependent_path_regex =~ s/\*/.*/ ;
+$dependent_path_regex = '\./(?:.*/)*' if $dependent_path_regex eq '\./.*/' ;
+
+if(!File::Spec->file_name_is_absolute($dependent_path_regex) && $dependent_path_regex !~ /^\\\.\// && $dependent_path_regex !~ /^\.\*/)
+	{
+	$dependent_path_regex = './' . $dependent_path_regex ;
+	}
+	
+if($dependent_regex =~ /^.[^\*]*\*/)
+	{
+	$error_message = "Error: '*' only allowed at first position in dependent specification '$dependent_regex'." ;
+	}
+	
+my $dependent_prefix_regex = '' ;
+if($dependent_regex =~ s/^\*//)
+	{
+	$dependent_prefix_regex = '[^/]*' ;
+	}
+	
+# finaly escape special characters
+# $dependent_path_regex is a regex with *, we don't want to escape it.
+# $dependent_prefix_regex is a regex with *, we don't want to escape it.
+$dependent_regex = quotemeta($dependent_regex) ;
+
+return
+	(
+	$error_message eq '',
+	$error_message,
+	$dependent_path_regex,
+	$dependent_prefix_regex,
+	$dependent_regex,
+	) ;
+}
+
+#-------------------------------------------------------------------------------
+
 1 ;
 
 __END__

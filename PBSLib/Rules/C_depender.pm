@@ -10,25 +10,11 @@ use Cwd ;
 
 # C depender for object files (not part of the core pbs but distributed with it)
 
-# old C depender:
-#	created dependency files during the depend step
-#	handled a complex cache creation and verification
-#	had for goal to present a complete dependency graph before the build
-#
-#	some points were good enough but "wrong", dependencies belonged to the
-#	C file except one could not do variant nodes on the fly, that was
-#	a goal for pbs but not implemented, in a way the depender was too advanced
-#
-#	the dependencies were computed sequentially 
-
-# the new depender:
-#	creates dependency files during the build and in a post build step
+#	creates dependency files during the build and integrates them in the node's graph
 #
 #	this the following advantages:
 #	
 #	very little code specific to the depender, this module and two PBS rules
-#
-#	the cache code is much simpler and most is handled by the pbs core mechanism
 #
 #	builds are triggered properly if no dependency cache is found
 #
@@ -38,65 +24,77 @@ use Cwd ;
 #	
 #	the cache is generated in parallel, if the build is done with -j option
 #
-#	the dependencies are merged back to the graph in a post build step, this is necessary
-#	as the nodes are build in separate processes that do not share the graph
+#	the dependencies are merged back to the graph in a post build steps
+#		just after the build for digest and after all node builds for the warp cache
 #
 #	each node is responsible for integrating its dependencies, this means that the mechanism
 #	is open for other types of nodes not just object files dependencies 
 #
-#	the cache is specific for the object node even if they share C nodes, no more configuration
-#	dependencies for the dependency cache, it's just a list of source header files
-#
-#	warp, pre and post-build, is handled properly as object nodes regenerate their digest and the
-#	digest of their dependencies after the build
+#	the cache is specific for the object node
 #
 #	in case a dependency cache is invalid, its contents are not added to the pre-build warp file,
 #	insuring validity of the warp cache which would retrigger the dependency step if necessary
-#
-#	it's one tenth of the old code size   
-
-
-my $cache_header = "C dependencies PBS generated at " ;
-my $cache_footer = 'END C dependencies PBS' ;
 
 #-------------------------------------------------------------------------------
 
-sub read_dependencies_cache
+sub GetObjectDependencies
 {
-my (undef, undef, $node) = @_ ;
+my
+        (
+        undef,
+        undef,
+        $tree,
+        undef,
+        $dependencies,         # rule local
+        $builder_override,     # rule local
+        ) = @_ ;
 
-my $dependency_name = "$node->{__NAME}.dependencies" ;
+my ($triggered, @previous_dependencies, @my_dependencies) ;
 
-my $file_to_build = $node->{__BUILD_NAME} // PBS::Rules::Builders::GetBuildName($node->{__NAME}, $node) ;
-my $dependency_file = "$file_to_build.dependencies" ;
+if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$dependencies > 1)
+        {
+        # previous depender defined dependencies
+        $triggered       = shift @{$dependencies} ;
+        @previous_dependencies = @{$dependencies} ;
+        }
 
-# base dependency cache in ./ 
-my $source_directory = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}[0] ;
-$source_directory = cwd if $source_directory eq './' ;
+my $digest_file_name = PBS::Digest::GetDigestFileName($tree) ;
 
-$dependency_file =~ s/^$source_directory/./ ;
-
-# handle the newly generated cache, if any
-$node->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
-
-my @dependencies_cache ;
-
-if 
-	(
-	   -e $dependency_file
-	&& ( @dependencies_cache = read_file($dependency_file, chomp => 1) )
-	&& ( $dependencies_cache[0] =~ /^$cache_header/ && $dependencies_cache[-1] =~ /^$cache_footer/ )
-	)
+# if .o node was previously build the dependencies will be cached in the .o digest
+if(-e $digest_file_name)
 	{
-	# valid cache, remove header and footer
-	shift @dependencies_cache ; pop @dependencies_cache ;
+	my $digest ;
+	unless (($digest) = do $digest_file_name) 
+		{
+		PrintWarning "Depend: GetObjectDependencies couldn't parse '$digest_file_name': $@\n" ;
+		}
+		
+	if('HASH' eq ref $digest)
+		{
+		my ($source) = ( grep {/\.c$/} keys %$digest) ;
 
-	return [1, @dependencies_cache, ] ; 
+		if($digest->{$source} eq PBS::Digest::GetFileMD5($source))
+			{
+			for my $dependency ( grep {/\.h$/} keys %$digest)
+				{
+				# verify validity of dependencies
+				if($digest->{$dependency} ne  PBS::Digest::GetFileMD5($dependency))
+					{
+					@my_dependencies = () ;
+					last ;
+					}
+
+				push @my_dependencies, $dependency ;
+				}
+			}
+		}	
 	}
-else
-	{
-	return [1, $dependency_name] ;
-	}
+
+$triggered = 1 ;
+unshift @my_dependencies, $triggered ;
+push @my_dependencies, @previous_dependencies ;
+
+return(\@my_dependencies, $builder_override) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -105,12 +103,14 @@ sub InsertDependencyNodes
 {
 my ($node, $inserted_nodes) = @_ ;
 
-return unless exists $node->{__BUILD_DONE} ;
+#return unless exists $node->{__BUILD_DONE} ;
 
 my $dependency_name = "$node->{__NAME}.dependencies" ;
 my ($dependency_file, $o_dependencies) = ($node->{__BUILD_NAME} . '.dependencies', '') ;
 
-$o_dependencies = read_file $dependency_file or die ERROR "C_DEPENDER: can't read cache\n" ; # in gcc case, this is a makefile
+$o_dependencies = read_file $dependency_file or die ERROR "C_DEPENDER: can't read '$dependency_file, $!'\n" ;
+
+# in gcc case, it is a makefile we parse
 $o_dependencies =~ s/^.*:\s+// ;
 $o_dependencies =~ s/\\/ /g ;
 $o_dependencies =~ s/\n/:/g ;
@@ -119,33 +119,13 @@ $o_dependencies =~ s/\s+/:/g ;
 my %dependencies = map { $_ => 1 } grep { /\.h$/ } split(/:+/, $o_dependencies) ;
 my @dependencies = sort  map { $_ = "./$_" unless (/^\// || /^\.\//); $_} keys %dependencies ;
 
-#my $now = strftime "%a %b %e %H:%M:%S %Y", gmtime;
-my $now = '' ;
-
-my $cache = $cache_header . __FILE__ . ':' . __LINE__ . " $now\n" ;
-
 # base dependencies in ./ if possible
 my $source_directory = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}[0] ;
 $source_directory = cwd if $source_directory eq './' ;
 
-
-my $insertion_data =
-	{
-	INSERTING_NODE => $node->{__NAME},
-	INSERTION_RULE => 'c_depender',
-	INSERTION_RULE_NAME => 'c_depender',
-	INSERTION_RULE_LINE => __LINE__,
-	INSERTION_RULE_FILE => __FILE__,
-	INSERTION_FILE => __FILE__ . ':' . __LINE__,
-	INSERTION_PACKAGE=> 'NA',
-	INSERTION_TIME => Time::HiRes::time,
-	} ;
-
-for my $d (@dependencies, $dependency_name)
+for my $d (@dependencies)
 	{
 	$d =~ s/^$source_directory/./ ;
-
-	$cache .= "$d\n" ;
 
 	if(exists $inserted_nodes->{$d})
 		{
@@ -159,7 +139,19 @@ for my $d (@dependencies, $dependency_name)
 			__NAME         => $d,
 			__BUILD_NAME   => $d,
 			__BUILD_DONE   => 1,
-			__INSERTED_AT  => $insertion_data,
+
+			__INSERTED_AT  => 
+				{
+				INSERTING_NODE => $node->{__NAME},
+				INSERTION_RULE => 'c_depender',
+				INSERTION_RULE_NAME => 'c_depender',
+				INSERTION_RULE_LINE => __LINE__,
+				INSERTION_RULE_FILE => __FILE__,
+				INSERTION_FILE => __FILE__ . ':' . __LINE__,
+				INSERTION_PACKAGE=> 'NA',
+				INSERTION_TIME => Time::HiRes::time,
+				} ,
+
 			__PBS_CONFIG   => $node->{__PBS_CONFIG},
 			__LOAD_PACKAGE => $node->{__LOAD_PACKAGE},
 			__MD5          => GetFileMD5($d),  
@@ -167,17 +159,9 @@ for my $d (@dependencies, $dependency_name)
 		}
 	}
 
-$cache .= "$cache_footer\n" ;
+delete $node->{$dependency_name} ;  
 
-write_file $dependency_file, $cache ;
-
-# make sure object file digest doesn't use the temporary dependency file hash 
-PBS::Digest::FlushMd5Cache($dependency_file) ;
-PBS::Digest::FlushMd5Cache($node->{__BUILD_NAME}) ;
-
-$inserted_nodes->{$dependency_name}{__MD5} = GetFileMD5($dependency_file) ;  
-
-# regenerate our own digest, could be done by PBS for all nodes with a post PBS build
+# regenerate .o digest
 eval { PBS::Digest::GenerateNodeDigest($node) } ;
 
 die "Error Generating node '$node->{__NAME}' digest: $@\n" if $@ ;

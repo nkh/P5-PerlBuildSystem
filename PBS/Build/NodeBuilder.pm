@@ -263,6 +263,11 @@ if($node_needs_rebuild)
 	
 	if($build_result == BUILD_SUCCESS)
 		{
+		($build_result, $build_message) = RunPostBuildCommands($pbs_config, $file_tree, $dependencies, $triggered_dependencies) ;
+		}
+
+	if($build_result == BUILD_SUCCESS)
+		{
 		PBS::Digest::FlushMd5Cache($build_name) ;
 		
 		eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
@@ -272,7 +277,7 @@ if($node_needs_rebuild)
 		
 	if($build_result == BUILD_SUCCESS)
 		{
-		# record MD5 while the file is still fresh in theOS  file cache
+		# record MD5 while the file is still fresh in the OS file cache
 		if(exists $file_tree->{__VIRTUAL})
 			{
 			$file_tree->{__MD5} = 'VIRTUAL' ;
@@ -313,8 +318,6 @@ if($build_result == BUILD_SUCCESS)
 		$build_message ||= '' ;
 		PrintInfo("Build result for '$build_name' : $build_result : $build_message\n") ;
 		}
-		
-	($build_result, $build_message) = RunPostBuildCommands($pbs_config, $file_tree, $dependencies, $triggered_dependencies) ;
 	}
 else
 	{

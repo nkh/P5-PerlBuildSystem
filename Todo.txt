@@ -1,68 +1,3 @@
-
-!display what's being build in a short dynamic tree form
-	to avoid the guessing when, ie, working with Robin
-
-	=> ridiculous idea!
-
-	wait!
-		we have a graph, we know what nodes are being build or are completely build
-		what we don't know is which nodes are interesting
-			some build systems treat nodes after their types (euurk), ie: executable
-
-			we need a mechanism to remove nodes from the graph display (short form)
-				do we love regexes or subs ?!
-				less attributes but it's OK to write a node sub (if I remember how to)
-
-
-		create a new graph, which ignore unimportant nodes
-			or maybe filter the whole graph
-
-		graph must be less than a page to be of any use
-
-		update state when nodes are updated
-			just a few states are interesting
-				nothing being done
-				dependencies being built (is %tage of interest?)
-				node is build
-			
-		update fast enough
-			which means no traversal when nodes are build
-				callback?
-			most difficult is dependencies being built and %tage
-				the important node can update itself when build		
-
-	=> still ridiculous!
-		who cares what's being build?!
-
-		if a specific part is of particular interest just build that one till it works then the whole system
-
-		of interest:
-			what's been built if the build failed
-				and not really sure it's of any interest really
-				
-				we need a list of what's been build
-					filtered
-					colored
-					displayed hierarchically 
-					
-					=> perfect job for a post pbs, custom written 
-	
-			what the failed build is part of (--np fixes that part)
-
-			some color on some nodes in all output
-				pbs ... 2>&1 | h whatnot # quick fix, more than good enough
-
-			Have some node flash information about their build state
-				post node build
-					=> a tad late
-
-				break point
-					pbs -ke . --trigger 246 -fb --debug ./bp  -ndpb -bnir 'xxxx'
-
-				added to the builder directly
-			
-
-
 multiple plugin and lib path
 
 Creator vs immediate build
@@ -139,7 +74,7 @@ Roadmap
 			variable access or modification
 						
 			grep output
-				can be done today by a breakpoint
+				can be done today by using a breakpoint
 
 	Repository
 		expand --source_directory to accept external binary repos
@@ -157,7 +92,7 @@ Roadmap
 		rename pbs switches
 
 		rename/alias ExcludeFromDigestGeneration
-
+			use REH_SOURCE
 
 move package dependent digest data to runtime package
 	rather than in Digest.pm
@@ -215,6 +150,270 @@ remove creator and PBS_FORCE_ type (only used by creators)
 
 do not put all the big files in the same sub processes (duh!)
 	checking the size of all the node may cost more than checking them in the same process
+
+log:
+	#--log_node_pbs_data, adds pbs data to log, save time and apace
+
+	rules triggering are not in the log
+	pbsfile loading is not in the log
+
+	--log_html
+		generate a set of pages from the log files
+		navigation link on node names
+		bread crumbs to parents
+
+
+		or a simple page wth minimum javascript that uses dependency data
+			need an out directory and a start node
+			and a dependency graph, parseable, where does it come from?
+				generate is in the LOG directory
+				maybe we do not need a full graph, we can use the node's data
+
+				given that they are in the same out directory, the data needs
+				only list parents and dependencies and their build name to find
+				the logs, 
+
+				can start a browser anywhere, practical when debugging, looking
+				at log data one can simply "click" the node.html to start browsing
+				the graph
+					this means that the script is in every html file!
+				
+	No need to have dependencies in the list, they are in the node info
+		we need -ni to generate the link for us or parse the output
+
+ breadcrunb/breadcrumb/breadcrumb/breadcrumb
+
+ .--------------..--------------.---------.-------------.
+ | node info    || build buffer | Log     | local graph |
+ '--------------''--------------'---------'-------------'------.
+ |                                                             |
+ |  name ...                                                   |
+ |                                                             |
+ |                                                             |
+ |        dependency                                           |
+ |        dependency                                           |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ |                                                             |
+ '-------------------------------------------------------------'
+
+
+
+
+
+AddEnvVariableDependency in --j 0+
+	passes 	passes in warp 0 
+
+	=> warp does not support ENV, the warpified tree has no idea of ENV or anything that is not a file MD5
+		Meso Warp will handle it!
+
+	#? how does it pass the automated tests!n warp > 0 ? 
+		test is skipped
+
+working on JOB = 1
+	automatic test pass when run by hand
+		
+	15% overhead for -j 1, probably much less for processes that actually does something more than compile 3 lines of code
+		returning output and logs
+		finding the node linearly
+		handling the communication, splitting answers on tags
+
+Node@root: time to retire
+	doesn't play well with progressbar (but it's the crappy progress bar that should be replaced with
+		something much simpler)
+	loads all the warp files, even in warp
+		doesn't have a config
+
+	either do it with warp, saving the configs or build locally after saving the configs
+		always save the config?
+		
+	
+
+new C depender, what if the compiler generates the dependencies but post build commands are not run?
+	=> we need the post pbs because the build is in another process and the warp is in the main process
+		meso warp fixes the problem without post pbs build commands but still needs to be
+		stiched up correctly when meso warp master generation fails (or is not run)
+
+	add: new c_depender test
+		current tests cover the change
+
+
+	#extra out directory
+	#takes an extra run to stabilize warp, fixed
+
+
+fork fails in windows, again!
+
+Tie::Hash::Index pulls in a zillion modules and libffi
+	
+check simplified dependencies rules and perl rules
+Check pbsfiles/config project
+
+document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
+	that they are best put under lib/rules
+	plugins are for global changes
+
+c depender:
+                $config->{'C_DEPENDER_SYSTEM_INCLUDES'},
+
+	#option to not take in the system includes
+	option to make the system includes a sub group so they are not displayed all the time in -tno
+
+-bi does not work with -j
+	shows info but build fails although it should continue
+		probably node builder knows about --bi but not parallel builder
+
+add --tmux-error option to test, with limit on how many are opened
+
+
+\r \e[K
+
+example of output with options on
+	pbs -ho -o1 -o2
+	pbs -warp 1.8  --display_warp_checked_nodes --display_warp_checked_nodes_fail_only --display_warp_removed_nodes
+
+	searches for examples with all switches
+	displays one or more examples 
+
+
+[SOURCE] instead for NoDigest
+	less typing
+	no need to know the API
+	regex (or single file) is already known
+	name is better when it is the name of the rule
+		in case multiple rules tag different  nodes as SOURCE
+
+[USER_TYPE]
+	annotation like types, just tags the rule
+	pbs keeps track of them
+	rule can extract all dependency nodes that have some USER_TYPE set
+	pbs can display them in -tt, maybe with an extra option
+
+
+AddNodeFileDependency
+	the dependency must exist or it's MD5 can't be computed
+	=> should wait till the depending node is build to compute dependent md5
+
+
+	!!! why wouldn't we just add a rule? why does the file dependency have to be in the digest but not in the graph?
+	
+	not supported in warp
+	=> Remove
+
+	this is the mechanism we use to add dependency on pbsfiles, it can hardly be removed :)
+	
+	it is accessible to the user if they want to "use" non pbs files to define config or rules
+		and want the dependency to be right
+
+AddVariableDependency
+	=> should be done in the rule, not globally in the pbsfile
+	=> should automatically add the variables that are used during the build of the node
+		%PBS_REPO would force all nodes to rebuild on a change of repo or added repo,
+		which is the opposite of the intended purpose of repositories!
+	
+	Warp doesn't check variables! it works because pbs checks the pbsfiles where the variables
+	are declared
+
+AddEnvVariableDependency
+	breaks warp
+	env is evil
+	=> put in config, add config variable dependency for lesser evil
+		will still break warp
+		overrides will be caught
+		will be saved in config
+
+project generation script can generate project which doesn't require compilation
+	- we can still use .c file but
+		- replace the .o depender
+		- build the .o by touching them
+			
+debug breakpoint could display an informative message about what it is doing
+and what is available for poking
+
+use Term::Emit for message, maybe replace Term::ProgressBar too
+	=> replace with simpler code not in a module, we already have a %done for forked builders
+
+install pbs on linux and pbs.pl on windows
+
+Add a bunch of test with bad pbsfiles to catch syntax errors
+
+# ---------------------------------------------- below is done ---------------------------------------------------
+
+#display what's being build in a short dynamic tree form
+	to avoid the guessing when, ie, working with Robin
+
+	=> ridiculous idea!
+
+	wait!
+		we have a graph, we know what nodes are being build or are completely build
+		what we don't know is which nodes are interesting
+			some build systems treat nodes after their types (euurk), ie: executable
+
+			we need a mechanism to remove nodes from the graph display (short form)
+				do we love regexes or subs ?!
+				less attributes but it's OK to write a node sub (if I remember how to)
+
+
+		create a new graph, which ignore unimportant nodes
+			or maybe filter the whole graph
+
+		graph must be less than a page to be of any use
+
+		update state when nodes are updated
+			just a few states are interesting
+				nothing being done
+				dependencies being built (is %tage of interest?)
+				node is build
+			
+		update fast enough
+			which means no traversal when nodes are build
+				callback?
+			most difficult is dependencies being built and %tage
+				the important node can update itself when build		
+
+	=> still ridiculous!
+		who cares what's being build?!
+
+		if a specific part is of particular interest just build that one till it works then the whole system
+
+		of interest:
+			what's been built if the build failed
+				and not really sure it's of any interest really
+				
+				we need a list of what's been build
+					filtered
+					colored
+					displayed hierarchically 
+					
+					=> perfect job for a post pbs, custom written 
+	
+			what the failed node build is part of (--np fixes that part)
+
+			some color on some nodes in all output
+				pbs ... 2>&1 | h whatnot # quick fix, more than good enough
+
+			Have some node flash information about their build state
+				!post node build
+					=> a tad late
+
+				break point
+					pbs -ke . --trigger 246 -fb --debug ./bp  -ndpb -bnir 'xxxx'
+
+				added to the builder directly
+					pbs2 rule injection would work nicely here
+
+
+
 
 #Box shell command option
 
@@ -378,107 +577,6 @@ do not put all the big files in the same sub processes (duh!)
 		Not because cache is empty, --display_md5_time shows only few digests are computed
 			generating the 2 Mb file takes time
 
-log:
-	#--log_node_pbs_data, adds pbs data to log, save time and apace
-
-	rules triggering are not in the log
-	pbsfile loading is not in the log
-
-	--log_html
-		generate a set of pages from the log files
-		navigation link on node names
-		bread crumbs to parents
-
-
-		or a simple page wth minimum javascript that uses dependency data
-			need an out directory and a start node
-			and a dependency graph, parseable, where does it come from?
-				generate is in the LOG directory
-				maybe we do not need a full graph, we can use the node's data
-
-				given that they are in the same out directory, the data needs
-				only list parents and dependencies and their build name to find
-				the logs, 
-
-				can start a browser anywhere, practical when debugging, looking
-				at log data one can simply "click" the node.html to start browsing
-				the graph
-					this means that the script is in every html file!
-				
-	No need to have dependencies in the list, they are in the node info
-		we need -ni to generate the link for us or parse the output
-
- breadcrunb/breadcrumb/breadcrumb/breadcrumb
-
- .--------------..--------------.---------.-------------.
- | node info    || build buffer | Log     | local graph |
- '--------------''--------------'---------'-------------'------.
- |                                                             |
- |  name ...                                                   |
- |                                                             |
- |                                                             |
- |        dependency                                           |
- |        dependency                                           |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- |                                                             |
- '-------------------------------------------------------------'
-
-
-
-
-
-AddEnvVariableDependency in --j 0+
-	passes 	passes in warp 0 
-
-	=> warp does not support ENV, the warpified tree has no idea of ENV or anything that is not a file MD5
-		Meso Warp will handle it!
-
-	#? how does it pass the automated tests!n warp > 0 ? 
-		test is skipped
-
-working on JOB = 1
-	automatic test pass when run by hand
-		
-	15% overhead for -j 1, probably much less for processes that actually does something more than compile 3 lines of code
-		returning output and logs
-		finding the node linearly
-		handling the communication, splitting answers on tags
-
-Node@root: time to retire
-	doesn't play well with progressbar (but it's the crappy progress bar that should be replaced with
-		something much simpler)
-	loads all the warp files, even in war
-		doesn't have a config
-
-	either do it with warp, saving the configs or build locally after saving the configs
-		always save the config?
-		
-	
-
-new C depender, what if the compiler generates the dependencies but post build commands are not run?
-	=> we need the post pbs because the build is in another process and the warp is in the main process
-		meso warp fixes the problem without post pbs build commands but still needs to be
-		stiched up correctly when meso warp master generation fails (or is not run)
-
-	add: new c_depender test
-		current tests cover the change
-
-
-	#extra out directory
-	#takes an extra run to stabilize warp, fixed
-
-
 #left flushmd5cache
 
 #3.o, where'd the digest?! in warp :P
@@ -529,106 +627,12 @@ new C depender, what if the compiler generates the dependencies but post build c
 
 	parallelizer checks that all nodes in the build sequence are build and reports error
 
-fork fails in windows, again!
-
-Tie::Hash::Index pulls in a zillion modules and libffi
-	
-check simplified dependencies rules and perl rules
-Check pbsfiles/config project
-
-document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
-	that they are best put under lib/rules
-	plugins are for global changes
-
-c depender:
-                $config->{'C_DEPENDER_SYSTEM_INCLUDES'},
-
-	#option to not take in the system includes
-	option to make the system includes a sub group so they are not displayed all the time in -tno
-
--bi does not work with -j
-	shows info but build fails although it should continue
-		probably node builder knows about --bi but not parallel builder
 
 #error: gcc failure when -j appears before report by pbs. stderr not redirected?
 	in case that would be buffering, this code may help use IO::Handle; STDERR->autoflush(1);
 
 	fixwd but redirection kills coloring of gcc output
 
-
-add --tmux-error option to test, with limit on how many are opened
-
-
-\r \e[K
-
-example of output with options on
-	pbs -ho -o1 -o2
-	pbs -warp 1.8  --display_warp_checked_nodes --display_warp_checked_nodes_fail_only --display_warp_removed_nodes
-
-	searches for examples with all switches
-	displays one or more examples 
-
-
-[SOURCE] instead for NoDigest
-	less typing
-	no need to know the API
-	regex (or single file) is already known
-	name is better when it is the name of the rule
-		in case multiple rules tag different  nodes as SOURCE
-
-[USER_TYPE]
-	annotation like types, just tags the rule
-	pbs keeps track of them
-	rule can extract all dependency nodes that have some USER_TYPE set
-	pbs can display them in -tt, maybe with an extra option
-
-
-AddNodeFileDependency
-	the dependency must exist or it's MD5 can't be computed
-	=> should wait till the depending node is build to compute dependent md5
-
-
-	!!! why wouldn't we just add a rule? why does the file dependency have to be in the digest but not in the graph?
-	
-	not supported in warp
-	=> Remove
-
-	this is the mechanism we use to add dependency on pbsfiles, it can hardly be removed :)
-	
-	it is accessible to the user if they want to "use" non pbs files to define config or rules
-		and want the dependency to be right
-
-AddVariableDependency
-	=> should be done in the rule, not globally in the pbsfile
-	=> should automatically add the variables that are used during the build of the node
-		%PBS_REPO would force all nodes to rebuild on a change of repo or added repo,
-		which is the opposite of the intended purpose of repositories!
-	
-	Warp doesn't check variables! it works because pbs checks the pbsfiles where the variables
-	are declared
-
-AddEnvVariableDependency
-	breaks warp
-	env is evil
-	=> put in config, add config variable dependency for lesser evil
-		will still break warp
-		overrides will be caught
-		will be saved in config
-
-project generation script can generate project which doesn't require compilation
-	- we can still use .c file but
-		- replace the .o depender
-		- build the .o by touching them
-			
-debug breakpoint could display an informative message about what it is doing
-and what is available for poking
-
-use Term::Emit for message, maybe replace Term::ProgressBar too
-	=> replace with simpler code not in a module, we already have a %done for forked builders
-
-install pbs on linux and pbs.pl on windows
-
-Add a bunch of test with bad pbsfiles to catch syntax errors
 
 #running post pbs commands even when not runnning the build
 	must run even if some build failed but not if no build at all
