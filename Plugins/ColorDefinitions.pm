@@ -65,7 +65,7 @@ return
 		info_2    => color('rgb013'), #bright_blue
 		info_3    => color('rgb023'), #cyan
 		shell     => color('rgb023'),
-		user      => color('bright_cyan'),
+		user      => color('cyan'),
 		warning   => color('rgb320'),
 		warning_2 => color('bright_yellow'),
 

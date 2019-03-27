@@ -72,6 +72,7 @@ for(@pm_files)
 
 my @extra_modules =
 qw(
+Plugins/CheckNode.pm
 Plugins/CheckNodeName.pm
 Plugins/ColorDefinitions.pm
 Plugins/CreateDump.pm

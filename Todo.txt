@@ -41,7 +41,9 @@ Roadmap
 			
 		distribution and parallelization
 
-		* linking configuration check
+		*** linking configuration check
+			move linking code to separate package and call
+			user definable plugin to do the check 
 
 		rethink package dependencies
 
@@ -49,7 +51,38 @@ Roadmap
 		distribution and parallelization
 		
 		separate check hash, generate build sequence, create parent information
+		
+		by the time we get to check we have an inserted nodes list so we can check all the nodes md5 in parallel
+			but when a node triggers it's parent nodes do not need md5 checking 
+				we check nodes from the root down returning the build sequence
+					do we need the build sequence when building in parallel?
+						no but it is used in the current implementation
+				we should check from the terminal nodes up
+				
+				the node level is known when it is inserted (parent + 1)
+				parents can be known to nodes (not logical but for speed up purpose)
 
+			that's the way warp does parallel check!
+				one level at the time and main process triggers parents
+				but the parents must be known to be triggered
+
+		for distribution we need to synchronize common nodes
+			synchronize with master for each node added to process local tree
+
+			do a full depend and post process the graph to merge them
+				we need to handle configuration as well as dependencies
+
+				an added advantage is the possibility to query remote build nodes for sub graphs
+					kind of meso warp for a sub graph but on another node
+
+					if a remote node has a matching sub graph, it can start checking and building it as soon
+						as the graph has been verified
+
+				handling of sub graph mismatch
+					report error if no sub graph matched
+						do we try to build the sub graph locally? yes
+
+					report warning if some sub graphs didn't match
 	build
 		distribute
 

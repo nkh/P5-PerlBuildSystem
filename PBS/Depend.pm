@@ -336,7 +336,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					PrintInfo "\t[$rules_matching] '$node_name' ${node_type}${forced_trigger}has dependencies [" . USER("@dependency_names", 0) . INFO("], rule $rule_index:$rule_info$rule_type\n\n", 0) ;
+					PrintUser "\t[$rules_matching] '$node_name' "
+						. INFO("${node_type}${forced_trigger}has dependencies [@dependency_names]", 0)
+						. "\n" ;
+
+					PrintInfo2("\trule $rule_index:$rule_info$rule_type\n\n") ;
 					}
 					
 				PrintWithContext
@@ -596,59 +600,7 @@ for my $dependency (@dependencies)
 	
 	if(exists $inserted_nodes->{$dependency_name})
 		{
-		# the dependency already exists within the tree (inserted through another node)
-		$tree->{$dependency_name} = $inserted_nodes->{$dependency_name} ;
-		$tree->{$dependency_name}{__LINKED}++ ;
-		
-		my $display_linked_node_info = 0 ;
-		$display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO})) ;
-		
-		my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
-		my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
-
-		my $linked_node_is_depended = exists $inserted_nodes->{$dependency_name}{__DEPENDED}
-						? ''
-						: ' [not depended yet]'  ;
-							
-		my $linked_node_info = "      Linking '$dependency_name'" 
-					. $linked_node_is_depended
-					. " from $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE}" 
-					. ":$inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}\n" ;
-		
-			
-		if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
-			{
-			die ERROR("--no_external_link switch specified, stop.\n") if(defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK}) ;
-				
-			unless($pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
-				{
-				my @local_rules_matching ;
-				
-				for(my $matching_rule_index = 0 ; $matching_rule_index < @$dependency_rules ; $matching_rule_index++)
-					{
-					my ($dependency_result) = $dependency_rules->[$matching_rule_index]{DEPENDER}->($dependency_name, $config, $inserted_nodes->{$dependency_name}, $inserted_nodes, $dependency_rules->[$matching_rule_index]) ;
-					push @local_rules_matching, $matching_rule_index if($dependency_result->[0]) ;
-					}
-				
-				if(exists $inserted_nodes->{$dependency_name}{__DEPENDED} && @local_rules_matching)
-					{
-					my @local_rules_matching_info ;
-					
-					for my $matching_rule_index (@local_rules_matching)
-						{
-						push @local_rules_matching_info, 
-							"$matching_rule_index:"
-							. $dependency_rules->[$matching_rule_index]{NAME}
-							. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
-						}
-					
-					$linked_node_info .= "         Ignoring local matching rules from '$Pbsfile': " . join(', ', @local_rules_matching_info) . "\n" ;
-					$display_linked_node_info++ ;
-					}
-				}
-			}
-			
-		PrintWarning $linked_node_info if $display_linked_node_info ;
+		LinkNode($pbs_config, $dependency_name, $tree, $inserted_nodes, $Pbsfile, $config, $dependency_rules, $rule_index) ;
 		}
 	else
 		{
@@ -1014,6 +966,68 @@ if($PBS::Debug::debug_enabled)
 		
 	$DB::single = 1 if (PBS::Debug::CheckBreakpoint($pbs_config, %debug_data)) ;
 	}
+}
+
+sub LinkNode
+{
+my ($pbs_config, $dependency_name, $tree, $inserted_nodes, $Pbsfile, $config, $dependency_rules, $rule_index) = @_ ;
+
+# user defined plugin which can fail the graph generation
+RunPluginSubs($pbs_config, 'CheckLinkedNode', @_) ;
+	
+# the dependency already exists within the graph, link to it
+$tree->{$dependency_name} = $inserted_nodes->{$dependency_name} ;
+$tree->{$dependency_name}{__LINKED}++ ;
+
+my $display_linked_node_info = 0 ;
+$display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO})) ;
+
+my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
+my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+
+my $linked_node_is_depended = exists $inserted_nodes->{$dependency_name}{__DEPENDED}
+				? ''
+				: ' [not depended yet]'  ;
+					
+my $linked_node_info = "      Linking '$dependency_name'" 
+			. $linked_node_is_depended
+			. " from $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE}" 
+			. ":$inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}\n" ;
+
+	
+if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
+	{
+	die ERROR("--no_external_link switch specified, stop.\n") if(defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK}) ;
+		
+	unless($pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
+		{
+		my @local_rules_matching ;
+		
+		for(my $matching_rule_index = 0 ; $matching_rule_index < @$dependency_rules ; $matching_rule_index++)
+			{
+			my ($dependency_result) = $dependency_rules->[$matching_rule_index]{DEPENDER}->($dependency_name, $config, $inserted_nodes->{$dependency_name}, $inserted_nodes, $dependency_rules->[$matching_rule_index]) ;
+			push @local_rules_matching, $matching_rule_index if($dependency_result->[0]) ;
+			}
+		
+		if(exists $inserted_nodes->{$dependency_name}{__DEPENDED} && @local_rules_matching)
+			{
+			my @local_rules_matching_info ;
+			
+			for my $matching_rule_index (@local_rules_matching)
+				{
+				push @local_rules_matching_info, 
+					"$matching_rule_index:"
+					. $dependency_rules->[$matching_rule_index]{NAME}
+					. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
+				}
+			
+			$linked_node_info .= "         Ignoring local matching rules from '$Pbsfile': " . join(', ', @local_rules_matching_info) . "\n" ;
+			$display_linked_node_info++ ;
+			}
+		}
+	}
+			
+PrintWarning $linked_node_info if $display_linked_node_info ;
 }
 
 #-------------------------------------------------------------------------------
