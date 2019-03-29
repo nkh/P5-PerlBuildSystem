@@ -783,14 +783,13 @@ else
 		
 		unless(defined $pbs_config->{NO_SUBPBS_INFO})
 			{
+			PrintWarning "[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message\n" ;
+
 			if(defined $pbs_config->{SUBPBS_FILE_INFO})
 				{
 				my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
-				PrintWarning("[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message, $node_info, with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
-				}
-			else
-				{
-				PrintWarning("Depend: '$node_name' $alias_message with subpbs '$sub_pbs_package:$sub_pbs_name'.\n") ;
+				PrintInfo2  "\t$node_info, \n"
+						. "\twith subpbs '$sub_pbs_package:$sub_pbs_name'.\n" ;
 				}
 			}
 			
@@ -1173,15 +1172,3 @@ PBS::Depend  -
 =head1 DESCRIPTION
 
 Given a node and a set of rules, B<CreateDependencyTree> will recursively build the entire dependency tree, inserting 
-any pertinent information it gathers in the node.
-
-=head2 EXPORT
-
-None by default.
-
-=head1 AUTHOR
-
-Khemir Nadim ibn Hamouda. nadim@khemir.net
-
-=cut
-

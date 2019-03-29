@@ -1,5 +1,3 @@
-multiple plugin and lib path
-
 Creator vs immediate build
 	Creator, file that need to exists before depending a node
 		often a file that itself points to other dependencies
@@ -120,7 +118,7 @@ Roadmap
 			more implementation
 			work on the requirements
 
-		Zero ENV
+		#Zero ENV
 
 		rename pbs switches
 
@@ -142,7 +140,6 @@ move package dependent digest data to runtime package
 binary repository
 	client
 		
-
 	server
 		? replace  --source_directory for binaries
 
@@ -381,6 +378,8 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#multiple plugin and lib path
 
 #display what's being build in a short dynamic tree form
 	to avoid the guessing when, ie, working with Robin

@@ -434,11 +434,11 @@ EOT
 		'Dependency information will be displayed on the same line for all depend.',
 		'',
 		
-	'dsi|display_subpbs_info'         => \$pbs_config->{DISPLAY_DEPENDENCY_INFO},
+	'ds|display_subpbs_start'         => \$pbs_config->{DISPLAY_DEPENDENCY_INFO},
 		'Display a message when depending a node in a subpbs.',
 		'',
 		
-	'sfi|subpbs_file_info'                => \$pbs_config->{SUBPBS_FILE_INFO},
+	'dsi|display_subpbs_start_info'                => \$pbs_config->{SUBPBS_FILE_INFO},
 		'PBS displays the sub pbs file name.',
 		'',
 		
@@ -624,7 +624,7 @@ EOT
 		'Display sub pbs definition.',
 		'',
 		
-	'dde|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
+	'de|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
 		'Display when a depend ends.',
 		'',
 		

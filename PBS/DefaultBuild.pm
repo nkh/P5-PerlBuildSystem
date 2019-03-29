@@ -80,7 +80,7 @@ PBS::Depend::CreateDependencyTree
 my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 my $added_nodes = $end_nodes - $start_nodes ;
 
-PrintInfo2("Depend: end $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+PrintWarning("Depend: end $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
