@@ -192,12 +192,12 @@ if(-f $file_name && $fh->open($file_name))
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
 	PrintUser(sprintf "Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
 
-	return($md5sum) ;
+	return $md5sum // 'invalid md5' ;
 	}
 else
 	{
 	PrintWarning  "Digest: Warning: can't read file '$file_name' to generate MD5\n";
-	return ;
+	return 'invalid md5' ;
 	}
 }
 

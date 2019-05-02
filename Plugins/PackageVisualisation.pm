@@ -32,21 +32,21 @@ my ($pbs_config, $package_alias, $config_snapshot, $config, $source_directories,
 
 if(defined $pbs_config->{DISPLAY_SOURCE_DIRECTORIES})
 	{
-	PrintInfo(DumpTree($source_directories, "source directories:")) ;
+	PrintInfo(DumpTree($source_directories, "Depend: source directories:")) ;
 	}
 if($pbs_config->{DISPLAY_CONFIGURATION})
 		{
-		PrintInfo(DumpTree($config, "Config for package '$package_alias' before depending rules are run (see --durno --dur):"));
+		PrintInfo(DumpTree($config, "Depend: config for package '$package_alias' before depending rules are run (see --durno --dur):"));
 		}
 		
 if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
 		{
-		PrintInfo(DumpTree($config_snapshot, "Config namespaces for '$package_alias':")) ;
+		PrintInfo(DumpTree($config_snapshot, "Depend: config namespaces for '$package_alias':")) ;
 		}
 		
 if(defined $pbs_config->{DISPLAY_USED_RULES}) #only the rules configured in
 	{
-	my $title =  "Dependency rules used to depend package '$package_alias':" ;
+	my $title =  "Depend: dependency rules for package: '$package_alias':" ;
 
 	if(defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY})
 		{

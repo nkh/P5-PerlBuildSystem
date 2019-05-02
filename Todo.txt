@@ -1,3 +1,6 @@
+log removal of environment variables
+	log the kept variables too
+
 Creator vs immediate build
 	Creator, file that need to exists before depending a node
 		often a file that itself points to other dependencies
@@ -39,7 +42,7 @@ Roadmap
 			
 		distribution and parallelization
 
-		*** linking configuration check
+		# linking configuration check
 			move linking code to separate package and call
 			user definable plugin to do the check 
 
@@ -106,6 +109,10 @@ Roadmap
 						
 			grep output
 				can be done today by using a breakpoint
+
+		query interface
+			database 
+			csv  + text to db 
 
 	Repository
 		expand --source_directory to accept external binary repos

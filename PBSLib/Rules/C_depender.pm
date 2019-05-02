@@ -77,7 +77,6 @@ if(-e $digest_file_name)
 			{
 			for my $dependency ( grep {/\.h$/} keys %$digest)
 				{
-				# verify validity of dependencies
 				if($digest->{$dependency} ne  PBS::Digest::GetFileMD5($dependency))
 					{
 					@my_dependencies = () ;

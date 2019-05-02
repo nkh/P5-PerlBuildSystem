@@ -1,0 +1,156 @@
+A post build step could merge the C dependencies
+	what if pbs dies before the post process
+		risk having an inconsistent state as pre warp has already generated a warp with the dependency files md5
+		
+		object node
+			gets compiled
+			generates dependencies
+
+			node digest is written
+
+			failure!
+
+			no warp is written
+
+			pre warp is used
+			
+			dependencies md5 is unchanged thus does not trigger 
+				but depender adds the dependencies which will also be checked
+	
+			
+
+	what do we merge
+
+		will not work in distributed dependency mode
+			this is because the main process is in charge and needs to merge the graph
+				instead let the dependency processes keep their part of the graph and 
+				send the list of nodes they have to the main process which acts like a linker
+					check if there are duplicates, check their config
+
+
+				we can end up with largely duplicated tree
+
+				graphs can also be serialized and re loaded by main processs
+					simpler than handling separate processes but unecessary serializing deserializing 
+					but we are just interested in the node names and config + rules, not in their data
+
+
+				when graph is OKed, depending processes can build in parallel too
+					how does node build synchronization work when  node dependencies are accross process
+					boundaries?
+
+
+
+the digest is a micro warp!
+	meso warp and macro warp can be created from them
+		they can link to the micro warp files while simplifying the nodes for quick load
+
+
+	does this eliminate the need for pre warp?
+		warp is a file created from the system description; it contains the graph.
+		it contains new build and previously build information (MD5), which is used to check
+		the validity of the graph
+
+		digests contain information about the dependencies of a node, a graph portion
+
+		given a top node's digest, a graph can be rebuild, given all the digests are present
+
+		source do not have digests but can be referred to in parents digests
+			#how do we know a node is a source?
+			#not having a digest doesn't mean it is not a node that has failed building and no digest exists yet
+				#need to tag source in digests using them
+			
+	
+		if a node digests is missing, it's pbsfile can be run to run to get the graph part missing
+
+		a pbsfile can be run if we have a configuration, a pbsfile config, not a node config, as it may add
+		rules selectively based on the parent pbsfile configuration. And a target node.
+
+
+	Can we build a warp file from any node today?
+		NO, it uses $insert_nodes instead for a node graph.
+
+	prototype could be a micro-meso-macro warp crawler that generates a higher level warp
+		we can test with a warp 1.5 file to see if we get the same graph
+
+	meso warp does not have to be a pbsfile level, any node can work, anything tagged to have a meso warp
+		pbsfiles can be run multiple times with different configs and targets
+
+	in the case of post build insertion, digests do not reflect the real dependencies before the post insertion is done
+		a higher level warp can be more complete than a micro warp because of additional information
+
+		how do we insure that higher level are used and warn about differences
+ 	
+	running in warp mode does not, today, use the digest files, if digest files are removed, warp still works
+		- we need to assert the dependency between meso warp and it's digests 
+			why? isn't messo a warp at a lower level? 
+			if meso doesn't point at digest but integrates them, it's a warp
+
+		- let it work as of today
+		- there is not 1 meso warp type, we can have multiple, how do they cooperate?
+
+
+	meso warp generation, and warp generation could be done by targets at the pbsfile lebel
+		we control the root rule in pbsfile runs, we can add whatever we please
+		we can run warp on the top node of the subpbs
+
+		
+	types of meso
+		integration meso, a warp, puts digests and micro warp inside a file
+
+		link meso, a list of meso, micro, digest files and their digest
+
+
+invalid warp situation
+	a file is modified or missing (low impact only sub graph is recreated)
+	a pbsfile is modified or missing (high impact, everything is re-run)
+
+
+	we run in no_warp mode and create a warp (pre and final)
+
+	when running in no_warp, we have a target and a pbsfile
+		if we find the nodes digest and the md5 of the pbsfile is valid, we have the root of the graph
+			that should be done before loading the pbsfile, to not load the pbsfile
+
+			we can continue scrapping all the sub noeds till there are no dependencies without digests
+
+			if a node's digest is not OK
+				if it is just the node run pbs just for the node if possible
+				otherwise remove all the nodes that come from that pbsfile
+
+
+	
+		the digest verification for all the nodes is done _instead_ for running the pbsfile
+			pbsfiles run very fast! is it workth is?
+
+
+	for subpbs, if a macro warp is found, just merge it
+
+	two solutions
+		recreate a warp file, run in normal depend mode
+			separate code base
+			can be made parallel
+ 
+		duringdepend, try to recreate sub graphs from meso
+			more complex code as
+				it has to be integrated in current depend process
+				it has to be integrate with the future parallel depend
+
+		=> what are we trying to achieve?
+
+			warp was invalid because of pbsfile
+			rebuild a warp with the effect of the pbsfile modification taken into account
+				rebuild all, modification always taken into account
+
+				rebuild from meso, reintegrating parts which are not influenced by the changes
+				in the pbsfile
+
+
+
+meso can, and should replace, pre-build warp
+	meso is distributed
+	meso can be reconstructed from parts
+
+when generating digests, keep them in memory for meso to crawl them rather than reload them
+	nodes that are not rebuild should already be in the meso file
+ 

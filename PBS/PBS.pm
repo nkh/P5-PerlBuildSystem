@@ -196,6 +196,8 @@ else
 		}
 	}
 	
+# load meso file
+
 $dependency_tree_name =~ s/\//_/g ;
 $dependency_tree_name = "__PBS_" . $dependency_tree_name ;
 
@@ -423,6 +425,8 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	PrintInfo(sprintf("Time in Pbsfile: %0.2f s.\n", tv_interval ($t0, [gettimeofday]))) ;
 	}
 	
+# save  meso file
+
 return($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package) ;
 }
 
@@ -746,7 +750,7 @@ PBS::PBS - Perl Build System.
 
 =head1 DESCRIPTION
 
-Entry point to B<PBS>. Calls PBS::DefaultBuild::DefaultBuild() is no user defined I<build()> exists in the I<Pbsfile>.
+Entry point to B<PBS>. Calls PBS::DefaultBuild::DefaultBuild() if no user defined I<build()> exists in the I<Pbsfile>.
 
 =head2 EXPORT
 
