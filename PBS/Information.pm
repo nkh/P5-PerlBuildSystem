@@ -301,8 +301,12 @@ if(defined $file_tree->{__CONFIG})
 	{
 	$log_node_info .= INFO(	DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, USE_ASCII => 1))
 				if defined $pbs_config->{CREATE_LOG} ;
+				
+
+	my @params ;
+	push @params, USE_ASCII => 1 if defined $pbs_config->{KEEP_PBS_BUILD_BUFFERS} ;
 								
-	$node_info .= INFO(DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab,))
+	$node_info .= INFO(DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, @params))
 			if $pbs_config->{DISPLAY_NODE_CONFIG} ;
 	}
 	
@@ -420,7 +424,7 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 	print $lh $log_node_info, "\n" if defined $lh ;
 	}
 
-if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_iNODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
+if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
 	print STDOUT $node_info ;
 	}

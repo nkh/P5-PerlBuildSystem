@@ -112,7 +112,7 @@ my ($node) = @_ ;
 my $redirection_base = $node->{__BUILD_NAME} // PBS::Rules::Builders::GetBuildName($node->{__NAME}, $node);
 my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirection_base, ('\..*')) ;
 
-$redirection_base = "${base_path}_PBS_BUILD_LOGS" ;
+$redirection_base = "${base_path}" ;
 
 my $redirection_file = "$redirection_base/$base_basename$base_ext.build_buffer" ;
 my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
