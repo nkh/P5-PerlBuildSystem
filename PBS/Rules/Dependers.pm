@@ -166,7 +166,7 @@ my ($dependencies_evaluator, $dependent_matcher) ;
 
 if('' eq ref $dependent_regex_definition)
 	{
-	PrintError "Unexpected non regex or sub dependent matcher definition at file '$name' at '$file_name:$line'\n" ;
+	PrintError "Depend: Unexpected non regex or sub matcher definition at file '$name' at '$file_name:$line'\n" ;
 	PbsDisplayErrorWithContext($file_name,$line) ;
 	die ;
 	}
@@ -182,7 +182,7 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 				
 				if($display_regex)
 					{
-					PrintInfo2("   $dependent_to_check =~ $dependent_regex_definition. Rule '$name' @ $file_name:$line.\n") ;
+					PrintInfo2("${PBS::Output::indentation}$dependent_regex_definition $name:$file_name:$line\n") ;
 					}
 					
 				return($dependent_to_check =~ $dependent_regex_definition) ;
@@ -198,7 +198,7 @@ elsif('CODE' eq ref $dependent_regex_definition)
 				
 				if($display_regex)
 					{
-					PrintInfo2("   $dependent_to_check =~ perl_sub rule '$name' @ $file_name:$line.\n") ;
+					PrintInfo2("${PBS::Output::indentation}perl_sub rule $name:$file_name:$line\n") ;
 					}
 					
 				return($dependent_regex_definition->(@_)) ;
@@ -208,7 +208,7 @@ elsif('CODE' eq ref $dependent_regex_definition)
 	}
 else
 	{
-	PrintError "Unexpected dependent matcher definition at file '$name' at '$file_name:$line'\n" ;
+	PrintError "Depend: Unexpected matcher definition at file '$name' at '$file_name:$line'\n" ;
 	PbsDisplayErrorWithContext($file_name,$line) ;
 	die ;
 	}

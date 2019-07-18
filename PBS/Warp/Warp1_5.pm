@@ -964,7 +964,7 @@ for my $node (keys %$inserted_nodes)
 			}
 
 
-		# extract package digest dependencies, note that this is only meaningful for new noddes
+		# extract package digest dependencies, note that this is only meaningful for new nodes
 		# revivified nodes do not have a __LOAD_PACKAGE 
 		if(exists $inserted_nodes->{$node}{__LOAD_PACKAGE})
 			{

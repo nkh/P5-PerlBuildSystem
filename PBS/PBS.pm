@@ -275,7 +275,8 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	# merge parent config
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
 	
-	PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Start configuration for '$package':")) if($pbs_config->{DISPLAY_CONFIGURATION_START}) ;
+	PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Config: before running '$Pbsfile' in  package '$package':"))
+		 if $pbs_config->{DISPLAY_CONFIGURATION_START}  ;
 	
 	my $add_pbsfile_digest = '' ;
 	

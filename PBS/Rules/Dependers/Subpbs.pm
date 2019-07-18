@@ -117,7 +117,7 @@ return
 		
 		if(defined $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
 			{
-			PrintInfo2("   $dependent_to_check =~ $depender_definition->{NODE_REGEX} [$sub_pbs_dependent_regex]. Subpbs rule '$name' @ $file_name:$line.\n") ;
+			PrintInfo2("${PBS::Output::indentation}$depender_definition->{NODE_REGEX} [$sub_pbs_dependent_regex]. Subpbs rule '$name' @ $file_name:$line.\n") ;
 			}
 		
 		$dependent_to_check =~ /^$sub_pbs_dependent_regex$/ && return ([1, $depender_definition]) ;

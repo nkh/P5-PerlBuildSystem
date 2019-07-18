@@ -1,4 +1,98 @@
 
+--dd, ddl, ddr
+	often followed with --tno
+	ca we present --dd as a tee to start with ?
+
+use case
+	Rule V all_tests: test1 test2
+
+	# we want the tests to be run in individual directories and in parallel
+	# they can't be in the same directory because they use the same input files
+	# which must be different for each test
+
+	Rule V ^test*: sub_dir*/test* @dependencies
+		cd sub_dir*/test
+		run the test
+		
+	Rule sub_dir*/test*
+		mkdir %FILE_TO_BUILD
+
+
+generalize the concept of object_files
+	a sub target creates a list of information to be used at a higher level
+		eg: a list of oject files to be linked
+			the concept was created to reduce the time spend creating
+			intermediary libraries
+
+	command line utility to manipulate the object_files
+	%EXTRACT to manipulate the object_files in the build commands
+	change name to reflect the generic nature
+
+	another case could be a lib that returns
+		a lib
+		the  location of header files
+
+		my_stuff: informative_lib
+
+
+
+		informative_lib: @c_files
+			%cc @c_files
+			object_files %FILE_TO_BUILD add LIB %FILE_TO_BUILD
+			object_files %FILE_TO_BUILD add INCLUDE_PATH somewhere/ ....
+			...
+			
+easier named dependencies
+	by common prefix?
+		t: dir/a dir/b another_dir/c d
+			command %MATCH(dir/, %DEPENDENCIES) # lol, this is gmake macros
+
+check gmake debugging options
+	database dumo
+	variable definition file:line
+	--warn-undefined-variable
+	...
+
+
+multiple versions of the same node in the graph
+	is it really worth it? 
+
+
+%FILE_TO_BUILD short versions
+	a la make $@
+	%FTB
+	%TARGET
+
+	the build time variables should be in the config too to allow easier debugging
+		they are computed per line run in a shell, not at the build start!
+			users can define their own!
+
+	in any case they should be visible for debugging
+		there's an EVAL_DEBUG switch bit not sure it works on user defined %VARS
+
+pass arguments to prerequisites targets
+	a: setup(a, a1, a2, ...)
+	b: setup(b, b1, b2, ...)
+
+	setup:
+
+	if setup is a target, it will be run just onece
+
+	it is possible to have multiple targets by using
+		%setup or setup%
+		but this runs the same setup when we want to run different setups
+
+	we can define a function and call it
+		a:
+			 setup(a, a1, a2, ...)
+		b:
+			 setup(b, b1, b2, ...)
+		but it doesn't show the prerequisite nature 
+
+matching a rule, run one time
+		when all match?
+		when a single one matches?
+
 templatized output
 	eg: output for when a node is build (-bni) corresponds to a template that the user can modify
 		access to basic element/color, and options, are provided
@@ -10,7 +104,43 @@ templatized output
 			note that node visualization is already a plugin
 		
 		breakpoints + bni + bnir 'no_match' is a workaround
+	
+	the templates should use functions that can be used in post processing
+	the templates themselves should be run on node
+		say during post processing or debugging I want to see the same output as during the build
+			fill_template(node, template, args)
 
+
+output is by default off
+	opposite of -q, we need to ask for output
+	output is often necessary during creation of the build rules
+	output is needed when a node fails to build
+		and only for the node that fails and its dependencies
+			and we can generate dependency node output on demand
+			if we need to see the output of the successful nodes, if not kept),
+				we can build those nodes
+
+Microwarp composition
+	as the warp cache is composed of MW, multiple configuration can share the nodes
+	can we check them in?
+		this would give us a history of the dependency graph
+			it would be nice if the system history was also under version control
+				difficult to force devs to checking code when doing local builds/tests
+				the nodes hash is kept in the dependency graph
+					we can find which version of the source repo is used
+						or if it is a local version
+
+
+log is not generated
+	the log contains node information and build time information (including output from the tools)
+		no need to keep tool output for node which build succeed
+
+		better to generate a log on demand from the dependency graph and build time information
+			see templatized output
+
+		possibility to generate a single node build environment for debugging
+
+		
 
 REH_BREAKPOINT
 	a bit like a pbs1 breakpoint, called back on events
@@ -221,7 +351,7 @@ Binary repository layer
 
 	a node that needs to be build does not need to be checked with the repos
 
-	feels close to what warp does except we need a physicla file rather than a pseudo node in $inserted_nodes
+	feels close to what warp does except we need a physical file rather than a pseudo node in $inserted_nodes
 
 	if a node needs to be build, it doesn't exist or a depdndency has changed, we can still find it
 		using it's dependencies and config as a hash

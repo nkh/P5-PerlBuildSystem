@@ -1,3 +1,88 @@
+
+ddr
+	rule matching PBS_WARP_TREE is not shown
+
+bug
+	node MD5 is checked during warp, even for Virtual nodes 
+
+rule name deduced from regex?
+
+shorter name
+	node types, V for VIRTUAL, ...
+	Rule for AddRule
+	...
+
+use tmux to keep session open when an error happens
+	that would mean build in tmux
+
+on error generate a script that
+	sets up a tmux environment
+	cat the build buffers as if one was building in the session
+	add commands to history
+	runs set of commands to ease debugging
+		display debugging information
+
+	run ranger 
+
+keep runtime info for nodes
+	build time
+	node where the build was done
+	environment variables (which should be in a node config)
+	...
+
+	the information is kept
+		in the node itself
+		in a log file in a perl format to allow post processing
+
+
+move NodeInformation to methods
+	many information elements are generated and added to the log or output
+		putting the computation of the information in methods allows post processing to generate the same output
+
+keep pbs buffers
+	a bit like keep_build_buffers
+
+	all debugging/process/flow/logic goes into external files 
+		nodes get their files
+		pbsfiles get their files
+		graph get its file
+		pbs gets its file
+
+	all switches on
+		switches can eventually get their own files if they output a lot of text
+
+		maybe not _all_ but a good part of the debug data
+			configured as all minus whatever the user deems not necessary
+
+			the configuration and example files for the output are a good
+			place for documenting the effect of the debug switches
+
+	use normal cli tools for debugging
+
+	use vi to gf from one file to another
+		need an editor that can handle ansi codes for color
+
+	optionally remove buffers for nodes that successfully build
+		do it after building dependencies to always keep info when an error occurs
+
+
+	time line of a build is also written down
+		not only the graph but when things happen in the graph
+
+
+split pbs a la gcc
+
+	different programs handle different phases
+		depend
+		check
+		build
+
+	data can be serialized between the steps or the build steps
+		are both applications and modules to be use in-memory in pbs
+
+
+remove print to STDOUT
+
 log removal of environment variables
 	log the kept variables too
 

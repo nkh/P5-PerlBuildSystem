@@ -317,30 +317,30 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					my $dependency_info = "\t[$rules_matching] '" . $el->($node_name) . "'${node_type}${forced_trigger} rule $rule_index:" . $em->($rule_info) . $rule_type ;
+					PrintInfo 
+						"\t'"
+						. USER($el->($node_name) . ' ' . ${node_type} . ${forced_trigger})
+						. INFO2(" $rule_index:" . $em->($rule_info) . $rule_type . " [$rules_matching]")
+						. "\n" ;
 					
 					if(@dependency_names)
 						{
-						$dependency_info .= "\n" ;
-						my $dependency_info_deps =  $PBS::Output::indentation . join("\n\t", map {"'" . $el->($_) . "'"} @dependency_names) ;
-						$dependency_info_deps .= "\n\n" ;
-			
-						PrintInfo($dependency_info) ;
-						PrintInfo3($dependency_info_deps) ;
+						PrintInfo $PBS::Output::indentation
+								. join("\n\t", map {"'" . $el->($_) . "'"} @dependency_names)
+								. "\n\n" ;
 						}
 					else
 						{
-						$dependency_info .= ".\n\n" ;
-						PrintInfo($dependency_info) ;
+						PrintWarning "\tno dependencies from rule\n\n" ;
 						}
 					}
 				else
 					{
-					PrintUser "\t[$rules_matching] '$node_name' "
-						. INFO("${node_type}${forced_trigger}has dependencies [@dependency_names]", 0)
-						. "\n" ;
-
-					PrintInfo2("\trule $rule_index:$rule_info$rule_type\n\n") ;
+					PrintUser "\t'$node_name' ${node_type}${forced_trigger} "
+						. INFO("dependencies [@dependency_names]", 0)
+						. "" ;
+					
+					PrintInfo2(" $rule_index:$rule_info$rule_type [$rules_matching]\n") ;
 					}
 					
 				PrintWithContext
@@ -668,8 +668,8 @@ if(@has_matching_non_subpbs_rules)
 	{
 	if(@sub_pbs)
 		{
-		PrintError DumpTree(\@has_matching_non_subpbs_rules, "In Pbsfile : $Pbsfile, $node_name has locally matching rules:") ;
-		PrintError(DumpTree(\@sub_pbs, "And matching Sub Pbs definition:")) ;
+		PrintError DumpTree(\@has_matching_non_subpbs_rules, "Depend: in Pbsfile : $Pbsfile, $node_name has locally matching rules:") ;
+		PrintError(DumpTree(\@sub_pbs, "Depend: and matching Sub Pbs definition:")) ;
 			
 		Carp::croak ;
 		}
@@ -696,7 +696,7 @@ if(@has_matching_non_subpbs_rules)
 		# help user keep sanity by revealing some of the depend history
 		if
 			(
-			   $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile
+			$tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile
 			&& defined $tree->{$dependency}{__DEPENDED_AT}
 			&& $tree->{$dependency}{__DEPENDED_AT} ne $Pbsfile
 			)
@@ -755,156 +755,132 @@ if(@has_matching_non_subpbs_rules)
 				) ;
 			}
 		}
+
+	if( ! $has_dependencies)
+		{
+		PrintWarning "$PBS::Output::indentation'$node_name' has no dependencies, rules from '$pbs_config->{PBSFILE}'\n\n" ;
+		}
+	}
+elsif(@sub_pbs)
+	{
+	if(@sub_pbs != 1)
+		{
+		PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
+		PrintError(DumpTree(\@sub_pbs,, "Sub Pbs:")) ;
+		
+		Carp::croak  ;
+		}
+		
+	# node matched a single subpbs
+	
+	my $sub_pbs_hash    = $sub_pbs[0]{SUBPBS} ;
+
+	my $unlocated_sub_pbs_name = my $sub_pbs_name = $sub_pbs_hash->{PBSFILE} ;
+	my $sub_pbs_package = $sub_pbs_hash->{PACKAGE} ;
+	
+	my $alias_message = '' ;
+	$alias_message = "aliased as '$sub_pbs_hash->{ALIAS}'" if(defined $sub_pbs_hash->{ALIAS}) ;
+	
+	$sub_pbs_name = LocatePbsfile($pbs_config, $Pbsfile, $sub_pbs_name, $sub_pbs[0]{RULE}) ;
+	$sub_pbs_hash->{PBSFILE_LOCATED} = $sub_pbs_name ;
+	
+	unless(defined $pbs_config->{NO_SUBPBS_INFO})
+		{
+		PrintWarning "[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message\n" ;
+
+		if(defined $pbs_config->{SUBPBS_FILE_INFO})
+			{
+			my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
+			PrintInfo2  "\t$node_info, \n"
+					. "\twith subpbs '$sub_pbs_package:$sub_pbs_name'.\n" ;
+			}
+		}
+		
+	#-------------------------------------------------------------
+	# run subpbs
+	#-------------------------------------------------------------
+	
+	delete $inserted_nodes->{$node_name} ; # temporarily eliminate ourself from the existing nodes list
+	
+	my $tree_name = "sub_pbs$sub_pbs_name" ;
+	$tree_name =~ s~^\./~_~ ;
+	$tree_name =~ s~/~_~g ;
+	
+	PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
+		
+	# Synchronize with elements from the subpbs definition, specially build and source dirs 
+	# we override elements
+	my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
+	$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
+	$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
+	
+	my $sub_node_name = $node_name ;
+	$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
+	
+	my $sub_config = PBS::Config::get_subps_configuration
+				(
+				$sub_pbs_hash,
+				\@sub_pbs,
+				$tree,
+				$sub_node_name,
+				$pbs_config,
+				$load_package,
+				) ;
+	
+	my $already_inserted_nodes = $inserted_nodes ;
+	$already_inserted_nodes    = {} if(defined $sub_pbs_hash->{LOCAL_NODES}) ;
+	
+	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
+		= PBS::PBS::Pbs
+			(
+			[@$pbsfile_chain, $sub_pbs_name],
+			'SUBPBS',
+			$sub_pbs_name,
+			$load_package,
+			$sub_pbs_config,
+			$sub_config,
+			[$sub_node_name],
+			$already_inserted_nodes,
+			$tree_name,
+			$sub_pbs_config->{PBS_COMMAND},
+			) ;
+		
+	# keep this node insertion info
+	$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
+	
+	# keep parent relationship
+	for my $dependency_to_key (keys %{$tree->{__DEPENDENCY_TO}})
+		{
+		$sub_tree->{$sub_node_name}{__DEPENDENCY_TO}{$dependency_to_key} = $tree->{__DEPENDENCY_TO}{$dependency_to_key};
+		}
+		
+	# copy the data generated by subpbs
+	for my $new_key (keys %{$sub_tree->{$sub_node_name}})
+		{
+		# keep some  attributes defined from the current Pbs
+		next if $new_key =~ /__NAME/ ;
+		next if $new_key =~ /__USER_ATTRIBUTE/ ;
+		next if $new_key =~ /__LINKED/ ;
+		
+		$tree->{$new_key} = $sub_tree->{$sub_node_name}{$new_key} ;
+		}
+		
+	# make ourself the real node again
+	$inserted_nodes->{$node_name} = $tree ;
 	}
 else
 	{
-	if(@sub_pbs)
+	# no subpbs no non-subpbs
+
+	next if $node_name =~ /^__/ ;
+
+	if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 		{
-		if(@sub_pbs != 1)
-			{
-			PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
-			PrintError(DumpTree(\@sub_pbs,, "Sub Pbs:")) ;
-			
-			Carp::croak  ;
-			}
-			
-		# the node had no dependencie but a single subpbs matched
-		
-		my $sub_pbs_hash    = $sub_pbs[0]{SUBPBS} ;
-
-		my $unlocated_sub_pbs_name = my $sub_pbs_name = $sub_pbs_hash->{PBSFILE} ;
-		my $sub_pbs_package = $sub_pbs_hash->{PACKAGE} ;
-		
-		my $alias_message = '' ;
-		$alias_message = "aliased as '$sub_pbs_hash->{ALIAS}'" if(defined $sub_pbs_hash->{ALIAS}) ;
-		
-		$sub_pbs_name = LocatePbsfile($pbs_config, $Pbsfile, $sub_pbs_name, $sub_pbs[0]{RULE}) ;
-		$sub_pbs_hash->{PBSFILE_LOCATED} = $sub_pbs_name ;
-		
-		unless(defined $pbs_config->{NO_SUBPBS_INFO})
-			{
-			PrintWarning "[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message\n" ;
-
-			if(defined $pbs_config->{SUBPBS_FILE_INFO})
-				{
-				my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
-				PrintInfo2  "\t$node_info, \n"
-						. "\twith subpbs '$sub_pbs_package:$sub_pbs_name'.\n" ;
-				}
-			}
-			
-		#-------------------------------------------------------------
-		# run subpbs
-		#-------------------------------------------------------------
-		
-		delete $inserted_nodes->{$node_name} ; # temporarily eliminate ourself from the existing nodes list
-		
-		my $tree_name = "sub_pbs$sub_pbs_name" ;
-		$tree_name =~ s~^\./~_~ ;
-		$tree_name =~ s~/~_~g ;
-		
-		PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
-			
-		# Synchronize with elements from the subpbs definition, specially build and source dirs 
-		# we override elements
-		my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
-		$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
-		$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
-		
-		my $sub_node_name = $node_name ;
-		$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
-		
-		my $sub_config = PBS::Config::get_subps_configuration
-					(
-					$sub_pbs_hash,
-					\@sub_pbs,
-					$tree,
-					$sub_node_name,
-					$pbs_config,
-					$load_package,
-					) ;
-		
-		my $already_inserted_nodes = $inserted_nodes ;
-		$already_inserted_nodes    = {} if(defined $sub_pbs_hash->{LOCAL_NODES}) ;
-		
-		my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
-			= PBS::PBS::Pbs
-				(
-				[@$pbsfile_chain, $sub_pbs_name],
-				'SUBPBS',
-				$sub_pbs_name,
-				$load_package,
-				$sub_pbs_config,
-				$sub_config,
-				[$sub_node_name],
-				$already_inserted_nodes,
-				$tree_name,
-				$sub_pbs_config->{PBS_COMMAND},
-				) ;
-			
-		# keep this node insertion info
-		$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
-		
-		# keep parent relationship
-		for my $dependency_to_key (keys %{$tree->{__DEPENDENCY_TO}})
-			{
-			$sub_tree->{$sub_node_name}{__DEPENDENCY_TO}{$dependency_to_key} = $tree->{__DEPENDENCY_TO}{$dependency_to_key};
-			}
-			
-		# copy the data generated by subpbs
-		for my $new_key (keys %{$sub_tree->{$sub_node_name}})
-			{
-			# keep some  attributes defined from the current Pbs
-			next if $new_key =~ /__NAME/ ;
-			next if $new_key =~ /__USER_ATTRIBUTE/ ;
-			next if $new_key =~ /__LINKED/ ;
-			
-			$tree->{$new_key} = $sub_tree->{$sub_node_name}{$new_key} ;
-			}
-			
-		# make ourself the real node again
-		$inserted_nodes->{$node_name} = $tree ;
-		}
-	else
-		{
-		next if $node_name =~ /^__/ ;
-		my $dependency_info = '' ;
-
-		if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
-			{
-			if(PBS::Digest::IsDigestToBeGenerated($load_package, $tree))
-				{
-				if( ! $has_dependencies)
-					{
-					if(@{$tree->{__MATCHING_RULES}})
-						{
-						$dependency_info = "'$node_name' has no locally defined dependencies" ;
-						}
-					else
-						{
-						$dependency_info = "'$node_name' wasn't depended" ;
-						}
-						
-					PrintWarning "$dependency_info (rules from '$pbs_config->{PBSFILE}').\n" ;
-					}
-				}
-			else
-				{
-				#source
-				if(@{$tree->{__MATCHING_RULES}})
-					{
-					PrintWarning "Depend: '$node_name' matched rules, rules from '$pbs_config->{PBSFILE}'.\n" ;
-					}
-					
-				if($has_dependencies)
-					{
-					PrintWarning2 "Depend: '$node_name' has dependencies, rules from '$pbs_config->{PBSFILE}'.\n" ;
-					}
-				}
-			}
+		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended"
+				. ", rules from '$pbs_config->{PBSFILE}'\n\n" ;
 		}
 	}
-	
+
 if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	{
 	PrintInfo2("Depend: -- Immediate build of node $node_name --\n") ;
