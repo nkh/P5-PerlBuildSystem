@@ -62,7 +62,7 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 
 my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 
-PrintInfo("Depend: $package_alias\[$PBS::Output::indentation_depth], nodes:$start_nodes              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+PrintInfo("Depend: targets: [@$targets], level: $PBS::Output::indentation_depth, nodes: $start_nodes              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -279,13 +279,13 @@ if($pbs_config->{DO_BUILD})
 else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
-	PrintWarning("Build: NOT BULDING.\n") ;
+	PrintWarning("Build: NOT BUILDING.\n") ;
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
 		if($debug_flag =~ /^DEBUG/ && defined $value)
 			{
-			PrintWarning("Build: $debug_flag set.\n") ;
+			PrintWarning("\t$debug_flag set\n") ;
 			}
 		}
 

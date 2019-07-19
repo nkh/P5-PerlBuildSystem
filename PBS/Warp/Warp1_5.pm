@@ -538,7 +538,7 @@ for my $node (@$nodes_to_check)
 	my $remove_this_node = 0 ;
 	
 	# virtual nodes don't have MD5
-	if('VIRTUAL' ne $nodes->{$node}{__MD5})
+	if('VIRTUAL' ne $nodes->{$node}{__MD5} && !$nodes->{$node}{__VIRTUAL} )
 		{
 		# rebuild the build name
 		$nodes->{$node}{__BUILD_NAME} =	exists $nodes->{$node}{__LOCATION}

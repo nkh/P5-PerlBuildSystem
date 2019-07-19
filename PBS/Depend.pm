@@ -668,10 +668,14 @@ if(@has_matching_non_subpbs_rules)
 	{
 	if(@sub_pbs)
 		{
-		PrintError DumpTree(\@has_matching_non_subpbs_rules, "Depend: in Pbsfile : $Pbsfile, $node_name has locally matching rules:") ;
-		PrintError(DumpTree(\@sub_pbs, "Depend: and matching Sub Pbs definition:")) ;
+		PrintError DumpTree
+			{
+			AddRule => \@has_matching_non_subpbs_rules,
+			AddSubpbsRule => \@sub_pbs,
+			},
+			"Depend: '$node_name' Error: found rules and subpbs rules, Pbsfile: $Pbsfile" ;
 			
-		Carp::croak ;
+		die "\n" ;
 		}
 		
 	# a node can be inserted from different pbsfile, still the result should be the same

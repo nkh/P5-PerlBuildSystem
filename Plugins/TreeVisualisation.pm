@@ -326,7 +326,6 @@ push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
 
 push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
 
-
 my @trees ;
 
 my $matching_nodes = 0 ;
@@ -354,18 +353,43 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		}
 	if(@trees == 1)
 		{
-		PrintInfo DumpTree($dependency_tree, "Tree for '$inserted_nodes->{$trees[0]}':", FILTER => $FilterDump, @extra_options) ;
+		PrintInfo DumpTree($dependency_tree, "Dependen: graph", FILTER => $FilterDump, @extra_options) ;
+		PrintInfo "Depend:\n" 
+				. DumpTree
+					(
+					$dependency_tree,
+					"dependency graph",
+					FILTER => $FilterDump,
+					INDENTATION => $PBS::Output::indentation,
+					@extra_options
+					) ;
 		}
 	else
 		{
 		my %trees = ( map { ($_ => $inserted_nodes->{$_}) } @trees ) ;
 
-		PrintInfo DumpTree(\%trees, "Trees:", FILTER => $FilterDump, @extra_options) ;
+		PrintInfo "Depend:\n" 
+				. DumpTree
+					(
+					%trees,
+					"dependency graph",
+					FILTER => $FilterDump,
+					INDENTATION => $PBS::Output::indentation,
+					@extra_options
+					) ;
 		}
 	}
 else
 	{
-	PrintInfo DumpTree($dependency_tree, "Tree for '$dependency_tree->{__NAME}':", FILTER => $FilterDump, @extra_options)
+	PrintInfo "Depend:\n" 
+			. DumpTree
+				(
+				$dependency_tree,
+				"dependency graph",
+				FILTER => $FilterDump,
+				INDENTATION => $PBS::Output::indentation,
+				@extra_options
+				)
 		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
 	}
 	

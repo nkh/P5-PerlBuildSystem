@@ -315,7 +315,7 @@ if($dependent_regex =~ s/^\*//)
 	$dependent_prefix_regex = '[^/]*' ;
 	}
 	
-# finaly escape special characters
+# finally escape special characters
 # $dependent_path_regex is a regex with *, we don't want to escape it.
 # $dependent_prefix_regex is a regex with *, we don't want to escape it.
 $dependent_regex = quotemeta($dependent_regex) ;

@@ -415,10 +415,20 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	}
 else
 	{
-	PrintError("Can't find Pbsfile '$Pbsfile' to define build.\n". DumpTree($pbs_config->{SUBPBS_HASH}, "Rule:", DISPLAY_ADDRESS => 0)) ;
+	PrintError "Error: no pbsfile: $Pbsfile, targets: [@$targets], at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" ;
+
+=pod alternative_output
+	PrintError DumpTree
+			(
+			{subpbs => $pbs_config->{SUBPBS_HASH}},
+			"Error: no pbsfile: '$Pbsfile', targets: [@$targets], at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" ,
+			DISPLAY_ADDRESS => 0
+			) ;
+
+=cut
 	die "\n";
 	}
-	
+
 $PBS::Output::indentation_depth-- ;
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})

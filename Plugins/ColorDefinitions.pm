@@ -60,7 +60,7 @@ return
 	256 => 
 		{
 		debug     => color('rgb314'),
-		error     => color('rgb200'), #red
+		error     => color('rgb300'), #red
 		info      => color('rgb020'), #green
 		info_2    => color('rgb013'), #bright_blue
 		info_3    => color('rgb023'), #cyan

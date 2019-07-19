@@ -256,7 +256,8 @@ else
 	$build_success = 0 ;
 	}
 
-return($build_success, "PBS: building '@$targets' with '$pbs_config->{PBSFILE}'\n") ;
+my $plural= @$targets < 2 ? '' : 's' ;
+return($build_success, "PBS: target$plural: @$targets, pbsfile: $pbs_config->{PBSFILE}\n") ;
 }
 
 #-------------------------------------------------------------------------------

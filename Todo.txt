@@ -1,9 +1,22 @@
 
+builder can be generated on demand
+	we compile builders as soon as AddRule is run
+	the time could be spread over the build phase
+	the builders are referenced from the node and thus kept in memory
+		if they were to be compile and reference in the scope of a node build
+		the  memory would be released
+
+		if the builder is used by multiple nodes we would need to compile them again
+			late compile and keep in memory
+
+			reference count the nodes using a builder and release the builder
+			when no node need to be build by it
+				node count is incremented when a node matches
+			
+--tno should always be displayed as --tnt
+
 ddr
 	rule matching PBS_WARP_TREE is not shown
-
-bug
-	node MD5 is checked during warp, even for Virtual nodes 
 
 rule name deduced from regex?
 

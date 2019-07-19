@@ -841,11 +841,11 @@ EOT
 		'',
 		
 	'ttmr|text_tree_match_regex:s'      => $pbs_config->{DISPLAY_TEXT_TREE_REGEX},
-		' limits how many trees are displayed.',
+		'limits how many trees are displayed.',
 		'',
 		
 	'ttmm|text_tree_match_max:i'      => \$pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH},
-		' limits how many trees are displayed.',
+		'limits how many trees are displayed.',
 		'',
 		
 	'ttf|text_tree_filter=s'          => $pbs_config->{DISPLAY_TREE_FILTER},
