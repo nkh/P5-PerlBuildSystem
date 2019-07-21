@@ -296,21 +296,6 @@ if($node_needs_rebuild)
 		}
 	}
 	
-# log the build
-if(defined (my $lh = $pbs_config->{LOG_FH}))
-	{
-	my $build_string = "Build result for '$build_name' : $build_result : $build_message\n\n" ;
-	
-	if($build_result == BUILD_FAILED)
-		{
-		print $lh ERROR $build_string ;
-		}
-	else
-		{
-		print $lh INFO $build_string ;
-		}
-	}
-	
 if($build_result == BUILD_SUCCESS)
 	{
 	if($pbs_config->{DISPLAY_BUILD_RESULT})

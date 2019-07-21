@@ -96,7 +96,7 @@ return if((! defined $pbs_config->{CREATE_LOG}) && $no_output) ;
 my ($node_header, $type, $tab)  = GetNodeHeader($file_tree, $pbs_config) ;
 
 $node_info .= $node_header unless $no_output ;
-$log_node_info .= INFO ("Node: $type'$name' [$build_name]:\n") if(defined $pbs_config->{CREATE_LOG});
+$log_node_info .= $node_header if(defined $pbs_config->{CREATE_LOG});
 
 #----------------------
 #insertion origin
@@ -160,13 +160,17 @@ if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_PAREN
 				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 				} ;
 							
+	my @params ;
+	push @params, USE_ASCII => 1 if $pbs_config->{KEEP_PBS_BUILD_BUFFERS} || $pbs_config->{CREATE_LOG} ;
+								
 	$current_node_info =
 		INFO
 			DumpTree
 				(
 				$file_tree->{__DEPENDENCY_TO},
 				"dependents tree:",
-				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0, INDENTATION => "\t",
+				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0, INDENTATION => $tab,
+				@params,
 				) ;
 
 	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
@@ -304,7 +308,7 @@ if(defined $file_tree->{__CONFIG})
 				
 
 	my @params ;
-	push @params, USE_ASCII => 1 if defined $pbs_config->{KEEP_PBS_BUILD_BUFFERS} ;
+	push @params, USE_ASCII => 1 if $pbs_config->{KEEP_PBS_BUILD_BUFFERS} || $pbs_config->{CREATE_LOG} ;
 								
 	$node_info .= INFO(DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, @params))
 			if $pbs_config->{DISPLAY_NODE_CONFIG} ;
@@ -418,11 +422,6 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_POST_BU
 		}
 	}
 	
-
-if(defined (my $lh = $pbs_config->{LOG_FH}))
-	{
-	print $lh $log_node_info, "\n" if defined $lh ;
-	}
 
 if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{

@@ -279,7 +279,7 @@ if($pbs_config->{DO_BUILD})
 else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
-	PrintWarning("Build: NOT BUILDING.\n") ;
+	PrintWarning("Build: NOT BUILDING\n") ;
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{

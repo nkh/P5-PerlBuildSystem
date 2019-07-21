@@ -1,4 +1,17 @@
 
+--keep_pbs_build_buffer and log html do not generate the same text log
+	
+
+--log_html generates a node information, inlined in html?, that information
+	is updated when build but is still interesting before the build or if the 
+	build fails, --log_node_info and use it fron html
+
+	=> switch already exists config->{CREATE_LOG}
+	
+	--create_log is the same as --keep_pbs_build_buffer
+
+Do we need to have TARGET path set?
+
 builder can be generated on demand
 	we compile builders as soon as AddRule is run
 	the time could be spread over the build phase

@@ -114,11 +114,11 @@ my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirect
 
 $redirection_base = "${base_path}" ;
 
-my $redirection_file = "$redirection_base/$base_basename$base_ext.build_buffer" ;
+my $redirection_file = "$redirection_base/$base_basename$base_ext.log" ;
 my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
-my $redirection_file_log = "$redirection_base/$base_basename$base_ext.log" ;
+my $redirection_file_log = "$redirection_base/$base_basename$base_ext.old_log_should_not_be_created" ;
 ($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
@@ -155,17 +155,9 @@ STDOUT->autoflush(1) ;
 open(OLDERR, ">&STDERR") ;
 open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
 
-if(defined $pbs_config->{CREATE_LOG})
-	{
-	my $lh = new FileHandle "> $redirection_file_log" || die ERROR "Can't create log file for $redirection_file_log: $@.\n" ;
-	$lh->autoflush(1) ;
-	
-	$node->{__PBS_CONFIG}{LOG_FH} = $lh ;
-	}
-	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Building with parallel builder, node: '$node_name' level: $node->{__LEVEL} ($node_build_sequencer_info).\n" ;
+	PrintInfo2 "Build: using parallel builder, node: '$node_name' level: $node->{__LEVEL} ($node_build_sequencer_info).\n" ;
 	}
 
 if(defined $node)
@@ -255,7 +247,7 @@ while(<FILE_TO_SEND>)
 	print $channel $_ ;
 	}
 	
-close(FILE_TO_SEND) ;	
+close(FILE_TO_SEND) ;
 
 print $channel "__PBS_FORKED_BUILDER___\n" ;
 
