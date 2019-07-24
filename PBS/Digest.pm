@@ -798,7 +798,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger (digest): $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger (digest): MATCH $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 			$file_is_modified++ ;
 
@@ -809,7 +809,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			}
 		}
 
-	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger (digest check): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{
@@ -835,7 +835,7 @@ else
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger (digest): $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger (digest): MATCH $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 
 			$file_is_modified++ ;
@@ -847,7 +847,7 @@ else
 			}
 		}
 	
-	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger (digest check): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 
 return($file_is_modified) ;

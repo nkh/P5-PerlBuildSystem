@@ -1,6 +1,14 @@
 
---keep_pbs_build_buffer and log html do not generate the same text log
-	
+--display_md5_warning to control
+	Digest: Warning: can't read file '/home/nadim/nadim/devel/divers/div_make/_out_
+
+--node_environment
+	display the environment variables active during the node build
+		maybe in a separate file to not spam too much in the terminal
+
+--log
+	log the build results per node and the location of the node log
+
 
 --log_html generates a node information, inlined in html?, that information
 	is updated when build but is still interesting before the build or if the 

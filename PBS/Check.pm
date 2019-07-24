@@ -258,22 +258,25 @@ for my $dependency (keys %$tree)
 			}
 		}
 
-	# trigger on our dependencies because they won't trigger themselves if they match 
-	# and are a source node. If a source node triggered, it would need to be rebuild.
-	my $trigger_match = 0 ;
-	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+	if(!PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree->{$dependency}))
 		{
-		if($dependency =~ /$trigger_regex/)
+		# trigger on our dependencies because they won't trigger themselves if they match 
+		# and are a source node. If a source node triggered, it would need to be rebuild.
+		my $trigger_match = 0 ;
+		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 			{
-			PrintUser "Trigger: $dependency =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
-			$trigger_match++ ;
+			if($dependency =~ /$trigger_regex/)
+				{
+				PrintUser "Trigger (source): MATCH $dependency =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				$trigger_match++ ;
 
-			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
-			$triggered++ ;
+				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
+				$triggered++ ;
+				}
 			}
-		}
 
-	PrintInfo2 "Trigger: $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+		PrintInfo2 "Trigger (source): $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+		}
 	}
 
 if(exists $tree->{__VIRTUAL})
@@ -282,8 +285,8 @@ if(exists $tree->{__VIRTUAL})
 	}
 else
 	{
-	# the dependencies have been checked recursively ; the only thing a digest check could trigger with is package or node depndencies
-	# like pbsfile, variables, etc.. there should be a switch to only check that
+	# the dependencies have been checked recursively ; the only thing a digest check could trigger with
+	# is package or node dependencies like pbsfile, variables, etc.. there should be a switch to only check that
 	
 	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} ||  $triggered)
 		{
@@ -317,7 +320,7 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		if($name =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger: $name =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger: MATCH $name =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 
 			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
