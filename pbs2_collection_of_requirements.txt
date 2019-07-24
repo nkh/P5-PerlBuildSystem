@@ -1,4 +1,81 @@
 
+
+multiple node created by a single build command
+
+	Match(pat1 pat2), BUILD(...) 
+		means both nodes are build by BUILD
+		but there is not relationship between Macth and BUILD
+
+		in pbs it is TWO builds and we try to  remember that one of the node
+			was build and the second one is not run
+			problem, it doesn't work in parallel, it doesn't work for multiple libs, ... 
+
+		see the gnu make book ~ p94
+
+	BEWARE of parallel build where process don't share data (pbs1 fails there)
+		which means that we need to check if the node was already build via the file system!
+
+		BEWARE 2 even if we use the file system sentinel 
+			the processes may be NOT running on the same machine (distribution)
+				can only be fixed by a common build database but complicates unnecessarily
+				and is much slower and gets slower as we parallelize more
+
+			even on the same  machine, two nodes may check for the presence of the sentinel
+				at the exact same time
+				this can be fixed by making the nodes depend on the last node thus forcing
+				the last node (and the sentinel) to be build first
+	
+
+	AR BUILDS(regex1, regex2, ...), BUILD_MULTIPLE...
+
+	regexes are ANDed
+
+	BUILDS runs at depend AND build stage to link them together
+		we can "tag" nodes as "build together" and act accordingly
+
+	BUILD_MULTIPLE is a specialized BUILD
+
+
+REH can be run at multiple stages
+
+REH run order is defined by saying which REH are run before or after
+	this lets us check at compile time if the REH sequence is valid
+
+variable dependencies
+	in pbs dependencies to variables are handled through a set of commands
+		AddVariableDependency, ... and equivalent commands that act on uniq nodes
+
+	REHs can replace them
+		global REHs are added in a rule that matches globally 
+		node REHs are added in the node rule or a rule that matches a specifi node
+			node REH can remove gloabla variable dependencies
+			
+			config node REH can take a script as argument for complex cases
+	
+	this unifies the handling and reporting of dependency listing with the handling
+	and reporting of digest entries
+
+
+	in other build systems this is usually done by remembering the command used to build the 
+	node, if it changes it has to be rebuild. In pbs  we decided that it didn't have the right
+	granularity, what if a file location change, if an argument doesn't change the output, ...
+	
+	we also want to build nodes with multiple commands and even, maybe with builders defined
+	in multiple rules
+
+	this put a burden on the user which can be lightened slightly
+		warn if a non dependency config variable is used in a build command
+			separate commands to declare variables that are not part of the digest
+				this removes the warning
+	
+	the user may want to depend on the command line and not bother with declaring variable dependencies
+		Rule match((), dependencies('*.c')
+			build("%CC
+
+multiple rules builder
+	a warning is displayed when multiple builders are used
+	warning end up in log (all warnings should)
+
 --dd, ddl, ddr
 	often followed with --tno
 	ca we present --dd as a tee to start with ?

@@ -8,6 +8,7 @@ my ($package, $file_name, $line) = caller() ;
 
 my $builder ;
 
+PrintDebug "Generating single builder\n" ;
 if(@_ == 1)
 	{
 	if('CODE' eq ref $_[0])
@@ -55,14 +56,18 @@ return
 	sub
 		{
 		my ($config, $file_to_build, $dependencies) = @_ ;
+
+PrintDebug "running single builder" . \@already_built . "\n" ;
 		
 		unless(@already_built)
 			{
+PrintDebug "first run $file_to_build, already build: @already_built\n" ;
 			push @already_built, $file_to_build ;
 			return($builder->(@_)) ;
 			}
 		else
 			{
+PrintDebug "already run for: @already_built\n" ;
 			push @already_built, $file_to_build ;
 			return(1, "SingleRunBuilder @ '$file_name:$line' was already run") ;
 			}

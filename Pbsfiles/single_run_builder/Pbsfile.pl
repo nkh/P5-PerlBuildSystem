@@ -1,6 +1,12 @@
 
 # This example shows how to generate multiple node with a single command.
 
+# note (July 2019): this doesn't work in -j builds as each process has its own sentinel
+
+# note (July 2019): this doesn't handle
+# AR ... qr/*.(lib|a)/=> SingleRunBuilder(...)
+# when multiple libraries are build, only the first one is build!
+
 PbsUse 'Builders/SingleRunBuilder' ;
 
 AddRule [VIRTUAL], "all",['all' => 'A', 'A_B', 'A_C'], BuildOk() ;

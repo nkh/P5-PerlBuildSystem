@@ -271,6 +271,7 @@ for my $dependency (keys %$tree)
 				$trigger_match++ ;
 
 				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
+				push @{$tree->{$dependency}{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 				$triggered++ ;
 				}
 			}

@@ -802,14 +802,13 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			$trigger_match++ ;
 			$file_is_modified++ ;
 
-			PrintDebug "\nCheck: --triger match: $file\n"
-				if $pbs_config->{DISPLAY_FILE_CHECK} ;
+			PrintDebug "\nCheck: --triger match: $file\n" if $pbs_config->{DISPLAY_FILE_CHECK} ;
 
 			last ;
 			}
 		}
 
-	PrintInfo2 "Trigger (digest check): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{
