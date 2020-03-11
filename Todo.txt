@@ -48,6 +48,7 @@ shorter name
 
 use tmux to keep session open when an error happens
 	that would mean build in tmux
+		or rebuild only the failed build in tmux
 
 on error generate a script that
 	sets up a tmux environment

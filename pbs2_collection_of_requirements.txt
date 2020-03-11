@@ -1,4 +1,360 @@
 
+REH_TIMER and REH_NO_TIMER
+	possibility to add timing via rules
+	
+	the timer need to either wrap all the builder or to be run at the start and the end
+
+	how do we time individual builders or build steps?
+
+	can we use REH_TIMER to time the loading of pbsfile and where is the statistic gathered
+		?REH_STATS 'where/how to save'
+
+	display of stats can be via a rule applied on the root node
+		? how do we display stats on a failed build
+	 
+
+
+pbsfile is normal perl file
+	running subpbs is, already, handled by a reh, one less thing to have in the pbs core
+
+	packages, package configs and anything local to the pbsfile can be handled in a normal pbsfile
+
+	global actions are more difficult
+		options, prf, targets handling, colors, debugging, progress bar,
+		statistics, indentation level, plugins, ...
+
+		phases: depend, check, build, post_pbs
+			maybe possible to replace them with rules
+
+	possibly 
+		use "pbs" ;
+		use "reh_some_flavor" ;
+
+		the pbs module can instantiate a singleton that does what pbs.pl does
+
+	what did pbs_use do that use can't 
+		adds the required package to the current package dependencies
+		load time statistics
+
+
+rule component can be shell scripts, service via rpc or http, ...
+	rule name, regex, depender, builder, node_sub, ...
+		perl dependers have access to everything, that's difficult when the depender
+		is an external command. 
+		
+		we can chose some data and either pass them as arguments or serialize them in a file
+
+		the great advantage of REH is that we can have different REHs depending on how we want to call the external code
+
+		the REH can be given a command name to run and that command can be an executable with a shebang
+			external command can be written in any language
+
+		REH pointing to a language and give code is possible too
+			REH_CMD_DEPENDER 
+				language => Python
+				code => some code 
+
+
+		wich takes us to other languages to write the pbsfiles
+			given that REH are not built in but included, nothing stops one to load language
+			specific REHs
+
+			use 'perl_reh' ; # with the possibility to filter what reh and change their name
+
+			Rule
+				Regex => /must be perl regex/
+
+			use 'java_reh' ;
+
+			Rule
+				Regex => /must be java regex/ 
+
+			making pbs a REH tunner and nothing else
+
+			=> of course there's more than writting the REH in other language for good support
+				the possibility to define variables, includes, ...
+
+
+	can AddRule be a REH?
+		rule name needs to be a REH to be handled in another language
+		
+		Merge AddRule and REH_MATCH
+			AddRule
+				NAME         => 'first',
+				Match        => /regex/,
+				Dependencies => qw(x y z),
+				Builder => 
+					[
+						'do something' ,
+						'do another thing'
+					];
+  
+
+			Match /regex/ =>
+				NAME         => 'first',
+				Dependencies => qw(x y z),
+				Builder => 
+					[
+						'do something' ,
+						'do another thing'
+					];
+	
+			Target /regex/ , qw(x y z) => # target is AddRule, Match, and Dependencies at the same time
+				do(
+					'something' ,
+					'another thing'
+				);
+	
+
+? stop mandating NAME
+	naming has the main advantage of forcing the user to think about what she's doing
+	debugging gives the file name and the line, and could print the rule, matchers, ...,
+		reducing the need for a name
+
+Target-specific variables
+	are considered harmful by other make implementations: kati, Mozilla pymake.
+	Because of them, a target can be built differently depending on if it's built standalone, 
+	or as a dependency of a parent target with a target-specific variable.
+	And you won't know which way it was, because you don't know what is already built.  
+		=> this means the node config has to be added to the digest
+			we do that for some variables for object files, a generalized mechanism to chose which variable is needed
+		=> pbs checks configuration variables when linking nodes
+
+let user define log level
+	use relative level, ie not a fixed value but relative to already defined levels (text without value)
+
+intermediate files
+	no such thing in pbs since we need to have a digest for any file that's not a source
+
+structured text output
+	output structured object (yaml|json|perl) natively and let external application transform the output for the user
+
+		pbs ... | special_pager
+		pbs ... | html_data | nc ... ; pbs_web ... &
+				pbs_web can keep sessions, have timeline, ...
+
+
+show current directory when executing commands
+	--pwd
+
+	we can also add the cwd to thwe structured data
+
+
+work flow primitives
+	on_error
+	or_build
+	and_build
+	try_catch
+	! parallel => everything must run parralel, one can use a dependency to synch if necessary
+
+	distribute
+		to heterogen nodes, with synch, timeout, re-try on a different node
+
+Interactive build/ kinda REPL except it runs in or around the build
+
+	given a dependency graph, do interactive steps for debugging and recording
+		close to debug mode but rather than running in a debugger user runs in an 
+		interactive shell.
+
+		INTERACTIVE_REH => 1
+			BUILD => [shell command 1, shell command 2, ...]
+
+		at each command start a shell, with the command inserted, and let the user control the command
+	
+	save the session to create build commands from it
+
+	interactively add node to graph
+		building node_1 the user realizes that a dependency must be build first
+			add_node $current node dependency
+				adds the dependency and takes user to the node build where
+				commands can be added
+	
+	if we could record the state of the file system (hu hoo docker!) we could go back and 
+		forth in the build time line.
+
+	
+PBS2 
+	AddNode adds by name
+		creates node if necessary and adds it
+
+	we should be able to give already created nodes (eg: from cache or other graphs) to AddNode
+
+	node and node content can be separated
+
+
+matching urls and other objects
+	rule 'name' matches some_URL, just a node in the graph, doesn't matter if it's an url or not
+		depend on nodes which themselves can be as remote as this one or not, again just a node name
+		checker the digest for the file, which may be on another machine
+		builder, can be local or remote, pbs doesn't care as long as it gets a digest
+		digest generator computes digest of not
+
+	checker and generator could be the same code
+	
+
+	alternative: url is just an installed file
+		url/file depends on file
+			checker checks the remote file
+			builder copies dependency to remote
+			digest returns the digest of file
+
+		file depends on local dependencies
+			builder
+
+
+	if the object type corresponds to a set of specialized depender, checker, builder, digest generator (or a subset of them)
+		we can wrap those REH in one of
+			Specialized add rule
+			Specialized add REH
+
+
+		AddRule
+			name => *.special
+			depender => special_depender
+			checker => special_checker
+			builder => special_builder
+			digest => special_digest_generator
+
+		AddRuleForSpecial
+			name => *.special
+			reh => ...
+
+		AddRule
+			name => *.special
+			special_REH()
+			reh => ...
+
+		*** all user defined
+			but depend, build, check, digest must be overridable
+
+		Best would be that AddRule adds the default depend, build, check, digest (making AddRule a user defined function)
+			overriding any of the base REH can generate warnings, log, whatever the REH want
+				How does the "default" checker REH know that it has been overriden?
+					Does the overriding REH manipulate the REH list?
+					Is there a single slot for checker REH? or builder REH (although we already want multiple build REH)
+				Do we need to allow the REH to check the REH list? 
+
+		Addrule is in a module that needs to be pbsused
+
+		top pbs just runs the top pbsfile
+
+shorter rule syntax
+	AddRule
+		NAME => 'the name',
+		REGEX => "some_regex",
+		ACTIVE => 1,
+		COMMENT => "some description",
+		REH_WHATNOT => 1
+
+	Rule 'the name', MATCHES("some regex"), IS_ACTIVE,
+		COMMENT("some description")
+		REH_WHATNOT => 1
+
+command to add non active rules
+	Rule 'the name', MATCHES("some regex") ; #ACTIVE
+	
+	NOP_Rule 'the name', MATCHES("some regex") 
+
+can REH add REH in rule or do we wrap the addition of REHs in a normal function?
+	
+remote file syntax
+	all files are local, how do we describe and access remote files
+
+		service:server:/path/file
+			service scp, webdav, http, ...
+			credentials (and the dreaded key ring)
+
+		virtual file or state
+			eg: entry in DB
+			not different from service:server/ ...
+
+
+		difference with local file is that the signature must be computed differently
+		pbs dependent doesn't care a node just a name
+
+
+		Rule 
+			Match(/$URL)
+			REH_COMPUTE_SIGNATURE(any code/pre existing code reference)
+			BUILD
+
+		
+		Rule
+			match_ssh_file $server_file, credentials:xxxx
+			# this also adds a REH_COMPUTE_SIGNATURE to the REH list
+
+			# much  easier to have match_ssh_file return a list of REH rather than be an REH
+
+REH_COMMENT
+	(maybe backport to pbs)
+	display the comment when the node is build
+	comments could have level, like a log, and be shown over a threshold
+		threshold should be dynamic
+
+pbsuse
+	does it look in the pbsfile directory or just in the include paths?
+
+	it's not scoped within a rule (do we want that?)
+	the include path are set on the CLI
+		can be hacked via pbs_config but it's  hack
+		needs a clean interface, with warnings, and scoping to local pbs run
+
+	warnings (option?) if multiple files with the same name exist
+	
+	can we generate the libs dynamically?
+		use case? (we have the mechanism to generate pbsfiles dynamically)
+
+	modules are assumed to have a pm extentsion
+	full path modules are handled but ./module is looked for in module_path not root
+
+REH_ON_FAILURE
+
+hardware failure
+	on large clusters failure is inevitable
+		how do we detect and differentiate hardware failures from build failures?
+			how do we restart the part of build failing because of hardware?
+
+text mode, data oriented
+	node and node group orientd
+		textual data to describe the node
+
+	work on a local group of data text files
+
+	distribution of processing for large data sets
+
+	small utilities (unix style)
+		check_digest
+		...
+
+remote debuggers
+	possibility to run shell builders in a debugging shell
+		eg:
+		AR  .....
+			name
+			builder
+				shell command 1
+				shell command 2
+
+		pbs -interactive_shell IP -name 
+		
+		when shell commands are to be run, a list of commands is displayed in
+		the client's shell window
+		
+			the client can be on a different machine, thus we need to ssh back
+
+	running the build system (or part of it) in a remote debugger
+
+how to handle no memory in very large builds
+	separate the different phases to reduce memory usage
+	put nodes in DB
+	on demand node loading/unloading
+
+interactive repl, scons .98
+	once the graph is created, the repl allows one to build repeatedly
+		is the graph hashed at each build?
+ 
+limit parallel build based on resource usage 
+	eg do not schedule while load is high
 
 multiple node created by a single build command
 

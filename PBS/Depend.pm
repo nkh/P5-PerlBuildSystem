@@ -876,9 +876,13 @@ else
 	{
 	# no subpbs no non-subpbs
 
-	next if $node_name =~ /^__/ ;
-
-	if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
+	if 
+		(
+		$node_name_matches_ddrr &&
+		$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} &&
+		$node_name !~ /^__/ &&
+		! PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
+		)
 		{
 		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended"
 				. ", rules from '$pbs_config->{PBSFILE}'\n\n" ;

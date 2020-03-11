@@ -19,7 +19,7 @@ our $VERSION = '0.04' ;
 
 use PBS::Output ;
 use PBS::Digest ;
-#use PBS::Constants ;
+use PBS::Constants ;
 #use PBS::Plugin;
 use PBS::Warp;
 
@@ -38,7 +38,7 @@ use constant RUN_IN_WARP_MODE => 1 ;
 
 sub WarpPbs
 {
-die "pbsfile chain needs to be merged" ;
+die "PBS: NOT SUPPORTED, pbsfile chain needs to be merged" ;
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;

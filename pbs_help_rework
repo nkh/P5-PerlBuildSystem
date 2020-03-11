@@ -51,16 +51,6 @@ log_display_last
 --h|help                                         : Displays this help.
 --help_switch=s                               : Displays help for the given switch.
 --help_narrow_display                        : Writes the flag name and its explanation on separate lines.
---d|display_pod_documenation:s                   : Interactive PBS documentation display and search.
-help_interactive
-
---pp|pbsfile_pod                                *: Displays a user defined help. See 'Online help' in pbs.pod
-help_user_from_pbsfile
---pbs2pod                                       *: Extracts the pod contained in the Pbsfile (except user documentation POD).
-help_build_system_from_pbsfile
---raw_pod                                        : -pbsfile_pod or -pbs2pod is dumped in raw pod format.
-help_raw_pod_format
-
 
 --p|pbsfile=s                                    : Pbsfile use to defines the build.
 --debug:s                                        : Enable debug support A startup file defining breakpoints can be given.
@@ -81,6 +71,19 @@ bash_completion_generate_scrip
 --nh|no_header                                   : PBS won't display the steps it is at. (Depend, Check, Build).
 ! misnamed, only place it is used is when depending files, get a spinner while loading pbsfile rather than, indented, multiple lines 
 usefull when using --display_pbsuse which could set it automatically
+
+pbsfiles contents:
+------------------
+--d|display_pod_documenation:s                   : Interactive PBS documentation display and search.
+help_interactive
+
+--pp|pbsfile_pod                                *: Displays a user defined help. See 'Online help' in pbs.pod
+help_user_from_pbsfile
+--pbs2pod                                       *: Extracts the pod contained in the Pbsfile (except user documentation POD).
+help_build_system_from_pbsfile
+--raw_pod                                        : -pbsfile_pod or -pbs2pod is dumped in raw pod format.
+help_raw_pod_format
+
 
 setup: 
 ------

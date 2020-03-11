@@ -35,6 +35,7 @@ And add the following functionality:
 use PBS::PBSConfigSwitches ;
 use PBS::Information ;
 use Data::TreeDumper ;
+use Data::TreeDumper::Utils ;
 
 #-------------------------------------------------------------------------------
 
@@ -151,7 +152,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				push @keys_to_dump, $key_name ;
 				}
 			
-			return	( 'HASH', undef, sort { $a->[0] cmp $b->[0] } @keys_to_dump ) ;
+			return	( 'HASH', undef, Data::TreeDumper::Utils::first_nsort_last( AT_START => [qr/^_/], KEYS => [map {$_->[0]} @keys_to_dump] ) ) ;
 			}
 			
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
