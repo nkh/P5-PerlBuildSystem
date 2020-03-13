@@ -137,6 +137,7 @@ $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
 $pbs_config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
 $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} ||= [] ;
+$pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_EXCLUDE} ||= [] ;
@@ -457,9 +458,13 @@ EOT
 	'ndi|no_duplicate_info'           => \$pbs_config->{NO_DUPLICATE_INFO},
 		'PBS won\'t display which dependency are duplicated for a node.',
 		'',
-		
+	
 	'ntii|no_trigger_import_info'     => \$pbs_config->{NO_TRIGGER_IMPORT_INFO},
 		'PBS won\'t display which triggers are imported in a package.',
+		'',
+	
+	'nhnd|no_has_no_dependencies=s'     => $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX},
+		'PBS won\'t display warning if node does not have dependencies.',
 		'',
 		
 	'sc|silent_commands'              => \$PBS::Shell::silent_commands,
@@ -514,7 +519,7 @@ EOT
 		'Display the rule which defined the Builder and which command is being run.',
 		'',
 		
-	'nsb|node_sub_builder'                  => \$pbs_config->{DISPLAY_SUB_BUILDER},
+	'nsb|node_sub_builder'             => \$pbs_config->{DISPLAY_SUB_BUILDER},
 		'Display information about sub being run (even if --nb is not set).',
 		'',
 		
@@ -591,7 +596,7 @@ EOT
 		 .'can keep the buffers by specifying this switch',
 		
 	'log_html|create_log_html'              => \$pbs_config->{CREATE_LOG_HTML},
-		'create a html log for each node, implies --create_log and --keep_pbs_build_buffers',
+		'create a html log for each node, implies --create_log ',
 		'',
 		
 	#----------------------------------------------------------------------------------

@@ -1,4 +1,13 @@
 
+
+--tno
+	shows the PBS libraries as dependencies (which is right)
+		when loading graph from warp file
+
+
+--no_has_no_dependencies
+	=> hide warning for C dependencies file not having dependencies itself (it is dependend)
+
 --display_md5_warning to control
 	Digest: Warning: can't read file '/home/nadim/nadim/devel/divers/div_make/_out_
 

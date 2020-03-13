@@ -762,7 +762,18 @@ if(@has_matching_non_subpbs_rules)
 
 	if( ! $has_dependencies)
 		{
-		PrintWarning "$PBS::Output::indentation'$node_name' has no dependencies, rules from '$pbs_config->{PBSFILE}'\n\n" ;
+		my $display_warning = 1 ;
+		
+		for my $regex (@{ $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} })
+			{
+			if($node_name =~ /$regex/)
+				{
+				$display_warning = 0 ;
+				last ;
+				} 
+			}
+		PrintWarning "$PBS::Output::indentation'$node_name' has no dependencies, rules from '$pbs_config->{PBSFILE}'\n\n"
+			if $display_warning ;
 		}
 	}
 elsif(@sub_pbs)

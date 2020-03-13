@@ -1,3 +1,51 @@
+handling of failed node build
+	depending on the build some node may have less importance than other
+		ie: doc build can fail but tests must pass
+
+	parents of node, subset of nodes  decide the importance of dependencies
+		the nodes (with level of importance to be changed) may live multiple level deep in the dependency graph
+
+		the higher level node must be able to catch a failed build  at the sub levels
+
+	Do we set REH_CATCH handlers after the dependency graph is build?
+		this can't be applied on a node since it is not visible outside the package
+
+		global rules could traverse the graph post dependency
+			collect global rules while creating graph
+			run global rules on the top node
+				set global_depend_flag
+
+			AddGlobalRule
+				matches qr// # can match a node or pbs node (pbsfile, config, ...)
+				dependencies => &get_dependencies_from_node
+				REH_stuff we want to change
+
+		desc_extra global rules are added automatically to sub levels
+			AddRule --dd
+				match
+				REH
+				GLOBAL
+
+			are rules added to digest
+				must as lower nodes don't include higher nodes digests (see pbsfile_path)
+
+			what happens when linking a node
+				does it have to have had the same global rule applied
+					otherwise order of dependency becomes important
+
+		
+		AddRule(..., ..., GLOBAL) can be added by a switch
+		pbs --pbsuse_global 'xxx'
+			
+
+	nodes can themselves catch a failure
+
+		Rule
+			REH
+			REH_BUILD ...
+			REH_CATCH
+
+	? isn't this "--keep building"
 
 REH_TIMER and REH_NO_TIMER
 	possibility to add timing via rules
@@ -30,12 +78,216 @@ pbsfile is normal perl file
 		use "pbs" ;
 		use "reh_some_flavor" ;
 
-		the pbs module can instantiate a singleton that does what pbs.pl does
+	the pbs module can instantiate a singleton that does what pbs.pl does
+		check the command line and include option_rules
+			each option matches a file that is run to parse part of the command line
+			non matching CL arguments are processed by a target "option-rule"
+
+option rules
+	have help
+	parse the command line arguments an return 
+		the rest of the command line
+		text/rules to be run in the current package
+
+	# this allows us to define options dynamically for debugging e.g.
+
+	example --dd option rule
+		lives in options/-dd.pl
+		parse command line
+			return command line minus parsed portion
+				can insert elements in command line
+					eg --all_debug can add --debug_level1 --debuge_level2 ...
+		handles --help--dd
+		returns code to be run in the package
+			debug option to show the code
+		
+		-dd has multiple types (call time type) so it can add a config when a node is created
+			and display dependencies after a node is depended
+
+	this mechanism can be used to implement rule injection
+		create a new "option" which adds a rule, add it to the pbs call
+		since options can take arguments, the injection can itself decide when to act
+
+	"options" can
+		add rules
+		manipulate package configs
+		add config rules
+		run code
+		access the graph
+		access the package node
+
+	option rules are 
+		perl scripts (non executable)
+			loaded within pbs during the run
+
+		executables
+			can be written in any language
+			how do they communicate back?
+				json/yaml on stdout
+
+			example --default_colors option
+				cat plugin/option/--default_colors
+			
+				#!/bin/bash
+				printf "mine/text\n--color_define 'debug=red on_yellow'"
+
+				alt:
+				
+				#!/bin/bash
+				tail -n +3 $0
+				exit 0
+				some yaml
+					here
+			
+
+target rule
+	parse the targets, update the target "variable"
+	start the build system
+
+	if the targets are added as dependencies to the "package" we just need
+	to start building the package, which we wanted to be a node anyway
+
+	the package rule can be added by "use pbs;"
+
+	"building" (maybe itself a step-node)  must be done after the rules are added
+		and the configuration is build
+	
+	there can be multiple target rules
+
+prf
+	is an option rule that only adds options to the command line
+	the options are read from the file given as argument
+	
+	pbs1 prf files are powerful (albeit restricted) perl scripts
+		? remove that possibility or emulate it
+
+colors
+	part of the package->node config
+		can specialize color per node type
+
+	package->node configs are dislpayed with -nc during build but we don't want to
+	see mundane config => filter them out
+		see: structured text output  
+		--nc is an option, a new option can be written to display whatever the user wants
+
+	normal output is without color
+		the color names are used (some pbs defined, some user defined)
+		the colors are white on black
+
+	--color
+		option sets the package colors which are inherited
+
+	--color_C_nodes
+		adds a rule matching C node and setting special colors for them
+	
+	--color_define "name=defintion"
+
+* debugging
+	debugger
+	breakpoints
+		stop in debugger
+	
+* progress bar,
+
+* statistics
+	Rule
+		MATCHES type pbsfile
+		REH_PBSLOAD_STAT
+			type, pre-load and post-load
+		GLOBAL
+
+	Target pbs_load_stats
+	
+	Rule
+		MATCH pbs_load_stats
+		DEPENDENCIES => PBS_DEPEND_STEP or PBS_END_STEP
+
+* indentation level
+
+* plugins
+	add switches dynamically, problem with prf (see pbs 1 FrontEnd.pm)
+	plugin path can be defined on the command line or prf after the switches that the plugin defines
+
+		all this because pbs does the parsing of command line arguments using switches added by the plugins
+		this, I believe, is a not a problem when the plugins parse themselves
+			pbs runs the parsing (via the plugins/option rule files)
+				if the command line is not consumed or transformed, there is an error
+					if an option is not recognize because the plugin/option is not in the plugin path
+						the plugin path option will add a plugin path and change the command line
+							pbs calls the plugin/options again and finds them
+
+* graph generation
+	Rule
+		MATCHES type pbs
+		REH_PBSLOAD_STAT
+			type, pre-load and post-load
+		GLOBAL
+
+	sub graphs
+		Rule
+			MATCHES type pbsfile
+			REH_GRAPH
+				type, pre-load and post-load
+			GLOBAL
+
+		
+
+	graph option
+		set a configuration variable in the package which is use by the graph node builder
+
+* configuration inheritance
+	package, node, sub pbs
+
+*warp
+	warp, meso, ... all are targets
+		added by switch
+
+
+
+*global artifact cache
+
+* post pbs
+	also a target
+	needs to be run even if the dependencies have failed
+
+
+overlay graphs
+	same build different variants
+	different build overlayed later
+
+	understand common parts of builds and differences
+	without building know what parts can be reused and in which order to build different builds
+		for maximum reuse, ie: build only part of what is common and wait for the other builds 
+		to build the rest, distribution must be globally controlled to avoid race conditions 
+
+step nodes, pbsfile nodes, package nodes
+	make all the elements nodes that are added by rules
+
+	pbs can add the rule for the current package
+	target add dependencies to the current package
+	rules add dependencies to the targets
+	configs are node which are dependencies to the other nodes
+	
+	depend, check, build can be seen as nodes
+		build: check
+		check: depend
+		depend: package config
+		package: targets
+		target: rule generated dependencies
+		config: rule generated or package generate
+
+
+REH types
+	reh can have multiple types so they are called multiple times
+	how can we make a reh (in a matching rule) run when another rule matches
+		e.g.: --dd needs to show dependencies when any rule matches
+		? add a node element handler (NEH) (via a rule and a REH type) and each time a node is used
+			(in any step, trigger, check, build, build step, ...) call the NEHs that match the step
+
 
 	what did pbs_use do that use can't 
 		adds the required package to the current package dependencies
 		load time statistics
-
 
 rule component can be shell scripts, service via rpc or http, ...
 	rule name, regex, depender, builder, node_sub, ...
@@ -55,7 +307,7 @@ rule component can be shell scripts, service via rpc or http, ...
 				code => some code 
 
 
-		wich takes us to other languages to write the pbsfiles
+		which takes us to other languages to write the pbsfiles
 			given that REH are not built in but included, nothing stops one to load language
 			specific REHs
 
@@ -110,6 +362,11 @@ rule component can be shell scripts, service via rpc or http, ...
 	naming has the main advantage of forcing the user to think about what she's doing
 	debugging gives the file name and the line, and could print the rule, matchers, ...,
 		reducing the need for a name
+
+	REGEX is also mandatory but why? if you forget the regex it will not match (siso)
+
+	some elements are set by pbs2 like DEFINED_AT_FILE
+		can't we let the REH handle that so the pbs engine doesn't have to?
 
 Target-specific variables
 	are considered harmful by other make implementations: kati, Mozilla pymake.
@@ -250,10 +507,35 @@ shorter rule syntax
 		COMMENT("some description")
 		REH_WHATNOT => 1
 
+other rule syntax
+	do we need Rule?
+		? any REH adds a rule till ; is found
+			not possible with fat comma
+
+	functions with the same names as REH allow:
+
+	Rule 'this rule',
+		MATCH => "some regex", 
+		COMMENT => "some description",
+		REH_WHATNOT => 1 ;
+
+	MATCH "some regex", 
+		COMMENT => "some description",
+		REH_WHATNOT => 1 ;
+
+	COMMENT "some description",
+		MATCH => "some regex", 
+		REH_WHATNOT => 1 ;
+
+	DISABLED 
+		MATCH => "some regex", 
+		COMMENT => "some description",
+		REH_WHATNOT => 1 ;
+
 command to add non active rules
 	Rule 'the name', MATCHES("some regex") ; #ACTIVE
 	
-	NOP_Rule 'the name', MATCHES("some regex") 
+	Disabled 'the name', MATCHES("some regex") 
 
 can REH add REH in rule or do we wrap the addition of REHs in a normal function?
 	

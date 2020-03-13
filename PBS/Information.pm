@@ -301,12 +301,12 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 #----------------------
 # node config
 #----------------------
+
 if(defined $file_tree->{__CONFIG})
 	{
 	$log_node_info .= INFO(	DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, USE_ASCII => 1))
 				if defined $pbs_config->{CREATE_LOG} ;
 				
-
 	my @params ;
 	push @params, USE_ASCII => 1 if $pbs_config->{KEEP_PBS_BUILD_BUFFERS} || $pbs_config->{CREATE_LOG} ;
 								
