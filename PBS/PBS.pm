@@ -156,7 +156,7 @@ my $display_all_pbs_config = 0 ;
 
 for (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
 	{
-	if('*' eq $_)
+	if('.' eq $_)
 		{
 		$display_all_pbs_config++ ;
 		last ;
@@ -169,16 +169,12 @@ if($display_all_pbs_config)
 	}
 else
 	{
-	for (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
+	for my $regex (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
 		{
-		my $key = uc($_) ;
-		
-		if(exists $pbs_config->{$key})
+		for my $key ( grep { /$regex/ } keys %{ $pbs_config} )
 			{
 			if('' eq ref $pbs_config->{$key})
 				{
-				my $value ;
-				
 				if(defined $pbs_config->{$key})
 					{
 					PrintInfo("$key: " . $pbs_config->{$key} . "\n") ;

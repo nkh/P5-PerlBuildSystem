@@ -184,10 +184,23 @@ colors
 
 * debugging
 	debugger
+		not really part of pbs even though pbs provides special functions while running in the debugger
+
 	breakpoints
+		REH_DEBUG, matches all the levels
 		stop in debugger
+			nothing to do with pbs, except the starting of the debbuger
 	
-* progress bar,
+* progress bar
+	output an update progress bar code for each build
+		external filtering app, displays the progress bar
+
+	see structured text output
+
+display node info
+	rule
+		Global
+		REH_display_node_info
 
 * statistics
 	Rule
@@ -203,6 +216,15 @@ colors
 		DEPENDENCIES => PBS_DEPEND_STEP or PBS_END_STEP
 
 * indentation level
+	mainly used during depend phase
+
+	we want to make the depend phase parallel, how does it look then?
+
+	indentation level is the depth of pbsfile levels
+		pbsfiles have names
+		some pbsfile can be called for different targets
+
+		level is a path to the node: pbsfile:target/pbsfile:target/node
 
 * plugins
 	add switches dynamically, problem with prf (see pbs 1 FrontEnd.pm)
@@ -235,16 +257,74 @@ colors
 	graph option
 		set a configuration variable in the package which is use by the graph node builder
 
-* configuration inheritance
-	package, node, sub pbs
+* configuration setting and inheritance
+	config is a node, its values are set with REH in a rule matching the node
 
+	package
+		add_config is equivalent to adding a rule
+
+		get_config 
+			!problem is that node exists after the rules are run
+			add_config could create a node (with PBS::get_node) $package_package_config and run a rule on it locally
+				is running a rule like immediate_build?
+
+			get_config can then ask for the node and look for values
+				better yet run a GET_REH which returns the value
+
+				
+
+
+		inheritance
+			config nodes have a parent data entry
+
+		
+	node
+		have a dependency config_node
+			which can inherit from the node's parent
+				would be nice if the inheritance was just symbolic (no real reference)
+					easy to serialize, parent is just the name of the config node
+					language agnostic, can be reused 
+			which can be passed to dependencies
+			which can filter the parents config node values
+
+	sub pbs
+		we want to override some of the config variables
+		we want to pass multiple config nodes to the sub pbs
+			normal node config
+			pbs config
 *warp
 	warp, meso, ... all are targets
 		added by switch
 
-
+		need to run even if the build fails
 
 *global artifact cache
+	 not really part of pbs, it could be any mechanism on many types of cache
+
+	one good thing is that it is possible to locate the artifact (including not finding one) with
+	rules
+
+	rule
+		rehs ...
+		locate_somewhere in the world
+		locate_in_build_directory
+		create_in_build_directory
+
+
+	this allows us to implement ccache like  caches very simply
+
+
+	pushing to the cache can be as simple as adding a reh to the rule
+		
+	rule
+		...
+		post_build_reh_push_to_cache
+
+		# could also be node depending on the 
+
+
+pbs builds nodes in differen overlay graphs
+
 
 * post pbs
 	also a target
@@ -260,6 +340,16 @@ overlay graphs
 		for maximum reuse, ie: build only part of what is common and wait for the other builds 
 		to build the rest, distribution must be globally controlled to avoid race conditions 
 
+	the same build could produce overlay graphs
+		pbs nodes
+		warp
+		C files dependencies
+
+		all valid grpahs on their own but of little interest during normal build
+
+		the other solution is to have them in the main graph but filter out when presenting node
+			this has the disadvantage to need code for each new type while overlay graphs are 
+			not part of the normal graph at all
 step nodes, pbsfile nodes, package nodes
 	make all the elements nodes that are added by rules
 
@@ -389,6 +479,12 @@ structured text output
 		pbs ... | special_pager
 		pbs ... | html_data | nc ... ; pbs_web ... &
 				pbs_web can keep sessions, have timeline, ...
+
+	multiple external programs can be chained
+
+		pbs ... | tee >(nc to_server) | show_depend | show_build | show stats
+		
+		the external program can either consume the data or pass it through
 
 
 show current directory when executing commands
@@ -1498,6 +1594,13 @@ keep statistics about what is the most often build
 	what part of the build system is most often used
 
 	let a user specific post pbs handle that (we can give an example)
+
+file database vs classic database
+	files allow direct manipulatiom
+	cdb allows fast seach
+
+	why choose?
+		generate the files and fill the db
 
 time cursor (see Log)
 

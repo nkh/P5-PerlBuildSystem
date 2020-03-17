@@ -136,23 +136,25 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				# handle --tnto
 				next if $tnto and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
 				
-				
-				my $key_name = [$_, $_] ;
-				if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
+				push @keys_to_dump, $_ ;
+				}
+			
+			my @keys_sorted = Data::TreeDumper::Utils::first_nsort_last( AT_START => [qr/^_/], KEYS => \@keys_to_dump ) ;
+			if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
+				{
+				for (@keys_sorted)
 					{
 					if(! /^__/)
 						{
 						if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__TRIGGERED})
 							{
-							$key_name = [$_, "* $_"] ;
+							$_ = [$_, "* $_"] ;
 							}
 						}
 					}
-					
-				push @keys_to_dump, $key_name ;
 				}
-			
-			return	( 'HASH', undef, Data::TreeDumper::Utils::first_nsort_last( AT_START => [qr/^_/], KEYS => [map {$_->[0]} @keys_to_dump] ) ) ;
+				
+			return ( 'HASH', undef, @keys_sorted ) ;
 			}
 			
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;

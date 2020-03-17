@@ -610,7 +610,7 @@ EOT
 		'',
 		
 	'dpc|display_pbs_configuration=s'=> $pbs_config->{DISPLAY_PBS_CONFIGURATION},
-		'Display the configuration (switches) for the the package being processed by PBS.',
+		'Display the pbs configuration matching  the regex.',
 		'',
 		
 	'dec|display_error_context'       => \$PBS::Output::display_error_context,

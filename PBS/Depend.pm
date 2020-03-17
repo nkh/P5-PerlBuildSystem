@@ -111,9 +111,7 @@ for my $post_build_rule (@post_build_rules)
 	}
 
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
-
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
-my $el = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $rules_matching = 0 ;
 
@@ -224,7 +222,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("\t[Subpbs] rule $rule_index:$rule_info\n") ;
+				PrintInfo("[Subpbs] $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -317,22 +315,18 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					PrintInfo 
-						"\t'"
-						. USER($el->($node_name) . ' ' . ${node_type} . ${forced_trigger})
-						. INFO2(" $rule_index:" . $em->($rule_info) . $rule_type . " [$rules_matching]")
-						. "\n" ;
+					my $indent = $PBS::Output::indentation ;
+					PrintUser($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
 					
 					if(@dependency_names)
 						{
-						PrintInfo $PBS::Output::indentation
-								. join("\n\t", map {"'" . $el->($_) . "'"} @dependency_names)
-								. "\n\n" ;
+						PrintInfo
+							 $indent . $indent
+							. join("\n$indent$indent", map {"'" . $em->($_) . "'"} @dependency_names)
+							. "\n" ;
 						}
-					else
-						{
-						PrintWarning "\tno dependencies from rule\n\n" ;
-						}
+
+					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n")) ;
 					}
 				else
 					{
@@ -892,7 +886,7 @@ else
 		$node_name_matches_ddrr &&
 		$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} &&
 		$node_name !~ /^__/ &&
-		! PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
+		PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
 		)
 		{
 		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended"
