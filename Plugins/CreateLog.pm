@@ -26,9 +26,11 @@ if($pbs_config->{CREATE_LOG})
 	eval "use PBS::Log;" ; 
 	die $@ if $@ ;
 	
-	PBS::Log::LogTreeData($pbs_config, $dependency_tree, $inserted_nodes, $build_sequence) ;
-
-	PrintInfo("Generated log in '$pbs_config->{LOG_NAME}'.\n") ;
+	if($pbs_config->{LOG_TREE})
+		{
+		PrintInfo("Log: file: '$pbs_config->{LOG_NAME}'.\n") ;
+		PBS::Log::LogTreeData($pbs_config, $dependency_tree, $inserted_nodes, $build_sequence) ;
+		}
 	}
 }
 

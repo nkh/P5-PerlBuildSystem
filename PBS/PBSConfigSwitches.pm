@@ -588,12 +588,13 @@ EOT
 		'PBS will display which nodes are under build.',
 		'',
 
-	'l|log|create_log'                    => \$pbs_config->{CREATE_LOG},
-		'Create a main log and a log for each node',
-		'When building in parallel, The build processes buffer the build output '
-		 .'in the KEEP_PBS_BUILD_BUFFERS/ directory. When the build is done, the '
-		 .'build processes forward the buffers to PBS and unlink the files. You '
-		 .'can keep the buffers by specifying this switch',
+	'l|log|create_log'                => \$pbs_config->{CREATE_LOG},
+		'Create a log for each node',
+		'The node build output is kept in the KEEP_PBS_BUILD_BUFFERS/ directory.',
+		
+	'log_tree'                        => \$pbs_config->{LOG_TREE},
+		'Add a tree dump to the log, an option as during incremental build this takes most of the time.',
+		'',
 		
 	'log_html|create_log_html'              => \$pbs_config->{CREATE_LOG_HTML},
 		'create a html log for each node, implies --create_log ',

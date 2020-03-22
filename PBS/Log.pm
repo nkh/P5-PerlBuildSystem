@@ -16,6 +16,7 @@ our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
 use Data::TreeDumper;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::MkTemp;
 use File::Path;
 use FileHandle;
@@ -104,10 +105,10 @@ my $dependency_tree = shift ;
 my $inserted_nodes  = shift ;
 my $build_sequence  = shift ;
 
-if(defined (my $lh = $pbs_config->{LOG_FH}))
+if(defined (my $lh = $pbs_config->{LOG_FH}) && $pbs_config->{LOG_TREE})
 	{
-	PrintInfo("Writing tree data to log file ...\n") ;
-	my $log_start = time() ;
+	PrintInfo("Log: generation ...") ;
+	my $t0 = [gettimeofday];
 	
 	print $lh INFO "\n" ;
 	
@@ -142,7 +143,7 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 						$number_of_nodes_in_the_dependency_tree++ ;
 						
 						print $lh INFO $tree->{__NAME} ;
-						print $lh INFO " => $tree->{__BUILD_NAME}" unless $tree->{__BUILD_NAME} eq $tree->{__NAME} ;
+						print $lh INFO " => $tree->{__BUILD_NAME}" if exists $tree->{__BUILD_NAME} and $tree->{__BUILD_NAME} ne $tree->{__NAME} ;
 						print $lh "\n" ;
 						}
 						
@@ -157,7 +158,6 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 	DumpTree($dependency_tree, '', NO_OUTPUT => 1, FILTER => $node_counter_and_lister) ;
 		
 	# Dependency tree.
-	
 	my $MarkNodesToRebuild = sub 
 		{
 		my $s = shift ;
@@ -196,8 +196,10 @@ if(defined (my $lh = $pbs_config->{LOG_FH}))
 			FILTER => $MarkNodesToRebuild,
 			USE_ASCII => 1,
 			) ;
-	
-	PrintInfo("Done in " . (time() - $log_start) . " sec.\n");
+
+	my $generation_time = tv_interval ($t0, [gettimeofday]) ;
+
+	PrintInfo sprintf(" (%0.2f sec.)\n",$generation_time) ;
 	}
 }
 

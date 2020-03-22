@@ -1,4 +1,7 @@
+Generate a log (like the build buffer) for nodes not build yet
+	when a node fails, we may want to look at the dependents and their configs
 
+#write tree data to log file takes some time, even when a single node is being rebuild (with warp)
 
 --tno
 	shows the PBS libraries as dependencies (which is right)
