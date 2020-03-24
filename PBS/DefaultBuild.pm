@@ -32,7 +32,7 @@ sub DefaultBuild
 {
 my
 	(
-	$pbsfile_chain,	
+	$pbsfile_chain,
 	$Pbsfile,
 	$package_alias,
 	$load_package,
@@ -66,7 +66,7 @@ PrintInfo("Depend: targets: [@$targets], level: $PBS::Output::indentation_depth,
 
 PBS::Depend::CreateDependencyTree
 	(
-	$pbsfile_chain,	
+	$pbsfile_chain,
 	$Pbsfile,
 	$package_alias,
 	$load_package,

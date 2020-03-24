@@ -26,8 +26,6 @@ And add the following functionality:
 
 =item --tww, set the wrap width
 
-=item --tww, set the wrap width
-
 =back
 
 =cut
@@ -335,7 +333,7 @@ my $matching_nodes = 0 ;
 
 if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 	{
-	for my $node_name (keys %$inserted_nodes)
+	for my $node_name (sort keys %$inserted_nodes)
 		{
 		last if $matching_nodes == $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ;
 
@@ -374,8 +372,8 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		PrintInfo "Depend:\n" 
 				. DumpTree
 					(
-					%trees,
-					"dependency graph",
+					\%trees,
+					"dependency graphs",
 					FILTER => $FilterDump,
 					INDENTATION => $PBS::Output::indentation,
 					@extra_options

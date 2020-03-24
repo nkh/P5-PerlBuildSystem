@@ -149,6 +149,7 @@ if($run_in_warp_mode)
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A Warp 1.5' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_NAME} = 'N/A' ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_FILE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE}] ;
 
@@ -735,6 +736,7 @@ for my $node (keys %$inserted_nodes)
 			}
 	
 		#todo: node can be linked to by new node and its pbsfile chain needs to be updated
+		#     linking during non warp depend should also update the pbsfile chain 
 		# the linking is done by the parent
 		}
 	else
@@ -911,7 +913,7 @@ for my $node (keys %$inserted_nodes)
 			{
 			@pbsfile_chain = map
 					{
-					my $node_index ;	
+					my $node_index ;
 					if (exists $nodes_index->{$_})
 						{
 						$node_index = $nodes_index->{$_} ;

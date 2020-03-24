@@ -399,7 +399,7 @@ else
 	}
 
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless defined $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
-$pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ||= 3 ;
+$pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} //= 3 ;
 
 #-------------------------------------------------------------------------------
 # build or not switches

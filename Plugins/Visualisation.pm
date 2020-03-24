@@ -89,7 +89,8 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 				{
 				$ni_regex_matched[$ni_regex_index] = 1 ;
 
-				PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) ;
+				PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) 
+					unless $inserted_nodes->{$node_name}{__WARP_NODE} ;
 				last ;
 				}
 			$ni_regex_index++ ;

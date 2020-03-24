@@ -1,5 +1,50 @@
-when building only one node a nude number and percentage is added to the log
+when building only one node a node number and percentage is added to the log
 	why is here a difference?
+
+distribute the warp generation in the graph
+	node generate their warp data
+	pbsfile runs collect their nodes (who collects linked nodes)
+	pbs collects the pbsfile runs
+
+	leaving the data separated allows use to parallelize the reconstruction of the graph
+		the reconstruction creates files containing reconstructed data (checked)
+		
+	it seems possible to distribute the creation via a warp rule matching everything
+
+	the reconstruction also seems to be possible via rules
+		actually a pbs run which creates a graph of already build nodes, to depend and build nodes
+
+	another advantage of not collating the warp file is that distributed sub graph builds can keep their warp cache local
+		warp can be returned as a sub graph with references to remote build system for the build
+	
+
+in warp nodes that are not to be rebuild are re-constructed
+	we can't see which nodes are re-depended (only linked) because their package is loaded
+	this information is interesting to show how much work is done in loading the pbsfiles that could
+	be avoied if the node were not all together
+		although the only work involved is linking
+		visualization of re-constructed, re-depended, re-build could be interesting (although not as much as how many and where in text form)
+
+
+Generate a log (like the build buffer) for nodes not build yet
+	when a node fails, we may want to look at the dependents and their configs
+
+	warp doesn't keep the information so -ni can't show them
+	-ni shows all the nodes that are in the graph, not the nodes not yet build
+		and easy option to add and a good information to show even when all nodes are displayed
+
+	even more reasons to distribute the warp data to meso warp
+		?? should the whole node data be serialized?!
+		including revere dependencies?!
+
+	the node data should be structured so it can easily be manipulated
+		but how do we look at the build log in a text editor without the need of an external program
+		write the external program!
+		first section of the node data is the build log, as displayed
+
+	other nodes are named and their build directory added (to find them)
+	
+	what about pbs data? eg: pbs file chain
 
 
 build priority
@@ -2764,6 +2809,7 @@ if a hierarchical display is requested (IE pbs config for all pbs runs, config, 
 	not 256 color but different colors for different elements, user defines colors sequences they want
 		we stop using Terminal::AnsiColor
 			or recognize "red on blue" otherwise use the user code
+			or immediately tranform "red on blue in the config" which is a user config so we don't care about it
 
 Immutable rule set
 	pbsfiles that always generate the same rules 
@@ -2777,7 +2823,4 @@ Immutable rule set
 	may be serialized in a more efficient format than the pbsfile
 
 	cache is invalidated when pbsfile is changed (clearly!)
-
-
-
 

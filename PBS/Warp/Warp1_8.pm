@@ -408,7 +408,15 @@ my $nodes = {} ;
 
 my $t_node_regeneration =  [gettimeofday] ;
 
-my $shared_insertion_data = { 'INSERTION_RULE' => 'N/A', 'INSERTING_NODE' => 'N/A', 'INSERTION_FILE' => 'N/A'} ;
+my $shared_insertion_data = 
+	{
+	INSERTING_NODE => 'N/A',
+	INSERTION_RULE => 'N/A',
+	INSERTION_FILE => 'N/A',
+	INSERTION_RULE_NAME => 'N/A',
+	INSERTION_RULE_FILE => 'N/A',
+	INSERTION_RULE_LINE => 'N/A',
+	} ;
 
 for my $node_name (keys %$node_md5s)
 	{

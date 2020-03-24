@@ -1,5 +1,8 @@
+linking during non warp depend must also update the pbsfile chain 
+
 Generate a log (like the build buffer) for nodes not build yet
 	when a node fails, we may want to look at the dependents and their configs
+	see pbs2 ideas
 
 #write tree data to log file takes some time, even when a single node is being rebuild (with warp)
 

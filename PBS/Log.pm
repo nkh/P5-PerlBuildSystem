@@ -91,7 +91,7 @@ $pbs_config->{LOG_NAME} = $log_path . mktemp("${now_string}_PBS_LOG_XXXXXXX", $l
 my $lh = new FileHandle "> $pbs_config->{LOG_NAME}" || die "Can't create log file! $@.\n" ;
 $pbs_config->{LOG_FH} = $lh ;
 
-PrintInfo("Generating log in '$pbs_config->{LOG_NAME}'.\n") ;
+PrintInfo("Log: file: '$pbs_config->{LOG_NAME}'.\n") unless $pbs_config->{QUIET} ;
 
 print $lh GetHeader('Log', $pbs_config) ;
 }

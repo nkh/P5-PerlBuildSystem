@@ -1039,7 +1039,7 @@ EOT
 		'',
 
 	'bi|build_info=s'                 => $pbs_config->{DISPLAY_BUILD_INFO},
-		'Options: --b --d --bc --br. A file or \'*\' can be specified. No Builds are done.',
+		'Options: --b --d --bc --br. A file or \'*\' can be specified. No Build is done.',
 		'',
 		
 	'nbh|no_build_header'             => \$pbs_config->{DISPLAY_NO_BUILD_HEADER},
