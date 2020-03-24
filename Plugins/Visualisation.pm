@@ -10,6 +10,8 @@ This plugin handles the following PBS defined switches:
 
 =item --ni
 
+=item --lni
+
 =item --dar
 
 =item --dac
@@ -27,6 +29,7 @@ This plugin handles the following PBS defined switches:
 use PBS::PBSConfigSwitches ;
 use PBS::Information ;
 use Data::TreeDumper ;
+use PBS::Build::ForkedNodeBuilder ; # for log file name
 
 #-------------------------------------------------------------------------------
 
@@ -89,28 +92,59 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 				{
 				$ni_regex_matched[$ni_regex_index] = 1 ;
 
-				PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) 
+				do
+					{
+					PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) 
+					}
 					unless $inserted_nodes->{$node_name}{__WARP_NODE} ;
+
 				last ;
 				}
 			$ni_regex_index++ ;
 			}
 		}
+	}
+	
+if(exists $pbs_config->{LOG_NODE_INFO} && @{$pbs_config->{LOG_NODE_INFO}})
+	{
+	PrintInfo "Log: creating pre-buil node info ..." ;
+	my $generated_node_info_log = 0 ;
 
-	my $no_ni_regex_matched = 1 ;
-	for (my $ni_regex_index = 0 ; $ni_regex_index < @ni_regex_matched ; $ni_regex_index++)
+	my @ni_regex_matched = (0) x @{$pbs_config->{LOG_NODE_INFO}} ;
+
+	for my $node_name (sort keys %$inserted_nodes)
 		{
-		if($ni_regex_matched[$ni_regex_index])
+		my $ni_regex_index = 0 ;
+
+		for my $node_info_regex (@{$pbs_config->{LOG_NODE_INFO}})
 			{
-			$no_ni_regex_matched = 0 ;
-			}
-		else
-			{
-			PrintWarning("Info: --ni $pbs_config->{DISPLAY_NODE_INFO}[$ni_regex_index] doesn't match any node in the graph.\n") ;
+			if($inserted_nodes->{$node_name}{__NAME} =~ /$node_info_regex/)
+				{
+				$ni_regex_matched[$ni_regex_index] = 1 ;
+					
+				my (undef, $node_info_file) =
+					PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
+
+				$node_info_file =~ s/\.log$/.node_info/ ;
+
+				do
+					{
+					$generated_node_info_log++ ;
+					my ($node_info, $log_node_info) = 
+						PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1) ;
+
+					open(my $fh, '>', $node_info_file) or die ERROR "Error: --lni can't create '$node_info_file'.\n" ;
+					print $fh $log_node_info ;
+					}
+					if (! $inserted_nodes->{$node_name}{__WARP_NODE} && $inserted_nodes->{$node_name}{__TRIGGERED})
+						|| ! -e $node_info_file  ;
+
+				last ;
+				}
+			$ni_regex_index++ ;
 			}
 		}
-		
-	PrintWarning("Info: no --ni switch matched.\n") if $no_ni_regex_matched ;
+	PrintInfo " ($generated_node_info_log nodes)\n" ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
@@ -129,7 +163,8 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 		sub
 		{
 		my $tree = shift ;
-		return ('HASH', undef, sort grep { /^(__NAME|__BUILD_NAME)/} keys %$tree) if('HASH' eq ref $tree) ;	
+		
+		return ('HASH', undef, sort grep { /^(__NAME|__BUILD_NAME)/} keys %$tree) if('HASH' eq ref $tree) ;
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 		} ;
 	

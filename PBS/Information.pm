@@ -82,26 +82,23 @@ $node_header .= $separator ;
 return $node_header, $type, $tab ;
 }
 
-sub DisplayNodeInformation
+sub GetNodeInformation
 {
-my ($file_tree, $pbs_config) = @_ ;
-
-my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
+my ($file_tree, $pbs_config, $generate_for_log) = @_ ;
 my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
 
-my $no_output = defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ? 1 : 0 ;
+my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
+my ($node_header, $type, $tab) = GetNodeHeader($file_tree, $pbs_config) ;
 
-return if((! defined $pbs_config->{CREATE_LOG}) && $no_output) ;
-
-my ($node_header, $type, $tab)  = GetNodeHeader($file_tree, $pbs_config) ;
+my $no_output = defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
 $node_info .= $node_header unless $no_output ;
-$log_node_info .= $node_header if(defined $pbs_config->{CREATE_LOG});
+$log_node_info .= $node_header ;
 
 #----------------------
-#insertion origin
+# insertion origin
 #----------------------
-if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_ORIGIN})
+if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
 	if(exists $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}) # inserted and depended in different pbsfiles
 		{
@@ -137,17 +134,17 @@ if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_ORIGI
 
 	$current_node_info .= INFO "$inserted\n" ;
 
-	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
-	$node_info     .= $current_node_info if defined $pbs_config->{DISPLAY_NODE_ORIGIN} ;
+	$log_node_info .= $current_node_info ;
+	$node_info     .= $current_node_info 
 	}
-	
+
 #----------------------
 # parents
 #----------------------
-if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_PARENTS})
+if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
 	#$current_node_info = INFO "\tdependent:" . join(', ',  GetParentsNames($file_tree)) . "\n" ;
-	
+
 	my $DependenciesOnly = sub
 				{
 				my $tree = shift ;
@@ -159,10 +156,7 @@ if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_PAREN
 				
 				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 				} ;
-							
-	my @params ;
-	push @params, USE_ASCII => 1 if $pbs_config->{KEEP_PBS_BUILD_BUFFERS} || $pbs_config->{CREATE_LOG} ;
-								
+
 	$current_node_info =
 		INFO
 			DumpTree
@@ -170,20 +164,20 @@ if(defined $pbs_config->{CREATE_LOG} || defined $pbs_config->{DISPLAY_NODE_PAREN
 				$file_tree->{__DEPENDENCY_TO},
 				"dependents tree:",
 				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0, INDENTATION => $tab,
-				@params,
+				 USE_ASCII => 1,
 				) ;
 
-	$log_node_info .= $current_node_info if defined $pbs_config->{CREATE_LOG} ;
-	$node_info     .= $current_node_info if defined $pbs_config->{DISPLAY_NODE_ORIGIN} ;
+	$log_node_info .= $current_node_info ;
+	$node_info     .= $current_node_info ;
 	}
-	
+
 #----------------------
 # dependencies
 #----------------------
-my (%triggered_dependencies) ;
-
-if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
+if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
 	{
+	my (%triggered_dependencies) ;
+
 	if(exists $file_tree->{__TRIGGERED})
 		{
 		for my $triggered_dependency_data (@{$file_tree->{__TRIGGERED}})
@@ -193,7 +187,7 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 			$triggered_dependencies{$triggered_dependency_data->{NAME}} = $triggered_dependency_data->{REASON} ;
 			}
 		}
-	
+
 	$current_node_info = INFO ("${tab}dependencies:\n") ;
 
 	for (sort keys %$file_tree)
@@ -209,24 +203,23 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_DEPENDENCIES}
 			{
 			$current_node_info .= INFO ("${tab}${tab}$_\n") if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
 			}
-
 		}
 
 	# remaining triggers
 	$current_node_info .= ERROR("${tab}${tab}$_: $triggered_dependencies{$_}\n") 
 		for keys %triggered_dependencies ;
 		
-	$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG});
+	$log_node_info .= $current_node_info ;
 	$node_info     .= $current_node_info ;
 	}
-	
+
 #----------------------
 # matching rules
 #----------------------
 my @rules_with_builders ;
 my $builder = 0 ;
 
-if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} || $pbs_config->{DISPLAY_NODE_BUILDER})
+if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 	{
 	my $builder_override ;
 		
@@ -293,35 +286,30 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_RULES} 
 		$current_node_info = INFO ("${tab}matching rule: #$rule_number$rule_tag '$rule_info'\n") ;
 		$current_node_info .= INFO ("${tab}${tab}=> $rule_dependencies\n") ;
 		
-		$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG}) ;
-		$node_info     .= $current_node_info if($pbs_config->{DISPLAY_NODE_BUILD_RULES}) ;
+		$log_node_info .= $current_node_info ;
+		$node_info     .= $current_node_info ;
 		}
 	}
-	
+
 #----------------------
 # node config
 #----------------------
-
-if(defined $file_tree->{__CONFIG})
+if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
-	$log_node_info .= INFO(	DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, USE_ASCII => 1))
-				if defined $pbs_config->{CREATE_LOG} ;
-				
-	my @params ;
-	push @params, USE_ASCII => 1 if $pbs_config->{KEEP_PBS_BUILD_BUFFERS} || $pbs_config->{CREATE_LOG} ;
-								
-	$node_info .= INFO(DumpTree($file_tree->{__CONFIG}, "Build config", INDENTATION => $tab, @params))
-			if $pbs_config->{DISPLAY_NODE_CONFIG} ;
+	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Node config", INDENTATION => $tab, USE_ASCII => 1)) ;
+
+	$log_node_info .= $config ;
+	$node_info .= $config ;
 	}
-	
-#----------------------
-#builder
-#----------------------
-my $more_than_one_builder = 0 ;
 
-# choose last builder if multiple Builders
-if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILDER})
+#----------------------
+# builder
+#----------------------
+if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILDER})
 	{
+	my $more_than_one_builder = 0 ;
+
+	# choose last builder if multiple Builders
 	if(@rules_with_builders)
 		{
 		my $rule_used_to_build = $rules_with_builders[-1] ;
@@ -343,11 +331,10 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILDER})
 							
 		$current_node_info = INFO ("${tab}Using builder from rule: #$rule_info\n") ;
 		
-		$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG}) ;
-		$node_info     .= $current_node_info if($pbs_config->{DISPLAY_NODE_BUILDER}) ;
+		$log_node_info .= $current_node_info ;
+		$node_info     .= $current_node_info
 		}
 	}
-		
 
 #-----------------------------------------
 # display override information
@@ -404,7 +391,7 @@ if(exists $pbs_config->{DISPLAY_BUILD_INFO} && @{$pbs_config->{DISPLAY_BUILD_INF
 #----------------------
 # post build
 #----------------------
-if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS})
+if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS})
 	{
 	if(defined $file_tree->{__POST_BUILD_COMMANDS})
 		{
@@ -417,14 +404,21 @@ if(defined $pbs_config->{CREATE_LOG} || $pbs_config->{DISPLAY_NODE_BUILD_POST_BU
 			$current_node_info .= INFO ("${tab}${tab}$rule_info\n") ;
 			}
 			
-		$log_node_info .= $current_node_info if(defined $pbs_config->{CREATE_LOG}) ;
-		$node_info     .= $current_node_info if($pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}) ;
+		$log_node_info .= $current_node_info ;
+		$node_info     .= $current_node_info
 		}
 	}
-	
+
+$node_info, $log_node_info
+}
+
+sub DisplayNodeInformation
+{
+my ($file_tree, $pbs_config) = @_ ;
 
 if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
+	my ($node_info) = GetNodeInformation($file_tree, $pbs_config) ;
 	print STDOUT $node_info ;
 	}
 }

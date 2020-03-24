@@ -210,13 +210,9 @@ if(@$targets)
 		$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
 		}
 
-	if($pbs_config->{DISPLAY_PBS_TOTAL_TIME})
-		{
-		my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
-		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) ;
-		
-		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs
-		}
+	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
+	$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs ;
+	PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if ($pbs_config->{DISPLAY_PBS_TOTAL_TIME} && ! $pbs_config->{QUIET}) ;
 
 	RunPluginSubs($pbs_config, 'PostPbs', $build_success, $pbs_config, $dependency_tree, $inserted_nodes) ;
 

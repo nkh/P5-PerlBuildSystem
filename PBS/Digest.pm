@@ -126,8 +126,9 @@ sub GetFileMD5
 {
 #  this one caching too.
 my $file = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
-my $md5 = 'invalid md5' ;
+my $warn = shift // 1 ;
 
+my $md5 = 'invalid md5' ;
 my $t0_md5 = [gettimeofday] ;
 
 $md5_requests++ ;
@@ -138,18 +139,20 @@ if(exists $md5_cache{$file})
 	}
 else
 	{
-	if(defined ($md5 = NonCached_GetFileMD5($file)))
+	if(defined ($md5 = NonCached_GetFileMD5($file)) && $md5 ne 'invalid md5')
 		{
 		$md5_cache{$file} = $md5 ;
+
+		my $time = tv_interval($t0_md5, [gettimeofday]) ;
+		PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
+
+		my $md5_time += $time ;
+		}
+	else
+		{
+		PrintWarning  "Digest: Warning: can't read file '$file' to generate MD5\n" if $warn ;
 		}
 	}
-
-
-my $time = tv_interval($t0_md5, [gettimeofday]) ;
-
-PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
-
-my $md5_time += $time ;
 
 return($md5) ;
 }
@@ -196,7 +199,6 @@ if(-f $file_name && $fh->open($file_name))
 	}
 else
 	{
-	PrintWarning  "Digest: Warning: can't read file '$file_name' to generate MD5\n";
 	return 'invalid md5' ;
 	}
 }
@@ -221,12 +223,11 @@ if(-f $file_name)
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
 	PrintUser(sprintf "Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
 
-	return($md5sum) ;
+	return $md5sum // 'invalid md5' ;
 	}
 else
 	{
-	#PrintWarning  "Warning: can't read file '$file_name' to generate MD5\n";
-	return ;
+	return 'invalid md5' ;
 	}
 }
 
@@ -812,7 +813,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	}
 else
 	{
-	if(defined (my $current_md5 = GetFileMD5($file)))
+	if(defined (my $current_md5 = GetFileMD5($file, ! $pbs_config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND} )))
 		{
 		unless($current_md5 eq $md5)
 			{

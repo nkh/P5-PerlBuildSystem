@@ -1,6 +1,13 @@
 when building only one node a node number and percentage is added to the log
 	why is here a difference?
 
+
+md5 request for C dependency cache are not counted in the md5 stats
+
+assign level of verbosity to all the output classes
+	we use colors right now
+	to  support --quiet directly in the PrintXXX functions
+
 distribute the warp generation in the graph
 	node generate their warp data
 	pbsfile runs collect their nodes (who collects linked nodes)
@@ -27,25 +34,33 @@ in warp nodes that are not to be rebuild are re-constructed
 
 
 Generate a log (like the build buffer) for nodes not build yet
+	=> implemented as --lni in pbs1
+
+
 	when a node fails, we may want to look at the dependents and their configs
 
 	warp doesn't keep the information so -ni can't show them
 	-ni shows all the nodes that are in the graph, not the nodes not yet build
 		and easy option to add and a good information to show even when all nodes are displayed
+		=> but -ni/-lni will display the nodes that are left to build, which is better
 
 	even more reasons to distribute the warp data to meso warp
 		?? should the whole node data be serialized?!
-		including revere dependencies?!
+		including reverse dependencies?!
 
 	the node data should be structured so it can easily be manipulated
 		but how do we look at the build log in a text editor without the need of an external program
 		write the external program!
 		first section of the node data is the build log, as displayed
 
-	other nodes are named and their build directory added (to find them)
-	
 	what about pbs data? eg: pbs file chain
 
+	=> practical after an error
+		either generate with -ni manually 
+		or when a build fail generate a node info for all the remaining node
+			including which dependencies failed (this is only valid till the node is rebuild)
+
+failed build should also be logged in a file
 
 build priority
 	node with most parents has higher priority has it may keep more cpus busy

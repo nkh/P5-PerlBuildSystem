@@ -109,8 +109,8 @@ if($run_in_warp_mode)
 			PrintInfo
 				sprintf
 					(
-					"Warp: load time: %0.2f s., verification time: %0.2f s.\n",
-					$warp_load_time, $warp_verification_time, $warp_total_time) ;
+					"Warp: load time: %0.2f s., verification time: %0.2f s. total time: %0.2f s.\n",
+					$warp_load_time, $warp_verification_time, $warp_total_time) unless $pbs_config->{QUIET} ;
 			}
 			
 		PrintInfo("\e[KWarp: Up to date\n") unless $pbs_config->{QUIET} ;
@@ -168,7 +168,7 @@ if($run_in_warp_mode)
 
 	write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
 
-	if($pbs_config->{DISPLAY_WARP_TIME})
+	if($pbs_config->{DISPLAY_WARP_TIME} && (!$pbs_config->{QUIET} || $number_of_removed_nodes))
 		{
 		my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
 

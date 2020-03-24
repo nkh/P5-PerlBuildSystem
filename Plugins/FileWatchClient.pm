@@ -270,7 +270,7 @@ else
 		}
 	}
 
-if($pbs_config->{DISPLAY_PBS_TIME})
+if($pbs_config->{DISPLAY_PBS_TIME} && ! $pbs_config->{QUIET})
 	{
 	my $watch_server_time = tv_interval ($t0, [gettimeofday]) ;
 	PrintInfo sprintf("Watcher: server time %0.2f s\n", $watch_server_time) ;

@@ -133,6 +133,7 @@ $pbs_config->{LIB_PATH} ||= [] ;
 $pbs_config->{DISPLAY_BUILD_INFO} ||= [] ;
 $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX} ||= [] ;
 $pbs_config->{DISPLAY_NODE_INFO} ||= [] ;
+$pbs_config->{LOG_NODE_INFO} ||= [] ;
 $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
 $pbs_config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
@@ -491,6 +492,10 @@ EOT
 		'Display information about the node matching the given regex before the build.',
 		'',
 		
+	'lni|log_node_information=s'      => $pbs_config->{LOG_NODE_INFO},
+		'Log information about nodes matching the given regex before the build.',
+		'',
+		
 	'nbn|node_build_name'             => \$pbs_config->{DISPLAY_NODE_BUILD_NAME},
 		'Display the build name in addition to the logical node name.',
 		'',
@@ -818,8 +823,12 @@ EOT
 		'Display the expected and the actual digest for each node.',
 		'',
 		
-	'dddo|display_different_digest_only'   => \$pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
+	'dddo|display_different_digest_only'  => \$pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
 		'Only display when a digest are diffrent.',
+		'',
+		
+	'wnmw|warp_no_md5_warning'             => \$pbs_config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND},
+		'Do not display a warning if the file to compute hash for does not exist during warp verification.',
 		'',
 		
 	'dfc|display_file_check'   => \$pbs_config->{DISPLAY_FILE_CHECK},

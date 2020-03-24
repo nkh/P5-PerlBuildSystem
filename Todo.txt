@@ -1,8 +1,22 @@
+
+warp 1.8 pbs chain merge
+
 linking during non warp depend must also update the pbsfile chain 
 
-Generate a log (like the build buffer) for nodes not build yet
+md5 request for C dependency cache are not counted in the md5 stats
+md5 cache flushed before returning stats!
+	in warp lots of cache flush all !
+
+#put -ni output in log file
+#separate node info generation when no log info is needed
+	log information takes a longtime to generate and is used for --lni only
+	should -l output everything too or the same as before
+
+
+#Generate a log (like the build buffer) for nodes not build yet
 	when a node fails, we may want to look at the dependents and their configs
 	see pbs2 ideas
+	=> ni shows the non warp files
 
 #write tree data to log file takes some time, even when a single node is being rebuild (with warp)
 
@@ -14,14 +28,14 @@ Generate a log (like the build buffer) for nodes not build yet
 --no_has_no_dependencies
 	=> hide warning for C dependencies file not having dependencies itself (it is dependend)
 
---display_md5_warning to control
+#--display_md5_warning to control
 	Digest: Warning: can't read file '/home/nadim/nadim/devel/divers/div_make/_out_
 
 --node_environment
 	display the environment variables active during the node build
 		maybe in a separate file to not spam too much in the terminal
 
---log
+#--log
 	log the build results per node and the location of the node log
 
 
@@ -37,6 +51,8 @@ Do we need to have TARGET path set?
 
 builder can be generated on demand
 	we compile builders as soon as AddRule is run
+		*** even for nodes that don't need to be build!
+
 	the time could be spread over the build phase
 	the builders are referenced from the node and thus kept in memory
 		if they were to be compile and reference in the scope of a node build
