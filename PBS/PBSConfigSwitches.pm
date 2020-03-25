@@ -919,10 +919,6 @@ EOT
 		'(DF) display only files which are triggered',
 		'',
 
-	'tnt|tree_node_triggered'           => \$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED},
-		'(DF) Display if the node must be rebuild by append a star if it does.',
-		'',
-		
 	'tntr|tree_node_triggered_reason'   => \$pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON},
 		'(DF) Display why a node is to be rebuild.',
 		'',

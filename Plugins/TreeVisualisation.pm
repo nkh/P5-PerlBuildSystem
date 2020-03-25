@@ -138,20 +138,17 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				}
 			
 			my @keys_sorted = Data::TreeDumper::Utils::first_nsort_last( AT_START => [qr/^_/], KEYS => \@keys_to_dump ) ;
-			if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED})
+			for (@keys_sorted)
 				{
-				for (@keys_sorted)
+				if(! /^__/)
 					{
-					if(! /^__/)
+					if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__TRIGGERED})
 						{
-						if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__TRIGGERED})
-							{
-							$_ = [$_, "* $_"] ;
-							}
+						$_ = [$_, "* $_"] ;
 						}
 					}
 				}
-				
+			
 			return ( 'HASH', undef, @keys_sorted ) ;
 			}
 			

@@ -1,7 +1,4 @@
 
-#-lni file is put in the source directory
-	should only be generated for non source nodes
-
 log file is generated even if no -l is given
 	maybe we should keep it 
 
@@ -15,19 +12,6 @@ md5 cache flushed before returning stats!
 
 watch_server drops events
 
-#put -ni output in log file
-#separate node info generation when no log info is needed
-	log information takes a longtime to generate and is used for --lni only
-	should -l output everything too or the same as before
-
-
-#Generate a log (like the build buffer) for nodes not build yet
-	when a node fails, we may want to look at the dependents and their configs
-	see pbs2 ideas
-	=> ni shows the non warp files
-
-#write tree data to log file takes some time, even when a single node is being rebuild (with warp)
-
 --tno
 	shows the PBS libraries as dependencies (which is right)
 		when loading graph from warp file
@@ -36,16 +20,9 @@ watch_server drops events
 --no_has_no_dependencies
 	=> hide warning for C dependencies file not having dependencies itself (it is dependend)
 
-#--display_md5_warning to control
-	Digest: Warning: can't read file '/home/nadim/nadim/devel/divers/div_make/_out_
-
 --node_environment
 	display the environment variables active during the node build
 		maybe in a separate file to not spam too much in the terminal
-
-#--log
-	log the build results per node and the location of the node log
-
 
 --log_html generates a node information, inlined in html?, that information
 	is updated when build but is still interesting before the build or if the 
@@ -73,7 +50,7 @@ builder can be generated on demand
 			when no node need to be build by it
 				node count is incremented when a node matches
 			
---tno should always be displayed as --tnt
+#--tno should always be displayed as --tnt
 
 ddr
 	rule matching PBS_WARP_TREE is not shown
@@ -544,6 +521,29 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#--log
+	log the build results per node and the location of the node log
+
+
+#-lni file is put in the source directory
+	should only be generated for non source nodes
+
+#put -ni output in log file
+#separate node info generation when no log info is needed
+	log information takes a longtime to generate and is used for --lni only
+	should -l output everything too or the same as before
+
+
+#Generate a log (like the build buffer) for nodes not build yet
+	when a node fails, we may want to look at the dependents and their configs
+	see pbs2 ideas
+	=> ni shows the non warp files
+
+#write tree data to log file takes some time, even when a single node is being rebuild (with warp)
+
+#--display_md5_warning to control
+	Digest: Warning: can't read file '/home/nadim/nadim/devel/divers/div_make/_out_
 
 #multiple plugin and lib path
 
