@@ -487,7 +487,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	PrintInfo("Locating '$unlocated_file' \@:\n") if $display_search_info ;
+	PrintInfo("\tLocating '$unlocated_file':\n") if $display_search_info ;
 	
 	if(-e $located_file)
 		{
@@ -498,15 +498,11 @@ unless(file_name_is_absolute($file))
 		$year += 1900 ;
 		$month++ ;
 		
-		PrintInfo("   located in build directory '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n") if $display_search_info ;
+		print USER("\t   found in build directory") . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0) if $display_search_info ;
 		}
 	else
 		{
-		if($display_search_info)
-			{
-			PrintInfo("   in build directory '$build_directory': ") ;
-			PrintError("not found.\n") ;
-			}
+		print ERROR("\t   not in build directory ") . INFO2(" '$build_directory'.\n", 0) if($display_search_info) ;
 		}
 		
 	if((! $file_found) || $display_all_alternates)
@@ -518,7 +514,6 @@ unless(file_name_is_absolute($file))
 			if('' eq ref $source_directory)
 				{
 				my $searched_file = "$source_directory/$file" ;
-				PrintInfo("   '$searched_file': ") if $display_search_info ;
 				
 				if(-e $searched_file)
 					{
@@ -529,12 +524,25 @@ unless(file_name_is_absolute($file))
 					
 					if($file_found)
 						{
-						PrintWarning("NOT USED. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n") if $display_search_info ;
+						print WARNING("\t   also found as ")
+							. INFO2(
+								" '$searched_file'\n"
+								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
+								0
+								) 
+					 			if $display_search_info ;
 						}
 					else
 						{
 						$file_found++ ;
-						PrintInfo("Relocated. size: $file_size time: $month_day-$month-$year $hour:$min:$sec\n") if $display_search_info ;
+						print USER("\t   located as ")
+							. INFO2(
+								" '$searched_file'\n"
+								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
+								0
+								) 
+								if $display_search_info ;
+						
 						$located_file = $searched_file ;
 						$alternative_source++ ;
 						last unless $display_all_alternates ;
@@ -542,7 +550,7 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					PrintError("not found.\n") if $display_search_info ;
+					print ERROR("\t   not as") . INFO2(" '$searched_file'\n", 0) if $display_search_info ;
 					}
 				}
 			else

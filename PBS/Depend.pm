@@ -334,7 +334,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						. INFO("dependencies [@dependency_names]", 0)
 						. "" ;
 					
-					PrintInfo2(" $rule_index:$rule_info$rule_type [$rules_matching]\n") ;
+					print INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]\n", 0) ;
 					}
 					
 				PrintWithContext

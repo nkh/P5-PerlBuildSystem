@@ -80,8 +80,6 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 
 if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
-	my @ni_regex_matched = (0) x @{$pbs_config->{DISPLAY_NODE_INFO}} ;
-
 	for my $node_name (sort keys %$inserted_nodes)
 		{
 		my $ni_regex_index = 0 ;
@@ -90,8 +88,6 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 			{
 			if($inserted_nodes->{$node_name}{__NAME} =~ /$node_info_regex/)
 				{
-				$ni_regex_matched[$ni_regex_index] = 1 ;
-
 				do
 					{
 					PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) 
@@ -110,8 +106,6 @@ if(exists $pbs_config->{LOG_NODE_INFO} && @{$pbs_config->{LOG_NODE_INFO}})
 	PrintInfo "Log: creating pre-buil node info ..." ;
 	my $generated_node_info_log = 0 ;
 
-	my @ni_regex_matched = (0) x @{$pbs_config->{LOG_NODE_INFO}} ;
-
 	for my $node_name (sort keys %$inserted_nodes)
 		{
 		my $ni_regex_index = 0 ;
@@ -120,8 +114,6 @@ if(exists $pbs_config->{LOG_NODE_INFO} && @{$pbs_config->{LOG_NODE_INFO}})
 			{
 			if($inserted_nodes->{$node_name}{__NAME} =~ /$node_info_regex/)
 				{
-				$ni_regex_matched[$ni_regex_index] = 1 ;
-					
 				my (undef, $node_info_file) =
 					PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
 

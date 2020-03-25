@@ -1,4 +1,9 @@
 
+-lni file is put in the source directory
+
+log file is generated even if no -l is given
+	maybe we should keep it 
+
 warp 1.8 pbs chain merge
 
 linking during non warp depend must also update the pbsfile chain 
