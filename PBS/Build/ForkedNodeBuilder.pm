@@ -83,7 +83,7 @@ while(defined (my $command_and_args = <$parent_channel>))
 			{
 			if(defined $pbs_config->{CREATE_LOG})
 				{
-				SendFile($parent_channel, $build_log, !$pbs_config->{KEEP_PBS_BUILD_BUFFERS}) ;
+				SendFile($parent_channel, $build_log, !$pbs_config->{CREATE_LOG}) ;
 				}
 			else
 				{
@@ -95,7 +95,7 @@ while(defined (my $command_and_args = <$parent_channel>))
 			
 		/^GET_OUTPUT$/ and do
 			{
-			SendFile($parent_channel, $build_output, !$pbs_config->{KEEP_PBS_BUILD_BUFFERS}) ;
+			SendFile($parent_channel, $build_output, !$pbs_config->{CREATE_LOG}) ;
 			last ;
 			} ;
 		}
@@ -145,7 +145,7 @@ my $t0 = [gettimeofday] ;
 my $node = %$inserted_nodes{$node_name} ;
 
 my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNames($node) ;
-#all output goes to files that might be kept if KEEP_PBS_BUILD_BUFFERS is set
+#all output goes to files that might be kept if CREATE_LOG is set
 #once the build is finished, the output is send to the master process
 
 open(OLDOUT, ">&STDOUT") ;

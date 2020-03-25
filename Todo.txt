@@ -7,6 +7,8 @@ md5 request for C dependency cache are not counted in the md5 stats
 md5 cache flushed before returning stats!
 	in warp lots of cache flush all !
 
+watch_server drops events
+
 #put -ni output in log file
 #separate node info generation when no log info is needed
 	log information takes a longtime to generate and is used for --lni only

@@ -488,15 +488,9 @@ CheckPackageDirectories($pbs_config) ;
 
 #----------------------------------------- Log -----------------------------------------
 
-if(defined $pbs_config->{CREATE_LOG})
-	{
-	$pbs_config->{KEEP_PBS_BUILD_BUFFERS}++ ;
-	}
-
 if(defined $pbs_config->{CREATE_LOG_HTML})
 	{
 	$pbs_config->{CREATE_LOG}++ ;
-	$pbs_config->{KEEP_PBS_BUILD_BUFFERS}++ ;
 	}
 
 PBS::Log::CreatePbsLog($pbs_config) if defined $pbs_config->{CREATE_LOG} ;

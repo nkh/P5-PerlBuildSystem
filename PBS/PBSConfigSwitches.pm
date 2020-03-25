@@ -595,7 +595,7 @@ EOT
 
 	'l|log|create_log'                => \$pbs_config->{CREATE_LOG},
 		'Create a log for each node',
-		'The node build output is kept in the KEEP_PBS_BUILD_BUFFERS/ directory.',
+		'The node build output is kept in the build directory.',
 		
 	'log_tree'                        => \$pbs_config->{LOG_TREE},
 		'Add a tree dump to the log, an option as during incremental build this takes most of the time.',
