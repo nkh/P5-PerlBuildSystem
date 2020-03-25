@@ -103,10 +103,15 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 	
 if(exists $pbs_config->{LOG_NODE_INFO} && @{$pbs_config->{LOG_NODE_INFO}})
 	{
-	PrintInfo "Log: creating pre-buil node info ..." ;
+	PrintInfo "Log: creating pre-build node info ..." ;
 	my $generated_node_info_log = 0 ;
 
-	for my $node_name (sort keys %$inserted_nodes)
+	for my $node_name 
+		(
+		sort 
+			grep { (! $inserted_nodes->{$_}{__WARP_NODE}) && PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_}) }
+				 keys %$inserted_nodes
+		)
 		{
 		my $ni_regex_index = 0 ;
 

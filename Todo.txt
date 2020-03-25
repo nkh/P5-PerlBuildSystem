@@ -1,5 +1,6 @@
 
--lni file is put in the source directory
+#-lni file is put in the source directory
+	should only be generated for non source nodes
 
 log file is generated even if no -l is given
 	maybe we should keep it 
