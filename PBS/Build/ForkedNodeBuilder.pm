@@ -177,7 +177,7 @@ if(defined $node)
 	local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
 	local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ; 
 
-	if($node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR})
+	if($node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR} || $node->{__PBS_CONFIG}{CREATE_LOG})
 		{
 		$node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;

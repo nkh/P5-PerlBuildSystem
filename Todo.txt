@@ -1,9 +1,5 @@
 
-log file is generated even if no -l is given
-	maybe we should keep it 
-
 warp 1.8 pbs chain merge
-
 linking during non warp depend must also update the pbsfile chain 
 
 md5 request for C dependency cache are not counted in the md5 stats
@@ -13,9 +9,8 @@ md5 cache flushed before returning stats!
 watch_server drops events
 
 --tno
-	shows the PBS libraries as dependencies (which is right)
+	shows the PBS libraries as dependencies (which is right but boring)
 		when loading graph from warp file
-
 
 --no_has_no_dependencies
 	=> hide warning for C dependencies file not having dependencies itself (it is dependend)
@@ -23,6 +18,17 @@ watch_server drops events
 --node_environment
 	display the environment variables active during the node build
 		maybe in a separate file to not spam too much in the terminal
+		=> in the log
+
+	how do we control the environment variables per node?
+		we don't, the only thing we control is $ENV at the start of the build
+
+for pbs2
+		control env per node, per command in the node, per phase in the node
+		inheritance of env from node to node
+		package env is default for nodes
+		env should go in the digest
+
 
 --log_html generates a node information, inlined in html?, that information
 	is updated when build but is still interesting before the build or if the 
@@ -513,14 +519,20 @@ project generation script can generate project which doesn't require compilation
 debug breakpoint could display an informative message about what it is doing
 and what is available for poking
 
-use Term::Emit for message, maybe replace Term::ProgressBar too
-	=> replace with simpler code not in a module, we already have a %done for forked builders
-
 install pbs on linux and pbs.pl on windows
 
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#use Term::Emit for message, maybe replace Term::ProgressBar too
+	=> replace with simpler code not in a module, we already have a %done for forked builders
+
+#log build command
+	so it can be run from vi, in terminal
+
+#log file is generated even if no -l is given
+	maybe we should always keep it 
 
 #--log
 	log the build results per node and the location of the node log

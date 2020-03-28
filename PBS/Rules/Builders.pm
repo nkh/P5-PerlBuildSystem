@@ -204,7 +204,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 	print STDERR "\n" if $command_index > 1 ;
 
 	my $command_information = '' ;
-	$command_information = "Running command $command_index of " . scalar(@$shell_commands) . ', ' if @$shell_commands > 1 ;
+	$command_information = "Running command $command_index of " . scalar(@$shell_commands) . "\n" if @$shell_commands > 1 ;
 	
 	if('CODE' eq ref $shell_command)
 		{
@@ -227,7 +227,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	else
 		{
-		PrintInfo2 $command_information . "command: $shell_command\n\n" if $display_command_information ;
+		PrintInfo2 $command_information . "command: $shell_command\n" if $display_command_information ;
 
 		my $command = EvaluateShellCommandForNode
 						(
@@ -238,6 +238,8 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
+		PrintUser "$command\n\n" if $display_command_information ;
+
 		$node_shell->RunCommand($command) ;
 		}
 	}

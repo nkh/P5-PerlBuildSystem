@@ -159,11 +159,6 @@ else
 local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
 local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
 
-if(defined $pbs_config->{DISPLAY_BUILD_SEQUENCER_INFO} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
-	{
-	PrintInfo("($node_build_sequencer_info) ");
-	}
-
 if
 	(
 	$display_node

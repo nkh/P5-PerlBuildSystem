@@ -1058,7 +1058,7 @@ EOT
 		"Built node names are displayed above the progress bar",
 		'',
 
-	'dpb3|display_progress_per_build_process'  => \$pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS},
+	'dpb3|display_progress_bar_process'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS},
 		"A progress per build process is displayed above the progress bar",
 		'',
 

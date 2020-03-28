@@ -1,6 +1,31 @@
+fzf
+	completion via fzf, showing the help text
+	--options which can be redirected to fzf
+	documentation via fzf
+	replace documentation module with fzf
+
+
+how to show dependencies on pbs libraries, environment variables, installed tools
+	if they were all dependencies to each node -tno would become unusable
+		this happens already in pbs 1 when nodes are loaded from the warp file
+		which puts them as dependency for each node to trigger in a better way
+
+	we could have a "lib/env/tools" node, so we'd only see it once
+
+	they could be in another layer of the graph
+		we can chose which layer to show ... per node!
+
+
 when building only one node a node number and percentage is added to the log
 	why is here a difference?
 
+log contains links to other files
+	node dependent trees should contain link to dependent log so vim gf can open it
+	also add links to dependencies log
+	or any other file that is interest
+
+log build command
+	so it can be run from vi, in terminal
 
 md5 request for C dependency cache are not counted in the md5 stats
 
@@ -979,6 +1004,11 @@ structured text output
 		
 		the external program can either consume the data or pass it through
 
+	pbs has it's own structured text transfoms that are applied
+		if no other are defined
+			via a user defined switch  
+		or disabled
+		or own can be displayed on STDERR while structure text is written to a file descriptor (user defined)
 
 show current directory when executing commands
 	--pwd

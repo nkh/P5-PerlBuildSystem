@@ -7,7 +7,6 @@ use strict ;
 use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
-use PBS::ProgressBar ;
 
 require Exporter ;
 
@@ -181,17 +180,6 @@ for (@$build_sequence)
 	$number_of_nodes_to_build++ ;
 	}
 
-my $progress_bar ;
-
-if($pbs_config->{DISPLAY_PROGRESS_BAR})
-	{
-	$progress_bar = PBS::ProgressBar->new
-			({
-			count => $number_of_nodes_to_build,
-			ETA   => "linear", 
-			});
-	}
-	
 my $failed_but_no_stop_set ; # holds error if NO_STOP was set
 
 my $builder_using_perl_time = 0 ;
@@ -236,8 +224,17 @@ for my $node (@$build_sequence)
 						
 	$builder_using_perl_time += tv_interval ($tn0, [gettimeofday]) if NodeBuilderUsesPerlSubs($node) ;
 	
-	$progress_bar->update($node_build_index) if($pbs_config->{DISPLAY_PROGRESS_BAR} && $build_result != BUILD_FAILED) ;
-	
+	if($pbs_config->{DISPLAY_PROGRESS_BAR} && $build_result != BUILD_FAILED)
+		{
+		my $time_remaining = (tv_interval ($t0, [gettimeofday]) / $node_build_index) * ($number_of_nodes_to_build -$node_build_index) ;
+
+		$time_remaining = $time_remaining < 60 
+					? sprintf("%0.2f", $time_remaining) . "s." 
+					: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
+
+		PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build -$node_build_index) . "]" ;
+		}
+
 	if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 		{
 		PrintWarning("--bi defined, continuing.\n") ;

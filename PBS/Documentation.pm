@@ -7,7 +7,6 @@ use warnings ;
 require Exporter ;
 
 use Pod::Parser;
-use PBS::ProgressBar ;
 
 our @ISA = qw(Exporter Pod::Parser) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
@@ -433,27 +432,21 @@ my @extra_paths = @_ ;
 
 my $parser = PBS::Documentation::Indexer->new();
 
-print "Searching and indexing pod sections.\n" ;
+print "Indexing pod sections.\n" ;
 
 my (undef, $path2name_pbs) = Pod::Simple::Search->new->limit_glob('PBS::*')->survey() ;
 my (undef, $path2name_extra) = Pod::Simple::Search->new->shadows(1)->inc(0)->survey(@extra_paths) ;
 
 my @files = (keys %$path2name_pbs, keys %$path2name_extra) ;
 
-my $progress_bar = PBS::ProgressBar->new
-		({
-		  count => scalar(grep {/\.pm$/} @files)
-		});
-
-my $file_index = 1 ;
+my ($files_to_parse, $file_index) = (scalar(grep {/\.pm$/} @files, 1)) ;
 
 for my $file (sort grep {/\.pm$/} @files)
 	{
 	eval {$parser->parse_from_file($file) ;	} ;
 	print "Skipping '$file': $@" if $@ ;
-	
-	$progress_bar->update($file_index) ;
 	$file_index++ ;
+	PrintInfo3 "\r\e[KParsed file $file_index/$files_to_parse" ;
 	}
 
 print "\n" ;

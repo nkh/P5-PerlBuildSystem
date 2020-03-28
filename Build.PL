@@ -37,7 +37,6 @@ PBS/Prf.pm
 PBS/PBSConfig.pm
 PBS/PBSConfigSwitches.pm
 PBS/Plugin.pm
-PBS/ProgressBar.pm
 PBS/Rules.pm
 PBS/Rules.pm
 PBS/Rules/Dependers.pm

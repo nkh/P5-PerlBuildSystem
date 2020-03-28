@@ -26,7 +26,6 @@ use PBS::Build ;
 
 use Socket;
 use IO::Select ;
-use PBS::ProgressBar ;
 use List::PriorityQueue ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
@@ -57,12 +56,10 @@ my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
 
-if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS})
 	{
-	PrintInfo3 "Builder $_\n" for (0 .. ($number_of_builders - 1)) ;
+	PrintInfo3 "Build\n" for (0 .. ($number_of_builders - 1)) ;
 	}
-
-my $progress_bar = CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
 
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
@@ -88,7 +85,6 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 	my @builders = WaitForBuilderToFinish($pbs_config, $builders) ;
 	@builders || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
 		
-
 	for my $builder (@builders)
 		{
 		my $built_node = $builder->{NODE} ;
@@ -102,13 +98,13 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		
 		if($build_result == BUILD_SUCCESS)
 			{
-			if($progress_bar)
+			if($pbs_config->{DISPLAY_PROGRESS_BAR})
 				{
 				if($pbs_config->{DISPLAY_PROGRESS_BAR_FILE})
 					{
 					PrintInfo3 "\r\e[K$built_node->{__NAME}\n" ;
 					}
-				elsif($pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+				elsif($pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS})
 					{
 					for ($number_of_builders)
 						{
@@ -116,14 +112,19 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 
 						PrintInfo2 "\e[${distance}A"
 								. "\r\e[K"
-								. $em ->("Builder $builder->{INDEX}: $built_node->{__NAME}")
+								. $em ->("Build: [$builder->{INDEX}] $built_node->{__NAME}")
 								. "\e[${distance}B" ;
-
 						}
 					}
+				
+				my $time_remaining = (tv_interval ($t0, [gettimeofday]) / $number_of_already_build_node) * ($number_of_nodes_to_build - $number_of_already_build_node) ;
 
-				$progress_bar->update($number_of_already_build_node) ;
-				} 
+				$time_remaining = $time_remaining < 60 
+							? sprintf("%0.2f", $time_remaining) . "s." 
+							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
+
+				PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]" ;
+				}
 
 			$builder_using_perl_time += $build_time 
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
@@ -153,6 +154,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		}
 	}
 
+PrintInfo3 "\r\e[K" ;
 TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
@@ -401,25 +403,6 @@ else
 	}
 }
 
-#-------------------------------------------------------------------------------------------------------
-
-sub CreateProgressBar
-{
-my ($pbs_config, $number_of_nodes_to_build) = @_ ;
-
-if($pbs_config->{DISPLAY_PROGRESS_BAR})
-	{
-	return
-		(
-		PBS::ProgressBar->new
-			({
-			count => $number_of_nodes_to_build,
-			ETA   => "linear", 
-			})
-		);
-	}
-}
-
 #----------------------------------------------------------------------------------------------------------------------
 
 sub WaitForBuilderToFinish
@@ -531,11 +514,11 @@ for my $builder (@$builders)
 	
 	my $distance = @$builders - $builder->{INDEX} ;  
 
-	if($pbs_config->{DISPLAY_PROGRESS_PER_BUILD_PROCESS})
+	if($pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS})
 		{
 		PrintInfo3 "\e[${distance}A"
 				. "\r\e[K"
-				. $em ->("Builder $builder->{INDEX}: $node_to_build->{__NAME}")
+				. $em ->("Build: [$builder->{INDEX}] $node_to_build->{__NAME}")
 				. "\e[${distance}B" ;
 		}
 

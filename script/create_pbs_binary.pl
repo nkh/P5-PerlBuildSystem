@@ -11,7 +11,7 @@ my $pbs_plugins_path = `pbs --display_pbs_plugin_path` ;
 
 my @extra_modules = 
 	qw(
-	PBS::Watch::Client PBS::Prf PBS::Warp::Warp0 PBS::Warp::Warp1_5 PBS::Warp::Warp1_7 PBS::Warp::Warp1_8 PBS::ProgressBar
+	PBS::Watch::Client PBS::Prf PBS::Warp::Warp0 PBS::Warp::Warp1_5 PBS::Warp::Warp1_7 PBS::Warp::Warp1_8
 	Devel::Depend::Cl 
 	Devel::Depend::Cpp 
 	Pod::Simple::HTMLBatch 

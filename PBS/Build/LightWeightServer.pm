@@ -23,7 +23,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use PBS::Build ;
 use PBS::Build::Forked ;
 
-use IO::Socket;
+use IO::Socket ;
 use IO::Select ;
 
 #-------------------------------------------------------------------------------
@@ -57,7 +57,6 @@ my $error_output = '' ;
 my %builder_stats ;
 my $builder_using_perl_time = 0 ;
 
-my $progress_bar = PBS::Build::Forked::CreateProgressBar($pbs_config, $number_of_nodes_to_build) ;
 my $node_build_index = 0 ;
 
 while(%$build_queue)
@@ -94,7 +93,17 @@ while(%$build_queue)
 			# generate md5 etc.. see BuildNode after BUILD_SUCCESS is received
 			# post_build
 			
-			$progress_bar->update($number_of_already_build_node) if $progress_bar ;
+			if($pbs_config->{DISPLAY_PROGRESS_BAR})
+				{
+				my $time_remaining = (tv_interval ($t0, [gettimeofday]) / $number_of_already_build_node) * ($number_of_nodes_to_build - $number_of_already_build_node) ;
+
+				$time_remaining = $time_remaining < 60 
+							? sprintf("%0.2f", $time_remaining) . "s." 
+							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
+
+				PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]" ;
+				}
+
 			$builder_using_perl_time += $build_time if PBS::Build::NodeBuilderUsesPerlSubs($build_queue->{$built_node_name}) ;
 			
 			PBS::Build::Forked::EnqueueNodeParents($pbs_config, $build_queue->{$built_node_name}{NODE}, $build_queue) ;
