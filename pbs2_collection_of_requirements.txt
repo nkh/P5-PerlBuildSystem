@@ -15,6 +15,14 @@ how to show dependencies on pbs libraries, environment variables, installed tool
 	they could be in another layer of the graph
 		we can chose which layer to show ... per node!
 
+warp nodes could be on their own layer
+	this allows us to display graphs without the warp node
+	we'd like to show the nodes that are directly linked to the new  graph (during warp)
+		those are linked nodes
+
+layers seem to be an attribute of the node (like linked or warp_node, ...)
+	difficult to know if layers should be handled as layers or node attributes
+	we can also add the node to a layer even if it has an attribute!
 
 when building only one node a node number and percentage is added to the log
 	why is here a difference?
@@ -24,8 +32,14 @@ log contains links to other files
 	also add links to dependencies log
 	or any other file that is interest
 
-log build command
-	so it can be run from vi, in terminal
+log contents
+	log build command
+		so it can be run from vi, in terminal
+	file names so they can be opened from vi
+		libs, pbsfiles, nodes
+
+node info generation
+	can the generation depend on the pbsfiles md5 and thus may not need to be generated if already ok?
 
 md5 request for C dependency cache are not counted in the md5 stats
 
@@ -2677,6 +2691,62 @@ Creator, IMMEDIATE_BUILD, VIRTUAL, FORCED
 	all can be REH!
 	
 rethink/document IMMEDIATE_BUILD FORCED, LOCAL_RULES and other exceptional mechanisms
+
+put generated file and source file under version control
+	allows us to run pbs and undo what the run as done
+		we can pattialy undo if we want
+
+	
+IMMEDIATE build in a REPL
+	user can point at a node and ask to have it build
+		a bit like IMMEDIATE_BUILD
+	
+
+IMMEDIATE_BUILD
+	first depend the node then build it before returning from the node's depend phase
+		what if the node has a late dependency?
+			warn, error, wait till all the late dependencies are available to run the node's
+				IMMEDIATE_BUILD (fancy!)
+
+CREATOR differs from IMMEDIATE_BUILD as the node is immediately available for other depender to run on it
+	eg: C file creator has the node on disk before the C file depender runs on it
+	
+	if IMMEDIATE_BUILD was used, the C_depender wouldn't find the file on disk
+
+	one solution to run multiple rules
+		IMMEDIATE_BUILD C -> some dependencies
+			create C
+
+		C -> C_DEPENDER
+			CC C -o ...
+
+		the problem is that rules are often loaded and the first rule must be registered before the standard C rule
+			but we have a solution! as the rules are named it is possible to ask for a rule to be run before or after another
+
+		in rule.pm
+			[NAME] C -> C_DEPENDER
+				CC C -o ...
+
+
+		use rule.pm
+
+		IMMEDIATE_BUILD C -> some dependencies
+			BEFORE_RULE => NAME
+			create C
+
+	next problem is that a node that has been depended (possibly by multiple rules in the same package) will
+		not be depended again but linked to
+
+		the example above works ass all the rules are in the same package but if the are created in one package 
+		and the rules to build them are in another package, those rules will not be run
+
+	next problem is that the node is build twice and nodes are never build twice
+		a solution would be to make the node as not build but immediate build, that stops us to immediate build a node twice
+
+
+	we REALLY want IMMEDIATE_BUILD to be a normal build and CREATOR to be an IMMEDIATE_BUILD because we just have one system then
+	and there is no need to handle digests, caches, warp in a special way as we do for CREATOR in pbs1
+
 
 REH_TRIGGER rather than pbs functionality
 	starts a subpbs before the REH_LINK_TO

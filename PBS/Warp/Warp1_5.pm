@@ -140,14 +140,14 @@ if($run_in_warp_mode)
 		$rebuilt++ ;
 
 		$nodes->{$node}{__NAME} = $node ;
-		$nodes->{$node}{__BUILD_DONE} = 'Warp 1.5' ;
+		$nodes->{$node}{__BUILD_DONE} = 'Warp' ;
 		$nodes->{$node}{__DEPENDED}++ ;
 		$nodes->{$node}{__CHECKED}++ ; # pbs will not check any node (and its subtree) which is marked as checked
 		
 		$nodes->{$node}{__PBS_CONFIG} = $global_pbs_config unless exists $nodes->{$node}{__PBS_CONFIG} ;
 		
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
-		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A Warp 1.5' ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_NAME} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_FILE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;

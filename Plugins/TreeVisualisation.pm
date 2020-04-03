@@ -117,6 +117,13 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					{
 					next ;
 					}
+				
+				if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__WARP_NODE} && ! exists $tree->{$_}{__LINKED} )
+					{
+					# only display the __WARP_NODEs that have been linked to the new node
+					# generated during warp
+					next ;
+					}
 					
 				# handle --tnonr
 				my $excluded ;

@@ -7,10 +7,25 @@ md5 cache flushed before returning stats!
 	in warp lots of cache flush all !
 
 watch_server drops events
+	use fluffy and generate files that can be reparsed by pbs
+	we can use a named pipe but the files have the advantage of advantage of being present in the file system
+		we need to have watchers on different machines, possibly different OSes)
+		using files is universal
+		format so they can be parsed rapidely
 
---tno
+	how do we know where to fnind the file system event logs?
+
+	at each run, uniquely identified with a new handle, produce a new log file
+
+#--tno
+	shows all the nodes
 	shows the PBS libraries as dependencies (which is right but boring)
 		when loading graph from warp file
+	stopped displaying __WARP_NODEs except those linked in the new nodes
+
+	this also stopped the display of the library nodes, because those are warp nodes
+	but not linked to by the new nodes, the linking to the library nodes is not done during
+	depend (which it should) but during the warp phase
 
 --no_has_no_dependencies
 	=> hide warning for C dependencies file not having dependencies itself (it is dependend)
@@ -23,7 +38,7 @@ watch_server drops events
 	how do we control the environment variables per node?
 		we don't, the only thing we control is $ENV at the start of the build
 
-for pbs2
+	for pbs2
 		control env per node, per command in the node, per phase in the node
 		inheritance of env from node to node
 		package env is default for nodes
@@ -138,7 +153,7 @@ split pbs a la gcc
 		are both applications and modules to be use in-memory in pbs
 
 
-remove print to STDOUT
+# remove print to STDOUT
 
 log removal of environment variables
 	log the kept variables too
@@ -490,7 +505,8 @@ AddNodeFileDependency
 	=> Remove
 
 	this is the mechanism we use to add dependency on pbsfiles, it can hardly be removed :)
-	
+		pbs2 put pbsfile dependencies in the graph, on another layer
+
 	it is accessible to the user if they want to "use" non pbs files to define config or rules
 		and want the dependency to be right
 
