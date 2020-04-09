@@ -164,8 +164,8 @@ my $file_name                   = shift ;
 my $number_of_blank_lines       = shift ;
 my $number_of_context_lines     = shift ;
 my $center_line_index           = shift ;
-my $center_line_colorizing_sub  = shift || sub{$_[0]} ;
-my $context_colorizing_sub      = shift || sub{$_[0]} ;
+my $center_line_colorizing_sub  = shift || sub{ COLOR('reset', @_) } ;
+my $context_colorizing_sub      = shift || sub{ COLOR('reset', @_) } ;
 
 open(FILE, '<', $file_name) or die ERROR(qq[Can't open $file_name for context display: $!]), "\n" ;
 
@@ -180,25 +180,27 @@ $line_with_context.= "\n" for (1 .. $number_of_blank_lines) ;
 
 <FILE> for (1 .. $number_of_lines_skip) ;
 
-$line_with_context .= INFO("File: '$file_name'\n") ;
+my $t = $PBS::Output::indentation;
+
+$line_with_context .= INFO2("$t${t}File: '$file_name'\n", 0) ;
 
 for(1 .. $top_context)
 	{
 	my $text = <FILE> ;
 	next unless defined $text ;
 
-	$line_with_context .=  $context_colorizing_sub->("$.- $text") ;
+	$line_with_context .=  $context_colorizing_sub->("$t$t$. $text", 0) ;
 	}
 		
 my $center_line_text = <FILE> ;
-$line_with_context .= $center_line_colorizing_sub->("$.> $center_line_text") if defined $center_line_text ;
+$line_with_context .= $center_line_colorizing_sub->("$t$t$. $center_line_text", 0) if defined $center_line_text ;
 
 for(1 .. $number_of_context_lines)
 	{
 	my $text = <FILE> ;
 	next unless defined $text ;
 	
-	$line_with_context .= $context_colorizing_sub->("$.- $text") ;
+	$line_with_context .= $context_colorizing_sub->("$t$t$. $text", 0) ;
 	}
 
 $line_with_context .= "\n" for (1 .. $number_of_blank_lines) ;

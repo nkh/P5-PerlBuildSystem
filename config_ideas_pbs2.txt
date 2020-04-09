@@ -23,7 +23,7 @@ multiple node@root
 
     given that multiple subpbs can be depended separately, having a pbs that supports multiple node@root targets is a just a question of having a virtual node that depends on all the multiple node@root.
 
-    what if in a global build nodes are generated and later linked to by sbpbs. if the subpbs do not have the rules necessary to generate the dependency of the nodes linked to, then the build would fail. This is of course good and adding the rules fix the problem. Still it would be good to know before hand if the nodes linked to have matching local rules or not.
+    what if in a global build nodes are generated and later linked to by subpbs. if the subpbs do not have the rules necessary to generate the dependency of the nodes linked to, then the build would fail. This is of course good and adding the rules fix the problem. Still it would be good to know before hand if the nodes linked to have matching local rules or not.
 
     the situation gets more complicated when the node linked to is not the target of a subpbs. a global build has visibility on all nodes in the graph, maybe something that should be limited, another mechanism is triggers which merged another build tree just for the sake of finding such nodes that are not targets. The trigger mechanism has the added advantage to be declarative.
 

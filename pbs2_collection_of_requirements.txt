@@ -22,7 +22,32 @@ warp nodes could be on their own layer
 
 layers seem to be an attribute of the node (like linked or warp_node, ...)
 	difficult to know if layers should be handled as layers or node attributes
-	we can also add the node to a layer even if it has an attribute!
+	we can also add the node to a layer (push @layers, $new_layer)  even if the nodes have a layer attribute!
+
+can a node belong t multiple layers?
+do the node, existing in the different layers, be different from each other (aka just their name is the same, an other attributes similar is OK too)
+
+
+trigger start another build but make the current nodes graph available
+importing graphs doesn't start another build
+
+the global build cache links back to graphs
+	the idea was that each node get a UUID that completely defines them so other builds could use the previous build
+		(it would be nice to have the attributes for th enode so we can make a partial matching, eg: some node but different compiler versions)
+
+	if the global node also had its graph, we could load its graph in the current build
+
+
+REH can add dependencies named dependencies
+	the REH register itself as a depender and something else
+
+	Rule something
+		Matches
+		dependencies => a b c
+		named_dependencies => Frank => 1 2 3
+
+		Builder => cat %NAMED_DEPENDENCIES_FRANK > %NODE_TO_BUILD
+		Buuilder_two => some_file # some_file is  dependency but it's not declared as one
 
 when building only one node a node number and percentage is added to the log
 	why is here a difference?
@@ -356,7 +381,7 @@ pbsfile in multiple languages
 
 	the snippets are added as dependencies, and snippets can return even more dependencies, rues, configs, ...
 
-	there was a requirement stating that dependers, or any REH, can be written in any language, this is an extenton where the pbsfile itself can be written in another language via specialized REH or functions (could we make the REH an function the same format)
+	there was a requirement stating that dependers, or any REH, can be written in any language, this is an extention where the pbsfile itself can be written in another language via specialized REH or functions (could we make the REH an function the same format)
 
 	example multi language pbsfile:
 
@@ -372,13 +397,22 @@ pbsfile in multiple languages
 		printf AddConfig "......"
 		EOB
 
+	this still is run by pbs but we could make pbs itself in multiple language
+		when a subpbs is run, a target and some supporting function are given
+			the subpbs doesn't have to be in perl or in pbs language it needs to return something that
+			pbs can integrate in the graph (a sub graph)
+
+			when running pbsf calls REH at specific phases, the nodes returned by the non perl subpbs can contain
+			REHs that run code written in any language
+
+
 
 Advanced examples
 	build a compiler that's going to be used to build nodes
 
 	in pbs, compiler is a configuration variable so it an be used in builders
 	nodes that need the compiler have it as dependency
-	dependency is added via a rule, the rule can be added byt a switch
+	dependency is added via a rule, the rule can be added by a switch
 	the rule can be global
 	the compiler itself has a rule to build it
 	the target of that rule uses the configuration variable
@@ -391,6 +425,75 @@ Advanced examples
 	the compiler can be fetched from a remote node/server/...
 	the compiler is either build or used as is it is found, in that case it becomes a source
 
+	? is the compiler the value of the configuration variable or a node (with sub graph)? both?
+
+	how do we transform a dependency (node) in something we can call
+
+		# pbs 1
+		Config CC => gcc_2.6
+		Rule object_file
+			dependency => "$path/$name.c",
+			dependency => \&depend_source 
+			build "%CC -o %FILE_TO_BUILD"
+
+
+		Rule object_file
+			named_dependency =>  [compiler => gcc_2.6],
+			REH_SOURCE => "$path/$name.c", 
+			build "%CC -o %FILE_TO_BUILD"
+
+		# above with sugar
+		Rule object_file
+			REH_COMPILER => gcc_2.6,
+			REH_SOURCE => "$path/$name.c",
+			REH_C_DEPENDENCIES, 
+			build "%CC -o %FILE_TO_BUILD"
+			
+			# REH_COMPILER can be used multiple time to override the compiler, just like a configuration variable
+			# REH_COMPILER can set itself to the default compiler in the system
+			# REH_COMPILER can set the configuration variable, with comment and history
+			# REH_COMPILER can verify the configuration variable and warn or bail
+			# REH_COMPILER can be run in multiple phases, including when the command line has to be evaluated (although setting the config variable is enough)
+			# REH_COMPILER can add a dependency to the compiler
+
+
+REH arguments
+	pbs2 proto parses rules made of tuples REH => REH_argument
+
+	REHs could say how many arguments they have
+		this allows REH without arguments or with multiple arguments
+
+		this can make debugging a bit harder just to make rules look good
+			
+
+	Rule something 
+		REH_1arg  => gcc_2.6,
+		REH_3args => "$path/$name.c", 123, something_else,
+		REH_0args ; 
+
+	Rule something 
+		REH_1arg  => gcc_2.6,
+		REH_3args => [ "$path/$name.c", 123, something_else ],
+		REH_0args => [] ;  or REH_0args() 
+
+	REHs can ask pbs if an argument is itself an REH
+	
+	?the biggest problem is that REH_0args is not valid perl syntax, even if we declared it as a function (which we do not want), it would still fail this:
+
+		use Data::TreeDumper ;
+
+		sub test {print DumpTree \@_, 'test'; 7}
+		sub rule {print DumpTree \@_, 'rule'}
+
+		rule
+			a => 1,
+			test , # test => 2 makes test a string
+			b => 2 ;
+		
+	declaring a string constant works
+		we also want to manipulate REH symbolically
+			allows easier debugging, logging
+			late compilation of rules
 
 log file
 	for each node a log file is generated
@@ -427,7 +530,14 @@ global rules
 
 	if gr has associated code it must be reloaded in subpbses
 
+	solution is to put the GR in a file and include it
+		inlined GR can be serialized (we can also add meta data in the serialized file)
+		switches that include GRs push the name of a file in the GR list
 
+	GR can be selectively Applied, even from command line switches
+		pbs --gr filename,regex,regex
+
+		command line switches are aliases to --gr 
 
 
 rule producing multiple targets at the same time
@@ -441,6 +551,9 @@ Textual output
 			generate logs
 			progress bar info to the output stream (or not, they still are handled externally)...
 
+		REH_VERBOSITY => phase, verbosity level, string # from that level up unless a most fitting REH_VERBOSITY exist
+			best to not show phase in pbsfile
+
 	--pretty-print
 		content of the pbs display (progress bar or other) can be changed with pretty print option displaying only what the user wants
 
@@ -453,7 +566,7 @@ Textual output
 	log output element
 		log is just a normal output tagged with log, so external output processor know where to save it
 
-	all the normally displayed information can be in different rehs and bs adds a global rules to add all of them at once
+	all the normally displayed information can be in different rehs and pbs adds a global rules to add all of them at once
 		the rule is kept in a separate file
 
 		add rule
@@ -464,19 +577,22 @@ Textual output
 			REH_AT_BUILD_END => generate some output section 
 			REH_AT_DEBUG_NODE => generate some output section 
 
+		all depend on verbosity level
 
 Global rule efficiency
 	rehs that are applied to all nodes should be quick to apply on nodes
 		EG: sort them and just apply them without running any regex (if that takes time, otherwise apply the regex)
 	since every node is going to match these GR, node should point at them rather than have copies
 	pointing at them should be done symbolically, by name not reference
-	rather than storing all the GR, store the name na global node section and always run it (optimization is the root of ...)
+	rather than storing all the GR, store the name in a global node section and always run it (optimization is the root of ...)
 
 
 reh_short command description
 	rather than display the build command, display a short comment
 		 eg: gcc ccc abc ccc vvv eee fffff becomes compiling abc
 	
+	depends on verbosity level
+
 	how do we override REH_AT_BUILD_COMMAND_START
 		the override should be by specific node 
  
@@ -529,7 +645,7 @@ handling of failed node build
 	depending on the build some node may have less importance than other
 		ie: doc build can fail but tests must pass
 
-	parents of node, subset of nodes  decide the importance of dependencies
+	parents of node, subset of nodes,  decide the importance of dependencies
 		the nodes (with level of importance to be changed) may live multiple level deep in the dependency graph
 
 		the higher level node must be able to catch a failed build  at the sub levels
@@ -564,7 +680,7 @@ handling of failed node build
 
 		
 		AddRule(..., ..., GLOBAL) can be added by a switch
-		pbs --pbsuse_global 'xxx'
+		pbs --pbsuse_global 'xxx' (see --gr)
 			
 
 	nodes can themselves catch a failure
@@ -589,6 +705,30 @@ REH_TIMER and REH_NO_TIMER
 	display of stats can be via a rule applied on the root node
 		? how do we display stats on a failed build
 	 
+	can TIME_OUT be applied the same way
+
+		isn't TIME_OUT better as a wrapper?
+
+		rule
+			name => no_time_out
+			...
+			build => ...
+
+		rule
+			name => single_command_time_out_wrapper
+			...
+			TIME_OUT => 10, [ build => ... ]
+
+		rule
+			name => multiple_command_time_out_wrapper
+			...
+			TIME_OUT => 10, [ build => ..., build2 => ... ]
+
+		rule
+			name => global_time_out_wrappers
+			...
+			BUILD_TIME_OUT => 10,
+			build => ...  
 
 
 pbsfile is normal perl file
@@ -745,18 +885,95 @@ display node info
 		DEPENDENCIES => PBS_DEPEND_STEP or PBS_END_STEP
 
 
+parallel depend phase 
+	(these thoughts started with how we display the parallel depend phase and continues on how to implement it)
+
+	for debugging, depend in parallel first then with a single process and display the indentation as pbs1
+
+	a regex to display the depending of a specific node, or node and all its sub dependencies can limit which node are displayed
+
+	triggering a specific node will display only that node's depending
+
+	display node depend as node build
+		the information about rules, triggers, ... displayed during depend are simply
+		aligned to the left
+
+		we can also display a progress bar
+
+	depend display during parallel depend is still not simple to display
+
+	depending nodes is not ordered like in pbs1, depend node, depend it's dependencies
+		depend node, put the list of nodes somewhere a depend thread will pick it up
+			this let us use the same type of scheduling as a build and even remote depend
+
+		the current mechanism is efficient because the rules and package configs are already in memory but a node to be depended could be serialized and deserialized in another thread/process. if we keep the rules serialized, the serialization of the node is just its config and its matching rule.
+
+	the output of the depend phase is unsorted, to display something we can use for debugging we must sort it
+		we can  follow multiple nodes depend if each one is sorted in it's own stream
+
+	the depend output of a node is written in a node depend log which can be looked at with an editor
+
+	the depend output for the graph is logged
+
+	it is possible to crawl the node depend logs and generate a structured output (indented by level)
+		the structured output can filter the node's depend output to a minimum and be decorate so one can jump from node to node in a text editor
+
+	fzf can be a great tool to use going around in nodes depend logs
+
+	NOT RE-DEPENDING A NODE
+		during depend in different threads/process/build_nodes, some nodes will be common dependencies
+		we don't want separate depend nodes to depend the same node as it wastes cpu time
+	
+		first of all we should use depended nodes if they exist from an older build
+		checking with a central location should be done in batch if possible, the depend process also gets a batch of nodes to process not just one  
+
+*** THE GRAPH IS A BUILD CONSTRUCT ***
+	we don't need a graph most of the time
+	this allows us to spread nodes depend and build on multiple machine processes as long as the environment is identical (nodes carry their config and build instructions) 
+
+synchronizing between build nodes (given they have the same (verified) environment) can be done with git/ssh (diff the remote nodes with local repo)
+	the remote repo can be shallow
+
+history of build
+	if the build log contains a time stamp we can put the node build logs on a time line
+	the time stamp also contains the parents, or should it be the parents, time is not really important it's the relation between the nodes that describe the build sequence
+	still nodes of equivalent build levels are build at different times (and on different build nodes, and can stay there, no need to copy them back
+
+	We don't want to keep a dependency to dependent relationship, even on it's own layer
+		we have the dependent to dependency available so we could build a reverse time line
+			we can display the time line in reverse
+
+		can this be used to schedule the build without having to keep the dependent information
+			we use the information to increment the dependent count of dependencies left to build
+
+			in any case this information shouldn't be kept in the node as we do in pbs1 as it is not a node data but a build data
+
 Global rule
 
 * indentation level
 	mainly used during depend phase
 
-	we want to make the depend phase parallel, how does it look then?
-
 	indentation level is the depth of pbsfile levels
 		pbsfiles have names
 		some pbsfile can be called for different targets
 
-		level is a path to the node: pbsfile:target/pbsfile:target/node
+	=> level is a path to the node: pbsfile:target/pbsfile:target/node
+		we don't need to have an indentation level, the nodes name contains it
+
+		an option can make the display indented or not
+
+		the path to the node is the pbsfile path! node name can be different
+
+
+		parent nodes give their path to their dependencies
+		linked nodes get multiple parents paths
+			but a node really doesn't care about it's parents, it has it's own config, rules, ...
+				the parents paths are a layer of information needed by the build not the node
+
+		
+		the depth can also be a numeric node attribute rather than embedded in the nodes pbsfile/target path
+
+
 
 * plugins
 	add switches dynamically, problem with prf (see pbs 1 FrontEnd.pm)
@@ -2746,6 +2963,26 @@ CREATOR differs from IMMEDIATE_BUILD as the node is immediately available for ot
 
 	we REALLY want IMMEDIATE_BUILD to be a normal build and CREATOR to be an IMMEDIATE_BUILD because we just have one system then
 	and there is no need to handle digests, caches, warp in a special way as we do for CREATOR in pbs1
+
+	REH_CREATOR can run before the depend step
+		here's arequirement that says REHs can define their step name and put it before other steps
+			REH_CREATOR, STEP_CREATOR before STEP_DEPEND
+
+
+		REH_CREATOR has its own dependencies
+		REH_CREATOR can do whatever it wants, including generating a build system and run it!
+			we don't need to generate files (PBS_CONTENT) but it's a good idea, we get a log of the build to
+				pbs genertes a file for PBS_CONTENT anyway
+			
+			it's possible to run pbs (since we are in pbs) and ask the core to build in a different graph layer
+
+			it's possible to run pbs as an external command and as it to generate a layer that is imported
+
+			it's possible to run another build system, or even a bash script, an import nodes after
+
+
+importing graph layer
+	pbs can serialize and import layers generated by other builds
 
 
 REH_TRIGGER rather than pbs functionality
