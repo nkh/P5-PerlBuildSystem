@@ -1,9 +1,135 @@
+
+pre-build warp
+	when is it generated
+	why are all pbsfiles re-run when   pre-build warp done but before warp generated
+
+text displayed with terminal control characters
+	in pbs1 a control character is used to erase the previously written text and write over it
+
+	some text will not be in the terminal because of this and that may make the debugging more difficult
+		output is structured in pbs2 so everything will be in the log and it is the display plugin that is 
+		responsible for using control characters
+
+long text display
+	pbs1 use elision in some contexts
+		--dd
+		name of target of subpbs
+		...
+
+	sometimes we want the full name of things
+		elision should be an option
+		elision in some context only
+			eg: --dd 
+		elision on some paths only
+			or not on some paths
+
+graph display
+	in text mode we need to be able to color the glyphss to show where they come from
+		triggered nodes
+		warp nodes
+		merged build nodes
+		...
+
+	text mode graph doesn't show triggered graphs!
+
+Information trees
+	always present the information in the most logical order
+	
+	IE: displaying a trigger rule
+		DEPENDER is of no interest
+		NAME is not first
+
+		trigger rule:
+		├─ DEPENDER = CODE(0x558e27765d48)  [C1]
+		├─ FILE = ./Pbsfile.pl  [S2]
+		├─ LINE = 16  [S3]
+		├─ NAME = T1  [S4]
+		├─ ORIGIN = :PBS::Runs::PBS_1:./Pbsfile.pl:16  [S5]
+		└─ TEXTUAL_DESCRIPTION  [A6]
+		   ├─ 0 = X  [S7]
+		   ├─ 1 =  blessed in 'Regexp'  [O8]
+		   │  └─ REGEXP = (?^:^\./y$)  [S9]
+		   ├─ 2 =  blessed in 'Regexp'  [O10]
+		   │  └─ REGEXP = (?^:^\./b$)  [S11]
+		   ├─ 3 =  blessed in 'Regexp'  [O12]
+		   │  └─ REGEXP = (?^:^\./bb$)  [S13]
+		   └─ 4 =  blessed in 'Regexp'  [O14]
+		      └─ REGEXP = (?^:^\./z1$)  [S15]
+		  
+pbs has many phases
+	verify warp
+	depend
+	check
+	build
+	generate warp
+	post build
+
+reloading rule does take time
+	Depend: pbsfiles: 100, time: 1.67 s.
+	Depend: nodes in the dependency tree: 1901 [W:0, R:1901]
+	Check: total time: 0.09 s.
+	'PbsUse' statistic:
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Builders/Objects.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.034684
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Configs/Compilers/gcc.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.107334
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C_depender.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.078792
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C_EvalShellCommand.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.064047
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/Compilers/gcc.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.054585
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.445084
+	├─ /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/Object_rules_utils.pm
+	│  ├─ LOADS = 100
+	│  └─ TOTAL_TIME = 0.05924
+	├─ TOTAL_LOADS = 700
+	└─ TOTAL_TIME = 0.843765999999999
+
+	=> let the user decide if rules are reloaded or re-used
+		PbsUse vs PbsUseNoCache
+		or global caching policy via a cli switch
+
+trigger rule import
+	in pbs1 an ExportTrigger is defines in a pbsfile, ImportTrigger looks for the function and calls it
+		this has the advantage that we can do something special in the ExportTrigger sub
+		
+		declare rules as EXPORTED and let pbs create the ExportTrigger sub or simply scan the rules for an EXPORTED rule in ImportTriggers
+		Exported rules are not called during depend if not imported
+
 fzf
 	completion via fzf, showing the help text
 	--options which can be redirected to fzf
 	documentation via fzf
 	replace documentation module with fzf
 
+layers
+	warp nodes could be on their own layer
+		this allows us to display graphs without the warp node
+		we'd like to show the nodes that are directly linked to the new  graph (during warp)
+			those are linked nodes
+
+		we can generalize the system and make it possible to decide which nodes go to what layer
+			via REH
+
+			when displaying nodes from one layer in a graph form, we need to compute the minimal set of nodes  from other layer that are needed to make a graph
+
+			? can nodes belong to multiple layers
+				would be nice if we want to merge builds
+
+	layers seem to be an attribute of the node (like linked or warp_node, ...)
+		difficult to know if layers should be handled as layers or node attributes
+		we can also add the node to a layer (push @layers, $new_layer)  even if the nodes have a layer attribute!
+
+	can a node belong t multiple layers?
+	do the node, existing in the different layers, be different from each other (aka just their name is the same, an other attributes similar is OK too)
 
 how to show dependencies on pbs libraries, environment variables, installed tools
 	if they were all dependencies to each node -tno would become unusable
@@ -15,21 +141,12 @@ how to show dependencies on pbs libraries, environment variables, installed tool
 	they could be in another layer of the graph
 		we can chose which layer to show ... per node!
 
-warp nodes could be on their own layer
-	this allows us to display graphs without the warp node
-	we'd like to show the nodes that are directly linked to the new  graph (during warp)
-		those are linked nodes
 
-layers seem to be an attribute of the node (like linked or warp_node, ...)
-	difficult to know if layers should be handled as layers or node attributes
-	we can also add the node to a layer (push @layers, $new_layer)  even if the nodes have a layer attribute!
+trigger start another build and makes the current nodes graph available
+	importing graphs doesn't start another build
 
-can a node belong t multiple layers?
-do the node, existing in the different layers, be different from each other (aka just their name is the same, an other attributes similar is OK too)
-
-
-trigger start another build but make the current nodes graph available
-importing graphs doesn't start another build
+	is the order of trigger handling important
+		if yes, how can we do that if we don't have any order for the normal dependencies?
 
 the global build cache links back to graphs
 	the idea was that each node get a UUID that completely defines them so other builds could use the previous build
@@ -911,12 +1028,24 @@ parallel depend phase
 	the output of the depend phase is unsorted, to display something we can use for debugging we must sort it
 		we can  follow multiple nodes depend if each one is sorted in it's own stream
 
-	the depend output of a node is written in a node depend log which can be looked at with an editor
+	depend log
+		the output during the depend phase can be difficult to follow as a node depend is followed by
+			its dependencies depend, the first node depend continues and al the sub dependencies have been depended
+			when the next dependency to the first node is depended it's difficult to see what parent that dependency has
+				? is it that important to know which parent
 
-	the depend output for the graph is logged
+		the output could contain graph lines to help but that works only for smaller graphs
 
-	it is possible to crawl the node depend logs and generate a structured output (indented by level)
-		the structured output can filter the node's depend output to a minimum and be decorate so one can jump from node to node in a text editor
+		the output background color could change with depth of depend, that's like graph lines
+
+		the depend output of a node is written in a node depend log which can be looked at with an editor
+			the sub nodes depend is not displayed but links to the sub nodes exist (build_name path + node name)
+
+		the depend output for the whole graph is logged (pbs1 output)
+
+		it is possible to crawl the node depend logs and generate a structured output (indented by level)
+			the structured output can filter the node's depend output to a minimum and be decorate so one can jump from node to node in a text editor
+			this is meso warp!
 
 	fzf can be a great tool to use going around in nodes depend logs
 
@@ -935,6 +1064,8 @@ synchronizing between build nodes (given they have the same (verified) environme
 	the remote repo can be shallow
 
 history of build
+	time is defined by the dependency relationship, not by build time which means nothing!
+
 	if the build log contains a time stamp we can put the node build logs on a time line
 	the time stamp also contains the parents, or should it be the parents, time is not really important it's the relation between the nodes that describe the build sequence
 	still nodes of equivalent build levels are build at different times (and on different build nodes, and can stay there, no need to copy them back
@@ -952,7 +1083,15 @@ Global rule
 
 * indentation level
 	mainly used during depend phase
-
+		the depend phase does more than just find dependencies
+			load pbsfile
+				display when it starts and stops
+			load pbs libraries
+				do stats on it
+			setup config
+			trigger rules
+			...
+ 
 	indentation level is the depth of pbsfile levels
 		pbsfiles have names
 		some pbsfile can be called for different targets
@@ -1000,8 +1139,6 @@ Global rule
 			REH_GRAPH
 				type, pre-load and post-load
 			GLOBAL
-
-		
 
 	graph option
 		set a configuration variable in the package which is use by the graph node builder

@@ -37,7 +37,7 @@ my $triggered_and_triggering = shift @$trigger_definition ;
 
 if('ARRAY' eq ref $triggered_and_triggering)
 	{
-	# $triggered_node at first posotion
+	# $triggered_node at first position
 	
 	my $last_triggering_nodes = @$triggered_and_triggering - 1 ;
 	for my $trigger (@$triggered_and_triggering[1 .. $last_triggering_nodes])

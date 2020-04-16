@@ -484,11 +484,11 @@ if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 		
 	if('HASH' eq ref $depender_definition)
 		{
-		PrintInfo("Registering subpbs rule: $class_info '$name$origin'.")  ;
+		PrintInfo("PBS: Adding subpbs rule: $class_info '$name$origin'.")  ;
 		}
 	else
 		{
-		PrintInfo("Registering rule: $class_info '$name$origin'.")  ;
+		PrintInfo("PBS: Adding rule: $class_info '$name$origin'.")  ;
 		}
 		
 	PrintInfo(DumpTree($rule_definition)) if defined $pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION} ;

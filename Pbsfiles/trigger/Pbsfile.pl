@@ -20,6 +20,4 @@ AddRule 'x',     ['x' => 'b'], "touch %FILE_TO_BUILD" ;
 #~ AddRule [qr/'z0', 'subdir/a', 'b', 'c', 'y', 'b', 'only_x'], "touch %FILE_TO_BUILD" ;
 AddRule 'build everything', [qr/(z0)|(subdir\/a)|b|c|y|b|(only_x)/ => undef], "touch %FILE_TO_BUILD" ;
 
-
 ImportTriggers('./trigger.pl') ;
-#~ ImportTriggers('./Pbsfiles/trigger/trigger.pl') ;

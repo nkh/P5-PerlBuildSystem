@@ -663,11 +663,11 @@ my $file_body = '' ;
 
 if($type eq 'Pbsfile')
 	{
-	PrintInfo("Loading: '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	PrintInfo("PBS: loading '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{
-		PrintError("Pbsfile '$file' and PBSFILE_CONTENT can't co-exist.\n") ;
+		PrintError("PBS: Error: Pbsfile '$file' and PBSFILE_CONTENT can't be used simultaneously.\n") ;
 		die ;
 		}
 	
@@ -713,8 +713,7 @@ my $result = eval $source ;
 
 if($@)
 	{
-	PrintError "\nCaught exception:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
-	#~confess "$@ ." if $@ ;
+	PrintError "\nException:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
 	die "\n";
 	}
 	
@@ -723,7 +722,7 @@ $type .= ': ' unless $type eq '' ;
 if((!defined $result) || ($result != 1))
 	{
 	$result ||= 'undef' ;
-	die "$type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;
+	die "PBS: Error: $type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;
 	}
 }
 

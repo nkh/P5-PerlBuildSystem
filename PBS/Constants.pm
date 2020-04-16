@@ -26,6 +26,8 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		DEPEND_AND_CHECK
 		DEPEND_CHECK_AND_BUILD
 		
+		TRIGGER_INSERTED
+		
 		UNTYPED
 		VIRTUAL
 		LOCAL
@@ -76,6 +78,9 @@ use constant DEPENDER_PACKAGE   => 1 ;
 
 # creator --------------------------------------------------------
 use constant NEED_REBUILD => 1 ;
+
+# node types --------------------------------------------------------
+use constant TRIGGER_INSERTED   => '__TRIGGER_INSERTED' ;
 
 # rule types --------------------------------------------------------
 use constant UNTYPED            => '__UNTYPED' ;

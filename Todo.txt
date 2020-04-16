@@ -1,3 +1,10 @@
+error cpu 100% and freezes
+	in pbsfiles/trigger
+		first works
+		pbs all -bni -tno --display_trigger --display_trigger_rule_definition --display_trigger_rules
+
+		second freezes
+		pbs all -bni -tno --display_trigger --display_trigger_rule_definition --display_trigger_rules
 
 warp 1.8 pbs chain merge
 linking during non warp depend must also update the pbsfile chain 

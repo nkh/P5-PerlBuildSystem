@@ -518,7 +518,7 @@ my ($pbs_config, $nodes, $nodes_to_check, $node_names, $IsFileModified, $level) 
 $level  = defined $level && $level ne '' ? "<$level>" : '' ;
 
 my ($number_of_removed_nodes, $node_verified) = (0, 0) ;
-my (@trigger_nodes, @nodes_triggered) ;
+my (@trigger_nodes, @nodes_triggered, %nodes_triggered) ;
 
 for my $node (@$nodes_to_check)
 	{
@@ -528,7 +528,7 @@ for my $node (@$nodes_to_check)
 		
 	$node_verified++ ;
 	
-	next unless exists $nodes->{$node} ; 
+	next if ! exists $nodes->{$node} ; 
 	
 	if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES} && ! exists $nodes->{$node}{__TERMINAL})
 		{
@@ -569,7 +569,7 @@ for my $node (@$nodes_to_check)
 		{
 		my @nodes_to_remove = ($node) ;
 		
-		PrintInfo "\e[KWarp: pruning\n" 
+		PrintInfo "\e[KWarp: pruning from node '$node'\n" 
 			if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_to_remove ;
 
 		while(@nodes_to_remove)
@@ -581,17 +581,19 @@ for my $node (@$nodes_to_check)
 				PrintInfo2 $PBS::Output::indentation . "$node_to_remove\n"
 					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} ;
 				
-				push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} keys %{$nodes->{$node_to_remove}{__DEPENDENT}} ;
+				push @dependent_nodes, grep{ ! exists $nodes_triggered{$_} } map {$node_names->[$_]} keys %{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 				
 				# remove triggering node and its dependents
 				if(exists $nodes->{$node_to_remove}{__TRIGGER_INSERTED})
 					{
 					my $trigerring_node = $nodes->{$node_to_remove}{__TRIGGER_INSERTED} ;
-					push @dependent_nodes, grep{ exists $nodes->{$_} } map {$node_names->[$_]} keys %{$nodes->{$trigerring_node}{__DEPENDENT}} ;
-					push @nodes_triggered, $trigerring_node ;
+					push @dependent_nodes, grep{! exists $nodes_triggered{$_} } map {$node_names->[$_]} keys %{$nodes->{$trigerring_node}{__DEPENDENT}} ;
+					push @nodes_triggered, $trigerring_node unless exists $nodes_triggered{$trigerring_node} ;
+					$nodes_triggered{$trigerring_node}++ ;
 					}
 					
-				push @nodes_triggered, $node_to_remove ;
+				push @nodes_triggered, $node_to_remove unless exists $nodes_triggered{$node_to_remove};
+				$nodes_triggered{$node_to_remove}++ ;
 				
 				$number_of_removed_nodes++ ;
 				}
@@ -600,7 +602,6 @@ for my $node (@$nodes_to_check)
 			}
 		}
 	}
-
 return (\@nodes_triggered, \@trigger_nodes) ;
 }
 

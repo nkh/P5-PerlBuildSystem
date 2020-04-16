@@ -199,7 +199,7 @@ my $post_build_definition =
 
 if(defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION})
 	{
-	PrintInfo("Registering post build command: '$name$origin'\n")  ;
+	PrintInfo("Adding post build command: '$name$origin'\n")  ;
 	}
 
 if(defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION})

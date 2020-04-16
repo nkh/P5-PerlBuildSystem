@@ -1566,7 +1566,7 @@ solution. In the mean time an experimental implementation using fork has been st
 
 =head1 Triggers
 
-Trigger is a sytem to  allow the current build to hook into other dependency trees. This can be used to 
+Trigger is a system to  allow the current build to hook into other dependency trees. This can be used to 
 (for example) synchronize libraries. the details are located in the library Pbsfile.
 
 L<file://home/nadim/Dev/PerlModules/PerlBuildSystem-0.25/Pbsfiles/trigger/Pbsfile.pl>

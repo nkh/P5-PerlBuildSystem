@@ -18,6 +18,8 @@ our $VERSION = '0.04' ;
 
 use Data::TreeDumper;
 use Time::HiRes qw(gettimeofday tv_interval) ;
+use String::Truncate ;
+use Term::Size::Any qw(chars) ;
 
 use PBS::Depend ;
 use PBS::Check ;
@@ -62,7 +64,13 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 
 my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 
-PrintInfo("Depend: targets: [@$targets], level: $PBS::Output::indentation_depth, nodes: $start_nodes              \n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+my $available = (chars() // 10_000) - (length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) + 40) ;
+my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+
+my $target_string = '' ; 
+$target_string .= $em->($_) for (@$targets) ; 
+
+PrintInfo("Depend: targets: [$target_string], level: $PBS::Output::indentation_depth, nodes: $start_nodes\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -80,7 +88,7 @@ PBS::Depend::CreateDependencyTree
 my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 my $added_nodes = $end_nodes - $start_nodes ;
 
-PrintWarning("Depend: end $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+PrintWarning("Depend: done $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

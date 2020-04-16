@@ -44,6 +44,8 @@ return
 
 #-------------------------------------------------------------------------------
 
+my %trigger_rules ;
+
 sub CreateDependencyTree
 {
 my $pbsfile_chain    = shift // [] ;
@@ -57,6 +59,7 @@ my $inserted_nodes   = shift ;
 my $dependency_rules = shift ;
 
 $PBS::Depend::BuildDependencyTree_calls++ ;
+my $indent = $PBS::Output::indentation ;
 
 return if(exists $tree->{__DEPENDED}) ;
 
@@ -76,8 +79,6 @@ my %dependency_rules ; # keep a list of  which rules generated which dependencie
 my $has_dependencies = 0 ;
 my @has_matching_non_subpbs_rules ;
 my @sub_pbs ; # list of subpbs matching this node
-
-my %triggered_nodes ;
 
 my @post_build_rules = PBS::PostBuild::GetPostBuildRules($load_package) ;
 
@@ -222,7 +223,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo("[Subpbs] $rule_index:$rule_info\n") ;
+				PrintUser("${indent}'$node_name' has matching subpbs: $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -230,7 +231,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		else
 			{
 			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rule->{FILE}:$dependency_rule->{LINE}'" ;
- 			}
+			}
 		
 		# transform the node name into an internal structure and check for node attributes
 		@dependencies = map
@@ -286,12 +287,13 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($node_name_matches_ddrr)
 				{
-				my $node_type = '' ;
-				for my $type (VIRTUAL, LOCAL, FORCED)
+				my @node_type ;
+				for my $type (VIRTUAL, LOCAL, FORCED, TRIGGER_INSERTED)
 					{
-					$node_type .= " $type " if exists $tree->{$type} ;
+					push @node_type, "$type" if exists $tree->{$type} ;
 					}
-				$node_type = '[' . $node_type . '] ' if $node_type ne '' ;
+
+				my $node_type = scalar(@node_type) ? '[' . join(', ', @node_type) . '] ' : '' ;
 				
 				my $rule_info =  $dependency_rule->{NAME}
 						. (defined $pbs_config->{ADD_ORIGIN} 
@@ -315,7 +317,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					my $indent = $PBS::Output::indentation ;
 					PrintUser($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
 					
 					if(@dependency_names)
@@ -416,7 +417,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				}
 			else
 				{
-				# temporarely hold the names of the dependencies within the node
+				# temporarily hold the names of the dependencies within the node
 				# this is used for checking duplicate dependencies
 				$tree->{$dependency_name} = $dependency ;
 				}
@@ -457,7 +458,7 @@ for my $dependency_name (keys %$tree)
 
 if(@sub_pbs > 1)
 	{
-	PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
+	PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple matching subpbs:\n" ;
 	PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
 	
 	Carp::croak  ;
@@ -467,6 +468,15 @@ if(@sub_pbs > 1)
 #-------------------------------------------------------------------------
 # handle node triggers
 #-------------------------------------------------------------------------
+my (%triggered_nodes, @triggered_nodes) ;
+
+my $trigger_rules_displayed = exists $trigger_rules{$load_package} ;
+my $trigger_rules = ( $trigger_rules{$load_package} //= [PBS::Triggers::GetTriggerRules($load_package)] ) ;
+my $number_of_trigger_rules = scalar(@{$trigger_rules}) ;
+
+PrintInfo("Trigger: rules: $number_of_trigger_rules\n") 
+	if !$trigger_rules_displayed && $number_of_trigger_rules && defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES} ;
+
 for my $dependency (@dependencies)
 	{
 	use constant TRIGGERED_NODE_NAME  => 0 ;
@@ -483,39 +493,39 @@ for my $dependency (@dependencies)
 	
 	my $dependency_name = $dependency->{NAME} ;
 	
-	for my $trigger_rule (PBS::Triggers::GetTriggerRules($load_package))
+	for my $trigger_rule (@{$trigger_rules})
 		{
 		my ($match, $triggered_node_name) = $trigger_rule->{DEPENDER}($dependency_name) ;
 
-		my $trigger_info_name =  $trigger_rule->{NAME} ;
-		my $trigger_info =  $trigger_info_name . $trigger_rule->{ORIGIN} ;
-								
 		if($match)
 			{
+			my $trigger_info_name =  $trigger_rule->{NAME} ;
+			my $trigger_info =  $trigger_info_name . $trigger_rule->{ORIGIN} ;
+								
 			my $current_trigger_message = '' ;
 			
 			next if($triggered_node_name eq $node_name) ;
 			
 			if(exists $inserted_nodes->{$triggered_node_name})
 				{
-				$current_trigger_message = "'$triggered_node_name' would have been inserted by trigger: '$trigger_info' "
-								. "on node '$dependency_name', but was found among the nodes.\n" ;
+				$current_trigger_message = "${indent}Trigger: ignoring '$triggered_node_name' from '$trigger_info'"
+								. ", trigger: '$dependency_name', was already in the graph.\n" ;
 				}
 			else
 				{
-				$current_trigger_message = "'$triggered_node_name' was inserted by trigger: '$trigger_info' "
-														. " on node '$dependency_name'.\n" ;
-														
+				$current_trigger_message = "${indent}Trigger: adding '$triggered_node_name' from '$trigger_info'"
+								. ", trigger: '$dependency_name'.\n" ;
+								
 				if(exists $triggered_nodes{$triggered_node_name})
 					{
-					$current_trigger_message .= "'$triggered_node_name' was already trigger inserted by trigger "
-									. "'$triggered_nodes{$triggered_node_name}[TRIGGER_INFO]' on "
-									. "node '$triggered_nodes{$triggered_node_name}[TRIGGERING_NODE_NAME]'."
-									. "Ignoring duplicate triggered node.\n" ;
+					$current_trigger_message .= "${indent}Trigger: ignoring duplicate '$triggered_node_name' from  "
+									. "'$triggered_nodes{$triggered_node_name}[TRIGGER_INFO]'"
+									. ", was added by trigger: '$triggered_nodes{$triggered_node_name}[TRIGGERING_NODE_NAME]'.\n"
 					}
 				else
 					{
 					$triggered_nodes{$triggered_node_name} = [$triggered_node_name, $dependency_name, $trigger_info, $trigger_info_name] ;
+					push @triggered_nodes, $triggered_nodes{$triggered_node_name} ;
 					}
 				}
 				
@@ -530,7 +540,7 @@ for my $dependency (@dependencies)
 #-------------------------------------------------------------------------
 # insert triggered nodes
 #-------------------------------------------------------------------------
-for my $triggered_node_data (values %triggered_nodes)
+for my $triggered_node_data (@triggered_nodes)
 	{
 	my $triggered_node_name  = $triggered_node_data->[TRIGGERED_NODE_NAME] ;
 	my $triggering_node_name = $triggered_node_data->[TRIGGERING_NODE_NAME] ;
@@ -775,13 +785,10 @@ elsif(@sub_pbs)
 	if(@sub_pbs != 1)
 		{
 		PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
-		PrintError(DumpTree(\@sub_pbs,, "Sub Pbs:")) ;
-		
+		PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
 		Carp::croak  ;
 		}
 		
-	# node matched a single subpbs
-	
 	my $sub_pbs_hash    = $sub_pbs[0]{SUBPBS} ;
 
 	my $unlocated_sub_pbs_name = my $sub_pbs_name = $sub_pbs_hash->{PBSFILE} ;
@@ -808,8 +815,12 @@ elsif(@sub_pbs)
 	#-------------------------------------------------------------
 	# run subpbs
 	#-------------------------------------------------------------
-	
-	delete $inserted_nodes->{$node_name} ; # temporarily eliminate ourself from the existing nodes list
+	my $node_is_trigger_inserted = exists $tree->{__TRIGGER_INSERTED} ;
+	PrintUser("${indent}Subpbs: trigger_inserted '$node_name'\n") if $node_is_trigger_inserted ; 
+
+	# temporarily eliminate ourself from the existing nodes list
+	# this means that any extra information in the node will not be available to subpbs, eg: we display the trigger insert info before the subps
+	delete $inserted_nodes->{$node_name} ;
 	
 	my $tree_name = "sub_pbs$sub_pbs_name" ;
 	$tree_name =~ s~^\./~_~ ;
@@ -839,6 +850,9 @@ elsif(@sub_pbs)
 	my $already_inserted_nodes = $inserted_nodes ;
 	$already_inserted_nodes    = {} if(defined $sub_pbs_hash->{LOCAL_NODES}) ;
 	
+	my %inserted_nodes_snapshot ;
+	%inserted_nodes_snapshot = %$inserted_nodes if $node_is_trigger_inserted ;
+
 	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
 		= PBS::PBS::Pbs
 			(
@@ -854,6 +868,21 @@ elsif(@sub_pbs)
 			$sub_pbs_config->{PBS_COMMAND},
 			) ;
 		
+	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
+	if ($node_is_trigger_inserted)
+		{
+		for my $name (keys %$already_inserted_nodes)
+			{
+			unless (exists $inserted_nodes_snapshot{$name})
+				{
+				$already_inserted_nodes->{$name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED}
+					unless exists $already_inserted_nodes->{$name}{__TRIGGER_INSERTED} ;
+				}
+			}
+		} 
+
+	$sub_tree->{$sub_node_name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED} if $node_is_trigger_inserted ;
+	
 	# keep this node insertion info
 	$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
 	
@@ -866,7 +895,7 @@ elsif(@sub_pbs)
 	# copy the data generated by subpbs
 	for my $new_key (keys %{$sub_tree->{$sub_node_name}})
 		{
-		# keep some  attributes defined from the current Pbs
+		# keep attributes defined from the current Pbs
 		next if $new_key =~ /__NAME/ ;
 		next if $new_key =~ /__USER_ATTRIBUTE/ ;
 		next if $new_key =~ /__LINKED/ ;
@@ -963,6 +992,8 @@ my ($pbs_config, $dependency_name, $tree, $inserted_nodes, $Pbsfile, $config, $d
 # user defined plugin which can fail the graph generation
 RunPluginSubs($pbs_config, 'CheckLinkedNode', @_) ;
 	
+my $indent = $PBS::Output::indentation ;
+
 # the dependency already exists within the graph, link to it
 $tree->{$dependency_name} = $inserted_nodes->{$dependency_name} ;
 $tree->{$dependency_name}{__LINKED}++ ;
@@ -973,19 +1004,21 @@ $display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $
 my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
 my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
-my $linked_node_is_depended = exists $inserted_nodes->{$dependency_name}{__DEPENDED}
-				? ''
-				: ' [not depended yet]'  ;
-					
-my $linked_node_info = "      Linking '$dependency_name'" 
-			. $linked_node_is_depended
-			. " from $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE}" 
-			. ":$inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}\n" ;
+my @linked_node_type ;
+push @linked_node_type, 'not depended' unless exists $inserted_nodes->{$dependency_name}{__DEPENDED} ;
+push @linked_node_type, 'trigger inserted' unless exists $inserted_nodes->{$dependency_name}{__TRIGGER_INSERTED} ;
+push @linked_node_type, 'different pbsfile' if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile) ;
+my $linked_node_type = @linked_node_type ? '[' . join(', ', @linked_node_type) . ']' : '' ;
 
+
+my $linked_node_info = WARNING("${indent}Depend: Linking '$dependency_name'$linked_node_type")
+			. INFO2( ", rule: $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}", 0)
+			. INFO2( ", dependent: $tree->{__NAME}", 0)
+			. "\n" ;
 	
 if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
 	{
-	die ERROR("--no_external_link switch specified, stop.\n") if(defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK}) ;
+	die ERROR("Error: --no_external_link switch specified, stop.\n") if(defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK}) ;
 		
 	unless($pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
 		{
@@ -1009,13 +1042,15 @@ if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfil
 					. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
 				}
 			
-			$linked_node_info .= "         Ignoring local matching rules from '$Pbsfile': " . join(', ', @local_rules_matching_info) . "\n" ;
+			$linked_node_info .= USER( "${indent}Ignoring local rules:\n") ;
+			$linked_node_info .= USER( "${indent}${indent}$_\n") for (@local_rules_matching_info) ;
+
 			$display_linked_node_info++ ;
 			}
 		}
 	}
-			
-PrintWarning $linked_node_info if $display_linked_node_info ;
+	
+print $linked_node_info if $display_linked_node_info ;
 }
 
 #-------------------------------------------------------------------------------

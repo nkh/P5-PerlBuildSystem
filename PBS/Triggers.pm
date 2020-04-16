@@ -41,12 +41,10 @@ my %triggers ;
 sub GetTriggerRules
 {
 my $package = shift ;
-my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
-PrintInfo("Get all triggers rules for package: '$package'\n") if defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES} ;
-
-return(@{$triggers{$package}}) if(exists $triggers{$package}) ;
-return() ;
+return exists $triggers{$package} 
+	? @{$triggers{$package}}
+	: () 
 }
 
 #-------------------------------------------------------------------------------
@@ -173,8 +171,8 @@ my $trigger_rule =
 
 if(defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES})
 	{
-	PrintInfo("Registering trigger: $name$origin\n")  ;
-	PrintInfo(DumpTree($trigger_rule, 'trigger rule:')) if defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION} ;
+	PrintInfo("Trigger: Adding $name$origin\n")  ;
+	PrintInfo2(DumpTree($trigger_rule, 'trigger rule:')) if defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION} ;
 	}
 
 push @{$triggers{$package}}, $trigger_rule ;
@@ -240,7 +238,7 @@ for my $Pbsfile (@_)
 			my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 			unless(defined $pbs_config->{NO_TRIGGER_IMPORT_INFO})
 				{
-				PrintInfo("Importing Triggers from '$Pbsfile:$definition_line' into package '$package' at $file_name:$line.\n") ;
+				PrintInfo("Trigger: Importing from '$Pbsfile:$definition_line' into package '$package' at $file_name:$line.\n") ;
 			   }
 			   
 			$trigger_exports_definition =~ s/sub\s+ExportTriggers// ;
