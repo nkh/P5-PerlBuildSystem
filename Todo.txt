@@ -1,11 +1,3 @@
-error cpu 100% and freezes
-	in pbsfiles/trigger
-		first works
-		pbs all -bni -tno --display_trigger --display_trigger_rule_definition --display_trigger_rules
-
-		second freezes
-		pbs all -bni -tno --display_trigger --display_trigger_rule_definition --display_trigger_rules
-
 warp 1.8 pbs chain merge
 linking during non warp depend must also update the pbsfile chain 
 
@@ -66,6 +58,8 @@ builder can be generated on demand
 	we compile builders as soon as AddRule is run
 		*** even for nodes that don't need to be build!
 
+		but that checks the rules at pbsfile run
+
 	the time could be spread over the build phase
 	the builders are referenced from the node and thus kept in memory
 		if they were to be compile and reference in the scope of a node build
@@ -74,10 +68,11 @@ builder can be generated on demand
 		if the builder is used by multiple nodes we would need to compile them again
 			late compile and keep in memory
 
-			reference count the nodes using a builder and release the builder
-			when no node need to be build by it
-				node count is incremented when a node matches
-			
+			!reference count the nodes using a builder and release the builder
+			!when no node need to be build by it
+			!	node count is incremented when a node matches
+				=> let perl do the reference counting
+
 #--tno should always be displayed as --tnt
 
 ddr

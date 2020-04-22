@@ -163,12 +163,52 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 				(
 				$file_tree->{__DEPENDENCY_TO},
 				"dependents tree:",
-				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0, INDENTATION => $tab,
-				 USE_ASCII => 1,
+				FILTER => $DependenciesOnly,
+				DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1,
 				) ;
 
 	$log_node_info .= $current_node_info ;
 	$node_info     .= $current_node_info ;
+	}
+
+#----------------------
+# environment variables
+#----------------------
+for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
+	{
+	my $matching_env = sub
+				{
+				my $tree = shift ;
+				
+				if('HASH' eq ref $tree)
+					{
+					return
+						(
+						'HASH', undef, 
+						sort grep 
+							{
+							my $match = 0 ;
+							for my $env_regex (@{$pbs_config->{NODE_ENVIRONMENT_REGEX}})
+								{
+								do { $match++ ; last }  if /$env_regex/
+								}
+								
+							$match ;
+							} keys %$tree
+						) ;
+					}
+				
+				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+				} ;
+
+	if($name =~ /$node_env_regex/)
+		{
+		$current_node_info = INFO( DumpTree( \%ENV, "ENV:", FILTER => $matching_env, DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1) ) ;
+		$log_node_info .= $current_node_info ;
+		$node_info     .= $current_node_info ;
+		
+		last ;
+		}
 	}
 
 #----------------------

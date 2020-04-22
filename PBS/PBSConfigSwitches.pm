@@ -133,6 +133,8 @@ $pbs_config->{LIB_PATH} ||= [] ;
 $pbs_config->{DISPLAY_BUILD_INFO} ||= [] ;
 $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX} ||= [] ;
 $pbs_config->{DISPLAY_NODE_INFO} ||= [] ;
+$pbs_config->{DISPLAY_NODE_ENVIRONMENT} ||= [] ;
+$pbs_config->{NODE_ENVIRONMENT_REGEX} ||= [] ;
 $pbs_config->{LOG_NODE_INFO} ||= [] ;
 $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
@@ -510,6 +512,14 @@ EOT
 		
 	'nd|node_dependencies'            => \$pbs_config->{DISPLAY_NODE_DEPENDENCIES},
 		'Display the dependencies for a node.',
+		'',
+		
+	'ne|node_environment=s'            => $pbs_config->{DISPLAY_NODE_ENVIRONMENT},
+		'Display the environment variables for the nodes matching the regex.',
+		'',
+		
+	'ner|node_environment_regex=s'      => $pbs_config->{NODE_ENVIRONMENT_REGEX},
+		'Display the environment variables  matching the regex.',
 		'',
 		
 	'nc|node_build_cause'             => \$pbs_config->{DISPLAY_NODE_BUILD_CAUSE},

@@ -1,7 +1,145 @@
 
+late dependencies
+	check can't be done for every node after depend
+
+	the depend and check step are separated in pbs1
+	we can check in parallel in the check step but can depend a node and check it immediately because of late dependencies
+
+	late dependencies are dependencies that have no matching rule while depending a dependent, a separate part of the build system
+	depends a late dependency making the graph valid
+
+	if we were to check immediately after depend, the late dependency would not have sub dependencies (yet) and the check
+	would be wrong
+
+	late depend may be theoretically wrong
+		the idea is that a sub module needs a dependency, say a library, it doesn't know nor care how it is build
+		the top level over the sub module can decide to have the library as source or as a node to be build
+		
+		the right approach would be for the top level to add a depended library before calling the sub module
+			and the sub module should fail if it doesn't exist 
+
+		say the library is build by sub module 2 and needed by sub module 1
+			with late dependencies it just works
+
+			other wise we need to make sub module 1 depend on the library directly
+				this is usually done by installing the library and configuring where it is so sub module 1 finds it
+					this means building sub module 2 first rather than making a single build
+
+				in any case the library must end in a location that sub module 1 knows, we can decide it's in ./libraries/lib
+					now need to make sub module 2 put it there
+						can we alias the nodes, before they are even depended?
+							the top level can insert a node that's not depended in the graph
+
+						ALIAS is used for the "target" of a subpbs run 
+							we can't alias a specific node 
+								well we can! inserted_nodes{alias} = inserted_node{whichever}
+								but that's perl code not pbs code, not user friendly
+
+
+				3 cases
+					the library is installed, we want to point at it
+						we want to make sure it is installed
+							the node needing it would fail if it wasn't there, no rules to make it and not present on disk
+
+						AddRule all => sub module needing lib
+						AddRule sub module needing lib => ./libs/my_lib
+						
+					the library will be installed, we need to make sure it's installed first 
+						IMMEDIATE_BUILD
+						we can still use late dependencies
+
+						AddRule all => ./libs/my_lib, sub module needing lib
+						AddRule IMMEDIATE_BUILD ./libs/my_lib => ./sub module 2/path/path/lib
+							ln  $dep1 %FILE_TO_BUILD
+
+						AddTrigger sub module 2 => ./libs/my_lib 
+						
+					the library is used where it is build
+						alias
+
+						AddRule all => sub module generating lib, sub module needing lib (order doesn't matter)
+
+						# if both modules already agree on location, we're done, late dependencies handles is
+						# if not we need to point at the lib
+
+						AddAlias ./libs/my_lib => sub module 2/path/path/my_lib # add both nodes to graph if necessary
+
+						# nice, no need for installation
+
+						# We could also pass the location via a configuration variable bu we would have no node in the graph!
+
+
+history browsing 
+
+	the time line is not based on when a node is build since the parallelization may schedule nodes at different times between builds
+
+	note that it is a single build that is interesting but we should push the user to understand dependencies rather than build time
+
+	at time zero (t0) we have a lot of nodes that are terminal and can be build
+		that is the list of nodes that are of interest at t0
+
+	that specific node is build at some specific time is of interest only if the dependencies are wrong
+
+	finding a specific node, or specific nodes and being able to follow their build chain is more interesting than WHEN a node is build
+		it is possible that we want to follow multiple node
+		see what they have in common
+		where in the graph they are relative to each other
+		if they are parts of each other dependencies
+		grep for dependencies and dependents (on command lines is even better than REPL)
+
+		we must be able to generate a list of all dependencies from a node, recursively till we find terminal nodes
+		generate the path from a node to another, displaying the information about rules that inserted each node (and a link to the nodes log)
+
+	it is completely useless to have a REPL when the command line works better and is more flexible
+
+	having the build information in the log is enough to follow the node build (from vi for example)
+
+	the build time, build result, error du to sub dependencies not building, and which one (can be computed instead) is available in the log.
+
+	pbs 1 stops as soon as a node fails building, it should continue generating logs for the nodes that have failing dependencies
+		that's the equivalent to dumping the graph 
+		can take a long time if 10s of thousands of log files must be generated
+			can generate the file while depending and add data to the file (making it a real log)
+				pbs1 has an option for that but it is not the same file as thee nodes build log
+	 
+	an old pbs1 requirement was to have the node in a database or in files rather than in memory, it seems that requirement, meso warp, and history are implemented the same
+		the rules to generate the nodes, their config, …  are themselves in files (the pbsfiles)
+		nodes should have a pbs package information, pbsfile, target, start config, so it is possible to regenerate the node un memory as when global pbs is run
+		all nodes in a package should point at the pbs package file as it is identical
+
+	?should we keep the log and the digest together ? 
+
+	We now have a lot of files that we use but don't verify, should the log have a digest or a way to be verified?
+
+
+	use cases:
+	file build failed, understand why
+
+	understand dependencies between files when a build fails because of a missing dependency
+		previous build succeeded now fail because a dependency has been removed that is needed
+
+
+File system as the graph
+	After depend is run (during?) It is possible to search the graph (grep, fzf, …) and go through it (cd, cat, find, ranger, vim, …)
+
+
 pre-build warp
 	when is it generated
 	why are all pbsfiles re-run when   pre-build warp done but before warp generated
+
+	see Meso warp
+
+
+--node_environment
+	display the environment variables active during the node build
+		maybe in a separate file to not spam too much in the terminal
+		=> in the log
+
+	control env per node, per command in the node, per phase in the node
+	inheritance of env from node to node
+	package env is default for nodes
+	env should go in the digest
+
 
 text displayed with terminal control characters
 	in pbs1 a control character is used to erase the previously written text and write over it
@@ -9,6 +147,7 @@ text displayed with terminal control characters
 	some text will not be in the terminal because of this and that may make the debugging more difficult
 		output is structured in pbs2 so everything will be in the log and it is the display plugin that is 
 		responsible for using control characters
+			eg: add control characters or not, pbs2 never does
 
 long text display
 	pbs1 use elision in some contexts

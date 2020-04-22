@@ -9,7 +9,7 @@ use strict ;
 use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
-use Time::HiRes ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
 use String::Truncate ;
@@ -126,7 +126,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	
 	my $depender  = $dependency_rule->{DEPENDER} ;
    
-	#DEBUG	
+	#DEBUG
 	my %debug_data ;
 	if($PBS::Debug::debug_enabled)
 		{
@@ -920,6 +920,35 @@ else
 		{
 		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended"
 				. ", rules from '$pbs_config->{PBSFILE}'\n\n" ;
+		}
+	}
+
+# section below is disable
+# we could generate the node log info after each node depend but do it after the check step
+# that adds the check status for the dependencies
+# the best solution would be to add information incrementally, generate the node log info during depend (rules  inserting dependencies)
+# and adding the check information later
+# alternatively we could check the nodes immediately but that wouldn't work with late depend that delays the insertion of dependencies
+#	we would have a wrong status for the dependencies
+if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
+	{
+	for my $node_info_regex (@{$pbs_config->{LOG_NODE_INFO}})
+		{
+		if($node_name =~ /$node_info_regex/)
+			{
+			my (undef, $node_info_file) =
+				PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
+
+			$node_info_file =~ s/\.log$/.node_info/ ;
+
+			my ($node_info, $log_node_info) = 
+				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1) ;
+				
+			open(my $fh, '>', $node_info_file) or die ERROR "Error: --lni can't create '$node_info_file' for '$node_name'.\n" ;
+			print $fh $log_node_info ;
+			
+			last ;
+			}
 		}
 	}
 
