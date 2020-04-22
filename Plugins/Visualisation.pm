@@ -90,7 +90,7 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 				{
 				do
 					{
-					PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config) 
+					PBS::Information::DisplayNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) 
 					}
 					unless $inserted_nodes->{$node_name}{__WARP_NODE} ;
 
@@ -125,7 +125,7 @@ if (@{$pbs_config->{LOG_NODE_INFO}})
 					{
 					$generated_node_info_log++ ;
 					my ($node_info, $log_node_info) = 
-						PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1) ;
+						PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;
 						
 					open(my $fh, '>', $node_info_file) or die ERROR "Error: --lni can't create '$node_info_file'.\n" ;
 					print $fh $log_node_info ;

@@ -168,7 +168,7 @@ if
 		)
 	)
 	{
-	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config) ;
+	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, 1, $inserted_nodes) ;
 	}
 else
 	{

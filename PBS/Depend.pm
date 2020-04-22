@@ -600,7 +600,7 @@ for my $dependency (@dependencies)
 	$has_dependencies++ ;
 	
 	# remember which rule inserted which dependency
-	push @{$dependency_rules{$dependency_name}}, [$rule_index, $dependency_rules->[$rule_index]{NAME}] ;
+	push @{$dependency_rules{$dependency_name}}, [$rule_index, @{$dependency_rules->[$rule_index]}{qw/NAME/}] ;
 	
 	if(exists $inserted_nodes->{$dependency_name})
 		{
@@ -696,7 +696,7 @@ if(@has_matching_non_subpbs_rules)
 		
 		for my $rule (@{$dependency_rules{$dependency}})
 			{
-			$key_name .= $rule->[0] . ' ' . $rule->[1] ;
+			$key_name .= "rule: " . join(':', @$rule) . " "  ;
 			}
 		
 		$tree->{$dependency}{__DEPENDENCY_TO}{$key_name} = $tree->{__DEPENDENCY_TO} ;
@@ -942,7 +942,7 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 			$node_info_file =~ s/\.log$/.node_info/ ;
 
 			my ($node_info, $log_node_info) = 
-				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1) ;
+				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;
 				
 			open(my $fh, '>', $node_info_file) or die ERROR "Error: --lni can't create '$node_info_file' for '$node_name'.\n" ;
 			print $fh $log_node_info ;

@@ -19,6 +19,7 @@ our $VERSION = '0.04' ;
 
 use PBS::Output ;
 use PBS::Constants ;
+use PBS::Digest ;
 
 #-------------------------------------------------------------------------------
 
@@ -84,7 +85,7 @@ return $node_header, $type, $tab ;
 
 sub GetNodeInformation
 {
-my ($file_tree, $pbs_config, $generate_for_log) = @_ ;
+my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
 
 my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
@@ -145,13 +146,25 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 	{
 	#$current_node_info = INFO "\tdependent:" . join(', ',  GetParentsNames($file_tree)) . "\n" ;
 
-	my $DependenciesOnly = sub
+	my $parent_tree = sub
 				{
-				my $tree = shift ;
+				my ($tree, $depth) = @_ ;
 				
 				if('HASH' eq ref $tree)
 					{
-					return( 'HASH', undef, sort grep {! /^__/} keys %$tree) ;
+					for (grep {'HASH' eq ref $tree->{$_} && ! /^__/} keys %$tree)
+						{
+						unless($pbs_config->{NO_NODE_INFO_LINKS})
+							{
+							my ($link) = /^([^:]*)/ ;
+							my $file_link = INFO2("node info: $inserted_nodes->{$link}{__BUILD_NAME}.node_info") ;
+							
+							# set children node info links
+							$tree->{$_}{$file_link} = [] ;
+							}
+						}
+
+					return ('HASH', undef, sort { $b =~ /node info:/ } grep { ! /node info/ unless $depth} grep { ! /^__/} keys %$tree) ;
 					}
 				
 				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
@@ -163,12 +176,12 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 				(
 				$file_tree->{__DEPENDENCY_TO},
 				"dependents tree:",
-				FILTER => $DependenciesOnly,
-				DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1,
+				FILTER => $parent_tree,
+				DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1, NO_NO_ELEMENTS => 1,
 				) ;
 
-	$log_node_info .= $current_node_info ;
-	$node_info     .= $current_node_info ;
+	$log_node_info .= $current_node_info . "\n" ;
+	$node_info     .= $current_node_info . "\n" ;
 	}
 
 #----------------------
@@ -242,6 +255,16 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_confi
 		else
 			{
 			$current_node_info .= INFO ("${tab}${tab}$_\n") if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
+			}
+		
+		if
+			(
+			PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_})
+			&& ! $pbs_config->{NO_NODE_INFO_LINKS}
+			) 
+			{
+			my $file_link = INFO2("node info: $inserted_nodes->{$_}{__BUILD_NAME}.node_info") ;
+			$current_node_info .= "${tab}${tab}$file_link\n" ;
 			}
 		}
 
@@ -454,11 +477,11 @@ $node_info, $log_node_info
 
 sub DisplayNodeInformation
 {
-my ($file_tree, $pbs_config) = @_ ;
+my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 
 if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
-	my ($node_info) = GetNodeInformation($file_tree, $pbs_config) ;
+	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
 	print STDOUT $node_info ;
 	}
 }

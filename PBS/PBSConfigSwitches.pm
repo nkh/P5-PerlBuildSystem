@@ -493,7 +493,11 @@ EOT
 	'ni|node_information=s'           => $pbs_config->{DISPLAY_NODE_INFO},
 		'Display information about the node matching the given regex before the build.',
 		'',
-		
+	
+	'nonil|no_node_info_links'  => \$pbs_config->{NO_NODE_INFO_LINKS},
+		'Pbs inserts node_info files links in info_files and logs, disable it',
+		'',
+	
 	'lni|log_node_information=s'      => $pbs_config->{LOG_NODE_INFO},
 		'Log information about nodes matching the given regex before the build.',
 		'',

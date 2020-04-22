@@ -94,7 +94,7 @@ history browsing
 
 	having the build information in the log is enough to follow the node build (from vi for example)
 
-	the build time, build result, error du to sub dependencies not building, and which one (can be computed instead) is available in the log.
+	the build time, build result, error due to sub dependencies not building, and which one (can be computed instead) is available in the log.
 
 	pbs 1 stops as soon as a node fails building, it should continue generating logs for the nodes that have failing dependencies
 		that's the equivalent to dumping the graph 
