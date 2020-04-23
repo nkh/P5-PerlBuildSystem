@@ -264,24 +264,24 @@ if($pbs_config->{DO_BUILD})
 		if
 			(
 			(exists $node->{__BUILD_FAILED} || exists $node->{__TRIGGERED})
-			&& (exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
+			&&
+			(exists $node->{__PBS_POST_BUILD} && 'CODE' eq ref $node->{__PBS_POST_BUILD})
 			)
 			{
-			PrintInfo "\r\e[KBuild: running post build command: $post_build_commands" ;
 			$post_build_commands++ ;
 
-			PrintInfo2 $PBS::Output::indentation . "$node->{__NAME}\n" if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+			if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS})
+				{
+				print INFO("\r\e[KBuild: running post build command for node:", 0)
+					. USER(" '$node->{__NAME}'\n", 0) ;
+				}
+
 			$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
 			}
 		}
 
-	print "\n" if $post_build_commands ;
-
-	PrintInfo
-		(
-		$PBS::Output::indentation
-		. sprintf("$post_build_commands commands in: %0.2f s.\n", tv_interval ($t0_pbs_post_build, [gettimeofday]))
-		) if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+	PrintInfo(sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.\n", tv_interval($t0_pbs_post_build, [gettimeofday])))
+		 if ($post_build_commands && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
 
 	}
 else

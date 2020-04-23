@@ -190,11 +190,11 @@ for my $config_variable (@config_variables)
 
 if($wantarray)
 	{
-	return(@user_config) ;
+	return @user_config ;
 	}
 else
 	{
-	return($user_config[0]) ;
+	return $user_config[0] ;
 	}
 }
 

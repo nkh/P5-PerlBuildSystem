@@ -90,9 +90,6 @@ else
 my @build_result ;
 if($run_in_warp_mode)
 	{
-	my $index = 0 ;
-	%nodes_index = map { $_ => $index++ ;} @$node_names ;
-
 	my $nodes_in_warp = scalar(keys %$nodes) ;
 
 	# use filewatching or default MD5 checking
@@ -126,7 +123,7 @@ if($run_in_warp_mode)
 	my ($node_mismatch, $trigger_log)
 		 = $pbs_config->{CHECK_JOBS} != 0
 			? PBS::Check::ForkedCheck::ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified, \&_CheckNodes) 
-		  	: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
+			: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
 	$trigger_log .= "\n" . $trigger_log_warp ;
 
@@ -162,8 +159,10 @@ if($run_in_warp_mode)
 			$nodes->{$dependent}{$node} = $nodes->{$node} if(exists $nodes->{$dependent})
 			}
 		}
+	# reset node names to clear nodes that have been removed
+	$node_names = [] ;
 
-        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
 
 	write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
@@ -232,7 +231,7 @@ if($run_in_warp_mode)
 				GenerateWarpFile
 					(
 					$warp_file, $targets, $new_dependency_tree, $nodes,
-					$pbs_config, $warp_configuration, undef, $node_names, \%nodes_index,
+					$pbs_config, $warp_configuration, undef,
 					$warp_dependents
 					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
@@ -245,7 +244,7 @@ if($run_in_warp_mode)
 			GenerateWarpFile
 				(
 				$warp_file, $targets, $new_dependency_tree, $nodes,
-				$pbs_config, $warp_configuration, undef, $node_names, \%nodes_index,
+				$pbs_config, $warp_configuration, undef,
 				$warp_dependents
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				
@@ -613,7 +612,6 @@ my ($warp_file, $targets, $dependency_tree, $inserted_nodes,
 	$pbs_config,
 	$warp_configuration,
 	$warp_message,
-	$node_names, $nodes_index,
 	$warp_dependents
 	) = @_ ;
 
@@ -638,8 +636,8 @@ my $global_pbs_config = # cache to reduce warp file size
 
 my ($nodes, $insertion_file_names) ;
 
-($nodes, $node_names, $insertion_file_names, $warp_dependents) = 
-	WarpifyTree1_5($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $node_names, $nodes_index, $warp_dependents) ;
+($nodes, my $node_names, $insertion_file_names, $warp_dependents) = 
+	WarpifyTree1_5($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $warp_dependents) ;
 
 my $number_of_nodes_in_the_dependency_tree = keys %$nodes ;
 
@@ -650,7 +648,6 @@ local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
 local $Data::Dumper::Sortkeys = 1 ; 
 
-#my $js = JSON::XS->new->pretty(1)->canonical(1) ; # sort keys, slower 
 my $js = JSON::XS->new->pretty(1) ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
@@ -678,17 +675,13 @@ if($pbs_config->{DISPLAY_WARP_TIME})
 
 sub WarpifyTree1_5
 {
-my ($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $node_names, $nodes_index, $warp_dependents) = @_ ;
+my ($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $warp_dependents) = @_ ;
+$warp_dependents //= {} ;
 
 my ($package, $file_name, $line) = caller() ;
 
-my (%nodes) ;
-
-$node_names //= [] ;
-$nodes_index //= {} ;
-$warp_dependents //= {} ;
-
-my (@insertion_file_names, %insertion_file_index, %libs) ;
+my ($node_names, $nodes_index) = ([], {}) ;
+my (%nodes, @insertion_file_names, %insertion_file_index, %libs) ;
 
 my $new_nodes = 0 ;
 
@@ -696,6 +689,12 @@ for my $node (keys %$inserted_nodes)
 	{
 	if(exists $inserted_nodes->{$node}{__WARP_NODE})
 		{
+		unless (exists $nodes_index->{$node})
+			{
+			push @$node_names, $node ;
+			$nodes_index->{$node} = $#$node_names;
+			}
+
 		# reuse the inserted nodes directly in writing the warp file
 		# inserted nodes is itself mainly warp revivified nodes
 
@@ -873,7 +872,7 @@ for my $node (keys %$inserted_nodes)
 			$nodes{$node}{__MD5} = 'not built yet' ; 
 			}
 		
-		my $node_index ;	
+		my $node_index ;
 		if (exists $nodes_index->{$node})
 			{
 			$node_index = $nodes_index->{$node} ;

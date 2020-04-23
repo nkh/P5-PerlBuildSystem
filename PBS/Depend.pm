@@ -151,10 +151,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	
 	if(grep {! defined } @dependencies)
 		{
-		die ERROR("Error: While depending '$node_name', rule $rule_info, returned an undefined dependency\n")
+		die ERROR("Depend: Error: While depending '$node_name', rule $rule_info, returned an undefined dependency\n")
 		}
 
-	#DEBUG	
+	#DEBUG
 	$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, TRIGGERED => $triggered, DEPENDENCIES => \@dependencies)) ;
 	
 	if($triggered)
@@ -184,28 +184,26 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						}
 					else
 						{
-						die ERROR "Build: node sub is not a sub in array at rule $rule_info\n" ;
+						die ERROR "Depend: Error: node sub is not a sub in array at rule $rule_info\n" ;
 						}
 					}
 				}
 			else
 				{
-				die ERROR "Build: node sub is not a sub @ $rule_info\n" ;
+				die ERROR "Depend: Error: node sub is not a sub @ $rule_info\n" ;
 				}
 				
-			if(@$subs)
+			my $index = 0 ;
+			for my $sub (@$subs)
 				{
-				PrintInfo 'Build: running node subs ['  . scalar(@$subs) . "] at '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n" 
-					if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+				$index++ ;
+			
+				print USER("$indent'$node_name'") 
+					. INFO(" node sub $index/" . scalar(@$subs), 0)
+					. INFO2(" '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n", 0) 
+						if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
-				my $index = -1 ;
-				for my $sub (@$subs)
-					{
-					$index++ ;
-					PrintInfo "Build: running node sub index '$index'\n" if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
-					
-					$sub->($node_name, $config, $tree, $inserted_nodes) ;
-					}
+				$sub->($node_name, $config, $tree, $inserted_nodes) ;
 				}
 			}
 			

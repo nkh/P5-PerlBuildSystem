@@ -6,7 +6,7 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::Dumper ;
+use Data::TreeDumper ;
 use File::Spec::Functions qw(:ALL) ;
 
 use Carp ;

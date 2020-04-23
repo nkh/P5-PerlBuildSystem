@@ -83,7 +83,7 @@ while(defined (my $command_and_args = <$parent_channel>))
 			{
 			if(defined $pbs_config->{CREATE_LOG})
 				{
-				SendFile($parent_channel, $build_log, !$pbs_config->{CREATE_LOG}) ;
+				SendFile($parent_channel, $build_log) ;
 				}
 			else
 				{
@@ -95,7 +95,7 @@ while(defined (my $command_and_args = <$parent_channel>))
 			
 		/^GET_OUTPUT$/ and do
 			{
-			SendFile($parent_channel, $build_output, !$pbs_config->{CREATE_LOG}) ;
+			SendFile($parent_channel, $build_output) ;
 			last ;
 			} ;
 		}
@@ -239,7 +239,7 @@ else
 
 sub SendFile
 {
-my ($channel, $file, $remove_file) =  @_ ;
+my ($channel, $file) =  @_ ;
 
 open FILE_TO_SEND, '<', $file or die "Can't open '$file': $!" ;
 while(<FILE_TO_SEND>)
@@ -250,8 +250,6 @@ while(<FILE_TO_SEND>)
 close(FILE_TO_SEND) ;
 
 print $channel "__PBS_FORKED_BUILDER___\n" ;
-
-unlink($file) if $remove_file;
 }
 
 #-------------------------------------------------------------------------------------------------------

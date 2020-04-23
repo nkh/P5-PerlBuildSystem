@@ -1,3 +1,7 @@
+Rule C_object defines a node sub, WHERE?
+
+--lni can be done in parallel
+
 warp 1.8 pbs chain merge
 linking during non warp depend must also update the pbsfile chain 
 
@@ -542,6 +546,31 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#move 2.h 2.hh didn't rebuild!
+	=> 2.h is not in the warp file!
+	post build commands are run in the build process we can't set __PBS_POST_BUILD there
+		use a node_sub, which is ran during the depend phase
+
+#failed build doesn't keep the log (but is displayed on the screen!
+	=> successful build didn't fetch the log (log is kept), failed builds fetch the log and keep the log only if --log was specified
+	=> always keep the log which is generated anyway
+
+#after a failed build generating node info files generate these warnings
+	Use of uninitialized value in concatenation (.) or string at /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/Information.pm line 266.
+	Use of uninitialized value $package in hash element at /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/Digest.pm line 640.
+	Use of uninitialized value $package in hash element at /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/Digest.pm line 656.
+	Use of uninitialized value $package in hash element at /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/Digest.pm line 640.
+	Use of uninitialized value $package in hash element at /home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/Digest.pm line 656.
+	=> we use IsDigestToBeGenerated which needs a package which doesn't exist in warp except for rebuild packages
+
+
+#changing Rules/C.pm makes warp trigger indefinitely
+	? nothing to build, warp not regenerated!
+		the C.pm serialization in the warp file differs after C.pm is changed
+	
+	=> after warp is loaded we used the names index from the old warp to check if the node was serialized
+		the error was that triggering nodes where not removed from the index so warp used the old lib serialisation
 
 #use Term::Emit for message, maybe replace Term::ProgressBar too
 	=> replace with simpler code not in a module, we already have a %done for forked builders

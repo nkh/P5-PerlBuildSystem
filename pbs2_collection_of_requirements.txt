@@ -1,9 +1,27 @@
 
+remove package dependencies by matching them directly to nodes
+	from pb1 code
+	# add package dependencies to the node
+	# package dependencies is sugar, we need to assign it in nodes to avoid triggering the whole
+	# warp graph for a change that only impacts a few nodes
+
+
+parallel depend and post build commands
+	pbs1 runs all the depend in the same process/thread
+	the node definitions belong to the main process till it's forked
+	the node definition can be assigned a __POST_PBS_BUILD_COMMAND which is to be run after the build and before the warp
+	__POST_PBS_BUILD_COMMANDS must be run in the main process
+
+	if we depend in parallel we need a mechanism to synch the node definitions back to the main process to run __POST_PBS_BUILD_COMMANDS
+		and to synch the nodes between the dependers
+
+
 late dependencies
 	check can't be done for every node after depend
 
 	the depend and check step are separated in pbs1
 	we can check in parallel in the check step but can depend a node and check it immediately because of late dependencies
+		check is already done in parallel in pbs1
 
 	late dependencies are dependencies that have no matching rule while depending a dependent, a separate part of the build system
 	depends a late dependency making the graph valid

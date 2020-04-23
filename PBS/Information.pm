@@ -259,7 +259,8 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_confi
 		
 		if
 			(
-			PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_})
+			(! $inserted_nodes->{$_}{__WARP_NODE} ) # Warp nodes are like source we know little about them except that their digests checked
+			&& PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_})
 			&& ! $pbs_config->{NO_NODE_INFO_LINKS}
 			) 
 			{
