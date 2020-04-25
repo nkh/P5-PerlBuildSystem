@@ -32,6 +32,7 @@ use Data::TreeDumper ;
 use PBS::PBSConfigSwitches ;
 use PBS::Information ;
 use PBS::Build::ForkedNodeBuilder ; # for log file name
+use PBS::Log::ForkedLNI ;
 
 #-------------------------------------------------------------------------------
 
@@ -104,40 +105,30 @@ if (@{$pbs_config->{LOG_NODE_INFO}})
 	{
 	my $t0 = [gettimeofday];
 	PrintInfo "Log: creating pre-build node info ..." ;
-	my $generated_node_info_log = 0 ;
+
+	my @lnis ;
 
 	for my $node_name 
 		(
-		grep { (! $inserted_nodes->{$_}{__WARP_NODE}) && PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_}) }
-			 keys %$inserted_nodes
+		grep { 
+			(! $inserted_nodes->{$_}{__WARP_NODE})
+			&& PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_}) 
+			}
+			keys %$inserted_nodes
 		)
 		{
 		for my $node_info_regex (@{$pbs_config->{LOG_NODE_INFO}})
 			{
-			if($node_name =~ /$node_info_regex/)
+			if($node_name =~ /$node_info_regex/ && (! $inserted_nodes->{$node_name}{__WARP_NODE} ))
 				{
-				my (undef, $node_info_file) =
-					PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
-				
-				$node_info_file =~ s/\.log$/.node_info/ ;
-				
-				do
-					{
-					$generated_node_info_log++ ;
-					my ($node_info, $log_node_info) = 
-						PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;
-						
-					open(my $fh, '>', $node_info_file) or die ERROR "Error: --lni can't create '$node_info_file'.\n" ;
-					print $fh $log_node_info ;
-					}
-					if (! $inserted_nodes->{$node_name}{__WARP_NODE} ) ;
-					
+				push @lnis, $inserted_nodes->{$node_name} ;
 				last ;
 				}
 			}
 		}
-	
-	PrintInfo sprintf("(nodes: %d, time: %0.2f s.)\n", $generated_node_info_log,  tv_interval($t0, [gettimeofday])) ;
+
+	PBS::Log::ForkedLNI::ParallelLNI($pbs_config, $inserted_nodes, \@lnis) ;
+	PrintInfo sprintf(" (nodes: %d, time: %0.2f s.)\n", scalar(@lnis),  tv_interval($t0, [gettimeofday])) ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})

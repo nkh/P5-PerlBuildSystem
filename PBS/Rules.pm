@@ -480,6 +480,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	my $class_info = "[$class" ;
 	$class_info .= ' (POST_DEPEND)' if $rule_type{__POST_DEPEND} ;
 	$class_info .= ' (CREATOR)'     if $rule_type{__CREATOR};
+	$class_info .= ' (NODE_SUBS)'   if @$node_subs ;
 	$class_info .= ']' ;
 		
 	if('HASH' eq ref $depender_definition)

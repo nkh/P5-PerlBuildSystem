@@ -203,7 +203,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					. INFO2(" '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n", 0) 
 						if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
-				$sub->($node_name, $config, $tree, $inserted_nodes) ;
+				my @r = $sub->($node_name, $config, $tree, $inserted_nodes) ;
+				
+				print INFO2("$indent${indent}node sub returned: @r\n") 
+					if @r && $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				}
 			}
 			
@@ -937,7 +940,7 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 			my (undef, $node_info_file) =
 				PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
 
-			$node_info_file =~ s/\.log$/.node_info/ ;
+			$node_info_file =~ s/\.pbs_log$/.pbs_info/ ;
 
 			my ($node_info, $log_node_info) = 
 				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;
@@ -1097,7 +1100,7 @@ if(file_name_is_absolute($sub_pbs_name))
 	}
 else
 	{
-	my ($basename, $path, $ext) = File::Basename::fileparse($Pbsfile, ('\..*')) ;			
+	my ($basename, $path, $ext) = File::Basename::fileparse($Pbsfile, ('\..*')) ;
 	
 	my $found_pbsfile ;
 	for my $source_directory (@$source_directories, $path)

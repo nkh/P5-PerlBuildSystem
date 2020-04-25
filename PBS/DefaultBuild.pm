@@ -50,6 +50,8 @@ my
 	$build_type,
 	) = @_ ;
 
+my $indent = $PBS::Output::indentation ;
+
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 
@@ -64,7 +66,7 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 
 my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 
-my $available = (chars() // 10_000) - (length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) + 40) ;
+my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 40) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $target_string = '' ; 
@@ -276,7 +278,9 @@ if($pbs_config->{DO_BUILD})
 					. USER(" '$node->{__NAME}'\n", 0) ;
 				}
 
-			$node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
+			my @r = $node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
+			print INFO2("${indent}node sub returned: @r\n") 
+				if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 			}
 		}
 

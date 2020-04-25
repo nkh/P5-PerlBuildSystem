@@ -1,4 +1,5 @@
-Rule C_object defines a node sub, WHERE?
+#Rule C_object defines a node sub, WHERE?
+	=> all rules having a shell command(s) have __SHELL_COMMAND_GENERATOR set via node subs
 
 --lni can be done in parallel
 

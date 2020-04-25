@@ -114,11 +114,11 @@ my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirect
 
 $redirection_base = "${base_path}" ;
 
-my $redirection_file = "$redirection_base/$base_basename$base_ext.log" ;
+my $redirection_file = "$redirection_base/$base_basename$base_ext.pbs_log" ;
 my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
-my $redirection_file_log = "$redirection_base/$base_basename$base_ext.old_log_should_not_be_created" ;
+my $redirection_file_log = "$redirection_base/$base_basename$base_ext.pbs_old_log_should_not_be_created" ;
 ($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 

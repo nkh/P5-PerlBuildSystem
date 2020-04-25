@@ -164,6 +164,8 @@ delete $node->{$dependency_name} ;
 eval { PBS::Digest::GenerateNodeDigest($node) } ;
 
 die "Error Generating node '$node->{__NAME}' digest: $@\n" if $@ ;
+
+return "Inserted node '$node->{__NAME}' dependencies in the graph (from $dependency_file)\n" ;
 }
 
 #-------------------------------------------------------------------------------

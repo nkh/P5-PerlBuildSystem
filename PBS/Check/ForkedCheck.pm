@@ -51,7 +51,7 @@ my $checkers = StartCheckers($number_of_check_processes, $pbs_config, $nodes, $n
 if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	{
 	my @terminal_nodes = grep { exists $nodes->{$_}{__TERMINAL} } keys %$nodes ;
-	PrintWarning "Warp: terminal nodes: " . scalar(@terminal_nodes) . "\n" ;
+	PrintWarning "Check: terminal nodes: " . scalar(@terminal_nodes) . "\n" ;
 
 	my $checker_index = 0 ;
 	for my $slice (distribute(scalar @terminal_nodes, $number_of_check_processes))
@@ -215,7 +215,7 @@ for my $checker_index (0 .. ($number_of_checkers - 1))
 				
 	unless(defined $checker_channel)
 		{
-		PrintError "Warp: Couldn't start parallel checker #$_!\n" ;
+		PrintError "Check: Couldn't start parallel checker #$_!\n" ;
 		die "\n";
 		}
 	
@@ -407,7 +407,7 @@ sub TerminateCheckers
 my ($pbs_config, $checkers) = @_ ;
 my $number_of_checkers = @$checkers ;
 
-PrintInfo "Warp: terminating checker processes [$number_of_checkers]\n" if $pbs_config->{DISPLAY_JOBS_INFO} ;
+PrintInfo "Check: terminating checker processes [$number_of_checkers]\n" if $pbs_config->{DISPLAY_JOBS_INFO} ;
 
 for my $checker (@$checkers)
 	{

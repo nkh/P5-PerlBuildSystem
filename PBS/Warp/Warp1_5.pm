@@ -159,6 +159,7 @@ if($run_in_warp_mode)
 			$nodes->{$dependent}{$node} = $nodes->{$node} if(exists $nodes->{$dependent})
 			}
 		}
+	
 	# reset node names to clear nodes that have been removed
 	$node_names = [] ;
 
@@ -993,8 +994,6 @@ for my $node (keys %$inserted_nodes)
 						{
 						unless (exists $nodes_index->{$1})
 							{
-							$new_nodes++ ;
-
 							my $inserting_node = $node_pbsfile ;
 
 							unless (exists $insertion_file_index{$inserting_node})
@@ -1058,8 +1057,6 @@ for my $node (keys %$inserted_nodes)
 
 						unless (exists $nodes_index->{$lib})
 							{
-							$new_nodes++ ;
-
 							my $inserting_node = $node_pbsfile ;
 
 							unless (exists $insertion_file_index{$inserting_node})
@@ -1111,12 +1108,16 @@ PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" ;
 # add nodes level above, to trigger
 for my $file (keys %$warp_dependents)
 	{
+PrintDebug "files $file\n" ;
 	$warp_configuration->{$file} = GetFileMD5($file) ;
 
 	my $dependents = $warp_dependents->{$file} ;
+use Data::TreeDumper ;
+PrintDebug DumpTree $dependents, 'dependents' ;
 
 	for my $node ( keys %{ $dependents->{LEVEL} } )
 		{
+PrintDebug "$node $node_names->[$node]\n" ;
 		for my $parent (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } GetParents($inserted_nodes->{$node_names->[$node]})) 
 			{
 			$dependents->{LEVEL}{$nodes_index->{$parent}}++ unless exists $dependents->{LEVEL}{$nodes_index->{$parent}} ;

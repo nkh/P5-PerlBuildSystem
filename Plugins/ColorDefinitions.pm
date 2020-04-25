@@ -60,12 +60,12 @@ return
 	256 => 
 		{
 		debug     => color('rgb314'),
-		error     => color('rgb300'), #red
-		info      => color('rgb020'), #green
-		info_2    => color('rgb013'), #bright_blue
-		info_3    => color('rgb023'), #cyan
+		error     => color('rgb300'),
+		info      => color('rgb020'),
+		info_2    => color('rgb013'),
+		info_3    => color('rgb023'), 
 		shell     => color('rgb023'),
-		user      => color('cyan'),
+		user      => color('rgb034'),
 		warning   => color('rgb320'),
 		warning_2 => color('bright_yellow'),
 

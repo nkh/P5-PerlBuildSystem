@@ -601,12 +601,12 @@ else
 			($pbsfile) = keys %existing_pbsfile ;
 			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 				{
-				PrintInfo "Config: Using pbsfile '$pbsfile' (chosen among default pbsfile names).\n" ;
+				PrintInfo "PBS: Using pbsfile '$pbsfile'.\n" ;
 				}
 			}
 		else
 			{
-			$error_message = "PBS config: found the following Pbsfiles:\n" ;
+			$error_message = "PBS: found the following Pbsfiles:\n" ;
 			
 			for my $found_pbsfile (keys %existing_pbsfile)
 				{
@@ -618,10 +618,19 @@ else
 		}
 	else
 		{
-		$error_message = "PBS config: No 'Pbsfile' to define build.\n" ;
+		$error_message = "PBS: no 'Pbsfile' to define build.\n" ;
 		}
 	}
 
+if (defined $pbsfile)
+	{
+	unless(File::Spec->file_name_is_absolute($pbsfile))
+		{
+		# found in current directory or expected to be in the current directory
+		my $cwd = getcwd() ;
+		$pbsfile = "$cwd/$pbsfile" ;
+		}
+	}
 return($pbsfile, $error_message) ;
 }
 

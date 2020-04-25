@@ -116,6 +116,8 @@ unless($builder_uses_perl_sub)
 		
 		$tree->{__SHELL_COMMANDS_GENERATOR} = $shell_command_generator ;
 		push @{$tree->{__SHELL_COMMANDS_GENERATOR_HISTORY}}, "rule '$name' @ '$file_name:$line'";
+		
+		return 'setting __SHELL_COMMANDS_GENERATOR' ;
 		} ;
 	}
 	

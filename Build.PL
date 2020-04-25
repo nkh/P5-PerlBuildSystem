@@ -30,6 +30,7 @@ PBS/Graph.pm
 PBS/Graph/Html.pm
 PBS/Graph/Snapshots.pm
 PBS/Log/Html.pm
+PBS/Log/ForkedLNI.pm
 PBS/GraphViz.pm
 PBS/Output.pm
 PBS/PBS.pm

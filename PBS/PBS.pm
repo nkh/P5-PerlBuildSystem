@@ -411,7 +411,10 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	}
 else
 	{
-	PrintError "Error: no pbsfile: $Pbsfile, targets: [@$targets], at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" ;
+	my $error = "PBS: Error: no pbsfile: $Pbsfile" ;
+	$error .= ", at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
+
+	PrintError $error ;
 
 =pod alternative_output
 	PrintError DumpTree
