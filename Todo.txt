@@ -1,7 +1,27 @@
+
+source code node info
+	generated in the source directory
+	why?!
+
+
+#in warp, pbschain{LEVEL} is wrong
+	the same pbsfile can be used at multiple levels we can't simply overwrite the value
+
+
+warp file contains lib with line number!
+	├─ 21 = '/home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C_depender.pm':149  [S22]
+	happens after build, pre-build warp has the right nodes
+
+#warp dependencies are not regenerated for pbsfiles not part of the build
+
+#warp fails with too few nodes back in the warp file
+
+
+
 #Rule C_object defines a node sub, WHERE?
 	=> all rules having a shell command(s) have __SHELL_COMMAND_GENERATOR set via node subs
 
---lni can be done in parallel
+# --lni can be done in parallel
 
 warp 1.8 pbs chain merge
 linking during non warp depend must also update the pbsfile chain 

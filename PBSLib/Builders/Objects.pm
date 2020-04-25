@@ -54,7 +54,7 @@ my $object_files = '';
 
 my $subpbs_result = new PBS::SubpbsResult() ;
 
-for my $dependency (@$dependencies)
+for my $dependency (sort @$dependencies)
 	{
 	if($dependency =~ /\.objects$/)
 		{

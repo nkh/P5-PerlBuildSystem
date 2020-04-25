@@ -1,4 +1,14 @@
 
+warp
+	having unbuild nodes in warp is moot
+		the node will build anyway after being removed
+			can we have only the build nodes or do we need all the nodes in the type of warp we have
+
+	warp can be prepared in the background as soon as the depend starts
+
+	warp nodes should be used as is to reduce time transforming then back to warp nodes after revivication
+
+
 remove package dependencies by matching them directly to nodes
 	from pb1 code
 	# add package dependencies to the node

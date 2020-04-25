@@ -12,7 +12,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.10' ;
+our $VERSION = '0.11' ;
 
 #-------------------------------------------------------------------------------
 
@@ -42,10 +42,8 @@ my $warp_file= "$warp_path/pbsfile_$warp_signature.pl" ;
 
 PrintInfo "Warp: file name: '$warp_file'\n" if defined $pbs_config->{DISPLAY_WARP_FILE_NAME} ;
 
-my ($nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents) ;
+my ($nodes, $node_names, $global_pbs_config, $warp_dependents) ;
 my ($version, $number_of_nodes_in_the_dependency_tree, $warp_configuration) ;
-
-my %nodes_index ; # reconstructed from $node_names ;
 
 my ($t0_warp, $t0_warp_check) = ([gettimeofday]) ;
 
@@ -59,7 +57,7 @@ my $warp_load_time = 0 ;
 
 if(-e $warp_file)
 	{
-	($nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents,
+	($nodes, $node_names, $global_pbs_config, $warp_dependents,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration)
 		= do $warp_file or do
 			{
@@ -130,7 +128,7 @@ if($run_in_warp_mode)
 	my $number_of_removed_nodes = $nodes_in_warp - scalar(keys %$nodes) ;
 
 	my $rebuilt = 0 ;
-	# rebuild the data PBS needs from the warp file for the nodes that have not triggered
+	# revivify the data PBS needs from the warp file for the nodes remaining from previous build
 	for my $node (keys %$nodes)
 		{
 		PrintInfo2 "\e[KWarp: rebuilt node $rebuilt\r" if $rebuilt % 100 ;
@@ -143,12 +141,12 @@ if($run_in_warp_mode)
 		
 		$nodes->{$node}{__PBS_CONFIG} = $global_pbs_config unless exists $nodes->{$node}{__PBS_CONFIG} ;
 		
-		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} = $node_names->[$nodes->{$node}{__INSERTED_AT}{INSERTION_FILE}] ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_NAME} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_FILE} = 'N/A' ;
 		$nodes->{$node}{__INSERTED_AT}{INSERTION_RULE_LINE} = 'N/A' ;
-		$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_names->[$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE}] ;
+		$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} = $node_names->[$nodes->{$node}{__INSERTED_AT}{INSERTING_NODE}] ;
 
 		$nodes->{$node}{__DEPENDED_AT} = $nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} unless exists $nodes->{$node}{__DEPENDED_AT} ;
 			
@@ -160,9 +158,6 @@ if($run_in_warp_mode)
 			}
 		}
 	
-	# reset node names to clear nodes that have been removed
-	$node_names = [] ;
-
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
 
@@ -231,9 +226,13 @@ if($run_in_warp_mode)
 				# this exception occurs only when a Builder fails so we can generate a warp file
 				GenerateWarpFile
 					(
-					$warp_file, $targets, $new_dependency_tree, $nodes,
-					$pbs_config, $warp_configuration, undef,
-					$warp_dependents
+					$warp_file,
+					$targets,
+					$new_dependency_tree,
+					$nodes,
+					$pbs_config,
+					'',
+					$node_names, 
 					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
@@ -244,9 +243,13 @@ if($run_in_warp_mode)
 			{
 			GenerateWarpFile
 				(
-				$warp_file, $targets, $new_dependency_tree, $nodes,
-				$pbs_config, $warp_configuration, undef,
-				$warp_dependents
+				$warp_file,
+				$targets,
+				$new_dependency_tree,
+				$nodes,
+				$pbs_config, 
+				'',
+				$node_names, 
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				
 			# force a refresh after we build files and generated events
@@ -281,7 +284,6 @@ else
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
-			undef, # warp config
 			' [pre-build]',
 			) ;
 		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
@@ -319,7 +321,7 @@ else
 					$targets,
 					$dependency_tree_snapshot,
 					$inserted_nodes_snapshot,
-					$pbs_config, undef,
+					$pbs_config,
 					)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 				}
 				
@@ -333,7 +335,7 @@ else
 				$targets,
 				$dependency_tree,
 				$inserted_nodes,
-				$pbs_config, undef,
+				$pbs_config,
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 			}
 			
@@ -352,7 +354,7 @@ sub CheckWarpConfiguration
 my ($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) = @_ ;
 my $trigger_log_warp  = '' ;
 
-for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_dependents->{$a}{MAX_LEVEL} // 0)} keys %$warp_configuration)
+for my $file (sort {($warp_dependents->{$b}{LEVEL} // 0)  <=> ($warp_dependents->{$a}{LEVEL} // 0)} keys %$warp_configuration)
 	{
 	# remove all level nodes and their parents
 	my @nodes_triggered ;
@@ -361,16 +363,16 @@ for my $file (sort {($warp_dependents->{$b}{MAX_LEVEL} // 0)  <=> ($warp_depende
 		{
 		@nodes_triggered = 
 			grep{ exists $nodes->{$_} } 
-				map {$node_names->[$_]} keys %{$warp_dependents->{$file}{LEVEL}} ;
+				map {$node_names->[$_]} keys %{$warp_dependents->{$file}{DEPENDENTS}} ;
 
 		$trigger_log_warp .= "{ PBSFILE_NAME => '$file', NODES => " . scalar(@nodes_triggered) . "},\n" ;
 
 		# remove all sub nodes
-		for my $sub_level (map {$node_names->[$_]} keys %{$warp_dependents->{$file}{SUB_LEVEL}})
+		for my $sub_level (map {$node_names->[$_]} keys %{$warp_dependents->{$file}{SUB_LEVELS}})
 			{
 			push @nodes_triggered,
 				grep{ exists $nodes->{$_} } 
-					map {$node_names->[$_]} keys %{$warp_dependents->{$sub_level}{LEVEL}} ;
+					map {$node_names->[$_]} keys %{$warp_dependents->{$sub_level}{DEPENDENTS}} ;
 			}
 
 		delete @{$nodes}{@nodes_triggered} ;
@@ -448,7 +450,7 @@ for my $node (keys %$nodes)
 	if('VIRTUAL' ne $nodes->{$node}{__MD5})
 		{
 		# rebuild the build name
-		$nodes->{$node}{__BUILD_NAME} =	exists $nodes->{$node}{__LOCATION}
+		$nodes->{$node}{__BUILD_NAME} = exists $nodes->{$node}{__LOCATION}
 							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
 							: $node ;
 		}
@@ -609,16 +611,10 @@ return (\@nodes_triggered, \@trigger_nodes) ;
 
 sub GenerateWarpFile
 {
-my ($warp_file, $targets, $dependency_tree, $inserted_nodes,
-	$pbs_config,
-	$warp_configuration,
-	$warp_message,
-	$warp_dependents
-	) = @_ ;
-
+my ($warp_file, $targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_message, $node_names,) = @_ ;
 $warp_message //='' ;
 
-$warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config, $warp_configuration) ;
+my $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config) ;
 
 PrintInfo("\e[KWarp: generation.$warp_message\n") unless $pbs_config->{QUIET} ;
 my $t0_warp_generate =  [gettimeofday] ;
@@ -635,10 +631,8 @@ my $global_pbs_config = # cache to reduce warp file size
 	SOURCE_DIRECTORIES => $pbs_config->{SOURCE_DIRECTORIES},
 	} ;
 
-my ($nodes, $insertion_file_names) ;
-
-($nodes, my $node_names, $insertion_file_names, $warp_dependents) = 
-	WarpifyTree1_5($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $warp_dependents) ;
+(my $nodes, $node_names, my $warp_dependents) = 
+	WarpifyTree1_5($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $node_names) ;
 
 my $number_of_nodes_in_the_dependency_tree = keys %$nodes ;
 
@@ -649,18 +643,18 @@ local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
 local $Data::Dumper::Sortkeys = 1 ; 
 
+#my $js = JSON::XS->new->pretty(1)->canonical(1) ; # sort keys, slower
 my $js = JSON::XS->new->pretty(1) ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
 print WARP '$nodes = decode_json qq{' . $js->encode( $nodes ) . "} ;\n\n" ;
 print WARP '$node_names = decode_json qq{' . $js->encode( $node_names ) . "} ;\n\n" ;
-print WARP '$insertion_file_names = decode_json qq{' . $js->encode( $insertion_file_names ) . "} ;\n\n" ;
 print WARP '$warp_dependents = decode_json qq{' . $js->encode( $warp_dependents ) . "} ;\n\n" ;
 print WARP '$warp_configuration = decode_json qq{' . $js->encode( $warp_configuration ) . "} ;\n\n" ;
 
 print WARP "\$version = $VERSION ;\n\$number_of_nodes_in_the_dependency_tree = $number_of_nodes_in_the_dependency_tree ;\n" ;
 
-print WARP 'return $nodes, $node_names, $global_pbs_config, $insertion_file_names, $warp_dependents,
+print WARP 'return $nodes, $node_names, $global_pbs_config, $warp_dependents,
 	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration;';
 
 close(WARP) ;
@@ -676,182 +670,183 @@ if($pbs_config->{DISPLAY_WARP_TIME})
 
 sub WarpifyTree1_5
 {
-my ($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $warp_dependents) = @_ ;
-$warp_dependents //= {} ;
+my ($pbs_config, $warp_configuration, $inserted_nodes, $global_pbs_config, $node_names) = @_ ;
 
 my ($package, $file_name, $line) = caller() ;
 
-my ($node_names, $nodes_index) = ([], {}) ;
-my (%nodes, @insertion_file_names, %insertion_file_index, %libs) ;
+my %nodes ;
+my @node_names = defined $node_names ? (@$node_names) : () ;
+
+my %nodes_index ;
+my $nodes_index_rebuild = 0 ;
+$nodes_index{$_} = $nodes_index_rebuild++ for (@node_names) ;
+
+my %libs ;
+my %warp_dependents;
 
 my $new_nodes = 0 ;
 
-for my $node (keys %$inserted_nodes)
+for my $node_name (keys %$inserted_nodes)
 	{
-	if(exists $inserted_nodes->{$node}{__WARP_NODE})
+	my $node = $inserted_nodes->{$node_name} ;
+	
+	if(exists $node->{__WARP_NODE})
 		{
-		unless (exists $nodes_index->{$node})
-			{
-			push @$node_names, $node ;
-			$nodes_index->{$node} = $#$node_names;
-			}
-
-		# reuse the inserted nodes directly in writing the warp file
-		# inserted nodes is itself mainly warp revivified nodes
-
-		$nodes{$node} = $inserted_nodes->{$node} ;
-		delete @{$nodes{$node}}
+		# reuse the revivified warp nodes directly
+		$nodes{$node_name} = $node ;
+		
+		# remove data we r-generated when loading warp, those were needed by different parts of pbs
+		delete @{$nodes{$node_name}}
 				{qw(
 				 __NAME __BUILD_DONE __BUILD_NAME __DEPENDED __DEPENDED_AT
 				__LINKED __CHECKED __PBS_CONFIG__DEPENDENCY_TO __DEPENDENCY_TO
 				__PBS_CONFIG
 				)} ;
 
-
-		my $insertion_file = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
+		$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$node->{__INSERTED_AT}{INSERTING_NODE}} ;
+		$nodes{$node_name}{__INSERTED_AT}{INSERTION_FILE} = $nodes_index{$node->{__INSERTED_AT}{INSERTION_FILE}} ;
 		
-		my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
-
-		unless (exists $insertion_file_index{$inserting_node})
+		delete $nodes{$node_name}{__INSERTED_AT}{INSERTION_RULE} ; 
+		delete $nodes{$node_name}{__INSERTED_AT}{INSERTION_RULE_NAME} ; 
+		delete $nodes{$node_name}{__INSERTED_AT}{INSERTION_RULE_FILE} ; 
+		delete $nodes{$node_name}{__INSERTED_AT}{INSERTION_RULE_LINE} ; 
+		
+		for my $dependency (keys %{$nodes{$node_name}})
 			{
-			push @insertion_file_names, $inserting_node ;
-			$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+			delete $nodes{$node_name}{$dependency} unless 0 == index($dependency, '__') ;
+			}
+		
+		my @pbsfile_chain = @{$node->{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
+		my $node_pbsfile_id = pop @pbsfile_chain ;
+
+		# See "pbsfile change" comments below 
+		if(defined $node_pbsfile_id)
+			{
+			my $node_pbsfile = $node_names[$node_pbsfile_id] ;
+
+			$warp_dependents{$node_pbsfile}{DEPENDENTS}{$nodes_index{$node_name}}++ ;
+			$warp_dependents{$node_pbsfile}{NODES}++ ;
+			$warp_dependents{$node_pbsfile}{LEVEL} = @pbsfile_chain ;
+
+			for my $pbsfile (@pbsfile_chain)
+				{
+				$warp_dependents{$node_names[$pbsfile]}{SUB_LEVELS}{$node_pbsfile_id}++ ;
+				}
 			}
 
-		$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
-
-		# remove dependencies
-		unless (exists $insertion_file_index{$insertion_file})
-			{
-			push @insertion_file_names, $insertion_file ;
-			$insertion_file_index{$insertion_file} = $#insertion_file_names ;
-			}
-			
-		$nodes{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_index{$insertion_file} ;
-		
-		delete $nodes{$node}{__INSERTED_AT}{INSERTION_RULE} ; 
-		
-		for my $dependent (keys %{$nodes{$node}})
-			{
-			delete $nodes{$node}{$dependent} unless 0 == index($dependent, '__') ;
-			}
-	
 		#todo: node can be linked to by new node and its pbsfile chain needs to be updated
-		#     linking during non warp depend should also update the pbsfile chain 
-		# the linking is done by the parent
+		#	linking during non warp depend should also update the pbsfile chain 
+		#	the linking is done by the parent
 		}
 	else
 		{
 		$new_nodes++ ;
-		if(exists $inserted_nodes->{$node}{__VIRTUAL})
-			{
-			$nodes{$node}{__VIRTUAL} = 1 ;
-			}
+		
+		$nodes{$node_name}{__VIRTUAL} = 1 if(exists $node->{__VIRTUAL}) ;
 			
-		if(exists $inserted_nodes->{$node}{__LOAD_PACKAGE})
+		if(exists $node->{__LOAD_PACKAGE})
 			{
-			unless(PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$node}{__LOAD_PACKAGE}, $inserted_nodes->{$node}))
+			unless(PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node))
 				{
 				# remember which node is terminal for later optimization
-				$nodes{$node}{__TERMINAL} = 1 ;
+				$nodes{$node_name}{__TERMINAL} = 1 ;
 				}
 			}
-		elsif(exists $inserted_nodes->{$node}{__TERMINAL})
+		elsif(exists $node->{__TERMINAL})
 			{
 			# remember which node is terminal for later optimization
-			$nodes{$node}{__TERMINAL} = 1 ;
+			$nodes{$node_name}{__TERMINAL} = 1 ;
 			}
 
-		if(exists $inserted_nodes->{$node}{__FORCED})
+		if(exists $node->{__FORCED})
 			{
-			$nodes{$node}{__FORCED} = 1 ;
+			$nodes{$node_name}{__FORCED}++ ;
 			}
 
-		if(!exists $inserted_nodes->{$node}{__VIRTUAL} && $node =~ /^\.(.*)/)
+		if(!exists $node->{__VIRTUAL} && $node_name =~ /^\.(.*)/)
 			{
-			($nodes{$node}{__LOCATION}) = ($inserted_nodes->{$node}{__BUILD_NAME} // '')  =~ /^(.*)$1$/ ;
+			($nodes{$node_name}{__LOCATION}) = ($node->{__BUILD_NAME} // '')  =~ /^(.*)$1$/ ;
 
-			delete $nodes{$node}{__LOCATION} if $nodes{$node}{__LOCATION} eq '.' ;
-			delete $nodes{$node}{__LOCATION} unless defined $nodes{$node}{__LOCATION} ;
+			delete $nodes{$node_name}{__LOCATION} if $nodes{$node_name}{__LOCATION} eq '.' ;
+			delete $nodes{$node_name}{__LOCATION} unless defined $nodes{$node_name}{__LOCATION} ;
 			}
 			
-		if(exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-			&& exists $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
+		if(exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+			&& exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
 			{
-			my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} ;
+			my $inserting_node = $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} ;
 
-			unless (exists $insertion_file_index{$inserting_node})
+			unless (exists $nodes_index{$inserting_node})
 				{
-				push @insertion_file_names, $inserting_node ;
-				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				push @node_names, $inserting_node ;
+				$nodes_index{$inserting_node} = $#node_names ;
 				}
 			
-			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
+			$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$inserting_node} ;
 			}
 		else
 			{
-			my $inserting_node = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTING_NODE} ;
+			my $inserting_node = $node->{__INSERTED_AT}{INSERTING_NODE} ;
 
-			unless (exists $insertion_file_index{$inserting_node})
+			unless (exists $nodes_index{$inserting_node})
 				{
-				push @insertion_file_names, $inserting_node ;
-				$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+				push @node_names, $inserting_node ;
+				$nodes_index{$inserting_node} = $#node_names ;
 				}
 
-			$nodes{$node}{__INSERTED_AT}{INSERTING_NODE} = $insertion_file_index{$inserting_node} ;
+			$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$inserting_node} ;
 			}
 		
-		if(exists $inserted_nodes->{$node}{__DEPENDED_AT})
+		if(exists $node->{__DEPENDED_AT})
 			{
-			if($inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ne $inserted_nodes->{$node}{__DEPENDED_AT})
+			if($node->{__INSERTED_AT}{INSERTION_FILE} ne $node->{__DEPENDED_AT})
 				{
-				$nodes{$node}{__DEPENDED_AT} = $inserted_nodes->{$node}{__DEPENDED_AT} ;
+				$nodes{$node_name}{__DEPENDED_AT} = $node->{__DEPENDED_AT} ;
 				}
 			}
 			
 		#reduce amount of data by indexing Insertion files (Pbsfile)
-		my $insertion_file = $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_FILE} ;
+		my $insertion_file = $node->{__INSERTED_AT}{INSERTION_FILE} ;
 		
-		unless (exists $insertion_file_index{$insertion_file})
+		unless (exists $nodes_index{$insertion_file})
 			{
-			push @insertion_file_names, $insertion_file ;
-			$insertion_file_index{$insertion_file} = $#insertion_file_names ;
+			push @node_names, $insertion_file ;
+			$nodes_index{$insertion_file} = $#node_names ;
 			}
 			
-		$nodes{$node}{__INSERTED_AT}{INSERTION_FILE} = $insertion_file_index{$insertion_file} ;
+		$nodes{$node_name}{__INSERTED_AT}{INSERTION_FILE} = $nodes_index{$insertion_file} ;
 		
 		if
 			(
-			   $inserted_nodes->{$node}{__PBS_CONFIG}{BUILD_DIRECTORY}  ne $global_pbs_config->{BUILD_DIRECTORY}
-			|| ! Compare($inserted_nodes->{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES}, $global_pbs_config->{SOURCE_DIRECTORIES})
+			   $node->{__PBS_CONFIG}{BUILD_DIRECTORY}  ne $global_pbs_config->{BUILD_DIRECTORY}
+			|| ! Compare($node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}, $global_pbs_config->{SOURCE_DIRECTORIES})
 			)
 			{
-			$nodes{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} = $inserted_nodes->{$node}{__PBS_CONFIG}{BUILD_DIRECTORY} ;
-			$nodes{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES} = [@{$inserted_nodes->{$node}{__PBS_CONFIG}{SOURCE_DIRECTORIES}}] ; 
+			$nodes{$node_name}{__PBS_CONFIG}{BUILD_DIRECTORY} = $node->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
+			$nodes{$node_name}{__PBS_CONFIG}{SOURCE_DIRECTORIES} = [@{$node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}}] ; 
 			}
 
-		if(exists $inserted_nodes->{$node}{__BUILD_DONE})
+		if(exists $node->{__BUILD_DONE})
 			{
 			# build done, can also be a node that did not trigger, up to date
-			if(exists $inserted_nodes->{$node}{__VIRTUAL})
+			if(exists $node->{__VIRTUAL})
 				{
-				$nodes{$node}{__MD5} = 'VIRTUAL' ;
+				$nodes{$node_name}{__MD5} = 'VIRTUAL' ;
 				}
 			else
 				{
-				if(exists $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_TIME})
+				if(exists $node->{__INSERTED_AT}{INSERTION_TIME})
 					{
 					# this is a new node
-					if(defined $inserted_nodes->{$node}{__MD5} && $inserted_nodes->{$node}{__MD5} ne 'not built yet')
+					if(defined $node->{__MD5} && $node->{__MD5} ne 'not built yet')
 						{
-						#PrintUser "using new node md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
-						$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} ;
+						$nodes{$node_name}{__MD5} = $node->{__MD5} ;
 						}
 					else
 						{
-						if(defined (my $current_md5 = GetFileMD5($inserted_nodes->{$node}{__BUILD_NAME})))
+						if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
 							{
-							$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} = $current_md5 ;
+							$nodes{$node_name}{__MD5} = $node->{__MD5} = $current_md5 ;
 							}
 						else
 							{
@@ -862,40 +857,39 @@ for my $node (keys %$inserted_nodes)
 					}
 				else
 					{
-					#PrintUser "using old md5 $node  $inserted_nodes->{$node}{__MD5}\n" ;
 					# use the old md5
-					$nodes{$node}{__MD5} = $inserted_nodes->{$node}{__MD5} ;
+					$nodes{$node_name}{__MD5} = $node->{__MD5} ;
 					}
 				}
 			}
 		else
 			{
-			$nodes{$node}{__MD5} = 'not built yet' ; 
+			$nodes{$node_name}{__MD5} = 'not built yet' ; 
 			}
 		
 		my $node_index ;
-		if (exists $nodes_index->{$node})
+		if (exists $nodes_index{$node_name})
 			{
-			$node_index = $nodes_index->{$node} ;
+			$node_index = $nodes_index{$node_name} ;
 			}
 		else
 			{
-			push @$node_names, $node ;
-			$node_index = $nodes_index->{$node} = $#$node_names;
+			push @node_names, $node_name ;
+			$node_index = $nodes_index{$node_name} = $#node_names;
 			}
 
-		if(exists $inserted_nodes->{$node}{__INSERTED_AT}{INSERTION_TIME})
+		if(exists $node->{__INSERTED_AT}{INSERTION_TIME})
 			{
-			for my $dependency (keys %{$inserted_nodes->{$node}})
+			for my $dependency (keys %{$node})
 				{
 				next if $dependency =~ /^__/ ;
 				$nodes{$dependency}{__DEPENDENT}{$node_index}++ ;
 				}
 			}
 
-		if (exists $inserted_nodes->{$node}{__TRIGGER_INSERTED})
+		if (exists $node->{__TRIGGER_INSERTED})
 			{
-			$nodes{$node}{__TRIGGER_INSERTED} = $inserted_nodes->{$node}{__TRIGGER_INSERTED} ;
+			$nodes{$node_name}{__TRIGGER_INSERTED} = $node->{__TRIGGER_INSERTED} ;
 			}
 
 		# add package dependencies to the node
@@ -903,48 +897,42 @@ for my $node (keys %$inserted_nodes)
 		# warp graph for a change that only impacts a few nodes
 
 		# reduce size by transforming to indexes
-		# bug: when reloading a warp file they are already indexed
 		my @pbsfile_chain  ;
 
-		if (exists $inserted_nodes->{$node}{__WARP_NODE})
-			{
-			@pbsfile_chain = @{$inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
-			}
-		else
-			{
-			@pbsfile_chain = map
+		@pbsfile_chain = map
+				{
+				my $node_index ;
+				if (exists $nodes_index{$_})
 					{
-					my $node_index ;
-					if (exists $nodes_index->{$_})
-						{
-						$node_index = $nodes_index->{$_} ;
-						}
-					else
-						{
-						push @$node_names, $_ ;
-						$node_index = $nodes_index->{$_} = $#$node_names ;
-						}
+					$node_index = $nodes_index{$_} ;
+					}
+				else
+					{
+					push @node_names, $_ ;
+					$node_index = $nodes_index{$_} = $#node_names ;
+					}
 
-					$node_index
-					} @{$inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
-			}
+				$node_index
+				} @{$node->{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
 
-		$nodes{$node}{__INSERTED_AT}{PBSFILE_CHAIN} = [@pbsfile_chain] ;
+		$nodes{$node_name}{__INSERTED_AT}{PBSFILE_CHAIN} = [@pbsfile_chain] ;
 		
 		my $node_pbsfile = pop @pbsfile_chain ;
-
 		unless(defined $node_pbsfile)
 			{
 			# top level nodes and nodes inserted by pbs, ie: deppendencies
-			$nodes{$node}{__WARP_NODE}++ ;
+			$nodes{$node_name}{__WARP_NODE}++ ;
 			next ;
 			}
 
-		$warp_dependents->{$node_names->[$node_pbsfile]}{LEVEL}{$node_index}++ ;
-		$warp_dependents->{$node_names->[$node_pbsfile]}{MAX_LEVEL} = @pbsfile_chain ;
+		$warp_dependents{$node_names[$node_pbsfile]}{DEPENDENTS}{$node_index}++ ;
+		$warp_dependents{$node_names[$node_pbsfile]}{NODES}++ ;
+		$warp_dependents{$node_names[$node_pbsfile]}{LEVEL} = @pbsfile_chain ;
 
 		for my $pbsfile (@pbsfile_chain)
 			{
+			# pbsfile change: 
+
 			# a pbsfile change means that we do not know if the warp graph is correct anymore
 			# as the change may have added or removed sub graphs
 
@@ -963,17 +951,18 @@ for my $node (keys %$inserted_nodes)
 			# and remove all the nodes in the levels below
 
 			# nodes for pbsfile level and below, to remove
-			$warp_dependents->{$node_names->[$pbsfile]}{SUB_LEVEL}{$node_pbsfile}++ ;
+			$warp_dependents{$node_names[$pbsfile]}{SUB_LEVELS}{$node_pbsfile}++ ;
 			}
 
 
 		# extract package digest dependencies, note that this is only meaningful for new nodes
-		# revivified nodes do not have a __LOAD_PACKAGE 
-		if(exists $inserted_nodes->{$node}{__LOAD_PACKAGE})
+		# revivified nodes have a list of package dependencies
+
+		if(exists $node->{__LOAD_PACKAGE}) # only new nodes have a __LOAD_PACKAGE 
 			{
 			my $package_digest = {
-						%{PBS::Digest::GetPackageDigest($inserted_nodes->{$node}{__LOAD_PACKAGE})},
-						%{PBS::Digest::GetNodeDigestNoChildren($inserted_nodes->{$node})},
+						%{PBS::Digest::GetPackageDigest($node->{__LOAD_PACKAGE})},
+						%{PBS::Digest::GetNodeDigestNoChildren($node)},
 						} ;
 
 			for my $package_dependency (keys %$package_digest)
@@ -992,14 +981,14 @@ for my $node (keys %$inserted_nodes)
 
 					unless(exists $nodes{$1})
 						{
-						unless (exists $nodes_index->{$1})
+						unless (exists $nodes_index{$1})
 							{
-							my $inserting_node = $node_pbsfile ;
+							my $inserting_node = $node_names[$node_pbsfile] ;
 
-							unless (exists $insertion_file_index{$inserting_node})
+							unless (exists $nodes_index{$inserting_node})
 								{
-								push @insertion_file_names, $inserting_node ;
-								$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+								push @node_names, $inserting_node ;
+								$nodes_index{$inserting_node} = $#node_names ;
 								}
 
 							$nodes{$1} =
@@ -1008,15 +997,15 @@ for my $node (keys %$inserted_nodes)
 								__INSERTED_AT =>
 									{
 									INSERTION_FILE => 0,
-									PBSFILE_CHAIN => $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [],
-									INSERTING_NODE => $insertion_file_index{$inserting_node},
+									PBSFILE_CHAIN => [],
+									INSERTING_NODE => $nodes_index{$inserting_node},
 									},
 								__TERMINAL => 1,
 								__WARP_NODE => 1,
 								} ;
 
-							push @$node_names, $1 ;
-							$nodes_index->{$1} = $#$node_names ;
+							push @node_names, $1 ;
+							$nodes_index{$1} = $#node_names ;
 							}
 						}
 
@@ -1055,14 +1044,14 @@ for my $node (keys %$inserted_nodes)
 
 						$lib = $libs{$lib} = $location . $lib ;
 
-						unless (exists $nodes_index->{$lib})
+						unless (exists $nodes_index{$lib})
 							{
-							my $inserting_node = $node_pbsfile ;
+							my $inserting_node = $node_names[$node_pbsfile] ;
 
-							unless (exists $insertion_file_index{$inserting_node})
+							unless (exists $nodes_index{$inserting_node})
 								{
-								push @insertion_file_names, $inserting_node ;
-								$insertion_file_index{$inserting_node} = $#insertion_file_names ;
+								push @node_names, $inserting_node ;
+								$nodes_index{$inserting_node} = $#node_names ;
 								}
 
 							$nodes{$lib} =
@@ -1071,15 +1060,15 @@ for my $node (keys %$inserted_nodes)
 								__INSERTED_AT =>
 									{
 									INSERTION_FILE => 0,
-									PBSFILE_CHAIN => $inserted_nodes->{$node}{__INSERTED_AT}{PBSFILE_CHAIN} // [],
-									INSERTING_NODE => $insertion_file_index{$inserting_node},
+									PBSFILE_CHAIN => [],
+									INSERTING_NODE => $nodes_index{$inserting_node},
 									},
 								__TERMINAL => 1,
 								__WARP_NODE => 1,
 								} ;
 
-							push @$node_names, $lib ;
-							$nodes_index->{$lib} = $#$node_names ;
+							push @node_names, $lib ;
+							$nodes_index{$lib} = $#node_names ;
 							}
 						}
 
@@ -1099,51 +1088,50 @@ for my $node (keys %$inserted_nodes)
 				}
 			}
 
-		$nodes{$node}{__WARP_NODE}++ ;
+		$nodes{$node_name}{__WARP_NODE}++ ;
 		}
 	}
 
 PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" ;
 
 # add nodes level above, to trigger
-for my $file (keys %$warp_dependents)
+for my $warp_dependent_name (keys %warp_dependents)
 	{
-PrintDebug "files $file\n" ;
-	$warp_configuration->{$file} = GetFileMD5($file) ;
-
-	my $dependents = $warp_dependents->{$file} ;
-use Data::TreeDumper ;
-PrintDebug DumpTree $dependents, 'dependents' ;
-
-	for my $node ( keys %{ $dependents->{LEVEL} } )
+	$warp_configuration->{$warp_dependent_name} = GetFileMD5($warp_dependent_name) ;
+	
+	my $warp_dependent = $warp_dependents{$warp_dependent_name} ;
+	
+	for my $dependent ( keys %{$warp_dependent->{DEPENDENTS}} )
 		{
-PrintDebug "$node $node_names->[$node]\n" ;
-		for my $parent (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } GetParents($inserted_nodes->{$node_names->[$node]})) 
+		my @parents = GetWarpNodeParents($dependent, \%nodes, \@node_names)  ;
+
+		for my $parent (@parents) 
 			{
-			$dependents->{LEVEL}{$nodes_index->{$parent}}++ unless exists $dependents->{LEVEL}{$nodes_index->{$parent}} ;
+			unless (exists $warp_dependent->{DEPENDENTS}{$parent}) 
+				{
+				$warp_dependent->{DEPENDENTS}{$parent}++ ;
+				}
 			}
 		}
 	}
 
-return(\%nodes, $node_names, \@insertion_file_names, $warp_dependents) ;
+return(\%nodes, \@node_names, \%warp_dependents) ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-sub GetParents
+sub GetWarpNodeParents
 {
-my ($node) = @_ ;
+my ($node_id, $nodes, $node_names) = @_ ;
+
+my @dependents = keys %{$nodes->{$node_names->[$node_id]}{__DEPENDENT}} ;
 
 my @parents ;
+push @parents, @dependents ;
 
-if(exists $node->{__PARENTS})
+for my $parent_id (@dependents) 
 	{
-	push @parents, @{$node->{__PARENTS}} ;
-
-	for my $parent (@{$node->{__PARENTS}}) 
-		{
-		push @parents, GetParents($parent) ;
-		}
+	push @parents, GetWarpNodeParents($parent_id, $nodes, $node_names) ;
 	}
 
 return @parents ;

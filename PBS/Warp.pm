@@ -79,30 +79,22 @@ return($warp_signature, $warp_signature_source) ;
 sub GetWarpConfiguration
 {
 my $pbs_config = shift ;
-my $warp_configuration = shift ;
-my $pbsfiles = shift ;
+my $warp_configuration = {} ;
 
 my $pbs_prf = $pbs_config->{PBS_RESPONSE_FILE} ;
 
-unless(defined $warp_configuration)
+if(defined $pbs_prf)
 	{
-	if(defined $pbs_prf)
+	my $pbs_prf_md5 = PBS::Digest::GetFileMD5($pbs_prf) ; 
+	
+	if(defined $pbs_prf_md5)
 		{
-		my $pbs_prf_md5 = PBS::Digest::GetFileMD5($pbs_prf) ; 
-		
-		if(defined $pbs_prf_md5)
-			{
-			$warp_configuration->{$pbs_prf} = $pbs_prf_md5 ;
-			}
-		else
-			{
-			PrintError("Warp file generation aborted: Can't compute MD5 for prf file '$pbs_prf'!") ;
-			return ;
-			}
+		$warp_configuration->{$pbs_prf} = $pbs_prf_md5 ;
 		}
 	else
 		{
-		$warp_configuration = {} ;
+		PrintError("Warp file generation aborted: Can't compute MD5 for prf file '$pbs_prf'!") ;
+		return ;
 		}
 	}
 
