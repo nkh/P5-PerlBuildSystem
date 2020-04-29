@@ -257,7 +257,7 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_confi
 			}
 		else
 			{
-			$current_node_info .= USER "${tab}${tab}$_\n" if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
+			$current_node_info .= INFO3 "${tab}${tab}$_\n" if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
 			}
 		
 		if
@@ -351,7 +351,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 					  ) ;
 							
 		$current_node_info = INFO ("${tab}Matching rule: #$rule_number$rule_tag '$rule_info'\n") ;
-		$current_node_info .= USER ("${tab}${tab}=> $rule_dependencies\n") ;
+		$current_node_info .= INFO3 ("${tab}${tab}=> $rule_dependencies\n") ;
 		
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;

@@ -113,7 +113,7 @@ for my $shell_command (@_)
 	{
 	if('' eq ref $shell_command)
 		{
-		PrintShell("$shell_command \n") unless defined $PBS::Shell::silent_commands ;
+		PrintUser("$shell_command \n") unless defined $PBS::Shell::silent_commands ;
 	
 		if(defined $PBS::Shell::silent_commands_output)
 			{

@@ -133,6 +133,9 @@ for my $d (@dependencies)
 		}
 	else
 		{
+		my $file = __FILE__ ;
+		($file) = ( $file =~ /^'(.*)'$/) ;
+
 		$inserted_nodes->{$d} = $node->{$d} = 
 			{
 			__NAME         => $d,
@@ -145,8 +148,8 @@ for my $d (@dependencies)
 				INSERTION_RULE => 'c_depender',
 				INSERTION_RULE_NAME => 'c_depender',
 				INSERTION_RULE_LINE => __LINE__,
-				INSERTION_RULE_FILE => __FILE__,
-				INSERTION_FILE => __FILE__ . ':' . __LINE__,
+				INSERTION_RULE_FILE => $file,
+				INSERTION_FILE => $file,
 				INSERTION_PACKAGE=> 'NA',
 				INSERTION_TIME => Time::HiRes::time,
 				} ,

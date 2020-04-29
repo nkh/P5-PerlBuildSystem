@@ -224,7 +224,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintUser("${indent}'$node_name' has matching subpbs: $rule_index:$rule_info\n") ;
+				PrintInfo3("${indent}'$node_name' has matching subpbs: $rule_index:$rule_info\n") ;
 				}
 				
 			next ;
@@ -318,7 +318,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					PrintUser($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
+					PrintInfo3($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
 					
 					if(@dependency_names)
 						{
@@ -332,7 +332,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					PrintUser "\t'$node_name' ${node_type}${forced_trigger} "
+					PrintInfo3 "\t'$node_name' ${node_type}${forced_trigger} "
 						. INFO("dependencies [@dependency_names]", 0)
 						. "" ;
 					
@@ -817,7 +817,7 @@ elsif(@sub_pbs)
 	# run subpbs
 	#-------------------------------------------------------------
 	my $node_is_trigger_inserted = exists $tree->{__TRIGGER_INSERTED} ;
-	PrintUser("${indent}Subpbs: trigger_inserted '$node_name'\n") if $node_is_trigger_inserted ; 
+	PrintInfo3("${indent}Subpbs: trigger_inserted '$node_name'\n") if $node_is_trigger_inserted ; 
 
 	# temporarily eliminate ourself from the existing nodes list
 	# this means that any extra information in the node will not be available to subpbs, eg: we display the trigger insert info before the subps

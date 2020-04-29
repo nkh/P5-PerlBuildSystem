@@ -233,7 +233,7 @@ else
 $pbs_config->{CHECK_JOBS} //= 4 ;
 $pbs_config->{CHECK_JOBS} = 4 if $pbs_config->{CHECK_JOBS} < 0 ;
 
-$pbs_config->{DISPLAY_WARP_CHECKED_NODESY}++ if $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+$pbs_config->{DISPLAY_WARP_CHECKED_NODES}++ if $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 
 if(defined $pbs_config->{DISPLAY_PBS_TIME})
 	{
@@ -302,6 +302,9 @@ if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY
 	}
 	
 $pbs_config->{DISPLAY_NODE_ORIGIN}++ if defined $pbs_config->{DISPLAY_NODE_PARENTS} ;
+
+push @{$pbs_config->{NODE_ENVIRONMENT_REGEX}}, '.'
+	if @{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}} && ! @{$pbs_config->{NODE_ENVIRONMENT_REGEX} } ;
 
 # ------------------------------------------------------------------------------
 

@@ -548,7 +548,9 @@ for my $node (@$nodes_to_check)
 							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
 							: $node ;
 
-		$remove_this_node += $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
+		$remove_this_node = "__MD5" eq "not built yet"
+					? 1
+					: $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
 		}
 
 	$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
@@ -557,7 +559,7 @@ for my $node (@$nodes_to_check)
 
 	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
 		{
-		if ($remove_this_node)	
+		if ($remove_this_node)
 			{
 			PrintInfo "\e[KWarp: " . ERROR('Removing') . INFO("  $node\n") ;
 			}

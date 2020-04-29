@@ -192,7 +192,7 @@ if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 
 	unless ($node_needs_rebuild)
 		{
-		PrintShell "Skipping node build, no dependency change\n" ;
+		PrintUser "Skipping node build, no dependency change\n" ;
 		
 		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No dependency change.") ;	
 		}

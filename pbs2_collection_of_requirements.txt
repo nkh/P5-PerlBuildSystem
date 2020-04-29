@@ -1,13 +1,38 @@
+--node_environment
+	display the environment variables active during the node build
+		maybe in a separate file to not spam too much in the terminal
+		=> in the log
+
+	how do we control the environment variables per node?
+		we don't, the only thing we control is $ENV at the start of the build
+
+	for pbs2
+		control env per node, per command in the node, per phase in the node?
+		inheritance of env from node to node
+		package env is default for nodes
+		env should go in the digest
 
 warp
 	having unbuild nodes in warp is moot
-		the node will build anyway after being removed
+		the node will build anyway after being removed and first revivified
 			can we have only the build nodes or do we need all the nodes in the type of warp we have
+				unbuild nodes trigger other nodes as their digest is not found
+				warp file nodes contains dependents so we need the nodes
+					but we do not need to check what we know will fail (because it is not build yet)
+						check if MD5 ew 'not_build' rather than compute a hash
 
 	warp can be prepared in the background as soon as the depend starts
+		if the processes are kept synchronized as the new nodes do not appear in the forked worker
+		yet another reason to keep everything textual so it can be streamed over
+
+	it can also be prepared parallel (parallel with depend and build) (if forking is not more expensive)
+
+	warp, after depend/build can be build in parallel as the graph is static
+		rather than returning warp nodes, the workers could write file on disk and
+			their format could be "cat"-ed together
 
 	warp nodes should be used as is to reduce time transforming then back to warp nodes after revivication
-
+		EG: no fiddling with the node data when serializing and de-serializing
 
 remove package dependencies by matching them directly to nodes
 	from pb1 code
@@ -24,7 +49,6 @@ parallel depend and post build commands
 
 	if we depend in parallel we need a mechanism to synch the node definitions back to the main process to run __POST_PBS_BUILD_COMMANDS
 		and to synch the nodes between the dependers
-
 
 late dependencies
 	check can't be done for every node after depend
@@ -352,9 +376,26 @@ node info generation
 
 md5 request for C dependency cache are not counted in the md5 stats
 
-assign level of verbosity to all the output classes
+assign color and level of verbosity to all the output classes
 	we use colors right now
 	to  support --quiet directly in the PrintXXX functions
+		per class
+
+	PrintXXX should be Print(XXX, ...) where XXX is the class corresponding to what is being done
+		the class is set by the context instead for forcing the context to use an existing class
+
+		instead for : PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_generation_time)) ;
+			Print [class, class, class, could be a single string], ....) ;
+			Print [WARP, TIMING, GENERATION], sprintf("Warp: total time: %0.2f s.\n", $warp_generation_time)) ;
+
+		if the class doesn't exist, it's displayed in a color that makes the developer/user know that it needs to be set
+
+		classes can be set from the command line, in the prf
+		non_set class used to display warning can also be set, it's just a class like any other
+
+	classes can be set during apbsfile run, in the pbsfile or by the parent
+
+
 
 distribute the warp generation in the graph
 	node generate their warp data
