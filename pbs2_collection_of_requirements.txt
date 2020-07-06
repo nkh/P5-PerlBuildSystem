@@ -1,3 +1,454 @@
+for CI
+	importance of logging the start time (and end) of a job
+
+parameter to a target (or sub target, a la "just" program)
+
+	default: (build "main")
+
+	build target:
+		@echo 'Building {{target}}...'
+		cd {{target}} && make
+
+
+	example 2
+
+	backup +what
+		scp what me@server
+
+	$> just backup a.1 a.2 b.1
+		scp a.1 a.2 b.1 me@server
+
+	# not sure it's better than: $> make backup WHAT="a.1 a.2 b.1"
+
+
+	just has three types of variables
+		variable
+		+variable
+		*variable
+
+		they can have default values
+
+
+
+	$> just backup a.1 a.2 b.1
+
+
+polyglot command
+	in just, prepending commands with a shebang runs the commands as scripts
+
+	roughly translated 
+		with the exception of string that is not needed in just as its syntax looks like make
+			and that it accepts a single command
+
+		rule polyglot
+			...
+			builder
+				<<EOP,
+				#!/bin/env perl
+				some perl script
+				EOS
+				<<EOA,
+				#!/bin/env awk
+				some awk script
+				EOA
+
+listing rules
+	idea from 'just', --list doesn't list "private" target starting with __, grep -v' ^--' sound like a better idea
+
+	pbs --list 
+		rule abc (:line)
+		rule 123 (:line)
+
+	pbs --show 
+		rule abc (:line)
+			body of the rule
+		rule 123 (:line)
+			body of the rule
+
+listing body of rule before executing it
+	idea from "just"
+	
+	pbs --node_rule_body
+		add the rule body to the node log, although we can open the node and jump to the definition easily 
+
+
+
+using #! instead for autorun in pbs2
+	#!/bin/env/pbs -f
+		#rest of the script
+
+
+
+default target
+	works nice with make because the target is the rule (which is pretty nice)
+	but pbs applies rules to the target passed on the command line
+
+	we know which rules we have since we register them and could make the first rule match
+		but match what? a regex?
+
+		rule name => xxx, Match /all/
+
+		a lot of things match that!
+
+		rule name => xxx, Match /^all$/ | Match 'all'
+		
+		only match all
+
+		first rule which matcher has a string as input?
+			special code _just_ to allow a default?! we don't like default variable, config, rules, ...
+		
+
+	we can show what the rules would match, IE regex or string
+
+	
+	prf, is it needed?
+		no but it's convenient
+
+		it allows us to put all the special cases in one place
+			default target (user target really)
+			configuration variables
+			options
+
+
+passing environment on the command line
+	other build tools have the environment as a configuration db
+		this is not good enough, to audit config IE
+
+	still pbs allows environment variables to sip through for commands that may need them
+		pbs only keeps the variables that are allowed to pass
+			this is still not good enough!
+
+		it is not possible to completely eliminate environment variables because tools depend on them
+
+		it's also very convenient to be able to set variables before calling a tool
+
+		multiple actions are possible and some already done
+
+			filter out the environment variable
+
+			make all the builds depend on the same environment, IE: if a variable was set when a
+				command was run, it must be set next time or the node is rebuild, env variables
+				become first class dependencies
+
+				this is means that the user needs to have control over the environment variables
+				that get in the build environment, probably per node to build
+					REH_USE_ENV
+
+				since we have the graph before building, we can alert the user for environment variable
+				mismatch (or tools version mismatch) before building.
+
+				tool version should be done via dependencies on the tools version instead
+					can also be used for global variables we need to be set
+
+		where do we filter the environment variables and how do we report them as we could report configuration variables
+
+			per pbs process, and pbs forked processes (who inherit them)
+			per pbsfile
+			per pbsfile run, they can be passed down (by whom the parent node or the parent pbsfile)
+				how does it work with pbsfile env filtering, who takes over?
+			per node
+
+		reporting environment configuration means keeping track of it
+			do we keep it in a separate configuration object?
+			can it be on a layer in C::Hierarchical?
+				with what priority?
+
+		whats the relationship with the pbs config
+			are $CC and %CC the same?
+				no because we must have a change to control the configuration at the node level
+
+				but we also need to be able to override config from the command line
+					that would work if env variables where on a layer in C::H
+			
+			are the environment variables put in the config when pbs starts?
+				do we put them in all the build environment automatically
+
+			do node handle environment variables in a special way or through pbs config
+
+		if a pbsfile filters out environment variables, what if we let them through?
+
+			shell: 		a=1 b=2
+			pbs:		--keep_environment: a ...
+			subpbs:		pass limited environment
+			pbsfile:	filter_environment: b, must have c
+						must have is an interesting concept, it can be verified when the rule is added
+						
+						it would be good if all this was through specialized REH in pbsfile_run rules
+
+displaying/loging configuration
+	on the command line
+		??
+
+	display config event when they are "special", I.E.: an override,
+		shall we also display the normal variable setting/changes in the log/output?
+			we prefer totally silent output with options to swith on specific output
+			the total opposite of make (almost, all goes to logs instead for stdout)
+
+	config is node specific
+		if a node doesn't have  any specific config it gets it from the pbs-run node and it then
+		becomes the nodes specific config.
+		the pbs-run node config is read only for nodes, only the pbsfile run can set configs
+			inherit from parent pbs-run, filter, set, ...
+			the config is kept in the pbs-run-node  log/digest
+
+	every node had the config in it's digest/log
+		not all the config are part of the value included in the signature but the config is listed
+
+		this also applies to pbs-run- nodes, ...
+
+	is the config also a node ?
+		if it is it can get verified and trigger 
+			on any or specific entries
+	pbs can save a pbs run config, shall we also save an environment config or should they be equivalent
+
+node build commands
+	pbs 1 can run multiple commands or pel scrits but there is no relationship between them, once
+	can even set a config from one build step to the other
+		note that pbs2-proto hands the node so there's a place to store data to be moved around
+			that could also be in the builder loop
+			or the command can do it on its own, like a shell command does
+
+
+
+../../../something
+	explain . and how to use it
+	explain full path and no relative path
+	catch ../..
+	how does not having relative paths help?
+	triggers in higher level directories (should be accessed from the machines root)
+	how does full path impact reuse of artefacts in other builds
+		can someone else reuse the builds if they are rooted differently
+		C depender has full path and that stopped re-use
+			a good thing? and what's the run time impact
+			bad?
+	how does one get a node path in a builder (and why would someone want to do that)
+
+pbs_run rules
+	rule name 
+		is rule a REH?
+			it takes a name ar argument and a list of REH that it registers?
+			there's not reason the registration would be done by pbs when a REH can do it
+				suubpbs are already handled this way
+
+	rule name
+		MATCH_PBS_RUN #is this the same as matching a subpbs rule? no there are two phases, start subpbs, be the top of the subpbs
+		MATCH_TARGET
+		FILTER_ENVIRONMENT (to subpbs, how about in the subpbs)
+		OTHER_REHs
+
+	if they have rules they have builders
+		good place to sneak in warp distribution
+
+	should the pbs run builder run the target builder
+		that includes loading the subpbs (how do we do in the pbs2 prototype)
+
+
+parallelization of depend step
+	fork?
+		on node
+		on subpbs
+
+	fork worker pool that can be controlled from the main process?
+		
+	we should stop handling nodes as objects in memory that reference each other and start handle them as 
+		a text description that can be loaded on demand
+		trees can be much smaller as they just just keep a reference to the files to load
+			there will be an impact on performance but it may be small
+
+	we can use the file system as a locking mechanism to know if a node is already in the graph or not
+		being careful with nodes that are already serialized on disk from another build
+
+		create the node, exclusively, first process creates it, other process use it
+		gmake used a trick to control how many parallel process it runs
+
+
+
+
+
+
+
+
+
+difference between config variables and environment
+	should there be a difference
+
+
+
+add section to elf file with pbs config for the node
+
+nodes can be prioritized against each other to make them build in a specific order
+	priority is a set via a REH as a node attribute which is used by the scheduler
+	this is for nodes that are not dependent and only to influence the scheduling
+
+nodes can catch/and/or forward that sub nodes are being build and thus that they are being built.
+	this generates a lot of signals and catching
+		the nodes who want to catch a signal have to register. 
+			add_rule ...
+				REH_CATCH_DEPENDENCIES_BUILD_START
+
+nodes can add a notice to pbs information displayed when node is build
+	print_info (maybe 'notice' is a better name) does just that
+
+node can display information in the node log (which is also displayed on the terminal)
+	REH_NODE_INFO can insert any amount of data, since it's a REH it can register to be called at different levels (depend, insert, build, ...) and
+	thus insert information in the stream at different levels.
+
+REH_NODE_INFO can be used in a rules for a subpbs, a node, ...
+
+REH_xxx_CONFIG can insert data in the information stream
+	like pbs1 inserts warning on the screen except that these warnings a structured
+
+nodes can take over the normal pbs terminal output (which is normally the stream output)
+	a rule can display its build differently
+	a pbs option disables this behavior if necessary (debug)
+	everything happening gets into the logged information stream 
+	the fact that the information stream is changed is also put in the log
+
+the node log file name is inserted in the information stream so it can be filtered out or opened directly from the terminal
+
+generate a list of nodes that have changed and a list of node that trigger (changed nodes and triggered nodes), the list contains the node log file path
+	the list can be added to the information stream
+	an option --display_triggered_nodes_list, displays the list and end the build, except if --force-build is active
+
+
+caching tree for fast build
+	fast build in this context means
+		fast graph generation
+		fast checking of dependencies
+		fast determination of the commands to run and in which order
+		not fast compilation 
+			although finding where the sub graph could be compiled the fastest is part of the build 
+
+	no build case, where nothing has changed, is the least interesting case
+		not even interesting to compare build systems because it's, well, a stupid case of no relevance
+
+	minimal build change is much more interesting and changes can be of many types
+		deepest file
+		file with most dependents
+		pbsfile
+		configuration change with different impact on the build
+		...
+
+	fast cache loading
+	fast cache checking
+	fast graph generation/regeneration
+	fast dependency check
+	fast command determination/order
+	fast distribution
+		that's the order pbs1 uses and it is not optimal
+		
+		if a graph is made of sub graphs (mini warp files) checking the micro-warp
+			can be done in parallel
+			only triggering micro-warp need to be merged to the global cache (maybe), the other just need to give the top node, un-triggered to add to the graph
+
+		the libs and pbsfiles are checked first, if they are dependencies of the nodes then node checking does the same in a more generic manner
+
+		the microwarp can be handled by an instance of pbs, which means that it can start building immediately
+			the instances of pbs, and their result, must be orchestrated
+
+			if the micro-warp is on another build node, the pbs instance can be run on that node achieving distribution
+
+		the size and topography of the micro-warps can be computed to be optimal for the build node
+
+		not checking intermediate nodes is the default, specially if artefacts are in a read only/pbs only filesystem
+			an option forces the checking of all the nodes
+
+		fast cache loading can be achieved by having less data in the cache, it can point to  the data in other files (log file, so we have the data in a single place)
+		graph regeneration is to have data that may be used in display (IE: insertion line) 
+			 we often set it to N/A only so it's not undefined and generates perl error when accessed
+
+		command determination means re-loading the pbsfile but if the pbsfile wasn't changed then it's the same command as before
+
+		the build order is the same as before and we can re-use it, it's just that some nodes, the one that didn't make it in the graph because they were not changed, won't be in the build sequence
+
+		
+
+	one case not handled optimally by pbs: only source change
+
+	    since we have a dependent list we could use it to generate the build sequence instead we reload all the pbsfiles down to the change source and recreate the build sequence from scratch. It is not sure a more optimized rebuild is better for the code or the comprehension of the build but this is certainly less efficient even if it is really fast.
+
+	to rebuild only the node and it's dependent we need to recreate the code that created it. Best would be to serialize it and/or keep it in memory
+
+	the node may be build by a shell command (and a shell context, environment, installed version of toos, installed libraries, ...) or by calling a perl sub. the perl sub (it also has a context, closures, ...) transforming the code into a simpler "call context" may allow us to write an new code just to build the node in effect this transforms the sub into a shell command where perl executes a simpler script
+
+	Rule ......, BUILDER => \code_ref, args
+
+	writing node_builder.pl which contains the code_ref source code makes it possible to call it as an external command
+	this could be achieve with a special code definition for builders, either by tagging its beginning and end or by making the code a string
+	some perl modules serialize subs, they may be an even simpler solution, at least more transparent for the user
+
+	even if we can serialize the code, we still need to handle errors in the same way as a full pbs build
+	serializing the code makes it possible to build a node without having the build system involved, not sure what advantage that could be and calling the code through the build system is simple, simply build that node and only that node by running pbs on the node's pbsfile
+
+
+
+debugging
+	it should be easy to debug a build that runs command in the command line (and subs)
+	if a node is build with shell commands, pbs should shellout for every command and give the control to the user
+	the command, and other pertinent information should be written in the terminal, after commands are run the user can continue the build either
+	by returning in the parent (pbs) shell or by sending a continue command and stay in the shell
+	the user should be able to open multiple shells for nodes to be build (or no node if necessary but that doesn't need to be done via pbs, tmux is fine)
+	this means that pbs needs to listen to a socket for "continue" commands
+	how is this different from gdb? multiple terminals because we want to keep output separated
+	should we implement gdb on top of pbs or continue with perldb?
+
+	if snapshots of the files to build are done before building, we can trace back
+		the user should be able to snapshot more than the node to build
+		pbs need to snapshot its own data
+		every time a node is build, a snapshot is made, which we get commit per buils
+
+	git merge with conflicts can be seen as a template for this kind of commands line options (--continue, ...)
+
+handling of bulk dependencies added by a search function, eg: find all the libraries in a directory, makes debugging difficult
+	because the dependencies are not named and grepping for their names gives no result, this forces one to grep through
+	 the build node/run a query. Note that the biggest problem is a CM problem.
+
+warp with reduced data
+	to load faster, it instead points to full data for nodes, this allows us to do queries without having to reload pbsfiles.
+	node data can be in microwarp, node digest and node log.
+	microwarp should point to data not be data. 
+
+a job in a CI system can be scheduled at any time, we need timestamps to see which one is started first
+	a job that is depending on another job will always start before the dependency
+	dependencies should be on artifacts not jobs! that a job created it is not relevant
+
+	a CI job is an administrative process over a normal build
+	but that's wrong, except the scheduling there should be not difference
+	maybe a ci job should be a job, which generates artifacts not virtual "I build the latest"
+	node builds must have information, time started, duration, in which context (build number if relevant, setup, config, ...)
+	since some of the information is shared by many nodes it should be in configuration nodes that are serialized (looks like pbsfile nodes),
+	linked to from the node build or serialized in it. if not serialized, on top of an url to the config/set/node, a md5 is kept, after all its a dependency too)
+
+Telling a build story
+	top down build systems are not always described top down, an example is setting up needed files before telling who needs them,
+	and the importance of CI being driven/verified with the build needs; or distributed and all CM data gathered in a CM manifest
+
+	by telling the story top down (possibly in different description files) 
+	how do we define in a flat file or a series of flat files a build which is a graph and not a list in the best way? while keeping the build story.
+	build system may need more comments if the build definition itself doesn't use a vocabulary that's clear enough, what makes a good book?
+	links, bread crums, history, bookmarks, history from a bookmark down, scope+folding
+
+	reading the story in the build description files is goo but we'd like to have the story readable in the graph and in the log while building
+	in the graph means that chapter in the story are also node, with dependencies. Those can be added as virtual nodes, although sometimes the fit an intermediate file well. The virtual nodes also have a builder and thus are visible in the build log, they can also display extra information since they have a builder
+
+	how to add dependencies to a story
+		often dependencies are in a list and the  list is added to the dependent's dependency list, ach dependency then match a rule which creates a node
+		in pbs1 a virtual node can be added, or a non virtual node
+
+		in pbs2 the same mechanism exists but we can extend rule with specialized REH
+
+		add_STORY_dependencies("the story", dependencies)
+
+		the above REH can, create a virtual node, and/or, add information to the dependency nodes (using rules?)
+
+		The REH can, during the nodes build, display information as it could also be a builder REH
+
+		alternatively the story can be added to the dependencies
+		Rule X, dependencies(), comments, belongs_to_stories(one or more story names) # I prefer dependents to set that information
+
+
+		A story resembles more a container than a dependent, there may be a better way to describe that (a scope for example, which could be a name space at run time), a use case with description and output is needed
+
 --node_environment
 	display the environment variables active during the node build
 		maybe in a separate file to not spam too much in the terminal
@@ -688,12 +1139,34 @@ generating graphs of the current build step (for the paranoid)
 
 Dependency on build tool, per functions, ...
 	pbs rebuilds if the pbsfiles or pbs libs have changed
-	but dependency on compiler, ... is not automatically handled
-		user defined but should be simple
+	but dependency on compiler (etc ...) is not automatically handled
+		user can define an extra dependency but it should be very simple
 			for shell commands, reminding the user that the command is not in the digest may help
 
+	this mechanism can definine a dependency on a specific compile version or the operating system version
+
+	for global dependency, eg: OS version, we need to add a rule in each pbsfile run
+		we have a defined system to add rules via switches --os_dependencies but we may
+		want to add it in the top file via "pbsuse 'os_dependencies'"
+			it doesn't work if we are rebuilding a node in a subpbs directly with --load-config
+			then it's the user's reponsibility
+
+			note that "pbuse 'os_dependencies'" applies the current pbs run only, we have no way to inherit it
+
+REH_EXPORT_RULE
+	pbsuse rules that are not to be loaded in each subpbs but inherited
+		then they should be exported down making it very clear what is done and where they come from
+
+		AddRule xyz
+			REH_EXPORT  # generates a warning, fills a history entry, ...
+
+REH_EXPORT_RULE per rule
+REH_EXPORT_CONFIG per config
+REH_IMPORT_CONFIG per node
+REH_IMPORT_ALL_CONFIGS per node
+
 nodes with only configuration dependencies
-	in waf:  was an example on how to had configuration in digests
+	in waf:  was an example on how to add configuration in digests
 	nodes without real dependencies? just virtual nodes? do we create a digest ;) ?
 
 
@@ -735,7 +1208,7 @@ pbsfile in multiple languages
 Advanced examples
 	build a compiler that's going to be used to build nodes
 
-	in pbs, compiler is a configuration variable so it an be used in builders
+	in pbs, compiler is a configuration variable so it can be used in builders
 	nodes that need the compiler have it as dependency
 	dependency is added via a rule, the rule can be added by a switch
 	the rule can be global
@@ -765,7 +1238,7 @@ Advanced examples
 		Rule object_file
 			named_dependency =>  [compiler => gcc_2.6],
 			REH_SOURCE => "$path/$name.c", 
-			build "%CC -o %FILE_TO_BUILD"
+			build "%compiler -o %FILE_TO_BUILD"
 
 		# above with sugar
 		Rule object_file
@@ -779,7 +1252,7 @@ Advanced examples
 			# REH_COMPILER can set the configuration variable, with comment and history
 			# REH_COMPILER can verify the configuration variable and warn or bail
 			# REH_COMPILER can be run in multiple phases, including when the command line has to be evaluated (although setting the config variable is enough)
-			# REH_COMPILER can add a dependency to the compiler
+			# REH_COMPILER can add the compiler as a dependency 
 
 
 REH arguments
@@ -830,7 +1303,7 @@ log file
 
 generate_ast
 	it is not easy to follow the chain of dependencies when debugging even if the chain is not wide nor deep
-	pbs as --tt --node_parents ... 
+	pbs has --tt --node_parents --node_parents ... 
 
 
 REH registration 
@@ -1101,6 +1574,8 @@ option rules
 	this mechanism can be used to implement rule injection
 		create a new "option" which adds a rule, add it to the pbs call
 		since options can take arguments, the injection can itself decide when to act
+
+	debugging uses rule injection
 
 	"options" can
 		add rules

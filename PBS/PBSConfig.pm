@@ -235,6 +235,8 @@ $pbs_config->{CHECK_JOBS} = 4 if $pbs_config->{CHECK_JOBS} < 0 ;
 
 $pbs_config->{DISPLAY_WARP_CHECKED_NODES}++ if $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 
+$pbs_config->{DISPLAY_MINIMUM_TIME} //= 0.5 ;
+
 if(defined $pbs_config->{DISPLAY_PBS_TIME})
 	{
 	$pbs_config->{DISPLAY_PBS_TOTAL_TIME}++ ;

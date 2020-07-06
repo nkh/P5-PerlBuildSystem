@@ -30,13 +30,13 @@ A post build step could merge the C dependencies
 
 				we can end up with largely duplicated tree
 
-				graphs can also be serialized and re loaded by main processs
-					simpler than handling separate processes but unecessary serializing deserializing 
+				graphs can also be serialized and re loaded by main process
+					simpler than handling separate processes but unnecessary serializing de-serializing 
 					but we are just interested in the node names and config + rules, not in their data
 
 
 				when graph is OKed, depending processes can build in parallel too
-					how does node build synchronization work when  node dependencies are accross process
+					how does node build synchronization work when  node dependencies are across process
 					boundaries?
 
 

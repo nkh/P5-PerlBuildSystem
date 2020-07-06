@@ -42,6 +42,10 @@ my $t0 = [gettimeofday];
 
 my ($pbs_config, $build_sequence, $inserted_nodes)  = @_ ;
 
+#always have the node name in the log
+$pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
+undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
+
 my ($build_queue, $number_of_terminal_nodes, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
 my $distributor        = PBS::Distributor::CreateDistributor($pbs_config, $build_sequence) ;
@@ -616,11 +620,10 @@ else
 	
 	my $no_output = defined $PBS::Shell::silent_commands && defined $PBS::Shell::silent_commands_output ;
 
+	my @bg_colors = @{$bg_color_classes[$bg_color_class]} ;
+	$bg_color_class ^= 1 ;
 
-my @bg_colors = @{$bg_color_classes[$bg_color_class]} ;
-$bg_color_class ^= 1 ;
-
-my $bg_color = 0 ;
+	my $bg_color = 0 ;
 
 	if($build_result == BUILD_SUCCESS)
 		{
@@ -634,10 +637,12 @@ my $bg_color = 0 ;
 			while(<$builder_channel>)
 				{
 				last if /__PBS_FORKED_BUILDER__/ ;
+				next if $no_output ;
 
 				#$bg_color ^= 1 if /Running command/ ; # change color for each sub command
 
 				chomp ;
+				$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
 
 				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
@@ -649,19 +654,32 @@ my $bg_color = 0 ;
 		{
 		# the build failed, save the builder output to display later and stop building
 		PrintError "Build: '$built_node->{__NAME}', error will be reported below.\n" ;
-			  
+		  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)
 			{
 			last if /__PBS_FORKED_BUILDER__/ ;
-			$error_output  .= $_ ;
+
+			chomp ;
+			$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
+			
+			my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
+
+			$error_output  .= $o . "\n" ;
 			}
 		}
 	}
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+	if($build_result == BUILD_SUCCESS)
+		{
+		PrintInfo "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+		}
+	else
+		{
+		PrintError "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+		}
 	}
 	
 return($build_result, $build_time, $error_output) ;

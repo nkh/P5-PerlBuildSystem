@@ -1,4 +1,23 @@
 
+--trigger ., triggers .o.trigger_dependencies
+		that stops the build!
+
+		-bi . makes it go forward
+
+
+broken in vi with color
+	first time goes to the file but not the line
+	second time refuses to go to c:_objects ... even if the cursor is on the file name
+
+	Matching rule: #1[B] 'c_objects:/home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C.pm:48'
+
+in log for object file
+	a dependency is missing and and an info file is pointing to a location that does not exist
+
+	dependencies:
+		node info: /home/nadim/no_backup/pbs_tests/generated_pbs_project/_out_nadim/pbsfile_2/pbsfile_9/pbsfile_10/pbsfile_11/pbsfile_12/pbsfile_13/73.o.trigger_dependencies.pbs_info
+		__SELF: : not found on disk
+
 warp 1.8 pbs chain merge
 linking during non warp depend must also update the pbsfile chain 
 
