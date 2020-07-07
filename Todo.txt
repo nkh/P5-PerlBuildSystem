@@ -1,9 +1,25 @@
+a lot of options exist for us to run queries and display information on the graph
+	most of the time it's the current graph being build but sometimes it is about a warp file
+
+	could the object be serialized and queries run on it without pbs?
+		we want to be able to script new queries not only run the one pbs give us
+			which means that the queres could/should be external to pbs even if pbs run them
+				which is what plugins do
+
+		we can also manipulate the graph then build it
+
+		warp is a serialization although heavily specialize
+			warp could be extracted from a serialized graph (one that's on disk)
 
 --trigger ., triggers .o.trigger_dependencies
 		that stops the build!
 
 		-bi . makes it go forward
+		PARENTS is not set for .o.trigger_dependencies, stopping the queueing of parents in the build list
 
+--trigger could be done by
+	a breakpoint
+	a rule that contains a trigger REH 
 
 broken in vi with color
 	first time goes to the file but not the line

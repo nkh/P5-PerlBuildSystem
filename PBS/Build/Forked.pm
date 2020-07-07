@@ -67,6 +67,7 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_BAR_PRO
 
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+my @failed_nodes ;
 
 while ($number_of_nodes_to_build > $number_of_already_build_node)
 	{
@@ -141,6 +142,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			$number_of_failed_builders++ ;
 
 			$excluded += MarkAllParentsAsFailed($pbs_config, $built_node) ;
+			push @failed_nodes, $built_node ;
 			}
 
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
@@ -177,18 +179,23 @@ if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
 	PrintInfo(sprintf("Build: parallel build time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	}
 
-	print STDERR (
-		($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
-		. INFO("nodes to build: $number_of_nodes_to_build"
-		. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
-		. ($number_of_failed_builders
-			? ERROR(", failures: $number_of_failed_builders")
-			: INFO (", failures: 0")) 
-		. ($excluded
-			? WARNING(", excluded: $excluded\n")
-			: INFO ("\n"))
-		) if $number_of_failed_builders ;
+print STDERR (
+	($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
+	. INFO("nodes to build: $number_of_nodes_to_build"
+	. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
+	. ($number_of_failed_builders
+		? ERROR(", failures: $number_of_failed_builders")
+		: INFO (", failures: 0")) 
+	. ($excluded
+		? WARNING(", excluded: $excluded\n")
+		: INFO ("\n"))
+	) if $number_of_failed_builders ;
+
+for my $failed_node (@failed_nodes)
+	{
+	PrintError "Build: '$failed_node->{__NAME}' failed\n" ;
 	}
 
 return(!$number_of_failed_builders) ;
@@ -250,10 +257,11 @@ for my $node (@$build_sequence)
 			{
 			push @removed_nodes, $node->{$child}{__NAME} ;
 			$node->{__CHILDREN_TO_BUILD}-- ;
+			#PrintInfo "Build: decremented '$node->{__NAME}' child to build count [$node->{__CHILDREN_TO_BUILD}], '$child' removed from build sequence \n" ;
 			}
 		}
 
-	if($node->{__LEVEL} != 0) # we hide PBS top node
+	if($node->{__LEVEL} != 0) # hide PBS top node
 		{
 		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
 		}
@@ -277,7 +285,7 @@ for my $node (@$build_sequence)
 	
 if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
 	{
-	PrintInfo2("Build: removed nodes from sequence (build already done):\n") ;
+	PrintInfo2("Build: removed nodes from sequence (source or build already done):\n") ;
 	local $PBS::Output::indentation_depth ;
 	$PBS::Output::indentation_depth++ ;
 	PrintInfo2 "$_\n" for @removed_nodes ;
@@ -422,7 +430,8 @@ for (0 .. ($number_of_builders - 1))
 	{
 	if($builders->[$_]{BUILDING} == 1)
 		{
-		push @waiting_for_messages, "$builders->[$_]{NODE}{__NAME} on '" . $builders->[$_]{SHELL}->GetInfo() ;
+		my $builder = $builders->[$_] ;
+		push @waiting_for_messages, "$builder->{NODE}{__NAME} on '" . $builder->{SHELL}->GetInfo() . ' pid:' .  $builder->{PID} ;
 		$select_all->add($builders->[$_]{CHANNEL}) ;
 		}
 	}
@@ -706,6 +715,13 @@ for my $parent (@{$node->{__PARENTS}})
 			}
 			
 		$build_queue->insert($parent, $parent->{__WEIGHT}) ;
+		}
+	else
+		{
+		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
+			{
+			PrintInfo2 "Build: parent '$parent->{__NAME}' still waiting for children to finish [$parent->{__CHILDREN_TO_BUILD}].\n" ;
+			}
 		}
 	}
 }

@@ -799,7 +799,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger (digest): MATCH $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger: '$file' matches /$trigger_regex/ (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 			$file_is_modified++ ;
 
@@ -835,7 +835,7 @@ else
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger (digest): MATCH $file =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger: '$file' matches /$trigger_regex/ (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 
 			$file_is_modified++ ;

@@ -1,3 +1,50 @@
+an option turns line output for print functions/log functions
+	we need to know what logged not only what is logged
+
+finding build nodes from somewhere else
+	root
+		tools
+			utils
+				the_tool
+		install
+			the_tool
+				which means that it needs to have it as dependency
+
+		test
+			some_test
+				need to run the_tool
+				which means that it needs to have it as dependency
+				
+				point to the tool at root/tools/utils/the_tool or root/install/the tool
+
+
+	=> which means that it needs to have it as dependency
+		a dependency is either
+			inserted by a trigger
+				some_test > trigger > some/node @ alias
+				
+
+			pointed at full path
+				if it's not there we get a late dependency
+					can late dependencies be aliased
+						eg: root/x/z/my_tool is aliased to root/tools/utils/the_tool
+
+					who makes the alias?
+						x/t/my_tool
+
+						anyone? anywhere?
+
+					can we have many aliases to one node?
+						what happens when aliases are already used?
+				
+					what happens to aliases that are never used?
+						do we warn about them
+
+
+			found in the graph
+				need support from pbs for that
+				does it even make sense?
+
 for CI
 	importance of logging the start time (and end) of a job
 

@@ -35,7 +35,10 @@ sub CheckDependencyTree
 my ($tree, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $node_checker_rule, $build_sequence, $files_in_build_sequence)  = @_ ;
 
 return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
-	
+
+# we also build data for the build step
+$tree->{__CHILDREN_TO_BUILD} = 0 ;
+
 PrintInfo "$checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
 
 $build_sequence //= [] ; 
@@ -205,32 +208,40 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 
 # IMPORTANT: this also generates child parents links for parallel build
 # do not make the block depend on previous triggers
-for my $dependency (keys %$tree)
+for my $dependency_name (keys %$tree)
 	{
-	next if $dependency =~ /^__/ ; # eliminate private data
+	my $dependency = $tree->{$dependency_name} ;
+
+	next if $dependency_name =~ /^__/ ; # eliminate private data
 	
-	if(exists $tree->{$dependency}{__CHECKED})
+	if(exists $dependency->{__CHECKED})
 		{
-		if($tree->{$dependency}{__TRIGGERED})
+		if($dependency->{__TRIGGERED})
 			{
 			$triggered = 1 ; # current node also need to be build
 
-			my $reason = $tree->{$dependency}{__TRIGGERED}[0]{NAME} ;
-			$reason .= ', ... (' . scalar(@{$tree->{$dependency}{__TRIGGERED}}) . ')'
-					if scalar(@{$tree->{$dependency}{__TRIGGERED}}) > 1 ;
+			my $reason = $$dependency->{__TRIGGERED}[0]{NAME} ;
+			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
+					if scalar(@{$dependency->{__TRIGGERED}}) > 1 ;
 
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => $reason} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
 			
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
-			push @{$tree->{$dependency}{__PARENTS}}, $tree ;
+			push @{$dependency->{__PARENTS}}, $tree ;
+
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			}
+		else
+			{
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will NOT be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 			}
 		}
 	else
 		{
 		my ($subdependency_triggered) = CheckDependencyTree
 							(
-							$tree->{$dependency},
+							$dependency,
 							$node_level + 1,
 							$inserted_nodes,
 							$pbs_config,
@@ -245,38 +256,48 @@ for my $dependency (keys %$tree)
 		
 		if($subdependency_triggered)
 			{
-			my $reason = $tree->{$dependency}{__TRIGGERED}[0]{NAME} ;
-			$reason .= ', ... (' . scalar(@{$tree->{$dependency}{__TRIGGERED}}) . ')'
-					if scalar(@{$tree->{$dependency}{__TRIGGERED}}) > 1 ;
+			my $reason = $dependency->{__TRIGGERED}[0]{NAME} ;
+			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
+					if scalar(@{$dependency->{__TRIGGERED}}) > 1 ;
 
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency, REASON => $reason} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
 			$triggered++ ;
 			
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
-			push @{$tree->{$dependency}{__PARENTS}}, $tree ;
+			push @{$dependency->{__PARENTS}}, $tree ;
+
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			}
+		else
+			{
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will NOT be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 			}
 		}
 
-	if(!PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree->{$dependency}))
+	if(! PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $dependency))
 		{
 		# trigger on our dependencies because they won't trigger themselves if they match 
 		# and are a source node. If a source node triggered, it would need to be rebuild.
 		my $trigger_match = 0 ;
 		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 			{
-			if($dependency =~ /$trigger_regex/)
+			if($dependency_name =~ /$trigger_regex/)
 				{
-				PrintUser "Trigger (source): MATCH $dependency =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				PrintUser "Trigger: source '$dependency_name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				$trigger_match++ ;
 
-				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency"} ;
-				push @{$tree->{$dependency}{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
+				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
+				push @{$dependency->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 				$triggered++ ;
+
+				$tree->{__CHILDREN_TO_BUILD}++ ;
+
+				#PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]") . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 				}
 			}
 
-		PrintInfo2 "Trigger (source): $dependency\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+		PrintInfo2 "Trigger (source): $dependency_name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
 		}
 	}
 
@@ -321,7 +342,7 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		if($name =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger: MATCH $name =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintUser "Trigger: '$name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 
 			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;

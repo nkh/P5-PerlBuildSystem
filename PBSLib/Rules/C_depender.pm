@@ -168,7 +168,7 @@ eval { PBS::Digest::GenerateNodeDigest($node) } ;
 
 die "Error Generating node '$node->{__NAME}' digest: $@\n" if $@ ;
 
-return "Inserted node '$node->{__NAME}' dependencies in the graph (from $dependency_file)\n" ;
+return "Inserted node '$node->{__NAME}' dependencies [" . scalar(@dependencies) . "] in the graph ($dependency_file)\n" ;
 }
 
 #-------------------------------------------------------------------------------

@@ -145,8 +145,7 @@ my $t0 = [gettimeofday] ;
 my $node = %$inserted_nodes{$node_name} ;
 
 my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNames($node) ;
-#all output goes to files that might be kept if CREATE_LOG is set
-#once the build is finished, the output is send to the master process
+#all output goes to a log file, once the build is finished, the output is send to the master process
 
 open(OLDOUT, ">&STDOUT") ;
 open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
