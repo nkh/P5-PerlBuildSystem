@@ -293,11 +293,10 @@ for my $dependency_name (keys %$tree)
 
 				$tree->{__CHILDREN_TO_BUILD}++ ;
 
-				#PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]") . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+				PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]") . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				}
 			}
-
-		PrintInfo2 "Trigger (source): $dependency_name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+	PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 		}
 	}
 
@@ -350,7 +349,7 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 			}
 		}
 
-	PrintInfo2 "Trigger: $name\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+	PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
 	}
 
 # node is checked, add it to the build sequence if triggered

@@ -790,6 +790,8 @@ return($rebuild_because_of_digest, $result_message, $number_of_differences) ;
 sub IsFileModified
 {
 my ($pbs_config, $file, $md5) = @_ ;
+$md5 //= "undefined" ;
+
 my $file_is_modified = 0;
 
 if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
@@ -809,7 +811,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			}
 		}
 
-	PrintInfo2 "Trigger (digest): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger: '$file' not trigger (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{
@@ -817,7 +819,7 @@ else
 		{
 		unless($current_md5 eq $md5)
 			{
-			PrintDebug "\nDigest: check hash,  got '$current_md5', expected '$md5' for '$file'\n"
+			PrintDebug "\nDigest: check hash, got '$current_md5', expected '$md5' for '$file'\n"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 				
 			$file_is_modified++ ;
@@ -847,7 +849,7 @@ else
 			}
 		}
 	
-	PrintInfo2 "Trigger (digest check): $file\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger: '$file' not trigger (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 
 return($file_is_modified) ;

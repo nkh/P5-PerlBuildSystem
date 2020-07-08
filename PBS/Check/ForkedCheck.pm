@@ -29,6 +29,8 @@ sub ParallelCheckNodes
 {
 my ($pbs_config, $nodes, $node_names, $IsFileModified, $node_checker) = @_ ;
 
+PrintInfo "Warp: using parallel checkers [$pbs_config->{CHECK_JOBS}], nodes may appear multiple time\n" if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} ;
+
 # location for MD5 computation
 for my $node (keys %$nodes)
 	{

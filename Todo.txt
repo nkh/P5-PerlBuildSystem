@@ -1,3 +1,15 @@
+pruning shows the same node multiple time
+	code handling warp triggered nodes (is it the same as thosethat were triggered by --trigger is just below
+
+--trigger -fb
+	nodes loaded from warp trigger even if --trigger is not given in the run!
+
+#--trigger ., triggers .o.trigger_dependencies
+		that stops the build!
+
+		-bi . makes it go forward
+		PARENTS is not set for .o.trigger_dependencies, stopping the queueing of parents in the build list
+
 a lot of options exist for us to run queries and display information on the graph
 	most of the time it's the current graph being build but sometimes it is about a warp file
 
@@ -10,12 +22,6 @@ a lot of options exist for us to run queries and display information on the grap
 
 		warp is a serialization although heavily specialize
 			warp could be extracted from a serialized graph (one that's on disk)
-
---trigger ., triggers .o.trigger_dependencies
-		that stops the build!
-
-		-bi . makes it go forward
-		PARENTS is not set for .o.trigger_dependencies, stopping the queueing of parents in the build list
 
 --trigger could be done by
 	a breakpoint

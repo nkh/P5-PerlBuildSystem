@@ -447,7 +447,7 @@ my $sub_process = 8 ;
 # location for MD5 computation
 for my $node (keys %$nodes)
 	{
-	if('VIRTUAL' ne $nodes->{$node}{__MD5})
+	if('VIRTUAL' ne ($nodes->{$node}{__MD5} // ''))
 		{
 		# rebuild the build name
 		$nodes->{$node}{__BUILD_NAME} = exists $nodes->{$node}{__LOCATION}
@@ -539,21 +539,33 @@ for my $node (@$nodes_to_check)
 		}
 
 	my $remove_this_node = 0 ;
-	
+	my @reasons ;
+
 	# virtual nodes don't have MD5
-	if('VIRTUAL' ne $nodes->{$node}{__MD5} && !$nodes->{$node}{__VIRTUAL} )
+	if('VIRTUAL' ne ($nodes->{$node}{__MD5} // '') && !$nodes->{$node}{__VIRTUAL} )
 		{
 		# rebuild the build name
 		$nodes->{$node}{__BUILD_NAME} =	exists $nodes->{$node}{__LOCATION}
 							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
 							: $node ;
 
-		$remove_this_node = "__MD5" eq "not built yet"
-					? 1
-					: $IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}) ;
+		if (($nodes->{$node}{"__MD5"} // '' ) eq "not built yet")
+			{
+			$remove_this_node++ ;
+			push @reasons, "signature = '" . ($nodes->{$node}{"__MD5"} // '') . "'" ;
+			}
+		elsif($IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}))
+			{
+			$remove_this_node++ ;
+			push @reasons, 'modified' ;
+			}
 		}
 
-	$remove_this_node++ if(exists $nodes->{$node}{__FORCED}) ;
+	if(exists $nodes->{$node}{__FORCED})
+		{
+		$remove_this_node++ ;
+		push @reasons, '__FORCED' ;
+		}
 
 	push @trigger_nodes, $node if $remove_this_node ;
 
@@ -561,7 +573,7 @@ for my $node (@$nodes_to_check)
 		{
 		if ($remove_this_node)
 			{
-			PrintInfo "\e[KWarp: " . ERROR('Removing') . INFO("  $node\n") ;
+			PrintInfo "\e[KWarp: " . ERROR('Removing') . INFO("  $node ") . ERROR("[" . join(' ,', @reasons) . "]\n") ;
 			}
 		else
 			{
@@ -569,7 +581,7 @@ for my $node (@$nodes_to_check)
 			}
 		}
 
-	if($remove_this_node) #and its dependents and its triggerer if any
+	if($remove_this_node) #and its dependents and its triggerers if any
 		{
 		my @nodes_to_remove = ($node) ;
 		
@@ -582,8 +594,8 @@ for my $node (@$nodes_to_check)
 			
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
-				PrintInfo2 $PBS::Output::indentation . "$node_to_remove\n"
-					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} ;
+				PrintInfo2 $PBS::Output::indentation . "$node_to_remove $$\n"
+					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && ! exists $nodes_triggered{$node_to_remove} ;
 				
 				push @dependent_nodes, grep{ ! exists $nodes_triggered{$_} } map {$node_names->[$_]} keys %{$nodes->{$node_to_remove}{__DEPENDENT}} ;
 				
