@@ -1,5 +1,130 @@
+show access to config variables during run
+	put them in the log
+	internal variables and environment variables
+
+	display which variables have not been used
+		for a node
+		for a graph
+		for the graph
+
+generate build manifests
+	of nodes in the build
+	of nodes triggering
+	of rebuild nodes
+
+	a graph that's easy to traverse for visual inspection
+		sd | broot
+		broot on _output_nadim
+
+		the source graph and the output graph are not the same, we may need to overlay them
+			sd links directories it doesn't link the nodes in a directory so we need to add that
+
+		the node triggering in the source directory don't change names nor have config and extra data so we may need to 
+		create extra data files in the source shadow tree, alt we can create a source node link in out directory
+
+		it may be ok for a few thousands nodes but not for half a million
+			we may need to create the links dynamically
+				when looking at the tree
+				when running a query that needs access to the source code in the shadow tree
+					although all files are referenced in the graph
+		
+		although broot is OK, it's made for searches not traversal
+
+	this is to look at the build at a high level
+	to look at the details we need a graph and detailed 
+
+	format of the manifests
+		preferably tab separated, with column header
+
+		query the graph
+			preferred way to generate manifests
+			we may need to keep a warp and complete graph
+				or the graph is the warp graph and we load extra data on the fly
+
+			the 1.8 warp graph is not even a graph anymore it's a cache lists to trigger nodes
+
+		having the graph allows us to query more than files
+			virtual nodes
+			configs
+			...
+
+		user can write a simple printf as git uses in pretty print
+
+		the query interface is a script using other query scripts
+			this lets the user build her own queries on top of query modules
+			the graph is loaded and the modules run on it
+
+			using a standard graph query and traversal language
+				we can still format our data as we want, we just need to proxy the language to our implementation
+
+
+	query examples
+		see above
+		create a shadow tree matching the query
+			eg: I am going to change this configuration in that pbsfile
+				show me how the graph would look like starting at another node
+
+generate a log for nodes as soon as they are added to the dependency graph
+failed modes have a failed postfix
+
+user can grep/fzf/ranger to find broken nodes
+	a file with the list of nodes can be generated -> give to fzf
+
+graph queries
+	find nodes that are broken
+		generate a context graph
+
+	find a node, generate a context graph
+
+	find node(s)  common to two or more nodes
+
+	find common pbsfiles
+	find common variables, that changed, ... where (this needs config history)
+
+
+	=> all this would be easier with external node data in a parser friendly format
+
+
+config history in a file
+	serialize the config, at the end of the pbsfile
+		with history
+		nodes can link to that history
+		pbsfile can link to that history
+
+
+	if nodes contain their configs, their parent, their pbsfile, and that their pbsfile contains links to its
+	parent node, we can re-construct the config history without having to serialize the config object
+		some information is lost, where the config was changed and why
+
+
+
+file system shadow directories
+	_output is exactly that except for
+		virtual nodes
+		pbsfiles
+		config
+
+
+log files can have different extensions depending of if the build succeeded or not
+	LS_COLOR can be used to make the error files stand
+	we should never have a build and failed log present at the same time
+		except if the user wants to save the previous log, which can be done by the user
+
+API
+	time to think about an api to control the build system
+
+	this includes better options which are a type of api
+
+	REST? REST for command line
+
+	REPL? isn't the debugger a better REPL?
+
+use hashes to index dependents in the warp file rather than file indexes
+	it's just slightly more expensive but we can find the nodes
+
 an option turns line output for print functions/log functions
 	we need to know what logged not only what is logged
+		IE: PrintXXX 
 
 finding build nodes from somewhere else
 	root
@@ -352,7 +477,27 @@ nodes can take over the normal pbs terminal output (which is normally the stream
 	the fact that the information stream is changed is also put in the log
 
 the node log file name is inserted in the information stream so it can be filtered out or opened directly from the terminal
+	a related problem is finding out the build order
+		it's sometimes the source of problems, mainly because dependencies are no declared properly
 
+	we log the order of build but there's a difference between having a log and using it
+		problem #1 is the amount of data
+			filtering
+				depth
+				matching nodes
+				matching pbs runs
+				amount of data displayed
+					each in own sections and can be filtered
+			folding
+		
+		we want to know the build sequence of nodes that are dependencies
+		we want to limit the depth of the dependencies shown
+		we want to start from vim or the command line or a repl (although the repl should be dumb just running external script)
+		we want to look at configuration for the nodes 
+		we want to know when the configuration/rules where added/changed
+		
+		we want to see the pbsfile run for a node, that log entry should be in a pbsfile_run.log and linked in the nodelog
+		
 generate a list of nodes that have changed and a list of node that trigger (changed nodes and triggered nodes), the list contains the node log file path
 	the list can be added to the information stream
 	an option --display_triggered_nodes_list, displays the list and end the build, except if --force-build is active
@@ -446,6 +591,19 @@ debugging
 
 	git merge with conflicts can be seen as a template for this kind of commands line options (--continue, ...)
 
+	on error create a file to open in vim with all relevant links
+
+	on error create a shadow directory with links to
+		failed node log
+			dependencies log
+		relevant pbsfiles
+			their dependencies
+		directory with saved config and command to run in that directory (while keeping everything at its place)
+			commands to run with different types of debugging switches
+		link to the whole source tree (since this is only a shadow directory with specific files)
+
+		
+	
 handling of bulk dependencies added by a search function, eg: find all the libraries in a directory, makes debugging difficult
 	because the dependencies are not named and grepping for their names gives no result, this forces one to grep through
 	 the build node/run a query. Note that the biggest problem is a CM problem.

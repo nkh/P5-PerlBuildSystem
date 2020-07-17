@@ -1069,9 +1069,14 @@ EOT
 		"Don't display the name of the node to be build.",
 		'',
 		
-	'dpb|display_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR},
+	'dpb0|display_nop_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR_NOP},
+		"Force silent build mode and displays an empty progress bar.",
+		'',
+
+	'dpb1|display_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR},
 		"Force silent build mode and displays a progress bar. This is Pbs default, see --ndpb.",
 		'',
+
 	'dpb2|display_progress_bar_file'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_FILE},
 		"Built node names are displayed above the progress bar",
 		'',
@@ -1081,7 +1086,7 @@ EOT
 		'',
 
 	'ndpb|display_no_progress_bar'    => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR},
-		"Force verbose build mode and displays a progress bar.",
+		"Verbose build mode.",
 		'',
 		
 	'bre|build_result'                => \$pbs_config->{DISPLAY_BUILD_RESULT},

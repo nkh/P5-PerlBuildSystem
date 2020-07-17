@@ -128,7 +128,8 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 							? sprintf("%0.2f", $time_remaining) . "s." 
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
 
-				PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]" ;
+				PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]"
+					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} ;
 				}
 
 			$builder_using_perl_time += $build_time 
@@ -478,9 +479,6 @@ my ($pbs_config, $build_queue, $builders, $node_build_index, $number_of_nodes_to
 
 my $started_builders = 0 ;
 
-PrintInfo2 "Build: starting:\n" 
-	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
-
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
@@ -491,8 +489,8 @@ for my $builder (@$builders)
 
 	my $node_to_build ; 
 	
-	#find a node to build which didn't have a descendent that failed
-	while( defined( $node_to_build = $build_queue->pop() )  && exists $node_to_build->{__HAS_FAILED_CHILD} ) { ; }
+	# find a node to build which didn't have a descendent that failed
+	while( defined( $node_to_build = $build_queue->pop() ) && exists $node_to_build->{__HAS_FAILED_CHILD} ) { ; }
 
 	return 0 unless defined $node_to_build ;
 	
@@ -540,9 +538,7 @@ for my $builder (@$builders)
 		my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
 		my $node_build_sequencer_info = "$node_index/$number_of_nodes_to_build, $percent_done%" ;
 		
-		local $PBS::Output::indentation_depth ;
-		$PBS::Output::indentation_depth++ ;
-		PrintInfo2 "$node_to_build->{__NAME} ($node_build_sequencer_info) in '@{[$builder->{SHELL}->GetInfo()]}' pid: $builder->{PID}\n" ;
+		PrintInfo2 "Build: start: $node_to_build->{__NAME} ($node_build_sequencer_info), pid: $builder->{PID}\n" ;
 		}
 	}
 
@@ -720,7 +716,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: parent '$parent->{__NAME}' still waiting for children to finish [$parent->{__CHILDREN_TO_BUILD}].\n" ;
+			PrintInfo2 "Build: parent '$parent->{__NAME}' children to build: $parent->{__CHILDREN_TO_BUILD}.\n" ;
 			}
 		}
 	}
