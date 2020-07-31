@@ -120,7 +120,7 @@ $string =~ s/\n(.)/$reset\n$color$indent$1/g ;
 
 return $color. $string . $reset ;
 }
-
+#sub RESET { return COLOR('reset', @_) }
 sub ERROR { return COLOR('error', @_) }
 sub WARNING  { return COLOR('warning', @_) }
 sub WARNING2 { return COLOR('warning_2', @_) }
@@ -147,6 +147,12 @@ for (@data)
 	print $glob $color_and_depth->($_) ;
 	}
 }
+
+sub PrintStdOut {_print(\*STDOUT, \&RESET, @_);}
+sub PrintStdErr {_print(\*STDERR, \&RESET, @_);}
+
+sub PrintStdOutColor {_print(\*STDOUT, @_);} # pass a color handler as first argument
+sub PrintStdErrColor {_print(\*STDERR, @_);} # pass a color handler as first argument
 
 sub PrintError {_print(\*STDERR, \&ERROR, @_);}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_) ;}

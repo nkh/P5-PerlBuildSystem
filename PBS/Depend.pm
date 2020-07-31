@@ -29,6 +29,7 @@ use PBS::Constants ;
 use PBS::Triggers ;
 use PBS::PostBuild ;
 use PBS::Plugin;
+use PBS::Information ;
 
 #-----------------------------------------------------------------------------------------
 
@@ -924,7 +925,7 @@ else
 		}
 	}
 
-# section below is disable
+# section below is disabled
 # we could generate the node log info after each node depend but do it after the check step
 # that adds the check status for the dependencies
 # the best solution would be to add information incrementally, generate the node log info during depend (rules  inserting dependencies)
@@ -940,7 +941,7 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 			my (undef, $node_info_file) =
 				PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
 
-			$node_info_file =~ s/\.pbs_log$/.pbs_info/ ;
+			$node_info_file .= '_dep' ;
 
 			my ($node_info, $log_node_info) = 
 				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;

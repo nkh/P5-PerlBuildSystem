@@ -1,3 +1,205 @@
+insert color codes in the logs
+	pbs2 generate monochrome data (logs)
+	pbs1 generates colored node logs and adds some color tag in the pbs_md5 files
+
+	the easiest way to look into logs is with ranger|broot|fzf and vim
+		these show files in different "viewers" which often can handle ansi codes
+		we need to generate those files from the pbs2 achromatic data
+
+a very simple way to run in the debugger, including pbsfiles
+	remember debugging DEFINED in cmake
+		I would have liked to stop at the set
+		execute it
+		look at result
+		run other set
+		clear set
+		write the current file modified
+		continue building
+
+	the repl can generate files, interactive generation of pbsfile, with localized runs
+
+		psfile lines
+			1
+			2
+			3
+			current : modify current, ie insert multiple lines that will replace 4
+				run the block till happy with the result
+				possibility to undo, IE go back to state before current was modified
+			5
+
+		window to visualize what's going on
+
+		the modified block must be run with a start config and target
+			isn't the block close to a subpbs?
+
+		we can keep the modified block and restart evaluation at previous line
+			thus we need to keep a state per line to be able to undo
+
+	we need to be able to specify which files to debug, simply
+	we can continue running till next breakpoint
+
+make pbs a normal lib so we can run in the REPL, including substraction of rules, going back in the graph evaluation ***, etc ...
+	add rule
+	pbsuse
+	normal perl code
+	set rules in rule set
+	apply rule set to node(s) and get graph
+	modify graph
+	apply rules to node in the graph
+	diff graphs
+	check graph (without adding parent relationships as we me re use it)
+	manipulate node group
+	get build sequence
+	build
+
+including non automatic or very long steps in a build
+	the user must agree on something being done
+		that may be receiving a mail back with the agreement or directly typing yes
+
+	check snake build
+	no-build scripts, script that only whrite what needs to be done and wait for a key to press
+		document the process
+		partial script that automate some of the work (not different from the build system 
+			calling a no-build script except that the process is self contained in a scrip
+			it would be an error to contain the script in an external, non pbs, script when
+			that can be achieved by writing the partial scrip in a pbsfile where taking a step
+			toward automation is much simpler than having half the work in a script
+			and half in pbs 
+
+			of course we need to let the user decide but providing a framework and example help
+			make a better choice
+				the example show how to partial automate something and handle dependencies
+				which is not a trivial step when going from manual to automated, particularely
+				when declarative scripts are involved
+
+what to do with large builds waiting for user input or a very long running command
+	the build (possibly distributed) is taking resources in the form of open file handles, memory, ...
+
+	even if not waiting, using resources is bad and should be reduced
+		a flagrant example is keeping the whole graph and nodes in memory even after the nodes
+		have been built.
+
+tracking what build a file once it's moved from the build directory
+	pbs node logs tell everything already in the build log
+	manifest that can be searshed
+	global md5 table of all node build pointing back at their build
+		note that this is the same as a build cache except the search is reversed
+			actual md5 to build instead for expected md5 (build) to node(actual md5)
+
+
+	not installing but linking the nodes helps (and keeps them packaged)
+
+parallel build systems
+	if the warp file is split, each warp file can be run in its own build system/process
+		if the start config and node for a dub build system is the same, the 
+		sub build system generates its graph (which is righ if input is unchanged
+			and delivers a trigger or not trigger for the top node
+			no need to deliver the graph only the triggered node
+				if its input is unchanged it can also start building immediately
+
+		the sub build graphs are delivered on demand to upper level
+			graph is node names only, the data is in the nodes_log/digest
+
+		at the end of the run, global graph, component graphs, config data, ... is
+		put together, rules could do that on nodes in the pbs layer (pbsfiles, configs, ....
+		
+	the complexity lays in what parts are run in a separate process
+		once the build is set, the process should end and the cpu left to build tools
+
+		this means that everything is serialized as there is no more object to talk to
+		maybe we should never be able to talk to a service but only via files
+			one advantage is that synch is done via files and files/processes can be on other nodes
+
+		since a node information is serialized, including its dependencies, we could parallelize ad nauseum
+			and let the nodes to be build synchronize the files they need, including compiler, ....
+
+			the build node should keep the dependencies around as much as possible, ie multiple compilers could be kept
+			on the build node
+				some dependencies, IE: compiler, build themselves by installing themselves
+
+			we could install in some sort of containers which would give the possibility to download parts of the install
+			from nodes which already have those parts, a p2p solution is even better
+				compare this with jenkins nodes where compilers are installed to avoid copy
+				of course we can still install them and the node's build simply verifies that the compiler is installed
+
+		we need to keep a weighted graph so the splitting is simple
+
+	administrating the different nodes that compose the build should be trivial, like the log for nodes in pbs1, location is obvious
+		CIT also has some idea about how to find a job which is not different from finding where a node is being build
+
+		we could overlay the sub build fs, if it's on another machine, to give a local view
+			could this work for CIT too?
+				fs could be read only when the user only had read rights to the job, etc ...
+
+		after running the build system to generate graph data it is possible to take a sub tree and 
+			copy everything that's needed to build it on a remote node manually
+				some trace information should be left so the automated build can try building on the node
+				where me made the manual copy
+
+			to find which nodes have a sub tree build data we can
+				use a distributed hash
+				query all the nodes
+				ssh and query and check the nodes ourselves
+
+				we're not sending GB of data just a few hashes so a simple solution is enough
+
+				we need to trust the node since it returns binaries, pki?
+				
+				how do we debug with files on other nodes -> mount the other nodes
+					but we need to lock the other nodes''s data so another build doesn't override data
+					we could use an overlayfs layer to make the generated files uniq, other builds
+					build in another directory which is another overlay
+
+	remote node build also contains information about what started the build (and where)
+		remote build may start another remote build
+			some correlation ID must be shared as well as a system to collect error information from any node
+
+build on an overlay, makes the output locked for a build
+	other builds can still access the layer as read only if they need the data
+		
+	this smells like docker!
+		maybe we should build in docker and each sub node/sub project can be build on it's own layer
+		this would allow us to fetch builds from other nodes
+			except that we want to keep stuff on the nodes  where it was build not bring it back: see local in pbs1
+
+			we could also mount the other directory via a network fs or even sshfs (for CIT create a new user per build)
+			
+			given a local filesystem in a single blob (IE not the native fs but an extra fs) we wouldn't need to
+			pack the files to relay them to another node, they are already packed, except we want to keep thing on the node
+			where they are build :)
+
+use bao to compute full graph md5s and serve the result
+	also fix inotify by using an agent that works better than our implementation
+		inotify should watch the directories not the files to save resources
+
+
+pbs name of application + user info optional, via filter or option?
+	via option --print_pbs --print_extra --print_location
+
+	build: using 3 processes ...
+
+	pbs: build: using 3 ...
+	[some user text, eg: name of a build] pbs: build: using 3 ...
+	pbs: @file:line build: using 3 ...
+
+	via filter
+		pbs: is added by the filter
+		extra text is handled by a filter option not pbs option
+		the line information must be added to the structured log
+
+depend steps should create depend.log files in a directory structure just like build does
+	we can still output the normal data (and the structured log)
+
+
+
+directly show graphical representation of queries
+	can be done via a wrapper
+	query can output the file name to pipe in viewer
+	sd can create a shadow structure
+
+	use visidata for queries?
+		can it lauch vi?
+
 show access to config variables during run
 	put them in the log
 	internal variables and environment variables
@@ -6,6 +208,10 @@ show access to config variables during run
 		for a node
 		for a graph
 		for the graph
+		
+		tell where they are declared and used
+
+		in a format that be queried, including their usage in sub trees
 
 generate build manifests
 	of nodes in the build
@@ -25,16 +231,26 @@ generate build manifests
 		it may be ok for a few thousands nodes but not for half a million
 			we may need to create the links dynamically
 				when looking at the tree
+
 				when running a query that needs access to the source code in the shadow tree
+
 					although all files are referenced in the graph
+
 		
+
 		although broot is OK, it's made for searches not traversal
 
+
+
 	this is to look at the build at a high level
+
 	to look at the details we need a graph and detailed 
 
+
 	format of the manifests
+
 		preferably tab separated, with column header
+
 
 		query the graph
 			preferred way to generate manifests
@@ -64,8 +280,26 @@ generate build manifests
 			eg: I am going to change this configuration in that pbsfile
 				show me how the graph would look like starting at another node
 
-generate a log for nodes as soon as they are added to the dependency graph
-failed modes have a failed postfix
+generate a log for nodes as soon as they are
+	added to the dependency graph
+		from pbs1 implementation of this functionality
+		1 # section below is disable
+		2 # we could generate the node log info after each node depend but do it after the check step
+		3 # that adds the check status for the dependencies
+		4 # the best solution would be to add information incrementally, generate the node log info during depend (rules  inserting dependencies)
+		5 # and adding the check information later
+		6 # alternatively we could check the nodes immediately but that wouldn't work with late depend that delays the insertion of dependencies
+		7 #◐◌◌◌◌◌◌we would have a wrong status for the dependencies
+
+	build failed modes have a failed postfix
+
+	the pbsfiles run
+	the command line
+	the environment variables
+	
+	everything that get on the screen
+		for build we redirect stdout but we can't do it for the main process
+			external filters can do that
 
 user can grep/fzf/ranger to find broken nodes
 	a file with the list of nodes can be generated -> give to fzf

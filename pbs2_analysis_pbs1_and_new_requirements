@@ -1,0 +1,256 @@
+documentation
+	guided tours
+	vocabulary list
+	snapshots of runs
+		debug
+		graph generation
+		...
+
+	videos
+	Pod site
+		html doc
+		man page/info
+
+	debug documentation
+
+	option documentation
+		one doc per option showing its effect
+
+Always generate document that shows what nodes have triggered and why
+
+out directory has a PBS directory for all PBS related information
+	so far log for nodes is beside the node, maybe a better option
+
+Make micro warp the base for all warps
+
+given a fixed set of libraries, is it possible to serialize them or share them in memory with the next pbs run
+
+Warps are REH that run on a package node
+	micro warp is also a REH but runs on subpbses
+	REH can run pre and post depend
+		verify the warp files and pre-loads nodes
+
+package nodes are a [target + parent config + pbsfile] tuple
+	package node rule is run by Pbsfile REH
+		Pbsfile REH can load warp nodes
+
+	warp doesn't have to be global it can be run in sub packages
+
+pbs switches are sorted in categories
+	-h -hs can be used to see short documentation
+	user can create categories and add switches in them
+	categories can be configured to contain option switches or switches configure to belong to a category
+
+--pbs-statistics
+	is a REH
+	node can have stats, as well as package or whole run
+
+statistics, debug info, info have human readable format that can be parsed
+
+MD5 requested error?
+	40 K requests for 15 K nodes
+
+tree graph
+	output data that can be transformed to HTML
+		isn't it better to generate the HTML directly
+			it may be too late for that as we have ran pbs already
+
+	tree graph can be generated from node logs
+
+pbs run generates a list of node needing rebuild
+	it is possible to diff lists to see the difference between builds
+
+queries for a graph
+	implemented as a plugin (can they be implemented as rules?)
+	--common-ancestors --common-descendents --relationship-between-nodes 
+	--equivalent-configs --config_changes
+	...
+
+	all these are easier implemented as post-build commands
+
+post-build
+	adds a rule that runs after the top node is build (or fails building)
+
+config
+	keep calls to add/get/... config
+
+distribute statistic data to the relevant nodes 
+	get timing per subpbs
+	less global clutter
+	add statistics to node log
+	
+distribute package config data structure to package
+	right now it is in PBS::Config
+
+FrontEnd:70
+	pbs config is overriden without warning and without a copy of the original
+
+Frontend
+	all global action run just once (IE --wizards --hs) should be mod to a separate sub/package
+	shouldn't they be rules?
+
+--dd
+	pbs1 shows all the dependencies aligned at column 1
+		a: 1 2 3
+		1: x y z
+		y: blah
+
+	indent according to the dependency level
+		a: 1 2 3
+			1: x y z
+				y: blah
+
+--progressbar4
+	display a high level tree showing what is being build
+
+--display_node_build_info
+	let node display that they are complete but only when this switch is present
+	! meh, why would we allow something that sucks
+		user can always add some breakpoints
+		
+
+breakpoint can query if the node is a dependency of another specific node
+	this can be used to tell user that the top node build has started
+		bleahh!
+	useful in debug node but no display a all in normal mode is better
+
+--config_variable_undefined_is_error
+
+--display_pbsuse_stataistics
+	display stats just after depending and before checking
+		if we want it implemented as a REH "depend" needs to be a "node"
+
+--node_build_information
+	--bi needs --fb but skips the build
+		not so smart
+
+--bi help contains references to switches that doe not exist
+
+help document to show which option add which information in the node log
+
+node log in structured format so display of information can be selective after the node is build
+	use some Json/Yaml post processor and templates (that generate no text if input is not present)
+
+Config::Hierarchical
+	debug mode shows a table of classes and how a variable is accessed
+			CLI	PBS	user
+	history			f:l	f:l + history
+	variable	12	7	5
+			^ chosen
+
+code/rule injection
+	list use cases
+	specify pbsfile/config/node for when code is injected
+		log
+
+	debug is a type of rule injection
+		use the same mechanism
+	
+	injection is made through PbsUse
+		this adds the injection code file to the dependencies
+
+Rule definitions/runs
+	Multiple builders
+		allow finer granularity of rules
+
+	types
+		unique builder
+		layered builder
+			builder can list itself after another builder
+		builders can run even if the previous builder fails
+			use this as an on_error mechanism
+
+	rule can say inwhich order it is run relative to other known rules (by Name)
+
+	depend a node in multiple subpbs?
+		how does this play with linking and nodes being depended?
+		option to disable it
+		warning + debug info
+
+save/load config
+	works on the parent config, make it clearn in the option names
+
+	add document to show how this is used
+
+	LOADED_CONFIG?
+		how is it used?
+
+	can we load and save a config in the same run
+		how to we keep track of previous config contents
+
+	if a pbsfile is modified, is the saved config invalid?
+
+	warn when the target of a pbs run with --load_parent_config doesn't have the same target
+
+	display information about parent config changed by the current run
+
+	runs with --load_configs should end up in different output directory
+
+	sort the config for easy human reading
+
+	all runs are using a parent config, should --save_config be the default?
+		where the config is a node 
+
+sub pbs
+	can they have multiple targets?
+
+node log
+	possibility to build directly from the editor
+	possibility to change the config (which needs to be in the log) and build
+
+ 	the build of a sub node is not reusable as it is started in a sub directory and . (the root) is not the same
+		scaffold it!
+
+build directory per pbsfile
+	different pbsfiles create different out directory
+		how do we reuse equivalent artefacts
+
+digest computation
+	via REH
+		nodes can have different digest types
+
+	REH to verify digest can use file watcher
+
+	git as a file watcher
+		via a REH
+		in preprocessing step where 
+			git is called
+			pbs is called triggering every necessary node
+			REH to verify digest is overriden with null verification (triggering takes precedence)
+
+	create digest is done by digest REH
+
+Environment
+	control from parent
+	propagate to children
+	children can control it
+		in child package
+		in node 
+			REH_ENV(qw(accepted env variables))
+			REH_NO_ENV
+			...
+
+post build commands are rules/REH
+	per node 
+	per pbsfile
+	per package
+	per pbs run
+
+	all the above being nodes (since rules apply to them)
+
+REH_CONFIG
+	can load config from  file
+		file ends in digest
+
+REH can add dependencies
+	see REH_CONFIG
+
+REH_ADD_FILE_DEPENDENCY
+	to replace the package mechanism
+	a better way is to list the dependency in the dependency list!
+
+REH_ADD_FILE_DEPENDENCY
+	to replace the package mechanism
+	a better way is to list the dependency in the dependency list!
+
+

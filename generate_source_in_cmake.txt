@@ -1,0 +1,92 @@
+Generated Sources In CMake Builds
+
+April 18, 2017 by Craig Scott
+Using a set of source files to build libraries and executables is about the most basic thing a build system needs to do. This is relatively easy with CMake, but things get more interesting when some of the source files need to be generated as part of the build. CMake provides a range of functionality which can be used to create files, but getting build dependencies correct is an area where many developers struggle or even simply give up. It doesn’t have to be that way!
+
+Generating Files At Configure Time
+The easiest scenario involves copying a file from somewhere into a known location during the configure stage and using it as a source or header file in the build stage. The configure_file() command makes this trivial and even has the ability to transform the input such that ${someVar} and @someVar@ are replaced with the value of the corresponding CMake variable during the copy. This can be a better alternative to passing information through compiler defines in some situations. A particularly effective example of this is passing an application version string defined in CMake through to C++ source code:
+
+version.cpp.in:
+
+const char* getVersion()
+{
+    return "@MyProj_VERSION@";
+}
+CMakeLists.txt:
+
+cmake_minimum_required(VERSION 3.0)
+project(MyProj VERSION 2.4.3)
+
+configure_file(version.cpp.in version.cpp)
+
+add_executable(myapp
+    main.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+)
+In the above, the MyProj_VERSION variable is automatically populated by CMake as part of the project() command when the VERSION option is provided. The configure_file() command then substitutes that CMake variable’s value during the copy, so the version.cpp file ends up with the version string embedded directly. The version.cpp file is generated in the build directory and this file is then added as a source for the myapp executable.
+
+One of the good things about configure_file() is that it automatically handles build dependencies. If the version.cpp.in input file ever changes, CMake will re-run the configure stage at the start of the build so that the version.cpp file is regenerated. Furthermore, CMake also recognises that version.cpp is an input file to the myapp target, so version.cpp will be recompiled and myapp relinked. The project does not have to specify any of these dependencies, CMake automatically recognises and defines them. The configure_file() command also has the useful characteristic that if the generated content doesn’t change, then the file is not actually updated and therefore CMake’s dependency tracking won’t cause downstream dependencies to be rebuilt.
+
+Sometimes the content of source files might be hard-coded directly in the CMakeLists.txt files or it may be built up from CMake variable contents. Files can then be written using one of the file() command forms which create file contents. The above example could also be implemented like this:
+
+cmake_minimum_required(VERSION 3.0)
+project(MyProj VERSION 2.4.3)
+
+file(WRITE version.cpp
+     "const char* getVersion() { return \"${MyProj_VERSION}\"; }"
+ )
+
+add_executable(myapp
+    main.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+)
+The file() command has other forms which can be used to write files, such as file(APPEND...) and file(GENERATE...), the latter being useful if generator expressions need to be evaluated as part of the content to be written. One disadvantage of using file() to write files is that it updates the output file every time CMake is run. As a result, anything that depends on that output file will be seen as out of date, even if the file’s contents haven’t changed. For this reason, configure_file() is usually the better alternative if the output file is used as an input to something else.
+
+Generating Files At Build Time
+A more challenging scenario is where a tool needs to be run at build time and the tool’s outputs are files to be used as sources for CMake targets. During the configure stage (i.e. when CMake is run), these files do not yet exist, so CMake needs some way of knowing they are generated files or it will expect them to be present. Unfortunately, a common approach used in this situation is to take a copy of a set of generated files and save them with the project’s sources (i.e. check them into version control). The project then defines a custom target which the developer can run to update the saved sources. This approach has a number of problems:
+
+Builds should not require manual steps or building a set of targets in a certain order, that’s what the build system should be able to handle its own.
+Builds can modify sources, which they should always aim to avoid. If a developer is using multiple build trees with the same set of sources (e.g. for different build configurations such as Debug and Release), then the builds may conflict in terms of the sources they want to generate (e.g. a Debug build may add additional logging or consistency checks).
+It is too easy to use generated code which is not up to date. This can be a hard to detect cause of code consistency problems if the generated code is used across multiple projects.
+If using code review as part of merge requests, etc., changes in the generated code can swamp the interesting changes made by the developer. In some cases, the amount of change in the generated code can even test the limits of review tools in terms of the size of a change they can handle.
+Instead of defining a custom target to generate the sources manually, projects should define custom outputs with add_custom_command(). CMake can then automatically work out dependencies when those outputs are used as inputs to another target.
+
+cmake_minimum_required(VERSION 3.0)
+project(MyProj VERSION 2.4.3)
+
+add_custom_command(
+    OUTPUT  generated.cpp
+    COMMAND mytool ${CMAKE_CURRENT_BINARY_DIR}/generated.cpp
+    DEPENDS someInputFile.cpp.in
+)
+
+add_executable(myapp
+    main.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/generated.cpp
+)
+With this approach, generated sources do not have to be saved in the source tree or checked in to version control. The sources are generated at build time and targets that list any of the custom command’s output files as sources will be dependent on the custom command. Extra dependencies can also be specified in add_custom_command() with the DEPENDS option, allowing files it uses as inputs to become part of the dependency hierarchy. If such input files change, the output files are regenerated and targets using those output files will be rebuilt. The main restriction here is that the targets using the generated outputs as inputs must be defined in the same directory scope as the custom command.
+
+This method can also be used when the tool performing the generation is itself a build target. If the command to run is an executable target, CMake will substitute the location of the binary automatically. It will also set up a dependency which ensures the executable target exists, but not a dependency that will re-run generation every time that target is rebuilt (to get that behavior, the executable has to be listed as a DEPENDS as well).
+
+cmake_minimum_required(VERSION 3.0)
+project(MyProj VERSION 2.4.3)
+
+add_executable(generator generator.cpp)
+
+add_custom_command(
+    OUTPUT  generated.cpp
+    COMMAND generator ${CMAKE_CURRENT_BINARY_DIR}/generated.cpp
+    DEPENDS generator someInputFile.cpp.in
+)
+
+add_executable(myapp
+    main.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/generated.cpp
+)
+Closing Remarks
+The most effective way to generate content to be used as source files depends on a number of factors. If the file contents can be generated at configure time, this is often the simplest approach. The main drawback to a configure-time copy is that if the configure stage is not fast, re-running CMake every time the input file changes can be annoying. Generating source files at build time is preferable where the generation is expensive or where it requires a tool that is itself built as part of the project. This lets CMake handle dependencies between the tool and the generation steps as well as being more suitable for parallel builds (in comparison, the configure stage is inherently non-parallel).
+
+One scenario not covered in the above is where one of the files being generated is a file read in by CMake as part of the configure stage. A generator may produce a CMakeLists.txt file, for example, which means the generator has to exist at configure time before any build has been performed. If the generator is built by the project, a chicken-and-egg situation results. Handling this sort of scenario requires more complicated techniques, with one effective solution being documented here. Alternatively, if the generator can be factored out into its own project, a more traditional superbuild approach using ExternalProject may be another alternative.
+
+
+
