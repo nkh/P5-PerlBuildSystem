@@ -1,3 +1,50 @@
+generation of pbs_log_dep takes a long time 0.8 s for 800 files ... in parallel
+	it's also re run for all the nodes in the graph, ? including warp nodes
+	the depend is overridden if the build goes forward
+		maybe we should generate the dep files when the build fails instead
+			at least for the nodes that fail and their dependents
+
+		it's useful to understand the the build structure
+
+node logs contains information about their build time and what pbs generated it
+	it could always contain some extra information like the compiler version, ...
+		although the compiler digest should be in the dependencies
+
+	it would be nice if the node also pointed to an extra file where the builds using the node
+	can add themselves, extra information that shows how many builds are using a node that's already
+	build
+
+	the node log can contain the dependencies hashes
+
+parallelization of build is done within a structure in memory
+	we could reimplement it externally with multiple queues and some external worker that starts builds
+		starting build is triggered by different stimuli
+			for terminal nodes it's the availability of a builder 
+				builders can be external applications, on different machines
+			for parent nodes, by having all the children build, making it a terminal node
+
+	we need to handle build errors
+		particularly removing all the failed node parents and maybe continue
+		the build for nodes that are OK
+
+	the external builders, and queue manager can continue building in the background
+		EG: pbs gives the hand back to the user because of errors
+
+	on next build, pbs can verify which nodes have been build while it was not running
+		it can also verify if a node from a previous build is not build yet and wait on it
+
+	this makes sharing nodes between build much easier, there is no need to synch between pbs builds
+		we only synch between build-nodes/being-buld nodes
+		we can find the nodes we need via the node digest (is the digest of its sub tree needed?), including config
+
+	
+	
+ 
+following variables defining link or compile flags
+	from a node build, follow the changes done to a configuration variable (including where it was changed and why)
+		this could be achieved with files so we can read them in vi
+			or vi a query (that goes through the files)
+
 insert color codes in the logs
 	pbs2 generate monochrome data (logs)
 	pbs1 generates colored node logs and adds some color tag in the pbs_md5 files

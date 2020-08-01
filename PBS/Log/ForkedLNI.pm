@@ -237,7 +237,6 @@ my ($pbs_config, $inserted_nodes, $nodes, $slice_start, $slice_end) = @_ ;
 for my $node (@{$nodes}[$slice_start .. $slice_end])
 	{
 	my (undef, $node_info_file) = PBS::Build::ForkedNodeBuilder::GetLogFileNames($node) ;
-	$node_info_file =~ s/\.pbs_log$/.pbs_info/ ;
 
 	my (undef, $log_node_info) = PBS::Information::GetNodeInformation($node, $pbs_config, 1, $inserted_nodes) ;
 		

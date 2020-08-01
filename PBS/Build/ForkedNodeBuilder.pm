@@ -148,8 +148,8 @@ my $node = %$inserted_nodes{$node_name} ;
 my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNames($node) ;
 #all output goes to a log file, once the build is finished, the output is send to the master process
 
-my $redirection_file_fail = $redirection_file . '_fail' ;
-unlink $redirection_file_fail ;
+my $file_fail = $redirection_file . '_fail' ;
+unlink $file_fail ;
 
 open(OLDOUT, ">&STDOUT") ;
 open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
@@ -211,6 +211,8 @@ if(defined $node)
 				) ;
 		} ;
 
+	close(STDERR) ;
+
 	if($@)
 		{
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;
@@ -221,15 +223,14 @@ if(defined $node)
 	
 	if($build_result == BUILD_FAILED)
 		{
-		rename  $redirection_file, $redirection_file_fail or die "Can't move log file '$redirection_file' to '$redirection_file_fail': $!" ;
+		rename  $redirection_file, $file_fail or die "Can't move log file '$redirection_file' to '$file_fail': $!" ;
 
-		$redirection_file = $redirection_file_fail ;
+		$redirection_file = $file_fail ;
 		}
 
 	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)
 		if(defined $pbs_config->{CREATE_LOG_HTML}) ;
 
-	close(STDERR) ;
 	open(STDERR, ">&OLDERR");
 	open(STDOUT, ">&OLDOUT");
 

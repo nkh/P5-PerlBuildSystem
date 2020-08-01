@@ -160,7 +160,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 						unless($pbs_config->{NO_NODE_INFO_LINKS})
 							{
 							my ($link) = /^([^:]*)/ ;
-							my $file_link = INFO2("node info: $inserted_nodes->{$link}{__BUILD_NAME}.pbs_info") ;
+							my $file_link = INFO2("node info: $inserted_nodes->{$link}{__BUILD_NAME}.pbs_log") ;
 							
 							# set children node info links
 							$tree->{$_}{$file_link} = [] ;

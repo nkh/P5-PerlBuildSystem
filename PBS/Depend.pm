@@ -941,8 +941,6 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 			my (undef, $node_info_file) =
 				PBS::Build::ForkedNodeBuilder::GetLogFileNames($inserted_nodes->{$node_name}) ;
 
-			$node_info_file .= '_dep' ;
-
 			my ($node_info, $log_node_info) = 
 				PBS::Information::GetNodeInformation($inserted_nodes->{$node_name}, $pbs_config, 1, $inserted_nodes) ;
 				

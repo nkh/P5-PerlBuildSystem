@@ -240,7 +240,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		#PrintInfo3 "$command\n\n" if $display_command_information ;
+		PrintInfo3 "$command\n\n" if $display_command_information ;
 
 		$node_shell->RunCommand($command) ;
 		}

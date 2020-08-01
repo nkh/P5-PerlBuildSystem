@@ -1,5 +1,33 @@
+#node log file point to info files
+	#info files are generated during depend
+	#log_info not removed when logs are created
+	#log doesn't contain link to parent logs
+
+#log doesn't contain build command expanded
+
+generation of pbs_log_dep takes a long time 0.8 s for 800 files ... in parallel
+	it's also re run for all the nodes in the graph, ? including warp nodes
+	the generation is useless if the build goes forward
+		maybe we should generate the dep files when the build fails instead
+			at least for the nodes that fail and their dependents
+
 use hashes to index dependents in the warp file rather than file indexes
 	it's just slightly more expensive but we can find the nodes
+
+no_build regex
+	allows us to point at nodes to not be build
+		the problem is that parallel build takes any node in any order, making it difficult
+		to debug a specfic node manually (or look at what's generated before it is build
+
+use external program to compute hash of dependencies
+	pbs --list-files | bao > file with current hashes
+
+	might be faster than computing the hash on demand during check
+	external program is optimized and may run in parallel (like pbs and bao does)
+		parallel may make it possible to parallelize anyway
+			can we compute the hash on other machines too
+
+	--check_only_terminal_nodes makes this moot
 
 C_depender.pm has no hash in the warp file and triggers everything
 	after re-build it STILL has no hash!

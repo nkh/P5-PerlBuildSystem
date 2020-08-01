@@ -104,7 +104,7 @@ if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}
 if (@{$pbs_config->{LOG_NODE_INFO}})
 	{
 	my $t0 = [gettimeofday];
-	PrintInfo "Log: creating pre-build node info ..." ;
+	PrintInfo "Log: creating pre-build node dependency info ..." ;
 
 	my @lnis ;
 
