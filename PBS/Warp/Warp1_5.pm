@@ -628,6 +628,12 @@ sub GenerateWarpFile
 my ($warp_file, $targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_message, $node_names,) = @_ ;
 $warp_message //='' ;
 
+unless($pbs_config->{DO_BUILD})
+	{
+	#PrintWarning "Warp: no generation, nothing built\n" ;
+	return ;
+	}
+
 my $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config) ;
 
 PrintInfo("\e[KWarp: generation.$warp_message\n") unless $pbs_config->{QUIET} ;
