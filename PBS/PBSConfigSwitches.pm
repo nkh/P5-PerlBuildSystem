@@ -1196,6 +1196,10 @@ EOT
 		"specify which warp to use.",
 		'',
 		
+	'warp_human_format'    => \$pbs_config->{WARP_HUMAN_FORMAT},
+		"Generate warp file in a readable format.",
+		'',
+		
 	'no_pre_build_warp'             => \$pbs_config->{NO_PRE_BUILD_WARP},
 		"no pre-build warp will be generated.",
 		'',

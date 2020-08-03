@@ -657,8 +657,9 @@ local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
 local $Data::Dumper::Sortkeys = 1 ; 
 
-#my $js = JSON::XS->new->pretty(1)->canonical(1) ; # sort keys, slower
-my $js = JSON::XS->new->pretty(1) ;
+my $js = $pbs_config->{WARP_HUMAN_FORMAT} 
+		? JSON::XS->new->pretty(1)->canonical(1)
+		: JSON::XS->new ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
 print WARP '$nodes = decode_json qq{' . $js->encode( $nodes ) . "} ;\n\n" ;
