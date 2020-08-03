@@ -203,7 +203,7 @@ if(@$targets)
 		{
 		my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;
 
-		PrintInfo "MD5 requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
+		PrintInfo "Digest: hash requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
 			. ", non cached: $md5_statistics->{NON_CACHED_REQUESTS} " 
 			. ", cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%), time: $md5_statistics->{MD5_TIME}\n" ;
 			

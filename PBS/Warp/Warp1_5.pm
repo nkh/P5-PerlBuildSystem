@@ -119,7 +119,7 @@ if($run_in_warp_mode)
 
 	# check and remove all nodes that would trigger
 	my ($node_mismatch, $trigger_log)
-		 = $pbs_config->{CHECK_JOBS} != 0
+		 = $pbs_config->{CHECK_JOBS} > 1
 			? PBS::Check::ForkedCheck::ParallelCheckNodes($pbs_config, $nodes, $node_names, $IsFileModified, \&_CheckNodes) 
 			: CheckNodes($pbs_config, $nodes, $node_names, $IsFileModified) ;
 
@@ -594,7 +594,7 @@ for my $node (@$nodes_to_check)
 			
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
-				PrintInfo2 $PBS::Output::indentation . "$node_to_remove $$\n"
+				PrintInfo2 $PBS::Output::indentation . "$node_to_remove [$$]\n"
 					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && ! exists $nodes_triggered{$node_to_remove} ;
 				
 				push @dependent_nodes, grep{ ! exists $nodes_triggered{$_} } map {$node_names->[$_]} keys %{$nodes->{$node_to_remove}{__DEPENDENT}} ;
@@ -699,6 +699,7 @@ $nodes_index{$_} = $nodes_index_rebuild++ for (@node_names) ;
 my %libs ;
 my %warp_dependents;
 
+PBS::Digest::ClearMd5Cache() ;
 my $new_nodes = 0 ;
 
 for my $node_name (keys %$inserted_nodes)
@@ -710,7 +711,7 @@ for my $node_name (keys %$inserted_nodes)
 		# reuse the revivified warp nodes directly
 		$nodes{$node_name} = $node ;
 		
-		# remove data we r-generated when loading warp, those were needed by different parts of pbs
+		# remove data we re-generated when loading warp, those were needed by different parts of pbs
 		delete @{$nodes{$node_name}}
 				{qw(
 				 __NAME __BUILD_DONE __BUILD_NAME __DEPENDED __DEPENDED_AT
@@ -756,7 +757,7 @@ for my $node_name (keys %$inserted_nodes)
 	else
 		{
 		$new_nodes++ ;
-		
+ 
 		$nodes{$node_name}{__VIRTUAL} = 1 if(exists $node->{__VIRTUAL}) ;
 			
 		if(exists $node->{__LOAD_PACKAGE})

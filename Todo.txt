@@ -1,28 +1,64 @@
 
-error?
-	generated_pbs_project rm -rf _out_nadim/pbsfile_2/pbsfile_9/pbsfile_10
-	generated_pbs_project pbs -ke . -nh --node_builder --check_only_terminal_nodes
+md5 stats doesn't work as checks are in sub processes 
+	merge stats
 
-	PBS: Warning --check_only_terminal_nodes is set.
-	Warp: checking 1658 nodes.
-	Check: terminal nodes: 799
-	Warp: [1658/trigger:0/removed:0], load time: 0.03 s., check time: 0.07 s.
-	Warp: Up to date
+warp generation can start as soon a subpbs ends
+	meso warp
+	generation of warp can be optimized
+		do no compute dependents if other nodes have already computed it
+		when checking we create a children to parent link (to start parent build) it's the same thing as 
+		creating a dependent list
 
-	generated_pbs_project pbs -ke . -nh --node_builder
-	Warp: checking 1658 nodes.
-	Warp: [1658/trigger:299/removed:326], load time: 0.03 s., check time: 0.09 s.
-	Warp: running PBS in warp mode. 326 nodes to rebuild.
+		warp contains less, filename and md5 list (to check externally)
+		a pointer to a dependent list which can be share among nodes, but nodes point at different places
+			we'll need multiple lists but the reuse is high with shared lists
+			some nodes may point at multiple lists (parents)
 
-	ALSO: normal build needs two runs to stop checking!
+		data serialized in warp file should not be serialized at all
+			just have the node name and let the data be in an external file, alt a meso warp
 
-warp 1.5 _LOCATION field
-	it's repeated for each node but often we have 2 different location
-	indexing the _LOCATTION can speedup loading of the file and reduce memory footprint 
-		in a test _LOCATION:some location took 70 KB space for a 1300 KB warp file
-			we still need _LOCATION:index so it will still take some space
+		better yet, warp nodes should not be used at all and thus no re-vivification is needed
+			graphs? queries?
+			
+	utility to regenerate a graph, for query, from a warp file (the dependency arrays)
 
-			we could use a shorter variable too
+
+logging
+	we log which node have triggered in the _warp directory
+	log which files have been removed from the graph
+	log which files are build
+
+
+node log dependencies
+	are listed without link t file
+	triggered nodes have the needed information
+
+		   Dependencies:
+		      ./1.o: __DIGEST_TRIGGERED, ... (2)
+		      node info: /home/nadim/no_backup/pbs_tests/generated_pbs_project/_out_nadim/1.o.pbs_info
+		   Matching rule: #9[B] '1.objects:/home/nadim/no_backup/pbs_tests/generated_pbs_project/pbsfile:77'
+		      => ./1.o ./2.o ./3.o ./4.o ./5.o ./6.o ./pbsfile_2/7.objects
+
+node log contains spaces rather than tabs
+	output tabs!
+	set tabs or use expand in the pbs wrapper
+	output filter can have different tabs per section
+		how does one set tab stops from the output filter
+			call tabs!
+
+
+
+ 
+warp 1.5 size
+	_LOCATION field
+		it's repeated for each node but often we have 2 different location
+		indexing the _LOCATTION can speedup loading of the file and reduce memory footprint 
+			in a test _LOCATION:some location took 70 KB space for a 1300 KB warp file
+				we still need _LOCATION:index so it will still take some space
+
+				we could use a shorter variable too
+	#--warp_human_format
+		save a more compact format by default and use this option for something readeable
 
 depend log
 	we call NodeInfo but that's not the depend log, that's the node after depend
@@ -665,6 +701,12 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#error?
+	need to re build multiple time for warp to stabilize
+		warp digest not updated (due to node index?)
+		
+	--check only terminals may also have the same problem as above
 
 #node log file point to info files
 	#info files are generated during depend

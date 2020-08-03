@@ -120,6 +120,11 @@ my $hash = shift ;
 %md5_cache = (%md5_cache, %$hash) ;
 }
 
+sub ClearMd5Cache
+{
+%md5_cache = () ;
+}
+
 #-------------------------------------------------------------------------------
 
 sub GetFileMD5
@@ -144,7 +149,7 @@ else
 		$md5_cache{$file} = $md5 ;
 
 		my $time = tv_interval($t0_md5, [gettimeofday]) ;
-		PrintInfo2(sprintf "Digest:  GetHash, time: %.6f " . (scalar(keys %md5_cache)) . ", $md5 file: $file\n", $time) if $display_md5_time ;
+		PrintInfo2(sprintf "Digest: [" . (scalar(keys %md5_cache)) . "] %.6f s., $md5, $file\n", $time) if $display_md5_time ;
 
 		my $md5_time += $time ;
 		}
@@ -811,7 +816,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 			}
 		}
 
-	PrintInfo2 "Trigger: '$file' not trigger (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	PrintInfo2 "Trigger: '$file' not triggered (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{

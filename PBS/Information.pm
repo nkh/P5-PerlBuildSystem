@@ -486,7 +486,7 @@ my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
 	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
-	print STDOUT $node_info ;
+	print STDERR $node_info ;
 	}
 }
 

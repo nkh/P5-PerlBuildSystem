@@ -1,3 +1,21 @@
+possibility to run commands directly from the log
+	we need the directory to be set properly too
+
+node config
+	nodes can specify what config variables they need (probably written somewhere else)
+	nodes verify, insertion time? build time?) if the variables they need exist
+	ENV is reduced to the declared variables
+		what about variables used by tools, does the node need to declare them?
+		does the node declare the tool as dependency to build and import the tools variables?
+
+	if no ENV is specified per node, do we have an empty ENV or the pbsfile ENV?
+
+	
+building in docker
+	where does the log go?
+		in docker but we'd like it outside, via mount or by making the logs available on a different machine via scp
+			scp a tarball
+
 generation of pbs_log_dep takes a long time 0.8 s for 800 files ... in parallel
 	it's also re run for all the nodes in the graph, ? including warp nodes
 	the depend is overridden if the build goes forward
