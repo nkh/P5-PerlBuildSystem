@@ -1,3 +1,6 @@
+catch external command std and std out
+	pbs1 Shell::Command redirects stdout to stdin!
+
 text graph
 	generate sub tree graphs
 		menas that we can't have references to parents or we get the whole tree 
@@ -59,7 +62,6 @@ output filters
 
 
 	filters should be able to do what post-pbs could do
-
 		so we must have a graph to re-load
 
 	the output data could be the serialized graph!
@@ -101,6 +103,17 @@ output filters
 		=> we can leave it to rules to decide if something is serialized or not
 			start with serialization then create new rules for more efficient storage
 
+	output filter don't have to be monolitic, they can be an API which acts on the log or part of the nodes
+		top level filter call the apis, eg: render_node can be reused in many filters
+
+	cache rendering
+		this allows use reuse previously done work
+		eg: show some node, max_depth 3; show other node, ... we don't recompute the common nodes since they are immutable
+
+	use tree like output as much as possible
+		we need a mechanism to
+			insert already rendered data without re computing everything
+			extract parts of the already rendered tree, eg: not everything but some fields, or to a specific depth
 
 node data
 	node data is transient in pbs, it may interest the user but for pbs once a step is done its data is of no more interest
@@ -206,10 +219,10 @@ wizards
 merge ideas from Todo
 	md5 stats doesn't work as checks are in sub processes 
 		merge stats
-		should let the rendering plugins do the merging?
+		=> should let the rendering plugins do the merging
 			simplest for visualization but not for queries where one wants data to be together
-			maybe queries should work on the full logs like the rendering plugins!
-
+				queries either merge themselves or we make a function available that does that
+		
 	warp generation can start as soon a subpbs ends
 		meso warp
 		generation of warp can be optimized

@@ -1,16 +1,9 @@
-#find out if LOCKCONFIG is merged from neo project
-	yes, if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CONFIG_INHERITANCE})
-
-no_color if redirected?
-
-what's the switch to have no progress bar and only the node header?
-	-ndpb seems to switch -bni on 
-
 md5 stats doesn't work as checks are in sub processes 
 	merge stats
-	should let the rendering plugins do the merging?
+	=> should let the rendering plugins do the merging
 		simplest for visualization but not for queries where one wants data to be together
-		maybe queries should work on the full logs like the rendering plugins!
+			queries either merge themselves or we make a function available that does that
+	
 
 logging
 	we log which node have triggered in the _warp directory
@@ -517,6 +510,16 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+#find out if LOCKCONFIG is merged from neo project
+	yes, if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CONFIG_INHERITANCE})
+
+#no_color if redirected?
+	we have no output to stout, only stderr
+	
+#what's the switch to have no progress bar and only the node header?
+	-ndpb seems to switch -bni on 
+	=> checked if variable was defined instead for value
+ 
 #--tno should always be displayed as --tnt
 
 #--tno

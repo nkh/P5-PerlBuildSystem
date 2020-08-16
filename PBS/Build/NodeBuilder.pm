@@ -238,7 +238,7 @@ if($node_needs_rebuild)
 		
 		if(@{$file_tree->{__MATCHING_RULES}})
 			{
-			$reason .= "No builder\n" ; 
+			$reason .= "No matching rule had a builder\n" ; 
 			}
 		else
 			{
@@ -462,7 +462,7 @@ if($@)
 		$build_message =
 			 ERROR(
 				"\n\t" . $@->{error} . "\n"
-				. (defined $PBS::Shell::silent_commands ? "\tCommand   : '" . $@->{command} . "'\n" : '')
+				. "\tCommand   : '" . $@->{command} . "'\n"
 				. "\tErrno     : " . $@->{errno} . "\n\tErrno text: " . $@->{errno_string} . "\n"
 				) ;
 		}

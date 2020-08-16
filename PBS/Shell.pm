@@ -16,8 +16,8 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(RunShellCommands RunHostedShellCommands) ;
 our $VERSION = '0.02' ;
 
-our $silent_commands ;
-our $silent_commands_output ;
+our $silent_commands = 0 ;
+our $silent_commands_output = 0 ;
 
 use PBS::Output ;
 
@@ -103,9 +103,9 @@ sub RunShellCommands
 # Run a command through system or sh
 # if $PBS::Shell::silent_commands is defined, this sub
 # will capture the output of the command
-# and only show it if an error occures
+# and only show it if an error occurs
 
-# if an error occures while running the command, an exception is thrown.
+# if an error occurs while running the command, an exception is thrown.
 
 # note that this is _not_ a member function.
 
@@ -113,9 +113,9 @@ for my $shell_command (@_)
 	{
 	if('' eq ref $shell_command)
 		{
-		PrintUser("$shell_command \n") unless defined $PBS::Shell::silent_commands ;
+		PrintUser("$shell_command \n") unless $PBS::Shell::silent_commands ;
 	
-		if(defined $PBS::Shell::silent_commands_output)
+		if($PBS::Shell::silent_commands_output)
 			{
 			my $output = `$shell_command 2>&1` ;
 		
