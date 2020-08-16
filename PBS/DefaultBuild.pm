@@ -72,7 +72,7 @@ my $em = String::Truncate::elide_with_defaults({ length => $available, truncate 
 my $target_string = '' ; 
 $target_string .= $em->($_) for (@$targets) ; 
 
-PrintInfo("Depend: targets: [$target_string], level: $PBS::Output::indentation_depth, nodes: $start_nodes\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+print INFO("Depend: ") , INFO3($target_string, 0), INFO(", level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0) unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(
@@ -150,6 +150,7 @@ else
 		}
 	}
 	
+
 my $t0_check = [gettimeofday];
 
 eval
@@ -210,6 +211,24 @@ eval
 
 PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
 
+if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
+	{
+	for my $name (keys %$inserted_nodes)
+		{
+		my $node = $inserted_nodes->{$name} ;
+		my $full_name = $node->{__BUILD_NAME} ;
+
+		my $is_alternative_source++ if exists $node->{__ALTERNATE_SOURCE_DIRECTORY} ;
+		my $is_virtual = exists $node->{__VIRTUAL} ;
+		
+		PrintInfo "node: " . INFO3($name) 
+				. INFO2($is_alternative_source ? ' -> [R]' : '')
+				. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
+				. "\n" ;
+		} 
+	}
+
+	
 # die later if check failed (ex: cyclic tree), run visualisation plugins first
 my $check_failed = $@ ;
 

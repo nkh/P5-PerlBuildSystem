@@ -126,9 +126,9 @@ $tree->{__BUILD_NAME} = $full_name ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
 	{
-	PrintInfo "node: $name"
-			. ($is_alternative_source ? ' -> [R]' : '')
-			. ($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
+	PrintInfo "node: " . INFO3($name) 
+			. INFO2($is_alternative_source ? ' -> [R]' : '')
+			. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
 			. "\n" ;
 	}
 	
@@ -230,11 +230,11 @@ for my $dependency_name (keys %$tree)
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$dependency->{__PARENTS}}, $tree ;
 
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" triggered by dependency [$dependency_name] [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 			}
 		else
 			{
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will NOT be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" NOT triggered by dependency [$dependency_name] [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 			}
 		}
 	else

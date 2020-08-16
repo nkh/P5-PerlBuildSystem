@@ -1058,7 +1058,11 @@ EOT
 		'',
 		
 	'f|files|nodes'                   => \$pbs_config->{DISPLAY_FILE_LOCATION},
-		'Show all the nodes in the dependency tree and their final location.',
+		'Show all the nodes in the current_dependency tree and their final location.',
+		'In warp only shows the nodes that have triggered, see option nodes_all for all nodes',
+
+	'fa|files_all|nodes_all'          => \$pbs_config->{DISPLAY_FILE_LOCATION_ALL},
+		'Show all the nodes in the current_dependency tree and their final location.',
 		'',
 
 	'bi|build_info=s'                 => $pbs_config->{DISPLAY_BUILD_INFO},
@@ -1174,7 +1178,7 @@ EOT
 		'Enable debug support A startup file defining breakpoints can be given.',
 		'',
 
-	'debug_display_breakpoint_header'                         => \$pbs_config->{DISPLAY_BREAKPOINT_HEADER},
+	'debug_display_breakpoint_header' => \$pbs_config->{DISPLAY_BREAKPOINT_HEADER},
 		'Display a message when a breakpoint is run.',
 		'',
 
@@ -1265,6 +1269,8 @@ sub LoadConfig
 my ($switch, $file_name, $pbs_config) = @_ ;
 
 $pbs_config->{LOAD_CONFIG} = $file_name ;
+
+$file_name = "./$file_name" if( $file_name !~ /^\\/ && -e $file_name) ;
 
 my ($loaded_pbs_config, $loaded_config) = do $file_name ;
 

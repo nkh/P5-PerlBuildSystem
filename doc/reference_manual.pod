@@ -833,7 +833,7 @@ when doing a hierarchical build. If your build system isn't hierarchical, your P
 
 =head2 Rule definition for sub depend
 
-Within a pair of matching curly braquets'{}', list:
+Within a pair of matching curly brackets '{}', list:
 
 =over 2
 
@@ -862,13 +862,13 @@ I</lib/Pbsfile> will use it's own rules, as if it was not part of a sub build.
 
 =head2 Which configuration is used in the child dependers?
 
-When B<PBS> starts a sub I<Pbsfile>, B<PBS> pushes (merges) the the parent configuration in the child Pbs. This is done automatically by B<PBS> just before
+When B<PBS> starts a sub I<Pbsfile>, B<PBS> pushes (merges) the parent configuration in the child Pbs. This is done automatically by B<PBS> just before
 calling the child B<Build()> sub or the B<default Build()> sub.
 
 =head2 Locking your config
 
 By calling B<LockConfigMerge()> in your Pbsfile, you disable the configuration merging that PBS does when loading your Pbsfile.
-B<PBS> will display a warning message. Definitions done throught the -D switch are always available in the sub Pbs configuration
+B<PBS> will display a warning message. Definitions done through the -D switch are always available in the sub Pbs configuration
 even if locked.
 
 =head2 B<PBS> Build flow for the above example
