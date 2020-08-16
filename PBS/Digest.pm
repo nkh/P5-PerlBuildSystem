@@ -406,10 +406,9 @@ my $node_package = $node->{__LOAD_PACKAGE} // '?' ;
 my %node_config = %{$node->{__CONFIG} // {}} ;
 
 my %node_dependencies ;
-
 for my $rule (@{$node_digest_rules{$node_package}})
 	{
-	$node_dependencies{$rule->{NAME}} = $node_config{$rule->{CONFIG_VARIABLE}}
+	$node_dependencies{$rule->{NAME}} = $rule->{VALUE}
 		if($node_name =~ $rule->{REGEX}) ;
 	}
 
@@ -568,7 +567,7 @@ my $package    = caller() ;
 
 while(my ($variable_name, $value) = splice(@_, 0, 2))
 	{
-	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_VARIABLE:$variable_name", CONFIG_VARIABLE => $variable_name, VALUE => $value} ;
+	push @{$node_digest_rules{$package}}, {REGEX => $node_regex, NAME => "__NODE_VARIABLE:$variable_name", VALUE => $value} ;
 	}
 }
 

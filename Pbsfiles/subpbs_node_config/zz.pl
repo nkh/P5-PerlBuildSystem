@@ -9,7 +9,7 @@ if(2 != @config_keys)
 	PrintInfo DumpTree(\%config, 'Package config') ;
 
 	# TARGET_PATH is always added by PBS
-	die "more than one entry in config!" ;
+	#die "more than one entry in config!" ;
 	}
 
-AddRule 'yy', ['yy'], BuildOk() ;
+AddRule 'zz', ['zz'], BuildOk() ;

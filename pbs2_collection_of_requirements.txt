@@ -25,7 +25,20 @@ warp file
 
 	maybe we should have a new warp file and triggering info would be inside it
 
-§:	this lets us compare build
+	this lets us compare build
+	
+	warp contains only the information to find which nodes need to be rebuild
+		a secondary files containing node data is loaded on demand from serialized nodes
+			we want to load them in chunks for better io
+			we could keep them in memory for some time to load them even faster
+				keep in text/compressed format so external tools can also access it
+
+memory usage
+	access to nodes in pbs code could use the same mechanism with a maximum amount of nodes
+		in memory at the same time
+
+	this becomes even more important if we merge builds or intersect builds
+
 
 debugger
 	pbs1 needs breakpoint, pbs2 starts at the insertion of root if no files are given
@@ -38,7 +51,7 @@ debugger
 		can we run pbs in ddd?
 
 	where do debug output go?
-		in the log? it mostly noise, better reference from the debug log to events in the main log
+		in the log? it's mostly noise, better reference from the debug log to events in the main log
 
 output filters
 	can we implement a query engine on the log? Yes!
@@ -215,6 +228,19 @@ wizards
 	why is pbs involved in the wizards if pbs doesn't provide any data to them?!
 
 
+Do we need to have TARGET_PATH set?
+	problem #1, TARGET_PATH is taken from the first target
+		works OKish as all subpbs have just one target
+		but would break if TARGET_PATH was used at top level
+
+	dependencies which are relative to the target are simply declared in a rule, pbs handles TARGET_PATH
+		and if necessary perl regexes allow the use of $path which is the dependent path
+			BUT TARGET_PATH is only the targets path, not it's dependencies paths
+
+			TARGE_PATH is alittle bit like . (the root of the build graph) except it's the root of the target
+
+		 
+	check how make uses it
 
 merge ideas from Todo
 	md5 stats doesn't work as checks are in sub processes 
@@ -427,8 +453,6 @@ merge ideas from Todo
 		=> switch already exists config->{CREATE_LOG}
 		
 		--create_log is the same as --keep_pbs_build_buffer
-
-	Do we need to have TARGET path set?
 
 	builder can be generated on demand
 		we compile builders as soon as AddRule is run

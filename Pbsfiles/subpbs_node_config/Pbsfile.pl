@@ -5,7 +5,7 @@ This example shows how to use PACKAGE_CONFIG in a sub pbs definition.
 It will also explains the handling of the configuration and show how to make the nodes trigger on 
 configuration changes.
 
-The tree below shows what packages the nodes are dependedn in and what file was used to process them.  The
+The tree below shows what packages the nodes are depended in and what file was used to process them.  The
 node's package contains the configuration and each node refers to its package configuration. Thus we have three
 nodes and three package configurations.
 
@@ -23,43 +23,26 @@ Tree for '__PBS_root_NO_WARP_pbs_._Pbsfile.pl':
       |  |- INSERTION_LOAD_PACKAGE = PBS::Runs::yy_1  [S38]
       `- __DEPENDED_AT = /devel/perl_modules/PerlBuildSystem/Pbsfiles/subpbs_node_config/yy.pl  [S49]
 
-Normally configuration is inherited by sub packages directly. The sub package Pbsfile may then manipulate the sub configuration
-via calls to AddRule. Using PACKAGE_CONFIG in a sub pbs rule changes the inheritance process. Remember that a package is an
-instanciatiion of a pbsfile for a specific node; it means that multiple packages can be created for different nodes from the same pbsfile
+Normally configuration is inherited by sub pbs. Controlling the configuration inheritance is done in
+via option '--no_config_inheritance' or PACKAGE_CONFIG_NO_INHERITANCE in a sub pbs definition.
 
-  .--------------------------------.
-  |           parent pbs           |
-  |--------------------------------|
-  | sub pbs with PACKAGE_CONFIG    |
-  |    PACKAGE_CONFIG data  --------------.
-  |                                |      |
-  | sub pbs without PACKAGE_CONFIG |      |
-  |                                |      |
-  '--------------------------------'      |
-          .---------------.               |  mergin in a temporary namespace
-  .-------| configuration |-----------.   |  get all the warnings and error 
-  |       '---------------'           |   |  of a configuration manipulation
-  | I                                 v   v
-  | n                              .-------------------------.
-  | h                              | with PACKAGE_CONFIG     |
-  | e                              | configuration merging   |----.
-  | r                              '-------------------------'    |
-  | i                                                             |
-  | t     .-----------------.        .---------------------.      |
-  | a     |     without     |        | with PACKAGE_CONFIG |      |
-  | n     | PACKAGE_CONFIG  |        |---------------------|      |
-  | c     |-----------------|        |                     |      |
-  | e     |                 |        |                     |      |
-  |       |                 |        |                     |      |
-  |       '-----------------'        '---------------------'      |
-  |        .---------------.            .---------------.         |
-  '------->| configuration |            | configuration |<--------'
-           '---------------'            '---------------'
+A package is an instanciation of a pbsfile for a specific node; multiple packages are created for different target
+even if they use the same pbsfile. So we can have one sub pbs inherit the parent configuration and another not. 
+
+parent config
+	[parent] 
+
+	supbpbs definition:
+		[]		[PACKAGE_CONFIG]	[PACKAGE_CONFIG_NO_INHERITANCE]		[PACKAGE_CONFIG_NO_INHERITANCE]
+							or --no_config_inheritance		or --no_config_inheritance
+												+ [PACKAGE_CONFIG]
+
+pbs config	[parent]	[parent] +		[]					[PACKAGE_CONFIG]
+				[PACKAGE_CONFIG] 
 
 
-Run with : pbs -no_warp -display_no_progress_bar -dpl -no_warp -tno -dd -fb -tree_node_triggered_reason -dddo
-
-Check xx.pl for an *important* explaination for how to be dependent of the configuration variables
+Run with : pbs -tno -ddl -w 0 -dddo --dpl --display_configs_merge  --durno --display_pbsfile_loading
+Check xx.pl for an *important* explanation for how to dependent on the configuration variables
 
 =cut
 
@@ -67,10 +50,8 @@ AddRule [VIRTUAL], 'all', ['all' => 'xx', 'yy', 'zz'], BuildOk ;
 
 AddConfig 
 	AR => 'ABC',
-	# 'locked' variables have to be overriden even in sub pbs PACKAGE_CONFIG
 	'AR:locked' => 'from_top_pbsfile',
 	AR2 => 'ABCD' ;
-
 
 AddRule 'xx',
 	{
@@ -79,7 +60,7 @@ AddRule 'xx',
 	PACKAGE => 'xx',
 	PACKAGE_CONFIG =>
 		{
-		# without 'force' pbs would detect this as an error and stop
+		# without 'force' pbs would detect this as an error (locked in parent config) and stop
 		'AR:force' => 'from_package_config_xx',
 		AR2 => 'from_package_config_xx',
 		},
@@ -92,7 +73,7 @@ AddRule 'yy',
 	PACKAGE => 'yy',
 	PACKAGE_CONFIG =>
 		{
-		# AR would is inherited from this package
+		# AR is inherited from parent package
 		AR2 => 'from_package_config_yy',
 		},
 	} ;
@@ -105,7 +86,7 @@ AddRule 'zz',
 	PACKAGE_CONFIG_NO_INHERITANCE => 1,
 	PACKAGE_CONFIG =>
 		{
-		# the only configuration variable present at the begining of the pbsfile run
+		# the only configuration variable in the sub pbs
 		AR2 => 'the_only_configuration_variable',
 		},
 	} ;

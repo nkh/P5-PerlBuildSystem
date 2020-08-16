@@ -36,25 +36,25 @@ if(defined $pbs_config->{DISPLAY_SOURCE_DIRECTORIES})
 	}
 if($pbs_config->{DISPLAY_CONFIGURATION})
 		{
-		PrintInfo(DumpTree($config, "Depend: config for package '$package_alias' before depending rules are run (see --durno --dur):"));
+		PrintInfo(DumpTree($config, "Depend: config for package '$package_alias' before rules are run:", DISPLAY_ADDRESS => 0));
 		}
 		
 if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
 		{
-		PrintInfo(DumpTree($config_snapshot, "Depend: config namespaces for '$package_alias':")) ;
+		PrintInfo(DumpTree($config_snapshot, "Depend: config namespaces for '$package_alias':", DISPLAY_ADDRESS => 0)) ;
 		}
 		
 if(defined $pbs_config->{DISPLAY_USED_RULES}) #only the rules configured in
 	{
-	my $title =  "Depend: dependency rules for package: '$package_alias':" ;
+	my $title =  "Depend: dependency rules for package '$package_alias':" ;
 
 	if(defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY})
 		{
-		PrintInfo(DumpTree([map{"'$_->{NAME}'$_->{ORIGIN}"} @{$dependency_rules}], $title)) ;
+		PrintInfo(DumpTree([map{"'$_->{NAME}'$_->{ORIGIN}"} @{$dependency_rules}], $title, DISPLAY_ADDRESS => 0)) ;
 		}
 	else
 		{
-		PrintInfo(DumpTree($dependency_rules, $title)) ;
+		PrintInfo(DumpTree($dependency_rules, $title, DISPLAY_ADDRESS => 0)) ;
 		}
 	}
 }

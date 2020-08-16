@@ -8,10 +8,10 @@ use strict ;
 use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
+#$Data::TreeDumper::Displaycallerlocation++ ;
 use Carp ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Spec::Functions qw(:ALL) ;
-#$Data::TreeDumper::Displaycallerlocation++ ;
 
 require Exporter ;
 
@@ -666,7 +666,7 @@ my $file_body = '' ;
 
 if($type eq 'Pbsfile')
 	{
-	PrintInfo("PBS: loading '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	PrintInfo3("PBS: loading '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{

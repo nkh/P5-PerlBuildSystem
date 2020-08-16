@@ -37,11 +37,11 @@ sub Builder
 {
 my ($config, $file_to_build) = @_ ;
 
-my $whole_config = DumpTree($config, "configuration", USE_ASCII => 1) ;
+#my $whole_config = DumpTree($config, "configuration", USE_ASCII => 1) ;
 
-open my $fh, '>', $file_to_build or croak "can't open file '$file_to_build': $?\n" ;
-print $fh $whole_config ;
-close $fh ;
+#open my $fh, '>', $file_to_build or croak "can't open file '$file_to_build': $?\n" ;
+#print $fh $whole_config ;
+#close $fh ;
 
 return(1, "OK Builder") ;
 }

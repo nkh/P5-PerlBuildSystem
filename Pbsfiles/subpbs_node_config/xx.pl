@@ -44,7 +44,7 @@ The first solution is to dynamically call AddConfigVariableDependencies in your 
 		}
 		
 There is another solution, a more advanced solution that you might prefer. The digest entries must 
-be known to PBS before it decides if a node has to be rebuild or not. The generql principle is to add
+be known to PBS before it decides if a node has to be rebuild or not. The general principle is to add
 the digest entries as in the examples above, directly in your pbsfile or in PBS libraries like C.pm does.
 
 It is also possible to let rules add digest entries at depend time via node-subs. The example below uses

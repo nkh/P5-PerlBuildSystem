@@ -503,9 +503,12 @@ if(defined $global_flags)
 # Get the config and extract what we need from it
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
+my $header_displayed = 0 ;
+
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
 	PrintInfo("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") ;
+	$header_displayed++ ;
 	}
 
 my $config_to_merge_to = GetPackageConfig($package) ;
@@ -595,17 +598,15 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			{
 			my $indent = "\t" x ($PBS::Output::indentation_depth + 1) ;
 				
-			PrintInfo DumpTree
-					{
-					force => $force,
-					locked => $locked,
-					unlocked => $unlocked,
-					override_parent => $override_parent, 
-					local => $local,
-					silent_override => $silent_override,
-					}, 
-					"$key => $value, attributes $flags",
-					INDENTATION => $indent ;
+			my %attributes ;
+			$attributes{force} = $force if $force ;
+			$attributes{locked} = $locked if $locked ;
+			$attributes{unlocked} = $unlocked if $unlocked ;
+			$attributes{override_parent} = $override_parent if $override_parent, ;
+			$attributes{local} = $local if $local ;
+			$attributes{silent_override} = $silent_override if $silent_override ;
+
+			PrintInfo DumpTree \%attributes, "$key => $value", DISPLAY_ADDRESS => 0, INDENTATION => $indent ;
 			}
 		else
 			{
@@ -664,25 +665,28 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		if($config_to_merge_to->{$type}{$class}{$key}{LOCKED} && (! $force))
 			{
+			PrintError("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintError
 				(
 				<<EOH .
-You want to override a locked configuration variable!
-	Your failed override:
-		key: '$key'
-		attempted new value: '$value'
-		at: '$origin'
-		class '$class'
-		type: '$type'
-		package: '$package'
-	
-	The locked variable
+	You want to override a locked configuration variable!
+		Your failed override:
+			key: '$key'
+			attempted new value: '$value'
+			at: '$origin'
+			class '$class'
+			type: '$type'
+			package: '$package'
+		
+		The locked variable
 EOH
 				DumpTree
 					(
 					$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},
-					'Origin:',
-					INDENTATION => "\t\t",
+					'history:',
+					INDENTATION => "\t\t\t",
 					)
 				) ;
 				
@@ -702,7 +706,7 @@ EOH
 			my $value_txt = defined $value ? $value : 'undef' ;
 			
 			# just show where the override happens to avoid cluttering the display
-			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "Overriding at '$origin'" ;
+			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "this Override at '$origin'" ;
 			
 			unless($silent_override)
 				{
@@ -718,21 +722,24 @@ EOH
 					$warn_sub = \&PrintWarning ;
 					}
 				
+				$warn_sub->("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+				$header_displayed++ ;
+
 				$warn_sub ->
 					(
 					<<EOH .
-Overriding a ${locked_message}configuration variable
-	key: '$key'
-	new value: '$value'
-	class '$class'
-	type: '$type'
-	package: '$package'
+	Overriding a ${locked_message}configuration variable
+		key: '$key'
+		new value: '$value'
+		class '$class'
+		type: '$type'
+		package: '$package'
 EOH
 					DumpTree
 						(
 						$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},
-						'Origin:',
-						INDENTATION => "\t",
+						'history',
+						INDENTATION => "\t\t",
 						)
 					) 
 				}
@@ -775,16 +782,18 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
+			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintWarning2
 				(
-				<<EOH
-Configuration variable will be ignored as type 'PARENT' has higher precedence
-	key: '$key'
-	attempted new value: '$value'
-	type: 'CURRENT'
-	at: '$origin'
-	
-	using value from parent: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
+				<<EOH,
+	Configuration variable will be ignored as type 'PARENT' has higher precedence
+		key: '$key'
+		attempted new value: '$value'
+		type: 'CURRENT'
+		at: '$origin'
+		parent value: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
 EOH
 				) ;
 			}
@@ -796,16 +805,18 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
+			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintWarning2
 				(
 				<<EOH
-Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
-	key: '$key'
-	attempted new value: '$value'
-	type: 'CURRENT'
-	at: '$origin'
-	
-	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+		key: '$key'
+		attempted new value: '$value'
+		type: 'CURRENT'
+		at: '$origin'
+		command line value: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
 EOH
 				) ;
 			}
@@ -820,16 +831,18 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
+			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintWarning2
 				(
 				<<EOH
-Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
-	key: '$key'
-	attempted new value: '$value'
-	type: 'PARENT'
-	at: '$origin'
-	
-	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+		key: '$key'
+		attempted new value: '$value'
+		type: 'PARENT'
+		at: '$origin'
+		command line value: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
 EOH
 				) ;
 			}
@@ -844,16 +857,18 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
+			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintWarning2
 				(
 				<<EOH
-Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
-	key: '$key'
-	attempted new value: '$value'
-	type: 'PARENT'
-	at: '$origin'
-	
-	using value from command line: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
+	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
+		key: '$key'
+		attempted new value: '$value'
+		type: 'PARENT'
+		at: '$origin'
+		command line value: '$config_to_merge_to->{'COMMAND_LINE'}{__PBS}{$key}{VALUE}'
 EOH
 				) ;
 			}
@@ -865,16 +880,19 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
+			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			$header_displayed++ ;
+
 			PrintWarning2
 				(
 				<<EOH
-Configuration variable of type 'LOCAL' has higher precedence than 'PARENT'
-	key: '$key'
-	new value: '$value'
-	type: 'LOCAL'
-	at: '$origin'
-	
-	Overridden value from PARENT: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
+	Configuration variable of type 'LOCAL' has higher precedence than 'PARENT'
+		key: '$key'
+		new value: '$value'
+		type: 'LOCAL'
+		at: '$origin'
+		
+		Overridden value from PARENT: '$config_to_merge_to->{'PARENT'}{__PBS}{$key}{VALUE}'
 EOH
 				) ;
 			}
@@ -1004,9 +1022,10 @@ my %sub_config ;
 
 if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CONFIG_INHERITANCE})
 	{
-	my $warning = "Config: no inheritance for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
-	$warning .= "[PACKAGE_CONFIG_NO_INHERITANCE]" if $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} ;
-	$warning .= "[--no_config_iheritance]" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
+	my $warning = "Config:" ;
+	$warning .= " PACKAGE_CONFIG_NO_INHERITANCE" if $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} ;
+	$warning .= " --no_config_inheritance" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
+	$warning .= " for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
 
 	PrintWarning "$warning\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
 
@@ -1096,7 +1115,7 @@ if('HASH' ne ref $sub_pbs_package_config)
 	die "\n" ;
 	}
 	
-my $title = "PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
 if($pbs_config->{DISPLAY_CONFIGURATION})
 	{

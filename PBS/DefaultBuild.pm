@@ -72,7 +72,7 @@ my $em = String::Truncate::elide_with_defaults({ length => $available, truncate 
 my $target_string = '' ; 
 $target_string .= $em->($_) for (@$targets) ; 
 
-print INFO("Depend: ") , INFO3($target_string, 0), INFO(", level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0) unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+print "\n" , INFO("Depend: ") , INFO3($target_string, 0), INFO(", level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0) unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 PBS::Depend::CreateDependencyTree
 	(

@@ -3,10 +3,6 @@
 
 PbsUse('Dependers/Matchers') ;
 
-#~ # %TARGET_PATH is usefull as soon as the target has a path it otherwise generates cycles!
-#~ # the following rule would recurse infinitely if the target is 'all' but not if the target is 'somepath/all'
-#~ AddRule '1', [qr<%TARGET_PATH/all$> => '$path/muu/all', '$path/f1', '$path/a.o', '$path/muu/xxxxx.o'] ;
-
 AddRule 'rule_1', [qr<\./all$> => '$path/muu/all', '$path/f1', '$path/a.o', '$path/muu/xxxxx.o'] ;
 
 AddRule 'rule_2', [qr<\.o$> => '$path/$basename.c'] ;
@@ -40,11 +36,6 @@ AddRule 'rule_3',
 					},
 	] ;
 
-
-#~ AddRule '4', [qr/%TARGET_PATH.+$/ => '$path/$basename.muu'] ;
-	
-#~ AddRule '3', [[sub{return(@_[4 .. 6])}], '*/*.c' => 'zzz'] ;
-#~ AddRule '', [qr// => ] ;
 
 
 

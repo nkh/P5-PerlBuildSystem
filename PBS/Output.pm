@@ -43,7 +43,7 @@ $Term::ANSIColor::AUTORESET = 1 ;
 
 #-------------------------------------------------------------------------------
 
-our $indentation = '   ' ;
+our $indentation = '    ' ;
 our $indentation_depth = 0 ;
 our $display_error_context  = 0 ;
 
