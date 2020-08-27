@@ -342,7 +342,7 @@ else
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	}
 
-print "\r\e[K" ;
+PrintInfo "Warp: done\n" unless $pbs_config->{QUIET} ;
 
 return(@build_result) ;
 }

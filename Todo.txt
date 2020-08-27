@@ -1,10 +1,26 @@
 info-label ?
+	check ---dpbX and other print using escape codes
+	#add in node logs
+	node output gets two label on error
 
-dpend not indented
+bug:
+	Warp: Removing  /home/nadim/perl5/lib/perl5/PBS/PBSLib/Rules/Object_rules_utils.pm [modified]
 
-need to rebuild? broken cache
+	#1 this is checked way after normal nodes are checked
+		gloabal dependencies, pbs libs, should be checked first
 
-bug, id  node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
+	#2 build proceeds, warp is generated, hash is not replaced with new value!
+		There's no hash at all!
+
+	need to rebuild? broken cache
+
+#depend not indented
+
+
+error Depend: pbsfile: 1, time: 1.28 s.
+	wrong number of pbsfiles
+
+bug, id node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
 we get the same digest and think it's the same thus nothing needs to be buid!
 
 bug: warp doesn't care about variables, just node digests

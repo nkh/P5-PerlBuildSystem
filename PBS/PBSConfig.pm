@@ -183,12 +183,12 @@ $pbs_config->{DISPLAY_PROGRESS_BAR}++ ;
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS} ;
 	
-$pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION}++ ;
 
 # check the options
-if(defined $pbs_config->{DISPLAY_DEPENDENCY_INFO})
+if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	delete $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION} ;
+	$pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION}++ ;
+	#delete $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION} ;
 	}
 	
 if(defined $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})

@@ -472,7 +472,7 @@ for my $node_name (sort keys %$node_md5s)
 
 	if
 		(
-		   defined $node_md5s->{$node_name}{__MD5}
+		defined $node_md5s->{$node_name}{__MD5}
 		&& 
 			(
 			     $node_md5s->{$node_name}{__MD5} eq 'VIRTUAL'
@@ -519,7 +519,7 @@ for my $node_name (reverse sort keys %nodes_not_matching)
 			{
 			if($node_version == $VERSION)
 				{
-				PrintInfo "Warp Prune: $node_name\n"
+				PrintInfo "Warp: Prune: $node_name\n"
 					 if($pbs_config->{DISPLAY_WARP_REMOVED_NODES}) ;
 
 				for my $dependent (reverse sort  @{$node_dependents->{__DEPENDENT}})

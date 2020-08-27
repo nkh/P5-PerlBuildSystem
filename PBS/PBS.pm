@@ -34,6 +34,7 @@ use PBS::Constants ;
 use PBS::Digest;
 
 use Digest::MD5 qw(md5_hex) ;
+use String::Truncate ;
 
 #-------------------------------------------------------------------------------
 
@@ -382,12 +383,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		}
 	else
 		{
-		if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
-			{
-			my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-			print STDERR INFO("\e[KDepend: '$pbs_runs' at depth '$PBS::Output::indentation_depth' [$number_of_nodes].\r", 0) ;
-			}
-		
 		($build_result, $build_message)
 			= PBS::DefaultBuild::DefaultBuild
 				(
@@ -666,7 +661,10 @@ my $file_body = '' ;
 
 if($type eq 'Pbsfile')
 	{
-	PrintInfo3("PBS: loading '$file' in '$package'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	my $available = PBS::Output::GetScreenWidth() ;
+	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'left' });
+
+	PrintInfo3("PBS: loading '" . $em->($file) ."'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{

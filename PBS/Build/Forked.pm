@@ -128,7 +128,9 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 							? sprintf("%0.2f", $time_remaining) . "s." 
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
 
-				PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]"
+				my $last_node = $number_of_nodes_to_build - $number_of_already_build_node ? '' : "\n" ;
+
+				PrintInfo3 "\r\e[KBuild: ETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]$last_node"
 					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} ;
 				}
 
@@ -161,7 +163,6 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		}
 	}
 
-PrintInfo3 "\r\e[K" ;
 TerminateBuilders($builders) ;
 
 if($number_of_failed_builders)
@@ -529,7 +530,7 @@ for my $builder (@$builders)
 		{
 		PrintInfo3 "\e[${distance}A"
 				. "\r\e[K"
-				. $em ->("Build: [$builder->{INDEX}] $node_to_build->{__NAME}")
+				. $em ->("Build: builder: $builder->{INDEX}, node: $node_to_build->{__NAME}")
 				. "\e[${distance}B" ;
 		}
 

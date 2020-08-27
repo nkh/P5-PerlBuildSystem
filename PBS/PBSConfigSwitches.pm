@@ -230,8 +230,8 @@ EOH
 		'Displays Pbs version.',
 		'',
 		
-	'info_label'                    => \&PBS::Output::InfoLabel,
-		'Adds a text label specifying the type of output.',
+	'info_label=s'                  => \&PBS::Output::InfoLabel,
+		'Adds a text label to all output.',
 		'',
 		
 	'c|color=i'                     => \&PBS::Output::SetOutputColorDepth,

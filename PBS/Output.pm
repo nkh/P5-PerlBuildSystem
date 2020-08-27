@@ -40,6 +40,16 @@ $VERSION = '0.06' ;
 use Term::ANSIColor qw(:constants) ;
 $Term::ANSIColor::AUTORESET = 1 ;
 
+use Term::Size::Any qw(chars) ;
+
+#-------------------------------------------------------------------------------
+
+
+our $output_info_label = '' ;
+sub InfoLabel
+{
+$output_info_label = $_[1] ;
+}
 
 #-------------------------------------------------------------------------------
 
@@ -49,6 +59,12 @@ our $display_error_context  = 0 ;
 
 my $cd = 256 ; # color_depth
 my %cc ;
+
+#-------------------------------------------------------------------------------
+
+sub GetScreenWidth { (chars() // 10_000) - ( length($indentation x ($indentation_depth + 3)) + length($output_info_label)) }
+
+#-------------------------------------------------------------------------------
 
 sub SetDefaultColors
 {
@@ -65,19 +81,6 @@ sub GetColor
 {
 $cc{$cd}{$_[0]} // '' ; 
 }
-
-#-------------------------------------------------------------------------------
-
-sub InfoLabel
-{
-for my $color (keys %{$cc{$cd}})
-	{
-	next if $color eq 'reset' ;
-
-	$cc{$cd}{$color} .= '[' . ucfirst($color) . '] ' ; 
-	}
-}
-
 
 #-------------------------------------------------------------------------------
 
@@ -136,16 +139,24 @@ sub DEBUG { return COLOR('debug', @_) }
 
 sub _print
 {
-my ($glob, $color_and_depth, @data) = @_ ;
+my ($glob, $color_and_depth, $data, $indent) = @_ ;
 
-for (@data)
-	{
-	$_ //= '' ;
-	
-	s/^(\t+)/$indentation x length($1)/gsme ;
-	
-	print $glob $color_and_depth->($_) ;
-	}
+$_ //= '' ;
+
+$data =~ s/^(\t+)/$indentation x length($1)/gsme if $indent ;
+
+my $reset = $cc{$cd}{reset} // '' ;
+my ($ends_with_newline) = $data =~ /(\n(?:\Q$reset\E)?)$/ ;
+
+print $glob $output_info_label, 
+	join
+		(
+		"\n$output_info_label",
+		map { $color_and_depth->($_) }
+			split /\n(?:\Q$reset\E)?/, $data
+		) ;
+
+$ends_with_newline && print $glob $ends_with_newline ;
 }
 
 sub PrintStdOut {_print(\*STDOUT, \&RESET, @_);}
@@ -153,6 +164,9 @@ sub PrintStdErr {_print(\*STDERR, \&RESET, @_);}
 
 sub PrintStdOutColor {_print(\*STDOUT, @_);} # pass a color handler as first argument
 sub PrintStdErrColor {_print(\*STDERR, @_);} # pass a color handler as first argument
+
+sub PrintNoColor {_print(\*STDERR, \&RESET, @_);}
+sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_);}
 
 sub PrintError {_print(\*STDERR, \&ERROR, @_);}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_) ;}

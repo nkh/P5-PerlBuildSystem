@@ -66,14 +66,22 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 
 my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 
-my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 40) ;
+my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $target_string = '' ; 
 $target_string .= $em->($_) for (@$targets) ; 
 
-print "\n" , INFO("Depend: ") , INFO3($target_string, 0), INFO(", level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0) unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+my $pbs_runs = PBS::PBS::GetPbsRuns() ;
+PrintInfo("Depend: target: " . INFO3($target_string, 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0))
+	unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
+if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
+	{
+	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
+	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $number_of_nodes", 0)) ;
+	}
+		
 PBS::Depend::CreateDependencyTree
 	(
 	$pbsfile_chain,
@@ -100,25 +108,29 @@ return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-my $pbs_runs = PBS::PBS::GetPbsRuns() ;
+if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
+	{
+	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
+	PrintInfo("\r\e[K") ;
+	}
+
+$pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo(sprintf("\e[KDepend: pbsfile$plural: $pbs_runs, time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
 else
 	{
-	PrintInfo "\e[KDepend: pbsfile$plural: $pbs_runs\n" ;
+	PrintInfo "Depend: pbsfile$plural: $pbs_runs\n" ;
 	}
 
 my $nodes = scalar(keys %$inserted_nodes) ;
 my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
 my $warp_nodes = $nodes - $non_warp_nodes ;
 
-my $build_at = $build_point ne '' ? " @ '$build_point'," : '' ;
-
-PrintInfo("Depend: ${build_at}nodes in the dependency tree: $nodes [W:$warp_nodes, R:$non_warp_nodes]\n") ;
+PrintInfo("Depend: nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n") ;
 
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
@@ -143,7 +155,7 @@ else
 			}
 		else
 			{
-			PrintError("Build: no such build point: '$build_point'.\n") ;
+			PrintError("Build: no such build point: '$build_point'\n") ;
 			DisplayCloseMatches($build_point, $inserted_nodes) ;
 			die "\n" ;
 			}
@@ -169,8 +181,6 @@ eval
 		\%trigged_nodes,
 		) ;
 	
-	print STDERR ' ' x 30 . "\r" ;
-	
 	# check if any triggered top node has been left outside the build
 	for my $node_name (keys %$inserted_nodes)
 		{
@@ -182,7 +192,7 @@ eval
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				PrintInfo("\nCheck: trigger inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+				PrintInfo("Check: trigger inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 				my @triggered_build_sequence ;
 				
 				PBS::Check::CheckDependencyTree
@@ -206,7 +216,7 @@ eval
 	my ($fn, $fp, $stat_message) = RunUniquePluginSub($pbs_config, 'GetWatchedFilesCheckerStats') ;
 	RunUniquePluginSub($pbs_config, 'ResetWatchedFilesCheckerStats') ;
 
-	PrintInfo $stat_message ;
+	PrintInfo $stat_message unless $stat_message eq ''  ;
 	} ;
 
 PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
@@ -221,7 +231,7 @@ if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 		my $is_alternative_source++ if exists $node->{__ALTERNATE_SOURCE_DIRECTORY} ;
 		my $is_virtual = exists $node->{__VIRTUAL} ;
 		
-		PrintInfo "node: " . INFO3($name) 
+		PrintInfo "Node: " . INFO3($name) 
 				. INFO2($is_alternative_source ? ' -> [R]' : '')
 				. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
 				. "\n" ;
@@ -293,13 +303,11 @@ if($pbs_config->{DO_BUILD})
 
 			if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS})
 				{
-				print INFO("\r\e[KBuild: running post build command for node:", 0)
-					. USER(" '$node->{__NAME}'\n", 0) ;
+				PrintInfo("Build: running post build command for node:" . USER(" '$node->{__NAME}'\n", 0)) ;
 				}
 
 			my @r = $node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
-			print INFO2("${indent}node sub returned: @r\n") 
-				if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
+			PrintInfo2("${indent}node sub returned: @r\n") if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 			}
 		}
 

@@ -1,4 +1,5 @@
 
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 
@@ -49,7 +50,7 @@ for my $source (@$dependencies)
 
 		if($node_name_matches_ddrr)
 			{
-			print WARNING 
+			PrintWarning 
 				$PBS::Output::indentation
 				. "Additional 'exists_on_disk' for rule: $rule_definition->{NAME}\n"
 					 # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 
@@ -89,7 +90,7 @@ my @dependencies = grep {! /^__/ } keys %$tree ;
 
 if (@dependencies > 1)
 	{
-	print WARNING 
+	PrintWarning 
 		$PBS::Output::indentation
 		. "Additional 'only_one_dependency' for rule: $rule_definition->{NAME}\n" ;
 

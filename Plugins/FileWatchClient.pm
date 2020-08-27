@@ -83,7 +83,7 @@ if
 	{
 	$watcher_false_negative,
 	$watcher_false_positive,
-	INFO("Warcher: " )
+	INFO("File Watch: " )
 		. WARNING("faulse_negative: $watcher_false_negative") 
 		. ', ' 
 		. ERROR("failse_positive: $watcher_false_positive")

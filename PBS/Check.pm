@@ -39,7 +39,7 @@ return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once o
 # we also build data for the build step
 $tree->{__CHILDREN_TO_BUILD} = 0 ;
 
-PrintInfo "$checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
+PrintInfo "Check: $checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
 
 $build_sequence //= [] ; 
 $files_in_build_sequence //= {} ;
@@ -64,7 +64,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 		if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 			{
 			my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config) ; 
-			print STDERR ERROR("\e[KCyclic dependencies detected ($number_of_cycles):\n$cycles") ;
+			PrintError "\e[KCyclic dependencies detected ($number_of_cycles):\n$cycles" ;
 
 			die "DEPENDENCY_CYCLE_DETECTED\n" ;
 			}
@@ -293,10 +293,13 @@ for my $dependency_name (keys %$tree)
 
 				$tree->{__CHILDREN_TO_BUILD}++ ;
 
-				PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]") . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]")
+						 . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n")
+							if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				}
 			}
-	PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+
+		PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 		}
 	}
 
@@ -518,11 +521,11 @@ unless(file_name_is_absolute($file))
 		$year += 1900 ;
 		$month++ ;
 		
-		print USER("\t   found in build directory") . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0) if $display_search_info ;
+		PrintUser("\t   found in build directory" . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0)) if $display_search_info ;
 		}
 	else
 		{
-		print ERROR("\t   not in build directory ") . INFO2(" '$build_directory'.\n", 0) if($display_search_info) ;
+		PrintError("\t   not in build directory " . INFO2(" '$build_directory'.\n", 0)) if($display_search_info) ;
 		}
 		
 	if((! $file_found) || $display_all_alternates)
@@ -544,24 +547,26 @@ unless(file_name_is_absolute($file))
 					
 					if($file_found)
 						{
-						print WARNING("\t   also found as ")
+						PrintWarning(
+							"\t   also found as "
 							. INFO2(
 								" '$searched_file'\n"
 								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 								0
-								) 
-					 			if $display_search_info ;
+								)
+							) if $display_search_info ;
 						}
 					else
 						{
 						$file_found++ ;
-						print USER("\t   located as ")
+						PrintUser(
+							"\t   located as "
 							. INFO2(
 								" '$searched_file'\n"
 								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 								0
-								) 
-								if $display_search_info ;
+								)
+							) if $display_search_info ;
 						
 						$located_file = $searched_file ;
 						$alternative_source++ ;
@@ -570,7 +575,7 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					print ERROR("\t   not as") . INFO2(" '$searched_file'\n", 0) if $display_search_info ;
+					PrintError("\t   not as" . INFO2(" '$searched_file'\n", 0)) if $display_search_info ;
 					}
 				}
 			else

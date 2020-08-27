@@ -1065,7 +1065,6 @@ else
 				) ;
 			} ;
 EOE
-		#~ print $code_string ;
 		%sub_config = eval $code_string ;
 		die $@ if $@ ;
 		}
@@ -1100,8 +1099,6 @@ my $subpbd_definition_location = "#line " . $sub_pbs->[0]{RULE}{LINE} . " " . $s
 	
 PBS::PBSConfig::RegisterPbsConfig($subpbs_package_node_config, $pbs_config) ;
 PBS::Config::ClonePackageConfig($load_package, $subpbs_package_node_config) ;
-
-#print "\n\n\n" . DumpTree(PBS::Config::GetPackageConfig($subpbs_package_node_config)) . "\n\n\n" ;
 
 # check the $sub_pbs_package_config for type validity
 if('HASH' ne ref $sub_pbs_package_config)

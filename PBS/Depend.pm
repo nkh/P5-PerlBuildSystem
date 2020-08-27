@@ -13,7 +13,6 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
 use String::Truncate ;
-use Term::Size::Any qw(chars) ;
 
 require Exporter ;
 
@@ -89,7 +88,7 @@ if
 	|| defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}
 	)
 	{
-	PrintInfo("Depend: '$node_name'\n")
+	PrintInfo2("Rule: target:" . INFO3("'$node_name'") . "\n")
 		if ($node_name !~ /^__/) ;
 	}
 
@@ -112,7 +111,7 @@ for my $post_build_rule (@post_build_rules)
 		}
 	}
 
-my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth + 2)) ;
+my $available = PBS::Output::GetScreenWidth() ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $rules_matching = 0 ;
@@ -199,14 +198,15 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				{
 				$index++ ;
 			
-				print USER("$indent'$node_name'") 
+				PrintUser(
+					"$indent'$node_name'" 
 					. INFO(" node sub $index/" . scalar(@$subs), 0)
-					. INFO2(" '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n", 0) 
+					. INFO2(" '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n", 0))
 						if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
 				my @r = $sub->($node_name, $config, $tree, $inserted_nodes) ;
 				
-				print INFO2("$indent${indent}node sub returned: @r\n") 
+				PrintInfo2("$indent${indent}node sub returned: @r\n") 
 					if @r && $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				}
 			}
@@ -335,9 +335,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					PrintInfo3 "\t'$node_name' ${node_type}${forced_trigger} "
 						. INFO("dependencies [@dependency_names]", 0)
-						. "" ;
-					
-					print INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]\n", 0) ;
+						. "" 
+						. INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]\n", 0) ;
 					}
 					
 				PrintWithContext
@@ -441,7 +440,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		{
 		# not triggered
 		my $depender_message = $dependencies[0] // 'No match' ;
-		print STDERR COLOR('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+		PrintColor('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}
 	}
 	
@@ -489,7 +488,7 @@ for my $dependency (@dependencies)
 	use Carp ;
 	unless('HASH' eq ref $dependency)
 		{
-		print STDERR $dependency ;
+		PrintNoColor $dependency ;
 		confess  ;
 		}
 	
@@ -804,10 +803,9 @@ elsif(@sub_pbs)
 	
 	unless(defined $pbs_config->{NO_SUBPBS_INFO})
 		{
-		PrintWarning "[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message\n" ;
-
 		if(defined $pbs_config->{SUBPBS_FILE_INFO})
 			{
+			PrintWarning "[$PBS::PBS::pbs_runs/$PBS::Output::indentation_depth] Depend: '$node_name' $alias_message\n" ;
 			my $node_info = "inserted at '$inserted_nodes->{$node_name}->{__INSERTED_AT}{INSERTION_RULE}'" ;
 			PrintInfo2  "\t$node_info, \n"
 					. "\twith subpbs '$sub_pbs_package:$sub_pbs_name'.\n" ;
@@ -1079,7 +1077,7 @@ if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfil
 		}
 	}
 	
-print $linked_node_info if $display_linked_node_info ;
+PrintNoColor($linked_node_info) if $display_linked_node_info ;
 }
 
 #-------------------------------------------------------------------------------

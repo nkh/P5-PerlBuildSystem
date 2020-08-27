@@ -100,7 +100,7 @@ else
 
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
-		print $lh INFO "Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n" ;
+		_print ($lh,  \&INFO, "Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
 		}
 		
 	# display which --bi don't match
