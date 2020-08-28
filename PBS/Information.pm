@@ -72,7 +72,7 @@ my $node_header = "\n" ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= WARNING("Node: $type'$name': ", 0) . INFO2("[$build_name]", 0) . "\n" ;
+	$node_header .= WARNING("Node: $type'$name':", 0) . INFO2(" $build_name", 0) . "\n" ;
 	}
 else
 	{

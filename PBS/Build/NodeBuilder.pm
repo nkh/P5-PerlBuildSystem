@@ -296,12 +296,12 @@ if($build_result == BUILD_SUCCESS)
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
 		$build_message ||= '' ;
-		PrintInfo("Build result for '$build_name' : $build_result : $build_message\n") ;
+		print STDERR INFO("Build result for '$build_name' : $build_result : $build_message\n") ;
 		}
 	}
 else
 	{
-	PrintError("\nBuilding '$build_name' : BUILD_FAILED : $build_message\n") ;
+	print STDERR ERROR("Building '$build_name' : BUILD_FAILED : $build_message") ;
 	}
 	
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
@@ -314,7 +314,7 @@ if($build_result == BUILD_SUCCESS)
 
 if($pbs_config->{TIME_BUILDERS} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	{
-	PrintInfo(sprintf("Build time: %0.3f s.\n", $build_time)) ;
+	print STDERR INFO(sprintf("Build time: %0.3f s.\n", $build_time)) ;
 	}
 
 return($build_result, $build_message) ;

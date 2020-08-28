@@ -229,7 +229,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	else
 		{
-		PrintInfo2 $command_information . "command: $shell_command\n" if $display_command_information ;
+		print STDERR INFO2 $command_information . "command: $shell_command\n" if $display_command_information ;
 
 		my $command = EvaluateShellCommandForNode
 						(

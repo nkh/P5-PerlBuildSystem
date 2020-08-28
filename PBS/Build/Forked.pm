@@ -171,7 +171,7 @@ if($number_of_failed_builders)
 	my $plural = ('','')[$number_of_failed_builders] // 's' ;
 
 	PrintError "Build: $number_of_failed_builders error$plural:\n" ;
-	PrintError $error_output ;
+	PrintError $error_output . "\n" ;
 	}
 
 if(defined $pbs_config->{DISPLAY_SHELL_INFO})
@@ -184,7 +184,7 @@ if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	PrintInfo(sprintf("Build: parallel build time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 	}
 
-print STDERR (
+PrintInfo (
 	($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
 	. INFO("nodes to build: $number_of_nodes_to_build"
 	. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
@@ -672,7 +672,7 @@ else
 			
 			my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
-			$error_output  .= $o . "\n" ;
+			$error_output .= $o . "\n" ;
 			}
 		}
 	}

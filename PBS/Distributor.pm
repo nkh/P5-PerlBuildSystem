@@ -50,7 +50,7 @@ return
 
 sub Setup
 {
-# the distributor initiolisation is two folded because PBS can:
+# the distributor initialisation is two folded because PBS can:
 # 1/ get an already build distributor that needs to be setup
 # 2/ get a standard file to create a PBS::Distributor
 
