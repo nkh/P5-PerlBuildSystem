@@ -3,25 +3,9 @@ info-label ?
 	#add in node logs
 	node output gets two label on error
 
-bug:
-	Warp: Removing  /home/nadim/perl5/lib/perl5/PBS/PBSLib/Rules/Object_rules_utils.pm [modified]
-
-	#1 this is checked way after normal nodes are checked
-		gloabal dependencies, pbs libs, should be checked first
-
-	#2 build proceeds, warp is generated, hash is not replaced with new value!
-		There's no hash at all!
-
-	need to rebuild? broken cache
-
-#depend not indented
-
-
-error Depend: pbsfile: 1, time: 1.28 s.
-	wrong number of pbsfiles
-
-bug, id node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
+?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
 we get the same digest and think it's the same thus nothing needs to be buid!
+	this happens when node say they are generated but are not and VIRTUAL is not set
 
 bug: warp doesn't care about variables, just node digests
 	definition on command line is ignore
@@ -547,6 +531,25 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+#bug:
+	Warp: Removing  /home/nadim/perl5/lib/perl5/PBS/PBSLib/Rules/Object_rules_utils.pm [modified]
+
+	#1 this is checked way after normal nodes are checked
+		gloabal dependencies, pbs libs, should be checked first
+
+	#2 build proceeds, warp is generated, hash is not replaced with new value!
+		There's no hash at all!
+
+	need to rebuild? broken cache
+
+	=> checked for node re-warped in node index but the node_index is rebuild from the old node!
+		check in re-warped nodes instead
+
+#depend not indented
+
+#error Depend: pbsfile: 1, time: 1.28 s.
+	wrong number of pbsfiles
+
 #find out if LOCKCONFIG is merged from neo project
 	yes, if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CONFIG_INHERITANCE})
 

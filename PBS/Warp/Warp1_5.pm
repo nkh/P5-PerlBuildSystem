@@ -167,7 +167,7 @@ if($run_in_warp_mode)
 		{
 		my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
 
-		my $info = "[$nodes_in_warp/trigger:$node_mismatch/removed:$number_of_removed_nodes]" ;
+		my $info = "nodes: $nodes_in_warp, triggered:$node_mismatch, removed:$number_of_removed_nodes" ;
 
 		PrintInfo
 			sprintf
@@ -573,11 +573,11 @@ for my $node (@$nodes_to_check)
 		{
 		if ($remove_this_node)
 			{
-			PrintInfo "\e[KWarp: " . ERROR('Removing') . INFO("  $node ") . ERROR("[" . join(' ,', @reasons) . "]\n") ;
+			PrintInfo "\e[KWarp: " . WARNING('Removing') . INFO3(" '$node'") . WARNING(" [" . join(' ,', @reasons) . "]\n") ;
 			}
 		else
 			{
-			PrintInfo("\e[KWarp: OK: $node\n") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+			PrintInfo("\e[KWarp: OK: " . INFO3(" '$node'\n")) unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 			}
 		}
 
@@ -585,7 +585,7 @@ for my $node (@$nodes_to_check)
 		{
 		my @nodes_to_remove = ($node) ;
 		
-		PrintInfo "\e[KWarp: pruning from node '$node'\n" 
+		PrintInfo("\e[KWarp: pruning from " . INFO3(" '$node'\n"))
 			if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_to_remove ;
 
 		while(@nodes_to_remove)
@@ -594,7 +594,7 @@ for my $node (@$nodes_to_check)
 			
 			for my $node_to_remove (grep{ exists $nodes->{$_} } @nodes_to_remove)
 				{
-				PrintInfo2 $PBS::Output::indentation . "$node_to_remove [$$]\n"
+				PrintInfo2 $PBS::Output::indentation . "$node_to_remove\n"
 					if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && ! exists $nodes_triggered{$node_to_remove} ;
 				
 				push @dependent_nodes, grep{ ! exists $nodes_triggered{$_} } map {$node_names->[$_]} keys %{$nodes->{$node_to_remove}{__DEPENDENT}} ;
@@ -763,7 +763,6 @@ for my $node_name (keys %$inserted_nodes)
 	else
 		{
 		$new_nodes++ ;
- 
 		$nodes{$node_name}{__VIRTUAL} = 1 if(exists $node->{__VIRTUAL}) ;
 			
 		if(exists $node->{__LOAD_PACKAGE})
@@ -1066,7 +1065,7 @@ for my $node_name (keys %$inserted_nodes)
 
 						$lib = $libs{$lib} = $location . $lib ;
 
-						unless (exists $nodes_index{$lib})
+						unless (exists $nodes{$lib})
 							{
 							my $inserting_node = $node_names[$node_pbsfile] ;
 

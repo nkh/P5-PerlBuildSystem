@@ -128,9 +128,10 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 							? sprintf("%0.2f", $time_remaining) . "s." 
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
 
-				my $last_node = $number_of_nodes_to_build - $number_of_already_build_node ? '' : "\n" ;
+				my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
+				my $last_node = $remaining_nodes ? '' : "\n" ;
 
-				PrintInfo3 "\r\e[KBuild: ETA: $time_remaining [" . ($number_of_nodes_to_build - $number_of_already_build_node) . "]$last_node"
+				PrintInfo3 "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes$last_node"
 					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} ;
 				}
 
