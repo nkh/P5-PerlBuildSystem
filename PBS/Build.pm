@@ -251,7 +251,7 @@ for my $node (@$build_sequence)
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
-	PrintInfo(sprintf("Total build time: %0.2f s. Perl subs time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	PrintInfo(sprintf("Build: time: %0.2f s., subs time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 	}
 
 if($failed_but_no_stop_set)

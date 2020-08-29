@@ -102,7 +102,7 @@ unless(defined $self->{LOGGED_IN})
 		{
 		die bless
 			{
-			error => "SSH login failed! for '$host_info'.",
+			error => "SSH login, host: $host_info",
 			command => 'SSH login',
 			errno => -1,
 			errno_string => $@,
@@ -136,10 +136,10 @@ else
 	
 	die bless
 		{
-		error => "SSH command failed! $host_info.", 
+		error => "SSH shell", 
 		command => $command,
 		errno => $exit,
-		errno_string => "SSH command failed! $host_info.",
+		errno_string => $host_info,
 		}, 'PBS::Shell' ;
 	}
 }

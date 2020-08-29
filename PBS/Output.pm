@@ -139,6 +139,10 @@ sub DEBUG { return COLOR('debug', @_) }
 
 sub _print
 {
+#use Carp qw(cluck longmess shortmess);
+#cluck "This is how we got here!"; 
+
+
 my ($glob, $color_and_depth, $data, $indent) = @_ ;
 
 $_ //= '' ;

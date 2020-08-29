@@ -161,12 +161,12 @@ for my $path (keys %sorted_nodes)
 				{
 				$build_result = BUILD_FAILED ;
 				
-				$build_message= "\n\t" . $@->{error} . "\n" ;
-				$build_message .= "\tCommand   : '" . $@->{command} . "'\n" ;
-				$build_message .= "\tErrno     : " . $@->{errno} . "\n" ;
-				$build_message .= "\tErrno text: " . $@->{errno_string} . "\n" ;
+				$build_message  = "\tType:" . $@->{error} . "\n" ;
+				$build_message .= "\tCommand: " . INFO3($@->{command}) . "\n" ;
+				$build_message .= "\tErrno: " . $@->{errno} . "\n" ;
+				$build_message .= "\tErrno:" . $@->{errno_string} . "\n" ;
 				
-				PrintError("BUILD_FAILED : $build_message\n") ;
+				PrintError("BUILD_FAILED: $build_message\n") ;
 				
 				return($build_result, $build_message, @not_o_nodes) ;
 				}

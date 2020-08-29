@@ -219,7 +219,7 @@ eval
 	PrintInfo $stat_message unless $stat_message eq ''  ;
 	} ;
 
-PrintInfo(sprintf("Check: total time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
+PrintInfo(sprintf("Check: time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	{

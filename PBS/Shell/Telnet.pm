@@ -96,7 +96,7 @@ if(@output >= 2 && $output[-2] =~ $error_string)
 	
 	die bless
 		{
-		error => 'Shell command failed!',
+		error => 'Shell',
 		command => $command,
 		errno => -1,
 		errno_string => $error_string,

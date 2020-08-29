@@ -133,7 +133,7 @@ if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
-	PrintInfo(sprintf("Total build time: %0.2f s. Perl subs time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	PrintInfo(sprintf("Build: time: %0.2f s., subs time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 	}
 
 return(!$number_of_failed_builders) ;

@@ -683,7 +683,7 @@ close(WARP) ;
 if($pbs_config->{DISPLAY_WARP_TIME})
 	{
 	my $warp_generation_time = tv_interval($t0_warp_generate, [gettimeofday]) ;
-	PrintInfo(sprintf("Warp: total time: %0.2f s.\n", $warp_generation_time)) ;
+	PrintInfo(sprintf("Warp: time: %0.2f s.\n", $warp_generation_time)) ;
 	}
 }
 

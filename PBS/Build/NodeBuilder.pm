@@ -295,13 +295,13 @@ if($build_result == BUILD_SUCCESS)
 	{
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
-		$build_message ||= '' ;
-		print STDERR INFO("Build result for '$build_name' : $build_result : $build_message\n") ;
+		$build_message //= '' ;
+		print STDERR INFO("Build: target: '$build_name', result: $build_result, message: $build_message\n") ;
 		}
 	}
 else
 	{
-	print STDERR ERROR("Building '$build_name' : BUILD_FAILED : $build_message") ;
+	print STDERR ERROR("Build: '$build_name':\n$build_message\n") ;
 	}
 	
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
@@ -314,7 +314,8 @@ if($build_result == BUILD_SUCCESS)
 
 if($pbs_config->{TIME_BUILDERS} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	{
-	print STDERR INFO(sprintf("Build time: %0.3f s.\n", $build_time)) ;
+	my $c = $build_result == BUILD_SUCCESS ? \&INFO : \&ERROR ;
+	print STDERR $c->(sprintf("Build: time: %0.3f s.\n", $build_time)) ;
 	}
 
 return($build_result, $build_message) ;
@@ -460,11 +461,11 @@ if($@)
 	if('' ne ref $@ && $@->isa('PBS::Shell'))
 		{
 		$build_message =
-			 ERROR(
-				"\n\t" . $@->{error} . "\n"
-				. "\tCommand   : '" . $@->{command} . "'\n"
-				. "\tErrno     : " . $@->{errno} . "\n\tErrno text: " . $@->{errno_string} . "\n"
-				) ;
+			ERROR(
+			  "\tCommand: $@->{command}\n"
+			. "\tType: $@->{error} \n"
+			. "\tErrno: $@->{errno}, $@->{errno_string}\n"
+			) ;
 		}
 	else
 		{
@@ -473,7 +474,7 @@ if($@)
 			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
 			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 		
-		$build_message = ERROR("\n\t Building $build_name '$rule_info': Exception type: $@") ;
+		$build_message = ERROR("\t Building $build_name '$rule_info': Exception: $@") ;
 		}
 	}
 
@@ -485,7 +486,7 @@ if($build_result == BUILD_FAILED)
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
 			
-	$build_message .= ERROR "\n\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
+	$build_message .= ERROR "\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
 	$file_tree->{__BUILD_FAILED} = $build_message ;
 	}
 

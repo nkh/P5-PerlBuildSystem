@@ -113,7 +113,7 @@ for my $shell_command (@_)
 	{
 	if('' eq ref $shell_command)
 		{
-		print STDERR USER("$shell_command \n") unless $PBS::Shell::silent_commands ;
+		print STDERR USER("command: $shell_command \n") unless $PBS::Shell::silent_commands ;
 	
 		if($PBS::Shell::silent_commands_output)
 			{
@@ -125,7 +125,7 @@ for my $shell_command (@_)
 				
 				die bless
 					{
-					error        => 'Shell command failed!',
+					error        => 'Shell',
 					command      => $shell_command,
 					errno        => $?,
 					errno_string => $!,
@@ -139,10 +139,9 @@ for my $shell_command (@_)
 				{
 				die bless
 					{
-					error => 'Shell command failed!' ,
+					error => 'Shell' ,
 					command => $shell_command,
 					errno => $?,
-					#errno_string => '',
 					errno_string => $!,
 					}, __PACKAGE__ ;
 				}

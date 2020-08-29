@@ -129,9 +129,9 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
 
 				my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
-				my $last_node = $remaining_nodes ? '' : "\n" ;
+				my $last_node = $remaining_nodes ? '' : "\r\e[KBuild: success: $number_of_already_build_node nodes\n" ;
 
-				PrintInfo3 "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes$last_node"
+				PrintInfo "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes$last_node"
 					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} ;
 				}
 
@@ -181,24 +181,23 @@ if(defined $pbs_config->{DISPLAY_SHELL_INFO})
 	
 if($pbs_config->{DISPLAY_TOTAL_BUILD_TIME})
 	{
-	PrintInfo(sprintf("Build: parallel build time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
+	my $c = $number_of_failed_builders == 0 ? \&PrintInfo : \&PrintError ;
+	$c->(sprintf("Build: parallel time: %0.2f s, sub time: %0.2f s.\n", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time)) ;
 	}
 
-PrintInfo (
-	($number_of_failed_builders ? ERROR("Build: ") : INFO("Build: "))
-	. INFO("nodes to build: $number_of_nodes_to_build"
-	. ", success: " . ($number_of_already_build_node - $number_of_failed_builders))
-	. ($number_of_failed_builders
-		? ERROR(", failures: $number_of_failed_builders")
-		: INFO (", failures: 0")) 
-	. ($excluded
-		? WARNING(", excluded: $excluded\n")
-		: INFO ("\n"))
-	) if $number_of_failed_builders ;
-
-for my $failed_node (@failed_nodes)
+if ($number_of_failed_builders)
 	{
-	PrintError "Build: '$failed_node->{__NAME}' failed\n" ;
+	PrintError (
+		  "Build: nodes: $number_of_nodes_to_build, failed: $number_of_failed_builders"
+		. ($excluded ? WARNING(", excluded: $excluded") : '')
+		. INFO(", success: " . ($number_of_already_build_node - $number_of_failed_builders))
+		. "\n"
+		) ;
+ 
+	for my $failed_node (@failed_nodes)
+		{
+		PrintError "Build: failed, " . INFO3("node: '$failed_node->{__NAME}',", 0) . INFO2(" file: '$failed_node->{__BUILD_NAME}'\n", 0) ;
+		}
 	}
 
 return(!$number_of_failed_builders) ;

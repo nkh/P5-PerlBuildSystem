@@ -1,3 +1,12 @@
+
+
+output filters should use a templating system
+	preferably one that's already written
+	one that can refer to other templates recursively
+
+write logs in yaml with color tags so cat would display them
+	if yaml doesn't accept the tags, filter them out when necessary
+
 catch external command std and std out
 	pbs1 Shell::Command redirects stdout to stdin!
 
