@@ -200,8 +200,6 @@ if($run_in_warp_mode)
 			# PBS will link to the  warp nodes instead for creating them
 			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
 			
-			PrintInfo "Warp: running PBS in warp mode. $number_of_removed_nodes node$node_plural to rebuild.\n" ;
-			
 			local $PBS::Output::indentation_depth = -1 ; 
 			($build_result, $build_message, $new_dependency_tree)
 				= PBS::PBS::Pbs

@@ -108,7 +108,15 @@ unless(exists $tree->{__DEPENDED})
 		}
 	}
 	
-my ($full_name, $is_alternative_source, $alternative_index) = LocateSource($name, $build_directory, $source_directories) ;
+my ($full_name, $is_alternative_source, $alternative_index) = 
+		LocateSource
+			(
+			$name,
+			$build_directory,
+			$source_directories,
+			$pbs_config->{DISPLAY_SEARCH_INFO},
+			$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
+			) ;
 
 if ($is_alternative_source)
 	{
@@ -220,7 +228,7 @@ for my $dependency_name (keys %$tree)
 			{
 			$triggered = 1 ; # current node also need to be build
 
-			my $reason = $$dependency->{__TRIGGERED}[0]{NAME} ;
+			my $reason = $dependency->{__TRIGGERED}[0]{NAME} ;
 			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
 					if scalar(@{$dependency->{__TRIGGERED}}) > 1 ;
 
@@ -365,7 +373,14 @@ if($triggered)
 		}
 	else
 		{
-		($full_name) = LocateSource($name, $build_directory) ;
+		($full_name) = LocateSource
+					(
+					$name,
+					$build_directory,
+					undef,
+					$pbs_config->{DISPLAY_SEARCH_INFO},
+					$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
+					) ;
 		}
 	
 	if($tree->{__BUILD_NAME} ne $full_name)
@@ -391,8 +406,23 @@ else
 		{
 		# never get here if the node doesn't exists as it would have triggered
 		
-		my ($build_directory_name) = LocateSource($name, $build_directory) ;
-		my ($repository_name) = LocateSource($name, $build_directory, $source_directories) ;
+		my ($build_directory_name) = LocateSource
+						(
+						$name,
+						$build_directory,
+						undef,
+						$pbs_config->{DISPLAY_SEARCH_INFO},
+						$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
+						) ;
+
+		my ($repository_name) = LocateSource
+						(
+						$name,
+						$build_directory,
+						$source_directories,
+						$pbs_config->{DISPLAY_SEARCH_INFO},
+						$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
+						) ;
 		
 		my $repository_digest_name = $repository_name . '.pbs_md5' ;
 		my $build_directory_digest_name = $build_directory_name . '.pbs_md5' ;
@@ -510,7 +540,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	PrintInfo("\tLocating '$unlocated_file':\n") if $display_search_info ;
+	PrintInfo("Locate: file:" . INFO3("'$unlocated_file':\n", 0)) if $display_search_info ;
 	
 	if(-e $located_file)
 		{
@@ -521,11 +551,11 @@ unless(file_name_is_absolute($file))
 		$year += 1900 ;
 		$month++ ;
 		
-		PrintUser("\t   found in build directory" . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0)) if $display_search_info ;
+		PrintInfo("Locate: found in build directory:" . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0)) if $display_search_info ;
 		}
 	else
 		{
-		PrintError("\t   not in build directory " . INFO2(" '$build_directory'.\n", 0)) if($display_search_info) ;
+		PrintInfo("Locate: not found in build directory:" . INFO2(" '$build_directory'.\n", 0)) if($display_search_info) ;
 		}
 		
 	if((! $file_found) || $display_all_alternates)
@@ -548,24 +578,18 @@ unless(file_name_is_absolute($file))
 					if($file_found)
 						{
 						PrintWarning(
-							"\t   also found as "
-							. INFO2(
-								" '$searched_file'\n"
-								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
-								0
-								)
+							"Locate: also located as "
+							. " '$searched_file'"
+							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 							) if $display_search_info ;
 						}
 					else
 						{
 						$file_found++ ;
-						PrintUser(
-							"\t   located as "
-							. INFO2(
-								" '$searched_file'\n"
-								. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
-								0
-								)
+						PrintInfo(
+							"Locate: found:"
+							. " '$searched_file'"
+							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 							) if $display_search_info ;
 						
 						$located_file = $searched_file ;
@@ -575,17 +599,23 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					PrintError("\t   not as" . INFO2(" '$searched_file'\n", 0)) if $display_search_info ;
+					PrintInfo("Locate: not located as:" . INFO2(" '$searched_file'\n", 0)) if $display_search_info ;
 					}
 				}
 			else
 				{
-				die "Search path sub is unimplemented!" ;
+				die ERROR("Locate: Error: Search path sub is unimplemented!") ;
 				}
 			}
 		}
 	}
-	
+else
+	{
+	PrintInfo("Locate: absolute pathy:" . INFO2(" $located_file\n", 0)) if $display_search_info ;
+	}
+
+PrintInfo("Locate: chosing: $located_file [$alternative_source, $other_source_index]\n") if $display_search_info ;
+
 return($located_file, $alternative_source, $other_source_index) ;
 }
 

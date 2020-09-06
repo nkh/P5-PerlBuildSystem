@@ -251,7 +251,7 @@ else
 
 if(defined $pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML})
 	{
-	PrintInfo "Generating DHTML dump of the dependency tree in '$pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML}' ...\n" ;
+	PrintInfo "Tree Visualisation: Generating DHTML dump of the dependency tree in '$pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML}' ...\n" ;
 	
 	open DHTML, '>', $pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML} 
 		or die "can't open dhtml file '$pbs_config->{DISPLAY_TEXT_TREE_USE_DHTML}': @!\n" ;
@@ -358,14 +358,15 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		}
 	if(@trees == 1)
 		{
-		PrintInfo DumpTree($dependency_tree, "Dependen: graph", FILTER => $FilterDump, @extra_options) ;
+		PrintInfo DumpTree($dependency_tree, "Dependent: graph", FILTER => $FilterDump, INDENTATION => "Depend:\t". $PBS::Output::indentation,
+@extra_options) ;
 		PrintInfo "Depend:\n" 
 				. DumpTree
 					(
 					$dependency_tree,
 					"dependency graph",
 					FILTER => $FilterDump,
-					INDENTATION => $PBS::Output::indentation,
+					INDENTATION => "Depend:\t". $PBS::Output::indentation,
 					@extra_options
 					) ;
 		}
@@ -379,7 +380,7 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 					\%trees,
 					"dependency graphs",
 					FILTER => $FilterDump,
-					INDENTATION => $PBS::Output::indentation,
+					INDENTATION => "Depend:\t". $PBS::Output::indentation,
 					@extra_options
 					) ;
 		}
@@ -392,7 +393,7 @@ else
 				$dependency_tree,
 				"dependency graph",
 				FILTER => $FilterDump,
-				INDENTATION => $PBS::Output::indentation,
+				INDENTATION => "Depend:\t". $PBS::Output::indentation,
 				@extra_options
 				)
 		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;

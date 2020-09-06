@@ -389,7 +389,7 @@ The depender sub should return:
 
 =back
 
-retrn variables 2 and 3 are for advanced use, you can safely ignore them (return only the first variable).
+return variables 2 and 3 are for advanced use, you can safely ignore them (return only the first variable).
 
 This construct allow us to handle the case of generated c files quite easily. Say we have a c file that is
 generated from a flex file. We need to generate the c file before the I<'c depender'> kicks in. The 

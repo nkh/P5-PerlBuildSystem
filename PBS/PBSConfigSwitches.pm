@@ -234,7 +234,7 @@ EOH
 		'Adds a text label to all output.',
 		'',
 		
-	'c|color=i'                     => \&PBS::Output::SetOutputColorDepth,
+	'c|color=s'                     => \&PBS::Output::SetOutputColorDepth,
 		'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors',
 		<<EOT,
 Term::AnsiColor is used  to color output.
@@ -1093,7 +1093,7 @@ EOT
 		"Verbose build mode.",
 		'',
 		
-	'bre|build_result'                => \$pbs_config->{DISPLAY_BUILD_RESULT},
+	'bre|display_build_result'       => \$pbs_config->{DISPLAY_BUILD_RESULT},
 		'Shows the result returned by the builder.',
 		'',
 		

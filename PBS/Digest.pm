@@ -25,14 +25,14 @@ our @EXPORT = qw(
 		AddConfigVariableDependencies AddNodeConfigVariableDependencies
 		AddSwitchDependencies         AddNodeSwitchDependencies
 		
-		ExcludeFromDigestGeneration   ForceDigestGeneration 
-		GenerateNodeDigest
+		ExcludeFromDigestGeneration   NoDigest
+		ForceDigestGeneration         GenerateNodeDigest
 		GetDigest
 		
 		GetFileMD5
 		) ;
 					
-our $VERSION = '0.05' ;
+our $VERSION = '0.06' ;
 our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
@@ -572,6 +572,13 @@ while(my ($variable_name, $value) = splice(@_, 0, 2))
 }
 
 #-------------------------------------------------------------------------------
+
+sub NoDigest
+{
+my ($package, $file_name, $line) = caller() ;
+
+_ExcludeFromDigestGeneration($package, $file_name, $line, map { ; "$_" => $_ } @_ ) ;
+}
 
 sub ExcludeFromDigestGeneration
 {

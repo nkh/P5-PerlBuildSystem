@@ -1,5 +1,105 @@
 
+make it possible for wrapper application to show its own message
+	write everything to stderr in log format and let the wrapper andle it
+	no exit
 
+
+node@root
+	rather than retiring it ...
+
+	build a graph from root
+	save it
+	run multiple node build without re generating the graph from root
+
+	we need use cases for this
+
+	one use case is to build node in different ways by changing the config
+	
+	another is to make the build faster by just building a node and not the whole graph
+		we planned to relpace that with meso warp (which is build as a sub graph of root)
+		we can run a local build (we should also generate command line to build just that node) and use the meso warp as warp
+			meso warp must be recomputed if it is changed during the local builds
+
+		is it that much faster? if we want to build just that node it means that it has failed and running in warp will just 
+		rebuild it till it builds
+
+ENV
+	given variables are known (can be all variables if the user wants)
+	we can remember them and rebuild everything if any changes (since we don't know how they are accesses)
+		we could strace all sub processes (bleh!)
+
+	this would work with warp too
+	
+	subpbs can restrict the environment variables
+		this would let us trigger less nodes
+
+		where do we limit the used environment variable (and how in the subpbs definition)
+
+			in the parent pbs but it makes little sense to put the knowledge there
+
+			in the subpbs definition
+				the problem is that we can't control that's it's done at the very start of the pbsfile
+				
+				suppbs file:
+
+				qx'a command that used ENV variables'
+				...
+				limit_env(...)
+
+				rest of pbsfile ...
+
+
+				Make it the user's problem, pbs can't do magic
+					pbs has control over the loading of the pbsfile and limit_env()
+					it can check if limit_env is called early in the pbsfile and warn
+
+		in perl sub the ACCESS to ENV should be logged too
+			with the complication that a perlsub can run other processes we have no control over
+
+			shell command are simpler because we  run the external commands for the user, in perl subs
+			the user has full control!
+
+--STRACE and REH_STRACE
+	run all build command in a wrapper that generates extra information
+
+	strace is just an example, the user can change the wrapper
+
+	the output should be in a node_log_strace
+
+	REH_STRACE_ENV is a specialized REH that logs the ENV access
+		post build it checks the log with the allowed ENV variable
+
+
+	we already do some type of wrapping via plugins in pbs1, we EvaluateShellCommand and let the user
+		add %something_custom, if they want to. this wrapper is slightly different as it is applied
+		by node via a REH when running an external command.
+
+build node in separate process
+	pbs1 calls the perl system function which either starts a shell or runs the process directly
+		we still need that
+
+	create a wrapper process that can be run
+		it can be a simple bash wrapper as long as it can be called separately from the build system
+
+		this allows us to do build elements separately which is very useful during debug
+
+		this also allows us to
+			run the build in a different shell
+				with tmux we can start a session for the current build and
+				run failed builds in it allowing the user to get in a setup environment
+
+			run on a remote	machine if the environment is the same, IE Kubernetes
+				this can still be a in different shell for each build like above
+
+		if run on a remote machine, the wrapper can use whatever protocol it wants, for pbs it's just
+			a local process
+
+			we can, prior to a build, generate all the wrappers then pick some of them for remote build
+				pbs doesn't even have to be aware
+
+				the wrapper can generate output data that get in the general log 
+					it can also generate output from what it gets in the remote build
+		 	
 output filters should use a templating system
 	preferably one that's already written
 	one that can refer to other templates recursively
@@ -42,13 +142,111 @@ warp file
 			we could keep them in memory for some time to load them even faster
 				keep in text/compressed format so external tools can also access it
 
+warp patching
+	most often the pbsfiles do not change and the graph stays the same
+		in some cases the same pbsfile can give a different graph, IE: an include file includes more files
+
+		it would be nice to be able to verify some hash of the graph to verify it's the same
+			the hash can be computed while the nodes are being built
+				that exactely what a patricia tree is
+					and we already have the hashes of the non regenerated nodes
+					
+
+			alternatively, we can remember the nodes we removed and compare (on the fly) to the nodes we add
+				although some dependencies are added after the build (IE: c dependencies)
+
+		in that case the only change that can happen is that some nodes change md5 (IE: source file changes during development)
+
+		the old warp file is still valid, the only thing needing change is the md5 for the node in the warp file
+			that can either be done directly in the file or via a patch
+
+	
+warp re-vivification
+	is done at every run
+	mostly so %inserted_nodes has nodes that are __DEPENDED so we only rebuild part of the graph
+	
+	serialize a re-vivified %inserted_nodes directly rather than rebuilding it
+
+
+preemptive duplication
+	move a copy of the build to other nodes in case we need 
+
+	§ in CI system where any build node can done on different build nodes, checking out code on
+		all the nodes for each project (during down time) saves time at build time
+
+		keeping the build directory separate is advantageous or having a "clean" target
+
+	dockerization of build
+		note that everything below can be done with a fs that uses a file as back-end
+		and that building in an overlay keeps that file pristine 
+
+		for OSes without FS layering a compressed file can be used
+			it may even be a better solution than FS and docker as it removes dependencies
+			but the compressed file has to be generated, that's automatic using FS
+
+			another advantage is that duplication takes less disk
+
+			compression can be optimized for space or speed
+
+		for each build there's a CM configuration which includes repos checked out
+			in release builds the repos are checked out again but since it's the same repos 
+			we do the exact same work again or the same work plus getting the latest commits
+			
+			if builds are done in docker, base checkouts can be used and we let the CVS checkout the 
+			new commits
+
+				a hash for the current repos heads(including branches) is generated
+				a snapshot, corresponding to the hash, is saved
+				next build can compute a hash list for its current CM configuration and request it from docker
+					since the build is probably for a new configuration that will fail 
+						we can optimize this away since the vast majority of builds are new builds
+
+					the build computes hashes backwards and requests docket till it gets a fs layer
+						computation can be cached, previous builds update it
+
+		the FS layer can be for the complete CM configuration but that's of low granularity
+			it works fine for a build but a FS layer needs to be created for each build
+
+			if the CM layer is per repo/branch (a checkout) we can create the build
+
+		old FS layers can be deleted when new ones appear
+			
+		when two build are concurrent they will both create a FS layer, synching the build so only one is done
+		is an optimization but it needs a global CI check difficult to implements in a generic fashion
+			don't use the CI system to know what jobs are running, use an external DB
+
+
+pbs in warp mode aka how to do nothing but build
+
+	if pbsfiles are unchanged, and the graph is the same (if no new dependencies are added/removed)
+		the rules applied are the same, we don't need to run them since we already have the dependencies
+		the only thing needed is run the builder
+			it's often the same command (or the pbsfile would change)
+				external dependencies (the compiler, it's dependencies) need to be cheked
+
+	rules can be transformed in an external program/module
+		dependers and builders in separate programs since they are used at different time
+
+		it can be run on external files
+		it can be used as a rule cache
+			if the rule hash is unchanged we just reuse the external program
+			nodes can remember what program/rules where run on them
+
 memory usage
 	access to nodes in pbs code could use the same mechanism with a maximum amount of nodes
 		in memory at the same time
 
 	this becomes even more important if we merge builds or intersect builds
 
+	acting on files, one at the time, drastically reduces the amount of memory needed
+		it also allows external processes to act on selected nodes only
 
+	we need to know what uses memory
+		the graph is itself distributed in the node, it's not an abject in itself but all the nodes need
+		to be in memory for the graph to be in memory. we can load only the nodes we need or even just query the information we need
+		eg: we need the dependency names
+
+	
 debugger
 	pbs1 needs breakpoint, pbs2 starts at the insertion of root if no files are given
 	
@@ -323,10 +521,12 @@ merge ideas from Todo
 				the rules run to create the node's dependencies
 
 
-	generation of pbs_log_dep takes a long time 0.8 s for 800 files ... in parallel
-		the generation is useless if the build goes through as it is generated by the same function
-			maybe we should generate the dep files when the build fails instead
-				=> for the nodes that fail and their dependents
+	generation of pbs_log during depend takes a long time 0.8 s for 800 files ... in parallel
+		the generation is useless if the build goes through as it is re-generated in the same file with build information added
+			maybe we should generate the files when the build fails instead
+				=> only for the nodes that fail and their dependents
+				=> as a custom post build command for discovery
+				=> as a different call to pbs which doesn't build but generates the files
 
 		it's useful for discovery but a switch to generate all for discovery can be used
 
@@ -465,7 +665,8 @@ merge ideas from Todo
 
 	builder can be generated on demand
 		we compile builders as soon as AddRule is run
-			*** even for nodes that don't need to be build!
+			even for nodes that don't need to be build, everytime a rule is added
+				in a test case, 2000 nodes, 3 to be rebuild, 21 builders generated
 
 			but that checks the rules at pbsfile run
 

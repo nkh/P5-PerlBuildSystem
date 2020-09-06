@@ -12,7 +12,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub) ;
+our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub LoadPluginFromSubRefs) ;
 our $VERSION = '0.04' ;
 
 use File::Basename ;

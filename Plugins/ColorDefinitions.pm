@@ -60,6 +60,29 @@ return
 	256 => 
 		{
 		debug     => color('rgb314'),
+		error     => color('rgb400'),
+		info      => color('rgb020'),
+		info_2    => color('rgb013'),
+		info_3    => color('rgb023'), 
+		shell     => color('rgb023'),
+		user      => color('rgb034'),
+		warning   => color('rgb320'),
+		warning_2 => color('bright_yellow'),
+
+		no_match  => color('RGB200'),
+
+		box_1_1   => color('on_grey1'),
+		box_1_2   => color('on_grey1'),
+
+		box_2_1   => color('on_grey3'),
+		box_2_2   => color('on_grey3'),
+
+		reset     => color('reset'),
+		},
+
+	night => 
+		{
+		debug     => color('rgb314'),
 		error     => color('rgb300'),
 		info      => color('rgb020'),
 		info_2    => color('rgb013'),

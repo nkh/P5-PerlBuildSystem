@@ -29,7 +29,7 @@ require Exporter;
 		(
 		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG COLOR
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintUser PrintShell PrintDebug
-		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
+		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext PrintNoColor 
 		GetColor
 		) ;
 		
@@ -84,7 +84,7 @@ $cc{$cd}{$_[0]} // '' ;
 
 #-------------------------------------------------------------------------------
 
-sub SetOutputColorDepth { $cd = $_[1] if $_[1] == 2 || $_[1] == 16 || $_[1] == 256 }
+sub SetOutputColorDepth { $cd = $_[1] }
 
 sub SetOutputColor
 {
@@ -150,7 +150,7 @@ $_ //= '' ;
 $data =~ s/^(\t+)/$indentation x length($1)/gsme if $indent ;
 
 my $reset = $cc{$cd}{reset} // '' ;
-my ($ends_with_newline) = $data =~ /(\n(?:\Q$reset\E)?)$/ ;
+my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
 
 print $glob $output_info_label, 
 	join

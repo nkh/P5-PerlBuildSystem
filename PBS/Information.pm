@@ -63,12 +63,7 @@ use Term::Size::Any qw(chars) ;
 
 my $terminal_width = chars() || 10_000 ;
 
-my $columns = length("Node: $type'$name':") ;
-$columns = $columns < $terminal_width ? $columns : $terminal_width ;
-
-my $separator = WARNING ('-' x $columns . "\n")  ;
-
-my $node_header = "\n" ;
+my $node_header = '' ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
@@ -79,8 +74,6 @@ else
 	$node_header .= WARNING("Node: $type'$name':", 0) . "\n" ;
 	}
 	
-$node_header .= $separator ;
-
 return $node_header, $type, $tab ;
 }
 
@@ -363,7 +356,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 #----------------------
 if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
-	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Node config:", INDENTATION => $tab, USE_ASCII => 1)) ;
+	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Config:", INDENTATION => $tab, USE_ASCII => 1)) ;
 
 	$log_node_info .= $config ;
 	$node_info .= $config ;
@@ -486,7 +479,7 @@ my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
 	{
 	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
-	print STDERR $node_info ;
+	PrintNoColor "$node_info\n" ;
 	}
 }
 

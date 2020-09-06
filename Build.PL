@@ -108,6 +108,7 @@ PBSLib/Configs/ConfigureProject.pm
 PBSLib/Configs/ConfigureProjectVariablesAndRules.pm
 PBSLib/Configs/ShellCommands.pm
 
+PBSLib/Dependers/AddDependencies.pm
 PBSLib/Dependers/Locator.pm
 PBSLib/Dependers/Matchers.pm
 

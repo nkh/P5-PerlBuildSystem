@@ -195,18 +195,18 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	print STDERR "\n" ;
 	}
 	
-my $command_index = 0 ;
+my $command_number = 0 ;
 my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} 
 					&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} 
 					&& ! $PBS::Shell::silent_commands ;
 
 for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
 	{
-	$command_index++ ;
-	print STDERR "\n" if $command_index > 1 ;
+	$command_number++ ;
+	print STDERR "\n" if $command_number > 1 ;
 
 	my $command_information = '' ;
-	$command_information = "Running command $command_index of " . scalar(@$shell_commands) . "\n" if @$shell_commands > 1 ;
+	$command_information = "Build: command $command_number of " . scalar(@$shell_commands) . "\n" if @$shell_commands > 1 ;
 	
 	if('CODE' eq ref $shell_command)
 		{
@@ -229,7 +229,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	else
 		{
-		print STDERR INFO2 $command_information . "command: $shell_command\n" if $display_command_information ;
+		PrintInfo2 $command_information . "Build: command: $shell_command\n" if $display_command_information ;
 
 		my $command = EvaluateShellCommandForNode
 						(
@@ -312,7 +312,7 @@ my $perl_sub_name = sub_name($builder) ;
 my ($sub_file, $sub_line) = get_code_location($builder) ;
 $perl_sub_name .= " $sub_file:$sub_line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
 
-PrintInfo2 "Running sub: $perl_sub_name\n"
+PrintInfo2 "Build: sub: $perl_sub_name\n"
 	if ($tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} 
 		|| ($tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER})) 
 		&& ! $PBS::Shell::silent_commands ;

@@ -304,6 +304,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		  . "use PBS::PBS ;\n"
 		  . "use PBS::Digest;\n"
 		  . "use PBS::Rules::Creator;\n"
+		  . "use PBS::Plugin;\n"
 		  . $add_pbsfile_digest,
 		  
 		"\n# load OK\n1 ;\n",

@@ -624,7 +624,7 @@ else
 		$build_time = $_ ;
 		}
 	
-	my $no_output = defined $PBS::Shell::silent_commands && defined $PBS::Shell::silent_commands_output ;
+	my $no_output = $PBS::Shell::silent_commands && $PBS::Shell::silent_commands_output ;
 
 	my @bg_colors = @{$bg_color_classes[$bg_color_class]} ;
 	$bg_color_class ^= 1 ;
@@ -648,12 +648,14 @@ else
 				#$bg_color ^= 1 if /Running command/ ; # change color for each sub command
 
 				chomp ;
-				$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
+				$_ = $PBS::Output::indentation if ($_ eq '' || $_ eq "\t") ;
 
 				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
-				print STDERR "$o\n" unless $no_output ;
+				PrintNoColor "$o\n" unless $no_output ;
 				}
+
+			PrintNoColor "\n" ;
 			}
 		}
 	else

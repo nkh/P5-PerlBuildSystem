@@ -163,6 +163,7 @@ PBSLib/Configs/ConfigureProjectVariablesAndRules.pm
 
 PBSLib/Language/Simplified.pm
 
+PBSLib/Dependers/AddDependencies.pm
 PBSLib/Dependers/Locator.pm
 PBSLib/Dependers/Matchers.pm
 

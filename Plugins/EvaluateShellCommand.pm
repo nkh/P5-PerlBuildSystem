@@ -16,6 +16,7 @@ Provides the following replacement variables:
 	%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY
 	%TRIGGERED_DEPENDENCY_LIST
 	%DEPENDENCY_LIST
+	%DEPENDENCY_LIST_n
 
 =over 2
 

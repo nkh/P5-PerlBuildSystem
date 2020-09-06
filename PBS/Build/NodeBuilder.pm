@@ -172,7 +172,8 @@ if
 	}
 else
 	{
-	print PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
+	PrintNoColor PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
+
 	$PBS::Shell::silent_commands = 1 ;
 	$PBS::Shell::silent_commands_output = 1 ;
 	}
@@ -296,12 +297,12 @@ if($build_result == BUILD_SUCCESS)
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
 		$build_message //= '' ;
-		print STDERR INFO("Build: target: '$build_name', result: $build_result, message: $build_message\n") ;
+		PrintInfo("Build: result: $build_result, message: \"$build_message\", target: " . INFO2("'$build_name'", 0) . "\n") ;
 		}
 	}
 else
 	{
-	print STDERR ERROR("Build: '$build_name':\n$build_message\n") ;
+	PrintError("Build: '$build_name':\n$build_message\n") ;
 	}
 	
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
