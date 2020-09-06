@@ -8,6 +8,7 @@ Provides the following replacement variables:
 	%BUILD_DIRECTORY
 
 	%FILE_TO_BUILD_PATH
+	%FILE_TO_BUILD_DIR
 	%FILE_TO_BUILD_NAME
 	%FILE_TO_BUILD_BASENAME
 	%FILE_TO_BUILD_NO_EXT
@@ -134,6 +135,7 @@ $path =~ s/\/$// ;
 for 
 	(
 	[ BUILD_DIRECTORY                          => $build_directory ],
+	[ FILE_TO_BUILD_DIR                        => $path ],
 	[ FILE_TO_BUILD_PATH                       => $path ],
 	[ FILE_TO_BUILD_NAME                       => "$basename$ext" ],
 	[ FILE_TO_BUILD_BASENAME                   => $basename ],

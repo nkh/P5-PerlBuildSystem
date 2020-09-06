@@ -114,12 +114,12 @@ my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirect
 
 $redirection_base = $base_path ;
 
-my $redirection_file = "$redirection_base/$base_basename$base_ext.pbs_log" ;
+my $redirection_file = "$redirection_base/.$base_basename$base_ext.pbs_log" ;
 my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
 # todo: remove
-my $redirection_file_log = "$redirection_base/$base_basename$base_ext.pbs_old_log_should_not_be_created" ;
+my $redirection_file_log = "$redirection_base/.$base_basename$base_ext.pbs_old_log_should_not_be_created" ;
 ($basename, $path, $ext) = File::Basename::fileparse($redirection_file_log, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 
@@ -160,7 +160,7 @@ open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirect
 
 if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
-	PrintInfo2 "Build: using parallel builder, node: '$node_name' level: $node->{__LEVEL} ($node_build_sequencer_info).\n" ;
+	PrintInfo2 "Build: building node: '$node_name', level: $node->{__LEVEL}, stats: $node_build_sequencer_info.\n" ;
 	}
 
 if(defined $node)

@@ -55,8 +55,8 @@ AddConfigTo 'BuiltIn',
 						: '%OPTIMIZE_CDEFINES',
 	
 	C_DEPENDER => GetConfig('C_DEPENDER_SYSTEM_INCLUDES:SILENT_NOT_EXISTS')
-			? '-MD  -MP -MF %%FILE_TO_BUILD.pbs_o_dep'
-			: '-MMD -MP -MF %%FILE_TO_BUILD.pbs_o_dep',
+			? '-MD  -MP -MF %%FILE_TO_BUILD_PATH/.%%FILE_TO_BUILD_NAME.pbs_o_dep'
+			: '-MMD -MP -MF %%FILE_TO_BUILD_PATH/.%%FILE_TO_BUILD_NAME.pbs_o_dep',
 
 	# command syntax
 	CC_SYNTAX  => "%%CC  %%CFLAGS   %%CDEFINES  %%CFLAGS_INCLUDE  -I%%PBS_REPOSITORIES -o %%FILE_TO_BUILD -c %%C_SOURCE %%C_DEPENDER",

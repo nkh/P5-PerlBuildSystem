@@ -424,9 +424,6 @@ else
 						$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
 						) ;
 		
-		my $repository_digest_name = $repository_name . '.pbs_md5' ;
-		my $build_directory_digest_name = $build_directory_name . '.pbs_md5' ;
-		
 		unless($repository_name eq $build_directory_name)
 			{
 			PrintWarning("Forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;

@@ -1070,18 +1070,20 @@ my ($node) = @_ ;
 
 my $file_name = $node->{__BUILD_NAME} // (PBS::Check::LocateSource($node->{__NAME}, $node->{__PBS_CONFIG}{BUILD_DIRECTORY}))[0] ;
 
-my $digest_file_name = $file_name . '.pbs_md5' ;
+my $digest_file_name = '' ;
 
-# files with full path get their digest file in the same path as the 
-# file defeating the output path
+my ($volume,$directories,$file) = splitpath($file_name);
+
 if(file_name_is_absolute($node->{__NAME}))
 	{
-	my ($volume,$directories,$file) = splitpath($file_name);
 	my $build_directory = $node->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
 
-	$digest_file_name = "$build_directory/ROOT${directories}$file.pbs_md5" ;
+	$digest_file_name = "$build_directory/ROOT${directories}.$file.pbs_md5" ;
 	}
-		
+else
+	{
+	$digest_file_name = "${directories}.$file.pbs_md5" ;
+	}
 
 return($digest_file_name) ;
 }

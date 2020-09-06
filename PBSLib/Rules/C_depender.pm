@@ -1,6 +1,7 @@
 
 use File::Slurp ;
 use File::Path ;
+use File::Spec::Functions qw(:ALL) ;
 use PBS::Rules::Builders ;
 
 #use POSIX qw(strftime);
@@ -105,7 +106,9 @@ my ($node, $inserted_nodes) = @_ ;
 #return unless exists $node->{__BUILD_DONE} ;
 
 my $dependency_name = "$node->{__NAME}.pbs_o_dep" ;
-my ($dependency_file, $o_dependencies) = ($node->{__BUILD_NAME} . '.pbs_o_dep', '') ;
+
+my ($volume,$directories,$file) = splitpath($node->{__BUILD_NAME});
+my ($dependency_file, $o_dependencies) = ("$directories.$file.pbs_o_dep", '') ;
 
 $o_dependencies = read_file $dependency_file or die ERROR "C_DEPENDER: can't read '$dependency_file, $!'\n" ;
 

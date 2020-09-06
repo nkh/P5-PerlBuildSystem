@@ -46,7 +46,7 @@ my ($pbs_config, $build_sequence, $inserted_nodes)  = @_ ;
 $pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
 undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
-my ($build_queue, $number_of_terminal_nodes, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
+my ($build_queue, $number_of_terminal_nodes, $level_statistics, $removed_nodes) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
 my $distributor        = PBS::Distributor::CreateDistributor($pbs_config, $build_sequence) ;
 my $number_of_builders = GetNumberOfBuilders($number_of_terminal_nodes, $pbs_config, $distributor) ;
@@ -56,6 +56,8 @@ my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
 my $number_of_nodes_to_build = scalar(grep {$_->{__NAME} !~ /^__/} @$build_sequence) ; # remove PBS root
+$number_of_nodes_to_build -= $removed_nodes ;
+
 my $node_build_index = 0 ;
 
 my $root_node = @$build_sequence[-1] ; # we guess, wrongly, that there is only one root in the build sequence
@@ -151,14 +153,10 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 			{
-			PrintWarning "Build: nodes built per level:\n" ;
-			local $PBS::Output::indentation_depth ;
-			$PBS::Output::indentation_depth++ ;
-
 			my $index = 1 ;
 			for my $level (@$level_statistics)
 				{
-				PrintWarning( $index++ . ' = ' . ($level->{done} // 0) . '/' . $level->{nodes} . "\n" ) ; 
+				PrintWarning "Build: level: " . $index++ . ', done: ' . ($level->{done} // 0) . ', total: ' . $level->{nodes} . "\n"  ; 
 				}
 			}
 		}
@@ -238,14 +236,8 @@ sub EnqueuTerminalNodes
 my ($build_sequence, $pbs_config) = @_ ;
 
 my ($build_queue, $number_of_terminal_nodes, @level_statistics) = (List::PriorityQueue->new, 0) ;
-my (@removed_nodes, @enqueued_nodes) ;
+my (%removed_nodes, @enqueued_nodes) ;
 
-if(defined $pbs_config->{DISPLAY_JOBS_INFO})
-	{
-	PrintInfo2 "Build: computing nodes weight\n" ;
-	PrintInfo2 "Build: enqueuing terminal nodes:\n" ;
-	}
-	
 for my $node (@$build_sequence)
 	{
 	# node in the build sequence might have been build already.
@@ -257,9 +249,9 @@ for my $node (@$build_sequence)
 		
 		if(defined $node->{__CHILDREN_TO_BUILD} && exists $node->{$child}{__TRIGGERED} && defined $node->{$child}{__BUILD_DONE})
 			{
-			push @removed_nodes, $node->{$child}{__NAME} ;
+			$removed_nodes{$node->{$child}{__NAME}}++ ;
 			$node->{__CHILDREN_TO_BUILD}-- ;
-			#PrintInfo "Build: decremented '$node->{__NAME}' child to build count [$node->{__CHILDREN_TO_BUILD}], '$child' removed from build sequence \n" ;
+			PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child' \n" ;
 			}
 		}
 
@@ -275,9 +267,7 @@ for my $node (@$build_sequence)
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			local $PBS::Output::indentation_depth ;
-			$PBS::Output::indentation_depth++ ;
-			PrintInfo2 "$node->{__NAME} ($node->{__WEIGHT})\n" ;
+			PrintInfo2 "Build: enqueuing node: '$node->{__NAME}', weight: $node->{__WEIGHT}\n" ;
 			}
 			
 		$number_of_terminal_nodes++ ;
@@ -285,16 +275,13 @@ for my $node (@$build_sequence)
 		}
 	}
 	
-if(defined $pbs_config->{DISPLAY_JOBS_INFO} && @removed_nodes)
+if(defined $pbs_config->{DISPLAY_JOBS_INFO} && scalar(keys %removed_nodes))
 	{
-	PrintInfo2("Build: removed nodes from sequence (source or build already done):\n") ;
-	local $PBS::Output::indentation_depth ;
-	$PBS::Output::indentation_depth++ ;
-	PrintInfo2 "$_\n" for @removed_nodes ;
+	PrintInfo2 "Build: removing node: '$_' ($removed_nodes{$_})\n" for sort keys %removed_nodes ;
 	}
 			
 	
-return($build_queue, $number_of_terminal_nodes, \@level_statistics) ;
+return($build_queue, $number_of_terminal_nodes, \@level_statistics, scalar(keys %removed_nodes) ) ;
 }
 
 #----------------------------------------------------------------------------------------------------------------------
@@ -433,7 +420,7 @@ for (0 .. ($number_of_builders - 1))
 	if($builders->[$_]{BUILDING} == 1)
 		{
 		my $builder = $builders->[$_] ;
-		push @waiting_for_messages, "$builder->{NODE}{__NAME} on '" . $builder->{SHELL}->GetInfo() . ' pid:' .  $builder->{PID} ;
+		push @waiting_for_messages, "'$builder->{NODE}{__NAME}', shell: '" . $builder->{SHELL}->GetInfo() . ', pid:' .  $builder->{PID} ;
 		$select_all->add($builders->[$_]{CHANNEL}) ;
 		}
 	}
@@ -444,13 +431,7 @@ if(@waiting_for_messages)
 	{
 	if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 		{
-		PrintWarning "Build: waiting for:\n" ;
-		
-		local $PBS::Output::indentation_depth ;
-		$PBS::Output::indentation_depth++ ;
-		
-		PrintWarning "$_\n" for(@waiting_for_messages) ;
-		print STDERR "\n" ;
+		PrintWarning "Build: waiting for node: $_\n" for(@waiting_for_messages) ;
 		}
 		
 	# block till we get end of build from a builder thread
@@ -539,11 +520,9 @@ for my $builder (@$builders)
 		my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
 		my $node_build_sequencer_info = "$node_index/$number_of_nodes_to_build, $percent_done%" ;
 		
-		PrintInfo2 "Build: start: $node_to_build->{__NAME} ($node_build_sequencer_info), pid: $builder->{PID}\n" ;
+		PrintInfo2 "Build: starting node: '$node_to_build->{__NAME}', stat: $node_build_sequencer_info, pid: $builder->{PID}\n" ;
 		}
 	}
-
-print STDERR "\n" if(defined $pbs_config->{DISPLAY_JOBS_INFO}) ;
 
 return($started_builders) ;
 }
@@ -596,6 +575,9 @@ unless ($builder_channel)
 	}
 
 my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, (<$builder_channel> // "0__PBS_FORKED_BUILDER__No message\n") ;
+chomp $build_message ;
+$build_message = '"' . $build_message . '"' ;
+
 $build_result = BUILD_FAILED unless defined $build_result ;
 
 my ($build_time, $error_output) = (-1, '') ;
@@ -682,11 +664,11 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
 	if($build_result == BUILD_SUCCESS)
 		{
-		PrintInfo "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+		PrintInfo "Build: node: '$built_node->{__NAME}', build result: $build_result, message: $build_message\n" ;
 		}
 	else
 		{
-		PrintError "Build: '$built_node->{__NAME}': build result: $build_result, message: $build_message\n" ;
+		PrintError "Build: node: '$built_node->{__NAME}', build result: $build_result, message: $build_message\n" ;
 		}
 	}
 	
@@ -710,7 +692,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: enqueuing parent '$parent->{__NAME}'.\n" ;
+			PrintInfo2 "Build: node: '$parent->{__NAME}', children to build count reached 0, enqueuing.\n" ;
 			}
 			
 		$build_queue->insert($parent, $parent->{__WEIGHT}) ;
@@ -719,7 +701,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: parent '$parent->{__NAME}' children to build: $parent->{__CHILDREN_TO_BUILD}.\n" ;
+			PrintInfo2 "Build: node: '$node->{__NAME}', parent: '$parent->{__NAME}', new children to build cound: $parent->{__CHILDREN_TO_BUILD}.\n" ;
 			}
 		}
 	}

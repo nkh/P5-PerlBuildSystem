@@ -1,7 +1,35 @@
 
+display each command's result not just the last one
+	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
+	Build: command: cp -r /home/nadim/nadim/devel/divers/div_make/releaser/resources/css /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css
+
+	Build: './OEM1/xxx/css': build result: 1, message:
 
 
-bni not working
+make all pbs artifact hidden
+	log
+	digest
+	dependencies
+
+bug trigger, in makefile releaser example trigger '.', build sequence hangs waitng for someting to be build
+	? the trigger removes/adds too many nodes
+	? source nodes linked multiple time
+
+#do not display the same source multiple time
+	Build: removed nodes from sequence (source or build already done):
+	    ./resources/css
+	    ./repo/OEM1/pt
+	    ./resources/css
+	    ./repo/OEM2/pt
+	    ./resources/css
+	    ./repo/OEM2/pt
+	    ./resources/css
+	    ./repo/OEM1/pt
+
+
+--bni not working
+	what does it do except showing command before expansion?
+		ndpb is the one stopping node info to be shown
 
 dependencies are not ordered yet sometime we want to depend on the tool that will be used to build the node
 	make has $< for the first dependency
@@ -51,11 +79,11 @@ Dependent in node build log for nodes at the bottom of the graph can be:
 		  `- ./release: rule: 1:release
 
 
-Source, is source, ...
+#Source, is source, ...
 	sugar to declare source files
+	=> NoDigest
 
-
-AddDependencies a simple_r_ dependency generator which wraps a full blown Depender
+#AddDependencies a simple_r_ dependency generator which wraps a full blown Depender
 	the idea is to not have to care for previous dependencies, private data, ...
 	those can be handled in a complete depender
 
@@ -64,7 +92,7 @@ AddDependencies a simple_r_ dependency generator which wraps a full blown Depend
 	also check that it's possible to have dependencies _after_ a depender sub
 
 
-colors
+#colors
 	slightly brighter error color
 	night time colors
 		simply another color set, we can chose those right
