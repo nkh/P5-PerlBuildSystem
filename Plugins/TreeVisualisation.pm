@@ -147,12 +147,14 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 			my @keys_sorted = Data::TreeDumper::Utils::first_nsort_last( AT_START => [qr/^_/], KEYS => \@keys_to_dump ) ;
 			for (@keys_sorted)
 				{
-				if(! /^__/)
+				if(! /^__/ && 'HASH' eq ref $tree->{$_})
 					{
-					if('HASH' eq ref $tree->{$_} && exists $tree->{$_}{__TRIGGERED})
-						{
-						$_ = [$_, "* $_"] ;
-						}
+					my $tag ;
+					
+					$tag = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
+					$tag = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
+					
+					$_ = [$_, $tag] if defined $tag ;
 					}
 				}
 			

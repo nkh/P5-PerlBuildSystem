@@ -422,9 +422,9 @@ print <<EOH ;
 
 PBS version $version
 
-Copyright 2002-2018, Nadim Khemir
+Copyright 2002-2020, Nadim Khemir
 
-Send all suggestions and inqueries to <nadim.khemir\@gmail.com>.
+Send suggestions and inqueries to <nadim.khemir\@gmail.com>.
 
 EOH
 }

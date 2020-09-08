@@ -15,7 +15,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule AddRuleTo AddSubpbsRule AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
+our @EXPORT = qw(AddRule Rule AddRuleTo AddSubpbsRule AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -161,6 +161,8 @@ RegisterRule
 	$depender_definition, $builder_sub, $node_subs,
 	) ;
 }
+
+*Rule=\&AddRule ;
 
 #-------------------------------------------------------------------------------
 
@@ -337,7 +339,7 @@ my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 if(exists $package_rules{$package}{$class})
 	{
-	#! replace loop below by hash lookup
+	#todo: replace loop below by hash lookup
 	for my $rule (@{$package_rules{$package}{$class}})
 		{
 		if($rule->{NAME} eq $name)

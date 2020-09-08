@@ -1,4 +1,15 @@
 
+--quiet is the default
+	return nothing but an exit code except when the user asks for it
+
+output filters mean that the data stream needs to be on stdout
+	does it? doesn't even have to be in a stream?
+	should we write to a socket? file?
+
+	what about applications wrapping pbs? web applications? remote debugging?
+
+
+
 make it possible for wrapper application to show its own message
 	write everything to stderr in log format and let the wrapper andle it
 	no exit

@@ -30,6 +30,7 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		
 		UNTYPED
 		VIRTUAL
+		V
 		LOCAL
 		FORCED
 		POST_DEPEND
@@ -86,6 +87,7 @@ use constant TRIGGER_INSERTED   => '__TRIGGER_INSERTED' ;
 use constant UNTYPED            => '__UNTYPED' ;
 use constant untyped            => '__UNTYPED' ;
 use constant VIRTUAL            => '__VIRTUAL' ;
+use constant V                  => '__VIRTUAL' ;
 use constant virtual            => '__VIRTUAL' ;
 use constant LOCAL              => '__LOCAL' ;
 use constant FORCED             => '__FORCED' ;

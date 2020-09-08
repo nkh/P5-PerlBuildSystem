@@ -1,4 +1,38 @@
 
+missing commit sha in version number
+
+touch pbs output files so they list in the right order
+	many are in the same second!
+
+tag node subs so we can list build commands without array ref
+	? put the node sub in an array ref?
+
+
+	Rule ......
+		[
+		builder
+		builder_sub
+		builder
+		]
+		node_sub
+
+	Rule ......
+		[node_sub]
+		builder
+		builder_sub
+		builder
+
+	Rule ......
+		builder
+		builder_sub
+		builder
+
+
+
+display list of built nodes
+
+#mark tree nodes if they are virtual
+
 display each command's result not just the last one
 	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
 	Build: command: cp -r /home/nadim/nadim/devel/divers/div_make/releaser/resources/css /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css
@@ -6,7 +40,7 @@ display each command's result not just the last one
 	Build: './OEM1/xxx/css': build result: 1, message:
 
 
-make all pbs artifact hidden
+#make all pbs artifact hidden
 	log
 	digest
 	dependencies
@@ -42,10 +76,10 @@ dependencies are not ordered yet sometime we want to depend on the tool that wil
 				%ATTR:attr
 			
 
-
 Dependent in node build log for nodes at the bottom of the graph can be:
 	very large
 	take time to generate ( how is the 800 nodes generation time after we speedup this?)
+		=> 0.8s to 0.5s
 
 	difficult to read because we have the dependents + its node log link
 
