@@ -180,7 +180,7 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 				
 				$dependent_regex_definition=~ s/\%TARGET_PATH/$target_path/ ;
 				
-				if($display_regex)
+				if($display_regex && $dependent_to_check !~ /^__/)
 					{
 					PrintInfo2("${PBS::Output::indentation}$dependent_regex_definition $name:$file_name:$line\n") ;
 					}
@@ -196,9 +196,9 @@ elsif('CODE' eq ref $dependent_regex_definition)
 				{
 				my ($dependent_to_check, $target_path, $display_regex) = @_ ;
 				
-				if($display_regex)
+				if($display_regex && $dependent_to_check !~ /^__/)
 					{
-					PrintInfo2("${PBS::Output::indentation}perl_sub rule $name:$file_name:$line\n") ;
+					PrintInfo2("${PBS::Output::indentation}perl sub $name:$file_name:$line\n") ;
 					}
 					
 				return($dependent_regex_definition->(@_)) ;

@@ -1,10 +1,12 @@
 
+USE and Config
+
 missing commit sha in version number
 
 touch pbs output files so they list in the right order
 	many are in the same second!
 
-tag node subs so we can list build commands without array ref
+#tag node subs so we can list build commands without array ref
 	? put the node sub in an array ref?
 
 
@@ -17,10 +19,10 @@ tag node subs so we can list build commands without array ref
 		node_sub
 
 	Rule ......
-		[node_sub]
 		builder
 		builder_sub
 		builder
+		[node_sub]
 
 	Rule ......
 		builder

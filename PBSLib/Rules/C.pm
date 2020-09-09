@@ -73,6 +73,7 @@ AddPostBuildCommand 'o_local_dependency_merge', ['*/*.o'],
 
 AddRule 'o_global_dependency_merge', ['*/*.o'],
 	undef,
+	[
 	sub 
 		{
 		my ($node_name, $config, $tree, $inserted_nodes) = @_ ;
@@ -81,7 +82,7 @@ AddRule 'o_global_dependency_merge', ['*/*.o'],
 		$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
 		
 		return 'setting __POST_PBS_BUILD to insert dependencies in the graph'
-		} ;
-
+		}
+	] ;
 1 ;
 

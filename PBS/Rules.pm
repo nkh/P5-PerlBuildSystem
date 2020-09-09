@@ -450,6 +450,7 @@ if(defined $node_subs)
 			{
 			if('CODE' ne ref $node_sub)
 				{
+				PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
 				PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
 				PbsDisplayErrorWithContext($file_name,$line) ;
 				die ;
@@ -462,6 +463,7 @@ if(defined $node_subs)
 		}
 	else
 		{
+			PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
 		PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
 		PbsDisplayErrorWithContext($file_name,$line) ;
 		die ;
