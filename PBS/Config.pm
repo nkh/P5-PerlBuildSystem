@@ -31,9 +31,11 @@ our @EXPORT = qw(
 			ConfigVariableNotDefined
 			ConfigVariableEmpty
 			ConfigVariableNotDefinedOrEmpty
+
+		Config
 		) ;
 					
-our $VERSION = '0.03' ;
+our $VERSION = '0.04' ;
 
 use PBS::Output ;
 
@@ -353,6 +355,36 @@ return(%all_configs) ;
 }
 
 #-------------------------------------------------------------------------------
+
+sub Config
+{
+# available within Pbsfiles
+# with only one element gets the elements config
+# with more than one element, set the config
+
+my ($package, $file_name, $line) = caller() ;
+
+if(@_ > 1)
+	{
+	AddConfigEntry($package, 'CURRENT', 'User', "$package:$file_name:$line", @_) ;
+	}
+elsif(@_ == 1)
+	{
+	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+	my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
+
+	return
+		(
+		__GetConfig
+			(
+			$package, $file_name, $line,
+			wantarray,
+			\%user_config,
+			@_,
+			)
+		) ;
+	}
+}
 
 sub AddConfig
 {

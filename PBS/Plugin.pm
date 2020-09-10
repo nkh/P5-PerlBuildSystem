@@ -12,7 +12,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub LoadPluginFromSubRefs) ;
+our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub LoadPluginFromSubRefs EvalShell) ;
 our $VERSION = '0.04' ;
 
 use File::Basename ;
@@ -92,7 +92,7 @@ my ($package, $file_name, $line) = caller() ;
 
 if(exists $loaded_plugins{$plugin})
 	{
-	PrintInfo "Plugin '$plugin' from '$file_name:$line' already loaded, Ignoring!\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+	PrintWarning "Plugin '$plugin' from '$file_name:$line' already loaded\n" ;
 	}
 else
 	{
@@ -112,6 +112,36 @@ else
 	
 	$plugin_load_package++ ;
 	}
+}
+
+#-------------------------------------------------------------------------------
+
+my $eval_shell_counter= 0 ; # make plugins uniq
+sub EvalShell($)
+{
+# syntactic sugar which wraps LoadPluginFromSubRefs and allows us to write
+# shorter code in pbsfilee:
+#	EvalShell q~ s<%OEM><(split('/',$node_ndsadfme ed))[1]>eg ~ ;
+
+my ($package, $file_name, $line) = caller() ;
+$eval_shell_counter++ ;
+
+my $substitution = shift ;
+LoadPluginFromSubRefs PBS::PBSConfig::GetPbsConfig($package), "$file_name:$line:$eval_shell_counter",
+	'EvaluateShellCommand' =>
+		sub 
+		{ 
+		my ($shell_command_ref, $node, $dependencies) = @_ ;
+
+		my $node_name = $node->{__NAME} ; # make other variables available
+
+		eval "\$\$shell_command_ref =~ $substitution" ;
+		if ($@)
+			{
+			PrintError "EvalShell: Error using substitution code: $substitution\n" ;
+			die $@ ;
+			}
+		} ;
 }
 
 #-------------------------------------------------------------------------------

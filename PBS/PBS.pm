@@ -18,7 +18,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(PbsUse) ;
+our @EXPORT = qw(PbsUse Use) ;
 our $VERSION = '0.03' ;
 
 use PBS::PBSConfig ;
@@ -632,6 +632,8 @@ for my $source_name (@{[@_]})
 		}
 	}
 }
+
+*Use = \&PbsUse ;
 
 #-------------------------------------------------------------------------------
 

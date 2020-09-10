@@ -1,4 +1,6 @@
 
+if only terminal nodes are checked the warp file can be split in terminal and non terminal nodes for quicker loading and checking
+
 --quiet is the default
 	return nothing but an exit code except when the user asks for it
 
@@ -7,7 +9,6 @@ output filters mean that the data stream needs to be on stdout
 	should we write to a socket? file?
 
 	what about applications wrapping pbs? web applications? remote debugging?
-
 
 
 make it possible for wrapper application to show its own message

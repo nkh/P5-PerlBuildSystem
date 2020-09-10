@@ -1,0 +1,24 @@
+Use 'Dependers/AddDependencies' ;
+Use 'Dependers/Matchers' ;
+
+EvalShell q~ s<%PT><(grep { /\/pt/ } @$dependencies)[0]>eg ~ ;
+EvalShell q~ s<%OEM><(split('/',$node_name))[1]>eg ~ ;
+NoDigest  './repo', './resources/css' ;
+
+Config OEMS => 'OEM1,OEM2', LIBRARIES => 'aaa,xxx' ;
+
+Rule [V], 'release', ['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
+	BuildOk() ;
+
+Rule 'mols', [ qr/encrypted\.mol$/ =>  DependerSub( sub { './' . (split('/',$_[0]))[1] . "/pt"} ), '$path/css'],
+	"%PT %FILE_TO_BUILD" ;
+
+Rule 'pts', [ qr/pt$/ ],
+	"mkdir -p %FILE_TO_BUILD_DIR", 
+	"cp -r ./repo/%OEM/* %FILE_TO_BUILD_DIR" ;
+
+Rule 'csss', [ AndMatch(qr<css$>, NoMatch(qr<resources/css$>)) => './resources/css' ],
+	'mkdir -p %FILE_TO_BUILD_DIR',
+	'cp -r %DEPENDENCY_LIST %FILE_TO_BUILD' ;
+
+
