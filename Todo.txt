@@ -1,6 +1,4 @@
 
-todo: EvaluateshellCommand option to show before and after eval if changed
-
 Build.PL
 	missing pbsfiles in distro?
 	add new files in distro ... releaser
@@ -17,41 +15,10 @@ Linking ... "trigger inserted" ?
 
 
 
-#USE and Config
-
-missing commit sha in version number
-
 touch pbs output files so they list in the right order
 	many are in the same second!
 
-#tag node subs so we can list build commands without array ref
-	? put the node sub in an array ref?
-
-
-	Rule ......
-		[
-		builder
-		builder_sub
-		builder
-		]
-		node_sub
-
-	Rule ......
-		builder
-		builder_sub
-		builder
-		[node_sub]
-
-	Rule ......
-		builder
-		builder_sub
-		builder
-
-
-
 display list of built nodes
-
-#mark tree nodes if they are virtual
 
 display each command's result not just the last one
 	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
@@ -60,26 +27,9 @@ display each command's result not just the last one
 	Build: './OEM1/xxx/css': build result: 1, message:
 
 
-#make all pbs artifact hidden
-	log
-	digest
-	dependencies
-
 bug trigger, in makefile releaser example trigger '.', build sequence hangs waitng for someting to be build
 	? the trigger removes/adds too many nodes
 	? source nodes linked multiple time
-
-#do not display the same source multiple time
-	Build: removed nodes from sequence (source or build already done):
-	    ./resources/css
-	    ./repo/OEM1/pt
-	    ./resources/css
-	    ./repo/OEM2/pt
-	    ./resources/css
-	    ./repo/OEM2/pt
-	    ./resources/css
-	    ./repo/OEM1/pt
-
 
 --bni not working
 	what does it do except showing command before expansion?
@@ -131,28 +81,6 @@ Dependent in node build log for nodes at the bottom of the graph can be:
 		  |- node info:
 		  |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/xxx/encrypted.mol.pbs_log
 		  `- ./release: rule: 1:release
-
-
-#Source, is source, ...
-	sugar to declare source files
-	=> NoDigest
-
-#AddDependencies a simple_r_ dependency generator which wraps a full blown Depender
-	the idea is to not have to care for previous dependencies, private data, ...
-	those can be handled in a complete depender
-
-		AddRule 'mols', [ qr/encrypted.mol$/ => , AddDependencies { './' . (split('/',$_[0]))[1] . "/pt" },  $path/css'],
-
-	also check that it's possible to have dependencies _after_ a depender sub
-
-
-#colors
-	slightly brighter error color
-	night time colors
-		simply another color set, we can chose those right
-		ENV variable? lol!
-		
-		pbs lib that when loaded changes the colors depending on the time of day and option
 
 
 ?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
@@ -569,6 +497,78 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+# EvaluateshellCommand option to show before and after eval if changed
+
+#USE and Config
+
+#missing commit sha in version number
+
+#tag node subs so we can list build commands without array ref
+	? put the node sub in an array ref?
+
+
+	Rule ......
+		[
+		builder
+		builder_sub
+		builder
+		]
+		node_sub
+
+	Rule ......
+		builder
+		builder_sub
+		builder
+		[node_sub]
+
+	Rule ......
+		builder
+		builder_sub
+		builder
+
+
+
+#mark tree nodes if they are virtual
+
+#make all pbs artifact hidden
+	log
+	digest
+	dependencies
+
+#do not display the same source multiple time
+	Build: removed nodes from sequence (source or build already done):
+	    ./resources/css
+	    ./repo/OEM1/pt
+	    ./resources/css
+	    ./repo/OEM2/pt
+	    ./resources/css
+	    ./repo/OEM2/pt
+	    ./resources/css
+	    ./repo/OEM1/pt
+
+
+#Source, is source, ...
+	sugar to declare source files
+	=> NoDigest
+
+#AddDependencies a simple_r_ dependency generator which wraps a full blown Depender
+	the idea is to not have to care for previous dependencies, private data, ...
+	those can be handled in a complete depender
+
+		AddRule 'mols', [ qr/encrypted.mol$/ => , AddDependencies { './' . (split('/',$_[0]))[1] . "/pt" },  $path/css'],
+
+	also check that it's possible to have dependencies _after_ a depender sub
+
+
+#colors
+	slightly brighter error color
+	night time colors
+		simply another color set, we can chose those right
+		ENV variable? lol!
+		
+		pbs lib that when loaded changes the colors depending on the time of day and option
+
+
 #warp 1.5 size
 	_LOCATION field
 		it's repeated for each node but often we have 2 different location

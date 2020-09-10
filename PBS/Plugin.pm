@@ -138,6 +138,9 @@ LoadPluginFromSubRefs PBS::PBSConfig::GetPbsConfig($package), "$file_name:$line:
 
 		my $node_name = $node->{__NAME} ;
 
+		PrintInfo2 "Eval: $substitution @ '$file_name'\n"
+			 if $node->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	
 		eval "\$\$shell_command_ref =~ $substitution" ;
 
 		if ($@)

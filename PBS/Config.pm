@@ -939,12 +939,9 @@ sub EvalConfig
 my ($entry, $config, $key, $origin, $tree) = @_ ;
 
 return($entry) unless defined $entry ;
-return($entry)  unless $entry =~ /%/ ;
+return($entry) unless $entry =~ /%/ ;
 
 my $source_entry = $entry ;
-
-PrintInfo2 "\t" . __FILE__ . ':' . __LINE__ . " [EvalConfig]\n" 
-	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 my $undefined_config = 0 ;
 
@@ -958,18 +955,18 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} doesn't exist at $origin\n") ;
+		PrintWarning "Eval: $config->{$1} doesn't exist called @ $origin, @ '" . __FILE__ . "'\n" ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\t\$config->{$1} isn't defined at $origin\n") ;
+		PrintWarning" Eval: $config->{$1} isn't defined @ $origin, @ '" . __FILE__ . "'\n" ;
 		$undefined_config++ ;
 		}
 
-	PrintDebug "\t\t$element => $config->{$element}\n"
+	PrintInfo2 "Eval: $element => " . ($config->{$element} // 'undef') . " @ $origin, @ '" . __FILE__ . "'\n"
 		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 
@@ -987,26 +984,24 @@ while($entry =~ /\%([_A-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning("\t\tconfiguration variable '%$element' doesn't exist at $origin\n") ;
+		PrintWarning "Eval: $config->{$1} doesn't exist @ $origin, @ '" . __FILE__ . "'\n" ;
+		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning("\t\tconfiguration variable '%$element' isn't defined at $origin\n") ;
+		PrintWarning "Eval: $config->{$1} isn't defined @ $origin, @ '" . __FILE__ . "'\n" ;
+		$undefined_config++ ;
 		}
 
-	PrintDebug "\t\t$element => $config->{$element}\n"
+	PrintInfo2 "Eval: $element => " . ($config->{$element} // 'undef') . " @ $origin, @ '" . __FILE__ . "'\n"
 		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 	
 
 $entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : "%$1"/eg ;
-
 $entry =~ s/__PBS__PERCENT__/\%/g ;
-		
-
-print "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 return $entry ;
 }
@@ -1138,7 +1133,7 @@ if('HASH' ne ref $sub_pbs_package_config)
 	PrintError 
 		DumpTree 
 			$rule->{TEXTUAL_DESCRIPTION},
-			"Section PACKAGE_CONFIG in sub pbs definition is not a hash, '$rule->{NAME}:$rule->{FILE}:$rule->{LINE}'" 
+			"Config: section PACKAGE_CONFIG in sub pbs definition is not a hash, '$rule->{NAME}:$rule->{FILE}:$rule->{LINE}'" 
 			. "(type is '" . ref($sub_pbs_package_config) . "')",
 			DISPLAY_ADDRESS => 0 ;
 	die "\n" ;

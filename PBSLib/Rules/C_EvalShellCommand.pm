@@ -1,18 +1,13 @@
 
 use PBS::Plugin ;
 
-
-PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '+001C.pm', 'EvaluateShellCommand' =>
-	\&C_eval) ;
+PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '+001C.pm', 'EvaluateShellCommand' => \&C_eval) ;
 
 #-------------------------------------------------------------------------------
 
 sub C_eval 
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
-
-PrintInfo2 "\t" . __FILE__. ':' . __LINE__ . "\n"
-	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 if($$shell_command_ref =~ /%C_SOURCE/)
 	{
@@ -23,7 +18,7 @@ if($$shell_command_ref =~ /%C_SOURCE/)
 		$c_source .= "$dependency" if $dependency =~ /\. c (?:pp)? /x ;
 		}
 
-	PrintDebug "\t\tC_SOURCE => $c_source\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	PrintInfo2 "Eval: C_SOURCE => $c_source @ " . __FILE__ . "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	$$shell_command_ref =~ s/%C_SOURCE/$c_source/g ;
 	}
 
@@ -31,7 +26,7 @@ if($$shell_command_ref =~ /%CFLAGS_INCLUDE/)
 	{
 	my $cflags_include = GetCFileIncludePaths($tree);
 	
-	PrintDebug "\t\tCFLAGS_INCLUDE => $cflags_include\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	PrintInfo2 "Eval: CFLAGS_INCLUDE => $cflags_include @ " . __FILE__ . "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	$$shell_command_ref =~ s/%CFLAGS_INCLUDE/$cflags_include/g ;
 	}
 
@@ -41,16 +36,14 @@ if($$shell_command_ref =~ /%C_DEPENDER/)
 
 	unless(defined $c_depender)
 		{
-		PrintWarning("\t\t'C_DEPENDER' isn't defined.\n") ;
+		PrintWarning("Eval C: C_DEPENDER isn't defined @ " . __FILE__ . "\n") ;
 		}
 	else
 		{
-		PrintDebug "\t\tC_DEPENDER => $c_depender\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+		PrintInfo2 "Eval: C_DEPENDER => $c_depender @ " . __FILE__ . "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 		$$shell_command_ref =~ s/%C_DEPENDER/$c_depender/g ;
 		}
 	}
-
-print "\n" if($tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}) ;
 }
 
 #-------------------------------------------------------------------------------

@@ -53,9 +53,6 @@ sub EvaluateShellCommand
 {
 my ($shell_command_ref, $tree, $dependencies, $triggered_dependencies) = @_ ;
 
-PrintInfo2 "\t" .__FILE__ . ':' . __LINE__ . " [EvaluateShellCommand]\n" 
-	if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
-
 my $source_entry = $$shell_command_ref ;
 
 my @repository_paths = PBS::Build::NodeBuilder::GetNodeRepositories($tree) ;
@@ -72,7 +69,7 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 	my $replacement = '';
 	for my $repository_path (@repository_paths)
 		{
-		PrintDebug "\tPBS_REPOSITORIES => $repository_path\n"
+		PrintInfo2 "Eval: PBS_REPOSITORIES => $repository_path @ '" . __FILE__ . "'\n"
 			if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 			
 		$replacement .= "$prefix$repository_path ";
@@ -148,13 +145,12 @@ for
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)
 		{
-		PrintDebug "\t\t$_->[0] => $_->[1]\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+		PrintInfo2 "Eval: $_->[0] => $_->[1] @ " . __FILE__ . "'\n"
+			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
 		}
 	}
-
-print "\n" if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 }
 
 #-------------------------------------------------------------------------------
