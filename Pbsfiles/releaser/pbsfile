@@ -21,4 +21,3 @@ Rule 'csss', [ AndMatch(qr<css$>, NoMatch(qr<resources/css$>)) => './resources/c
 	'mkdir -p %FILE_TO_BUILD_DIR',
 	'cp -r %DEPENDENCY_LIST %FILE_TO_BUILD' ;
 
-

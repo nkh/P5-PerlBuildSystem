@@ -40,31 +40,29 @@ if($^O eq "MSWin32")
 
 #-------------------------------------------------------------------------------
 
-sub GetLoadedPlugins
-{
-return(keys %loaded_plugins) ;
-}
+sub GetLoadedPlugins { return(keys %loaded_plugins) }
 
 #-------------------------------------------------------------------------------
 
 sub LoadPlugin
 {
+my ($package, $file_name, $line) = caller() ;
 my ($config, $plugin) = @_;
 
-if(exists $loaded_plugins{$plugin})
-	{
-	PrintInfo "   Ignoring Already loaded '$plugin'.\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-	return ;
-	}
-	
 if($config->{DISPLAY_PLUGIN_LOAD_INFO})
 	{
 	my ($basename, $path, $ext) = File::Basename::fileparse($plugin, ('\..*')) ;
-	PrintInfo "   $basename$ext\n" ;
+	PrintInfo "Plugin: loading: '$basename$ext'\n" ;
 	}
 	
-$loaded_plugins{$plugin} = $plugin_load_package ;
+if(exists $loaded_plugins{$plugin})
+	{
+	PrintWarning"Plugin: '$plugin' already loaded, ignoring plugin @ '$file_name:$line'\n" 
+		if ("$file_name:$line" ne $loaded_plugins{$plugin}[1]) || $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 
+	return ;
+	}
+	
 eval
 	{
 	PBS::PBS::LoadFileInPackage
@@ -78,7 +76,9 @@ eval
 		) ;
 	} ;
 	
-do { PrintError("Couldn't load plugin from '$plugin'.$@") ; die "\n" }  if $@ ;
+do { PrintError("Plugin: Couldn't load plugin from '$plugin'.$@") ; die "\n" }  if $@ ;
+
+$loaded_plugins{$plugin} = [$plugin_load_package, "$file_name:$line"];
 $plugin_load_package++ ;
 }
 
@@ -86,30 +86,33 @@ $plugin_load_package++ ;
 
 sub LoadPluginFromSubRefs
 {
+my ($package, $file_name, $line) = caller() ;
 my ($config, $plugin, %subs) = @_;
 
-my ($package, $file_name, $line) = caller() ;
+PrintInfo "Plugin: loading: '$plugin' from '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 
 if(exists $loaded_plugins{$plugin})
 	{
-	PrintWarning "Plugin '$plugin' from '$file_name:$line' already loaded\n" ;
+	PrintWarning"Plugin: '$plugin' already loaded, ignoring plugin @ '$file_name:$line'\n"
+		if ("$file_name:$line" ne $loaded_plugins{$plugin}[1]) || $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 	}
 else
 	{
-	PrintInfo "Plugin '$plugin' from '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-	
-	$loaded_plugins{$plugin} = $plugin_load_package ;
 	
 	while (my($sub_name, $sub_ref) = each %subs)
 		{
-		if($config->{DISPLAY_PLUGIN_LOAD_INFO})
-			{
-			PrintInfo "   sub ref '$sub_name'\n" ;
-			}
+		PrintInfo "Plugin: name: '$sub_name'\n" if($config->{DISPLAY_PLUGIN_LOAD_INFO}) ;
 			
 		eval "* PBS::PLUGIN_${plugin_load_package}::$sub_name = \$sub_ref ;" ;
+
+		if ($@)
+			{
+			PrintError "Plugin: Error: can't load sub ref '$sub_name'\n" ;
+			die $@ ;
+			}
 		}
 	
+	$loaded_plugins{$plugin} = [$plugin_load_package, "$file_name:$line"];
 	$plugin_load_package++ ;
 	}
 }
@@ -124,21 +127,22 @@ sub EvalShell($)
 #	EvalShell q~ s<%OEM><(split('/',$node_ndsadfme ed))[1]>eg ~ ;
 
 my ($package, $file_name, $line) = caller() ;
+my ($substitution) = @_ ;
 $eval_shell_counter++ ;
 
-my $substitution = shift ;
 LoadPluginFromSubRefs PBS::PBSConfig::GetPbsConfig($package), "$file_name:$line:$eval_shell_counter",
 	'EvaluateShellCommand' =>
 		sub 
 		{ 
 		my ($shell_command_ref, $node, $dependencies) = @_ ;
 
-		my $node_name = $node->{__NAME} ; # make other variables available
+		my $node_name = $node->{__NAME} ;
 
 		eval "\$\$shell_command_ref =~ $substitution" ;
+
 		if ($@)
 			{
-			PrintError "EvalShell: Error using substitution code: $substitution\n" ;
+			PrintError "EvalShell: Error in substitution code: $substitution\n" ;
 			die $@ ;
 			}
 		} ;
@@ -152,7 +156,7 @@ my ($config, $plugin_paths) = @_ ;
 
 for my $plugin_path (@$plugin_paths)
 	{
-	PrintInfo "Plugin directory '$plugin_path':\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+	PrintInfo "Plugin: scanning directory '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 	
 	for my $plugin (glob("$plugin_path/*.pm"))
 		{
@@ -179,7 +183,7 @@ for my $plugin_path (sort keys %loaded_plugins)
 	{
 	no warnings ;
 
-	my $plugin_load_package = $loaded_plugins{$plugin_path} ;
+	my $plugin_load_package = $loaded_plugins{$plugin_path}[0] ;
 	
 	my $plugin_sub ;
 	
@@ -220,7 +224,7 @@ for $plugin_path (sort keys %loaded_plugins)
 	{
 	no warnings ;
 
-	my $plugin_load_package = $loaded_plugins{$plugin_path} ;
+	my $plugin_load_package = $loaded_plugins{$plugin_path}[0] ;
 	
 	eval "\$plugin_sub = *PBS::PLUGIN_${plugin_load_package}::${plugin_sub_name}{CODE} ;" ;
 	push @found_plugin, $plugin_path if($plugin_sub) ;

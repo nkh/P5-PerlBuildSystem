@@ -1,6 +1,11 @@
 
 todo: EvaluateshellCommand option to show before and after eval if changed
 
+Build.PL
+	missing pbsfiles in distro?
+	add new files in distro ... releaser
+
+pt not depended (OK) but no warning about resource/css!
 
 Linking ... "trigger inserted" ?
 	bsfile:19, dependent: ./OEM2/aaa/css

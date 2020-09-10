@@ -229,7 +229,8 @@ my $self = shift;
 if(-d '.git')
 	{
 	my ($pbs_version, $commit) = GetVersionAndRevisionFrom('PBS/FrontEnd.pm') ;
-	
+	$pbs_version .= "_$commit" ;
+
 	print "Generating version module ($pbs_version)\n" ;
 	
 	open VERSION, '>', 'PBS/Version.pm' or die "can't generate Version module: $!\n" ;
