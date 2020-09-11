@@ -316,10 +316,30 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
+				
+				my $no_dependencies = '' ;
+				unless(@dependency_names)
+					{
+					my $display_warning = 1 ;
 					
+					for my $regex (@{ $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} })
+						{
+						if($node_name =~ /$regex/)
+							{
+							$display_warning = 0 ;
+							last ;
+							} 
+						}
+
+					$no_dependencies = WARNING("no dependencies", 0) ;
+					}
+
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
 					PrintInfo3($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
+					
+					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n"))
+						if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
 					
 					if(@dependency_names)
 						{
@@ -328,24 +348,33 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							. join("\n$indent$indent", map {"'" . $em->($_) . "'"} @dependency_names)
 							. "\n" ;
 						}
-
-					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n")) ;
+					else
+						{
+						PrintNoColor "$indent$indent$no_dependencies\n" ;
+						}
 					}
 				else
 					{
-					PrintInfo3 "\t'$node_name' ${node_type}${forced_trigger} "
-						. INFO("dependencies [@dependency_names]", 0)
-						. "" 
-						. INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]\n", 0) ;
+					my $dd = INFO3 "$indent'$node_name' ${node_type}${forced_trigger}" ;
+
+					$dd .= @dependency_names ? INFO(" dependencies [@dependency_names]", 0) : $no_dependencies ;
+
+					$dd .= defined $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+						? INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]", 0)
+						: '' ;
+					
+					$dd .= "\n" ;
+					
+					PrintNoColor '' . $dd ;
 					}
 					
 				PrintWithContext
 					(
 					$dependency_rule->{FILE},
-					1, 2, #context  size
+					1, 2, # context  size
 					$dependency_rule->{LINE},
 					\&INFO,
-					) if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
+					) if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 				}
 			}
 			
@@ -765,21 +794,6 @@ if(@has_matching_non_subpbs_rules)
 			}
 		}
 
-	if( ! $has_dependencies)
-		{
-		my $display_warning = 1 ;
-		
-		for my $regex (@{ $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} })
-			{
-			if($node_name =~ /$regex/)
-				{
-				$display_warning = 0 ;
-				last ;
-				} 
-			}
-		PrintWarning "$PBS::Output::indentation'$node_name' has no dependencies, rules from '$pbs_config->{PBSFILE}'\n\n"
-			if $display_warning ;
-		}
 	}
 elsif(@sub_pbs)
 	{
@@ -1033,18 +1047,18 @@ my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
 push @link_type, 'not depended'      unless exists $dependency->{__DEPENDED} ;
+push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
 my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
 
-my $linked_node_info = WARNING("${indent}Depend: Linking '$dependency_name'$link_type")
-			. INFO2( ", rule: $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}", 0)
-			. INFO2( ", dependent: $tree->{__NAME}", 0)
-			. "\n" ;
+my $linked_node_info = INFO3("${indent}'$dependency_name'") . WARNING(" linking $link_type", 0) ;
+$linked_node_info .= INFO2( ", rule: $dependency->{__INSERTED_AT}{INSERTION_RULE}", 0) if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
+$linked_node_info .= "\n" ;
 	
-if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
+if($dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
 	{
-	die ERROR("Error: --no_external_link switch specified, stop.\n") if(defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK}) ;
+	die ERROR("Error: --no_external_link switch specified, stop.\n") if defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK} ;
 		
 	unless($pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
 		{
@@ -1052,11 +1066,11 @@ if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfil
 		
 		for(my $matching_rule_index = 0 ; $matching_rule_index < @$dependency_rules ; $matching_rule_index++)
 			{
-			my ($dependency_result) = $dependency_rules->[$matching_rule_index]{DEPENDER}->($dependency_name, $config, $inserted_nodes->{$dependency_name}, $inserted_nodes, $dependency_rules->[$matching_rule_index]) ;
+			my ($dependency_result) = $dependency_rules->[$matching_rule_index]{DEPENDER}->($dependency_name, $config, $dependency, $inserted_nodes, $dependency_rules->[$matching_rule_index]) ;
 			push @local_rules_matching, $matching_rule_index if($dependency_result->[0]) ;
 			}
 		
-		if(exists $inserted_nodes->{$dependency_name}{__DEPENDED} && @local_rules_matching)
+		if(exists $dependency->{__DEPENDED} && @local_rules_matching)
 			{
 			my @local_rules_matching_info ;
 			
