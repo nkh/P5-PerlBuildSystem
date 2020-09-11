@@ -1031,14 +1031,13 @@ $display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $
 my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
 my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
-my @linked_node_type ;
-push @linked_node_type, 'not depended' unless exists $inserted_nodes->{$dependency_name}{__DEPENDED} ;
-push @linked_node_type, 'trigger inserted' unless exists $inserted_nodes->{$dependency_name}{__TRIGGER_INSERTED} ;
-push @linked_node_type, 'different pbsfile' if($inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile) ;
-my $linked_node_type = @linked_node_type ? '[' . join(', ', @linked_node_type) . ']' : '' ;
+my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
+push @link_type, 'not depended'      unless exists $dependency->{__DEPENDED} ;
+push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
+push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
+my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
 
-
-my $linked_node_info = WARNING("${indent}Depend: Linking '$dependency_name'$linked_node_type")
+my $linked_node_info = WARNING("${indent}Depend: Linking '$dependency_name'$link_type")
 			. INFO2( ", rule: $inserted_nodes->{$dependency_name}{__INSERTED_AT}{INSERTION_RULE}", 0)
 			. INFO2( ", dependent: $tree->{__NAME}", 0)
 			. "\n" ;
