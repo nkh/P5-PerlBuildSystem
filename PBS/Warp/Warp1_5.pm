@@ -81,7 +81,7 @@ if(-e $warp_file)
 	}
 else
 	{
-	PrintWarning("Warp: file '_warp1_5/pbssfile_$warp_signature.pl' doesn't exist.\n") ;
+	#PrintWarning("Warp: file '_warp1_5/pbssfile_$warp_signature.pl' doesn't exist.\n") ;
 	$run_in_warp_mode = 0 ;
 	}
 
@@ -340,7 +340,7 @@ else
 	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
 	}
 
-PrintInfo "Warp: done\n" unless $pbs_config->{QUIET} ;
+#PrintInfo "Warp: done\n" unless $pbs_config->{QUIET} ;
 
 return(@build_result) ;
 }

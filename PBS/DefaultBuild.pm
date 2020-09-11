@@ -273,11 +273,7 @@ if($pbs_config->{DO_BUILD})
 	($build_result, $build_message) 
 		= PBS::Build::BuildSequence($pbs_config, \@build_sequence, $inserted_nodes) ;
 
-	if($build_result == BUILD_SUCCESS)
-		{
-		PrintInfo("Build: done\n") unless $pbs_config->{QUIET} ;
-		}
-	else
+	if($build_result != BUILD_SUCCESS)
 		{
 		PrintError("Build: failed\n") ;
 		}
