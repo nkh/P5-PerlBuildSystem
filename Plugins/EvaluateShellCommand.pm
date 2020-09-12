@@ -151,6 +151,24 @@ for
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
 		}
 	}
+
+my %attributes ;
+
+for(grep { ! /^__/ } keys %$tree)
+	{
+	$attributes{$tree->{$_}{__USER_ATTRIBUTE} // 'NO_ATTRIBUTE'} .= $tree->{$_}{__BUILD_NAME} ; 
+	}
+
+while(my ($attribute, $value) = each %attributes)
+	{
+	if($$shell_command_ref =~ m/\%$attribute/)
+		{
+		PrintInfo2 "Eval: $attribute => $value @ " . __FILE__ . "'\n"
+			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+	
+		$$shell_command_ref =~ s/\%$attribute/$value/g ;
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------

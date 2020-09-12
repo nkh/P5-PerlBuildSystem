@@ -1046,10 +1046,23 @@ my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
 my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
-push @link_type, 'not depended'      unless exists $dependency->{__DEPENDED} ;
-push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
+
+if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE}, $dependency))
+	{
+	push @link_type, 'warning: not depended'      unless exists $dependency->{__DEPENDED} ;
+	push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	}
+else
+	{
+	push @link_type, 'source' ;
+
+	push @link_type, 'warning: depended'      if exists $dependency->{__DEPENDED} ;
+	push @link_type, 'warning: has dependencies'   if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	}
+
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
+
 my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
 
 my $linked_node_info = INFO3("${indent}'$dependency_name'") . WARNING(" linking $link_type", 0) ;

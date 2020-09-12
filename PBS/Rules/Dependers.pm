@@ -324,6 +324,8 @@ my $dependencies_evaluator = sub
 	my $name = $basename . $ext ;
 	$path =~ s/\/$// ;
 	
+	my @path_elements = split('/',$path) ;
+
 	my @all_dependencies ;
 	my $matched_perl_regex = 0 ;
 	
@@ -334,7 +336,10 @@ my $dependencies_evaluator = sub
 			my $dependency = $dependency_definition ;
 			$dependency =~ s/\$name/$name/g ;
 			$dependency =~ s/\$basename/$basename/g ;
+
+			$dependency =~ s/\$path$_/$path_elements[$_]/eg for (0 .. $#path_elements) ;
 			$dependency =~ s/\$path/$path/g ;
+
 			$dependency =~ s/\$ext/$ext/g ;
 			$dependency =~ s/\$file_no_ext/$path\/$basename/g ;
 			
