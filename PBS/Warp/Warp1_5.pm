@@ -1111,7 +1111,7 @@ for my $node_name (keys %$inserted_nodes)
 		}
 	}
 
-PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" ;
+PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" unless $pbs_config->{QUIET} ;
 
 # add nodes level above, to trigger
 for my $warp_dependent_name (keys %warp_dependents)

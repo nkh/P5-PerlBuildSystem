@@ -1,18 +1,18 @@
 NoDigest  './repo', './resources/css' ;
 
-Config OEMS => 'OEM1,OEM2', LIBRARIES => 'aaa,xxx' ;
+Config
+	OEMS      => 'OEM1,OEM2',
+	LIBRARIES => 'aaa,xxx' ;
 
 Rule [V], 'release', ['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
-	"true" ;
+	BuildOk() ;
 
 Rule 'mols', [ qr/encrypted\.mol$/ =>  './$path1/pt::PT', '$path/css'],
-	"%PT %FILE_TO_BUILD" ;
+	'%PT %FILE_TO_BUILD' ;
 
 Rule 'pts', [ qr/pt$/ => './repo/$path1::OEM_PT' ],
-	"mkdir -p %FILE_TO_BUILD_DIR",
-	"cp -r %OEM_PT/* %FILE_TO_BUILD_DIR" ;
+	'cp -r %OEM_PT/* %FILE_TO_BUILD_DIR' ;
 
 Rule 'csss', [ qr<(*nlb:./resources/)css$> => './resources/css' ],
-	'mkdir -p %FILE_TO_BUILD_DIR',
 	'cp -r %DEPENDENCY_LIST %FILE_TO_BUILD' ;
 

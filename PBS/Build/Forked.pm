@@ -309,7 +309,8 @@ if($number_of_builders > $number_of_terminal_nodes)
 
 $number_of_builders ||= 1 ; #safeguard for user errors
 
-PrintInfo("Build: process: $number_of_builders, max: $pbs_config->{JOBS}, terminal nodes: $number_of_terminal_nodes\n") ;
+PrintInfo("Build: process: $number_of_builders, max: $pbs_config->{JOBS}, terminal nodes: $number_of_terminal_nodes\n")
+	if(defined $pbs_config->{DISPLAY_JOBS_INFO}) ;
 
 return($number_of_builders ) ;
 }

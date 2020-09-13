@@ -1,5 +1,2 @@
-AddTargets('release') ;
-AddCommandLineSwitches('--no_default_path_warning') ;
-
-1;
-
+AddTargets 'release' ;
+AddCommandLineSwitches qw(--no_default_path_warning -nh) ;

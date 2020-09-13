@@ -8,7 +8,7 @@ use strict ;
 use warnings ;
 use Carp ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Path ;
+use File::Path qw(make_path) ;
 
 require Exporter ;
 
@@ -220,6 +220,19 @@ if($node_needs_rebuild)
 				}
 			else
 				{
+				unless ($file_tree->{__VIRTUL})
+					{
+					my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
+					make_path($path, { error => \my $make_path_errors}) ;
+					
+					if ($make_path_errors && @$make_path_errors)
+						{
+						my $error = join ', ' , map {my (undef, $message) = %$_; $message} @$make_path_errors ;
+
+						return (BUILD_FAILED, "'$build_name' Error: $error.") ;
+						}
+					}
+				
 				($build_result, $build_message) 
 					= RunRuleBuilder
 						(

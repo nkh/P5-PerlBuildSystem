@@ -117,20 +117,18 @@ if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $plural = $pbs_runs > 1 ? 's' : '' ;
 
-if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
-	{
-	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s.\n", tv_interval ($t0_depend, [gettimeofday]))) ;
-	}
-else
-	{
-	PrintInfo "Depend: pbsfile$plural: $pbs_runs\n" ;
-	}
-
 my $nodes = scalar(keys %$inserted_nodes) ;
 my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
 my $warp_nodes = $nodes - $non_warp_nodes ;
 
-PrintInfo("Depend: nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n") ;
+if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
+	{
+	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	}
+else
+	{
+	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n" ;
+	}
 
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
