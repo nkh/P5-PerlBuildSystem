@@ -44,6 +44,67 @@ return
 
 #-------------------------------------------------------------------------------
 
+my %has_no_dependencies ;
+
+sub HasNoDependencies
+{
+my ($package, $file_name, $line) = caller() ;
+
+die ERROR "Invalid 'ExcludeFromDigestGeneration' arguments at $file_name:$line\n" if @_ % 2 ;
+
+_HasNoDependencies($package, $file_name, $line, @_) ;
+}
+
+sub _HasNoDependencies
+{
+my ($package, $file_name, $line, %exclusion_patterns) = @_ ;
+ 
+for my $name (keys %exclusion_patterns)
+	{
+	if(exists $has_no_dependencies{$package}{$name})
+		{
+		PrintWarning
+			(
+			"Depend: overriding HasNoDependencies entry '$name' defined at $has_no_dependencies{$package}{$name}{ORIGIN}:\n"
+			. "\t$has_no_dependencies{$package}{$name}{PATTERN} "
+			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
+			) ;
+		}
+		
+	$has_no_dependencies{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
+	}
+}
+
+sub OkNoDependencies
+{
+my ($package, $node) = @_ ;
+
+my $node_name  = $node->{__NAME} ;
+my $pbs_config = $node->{__PBS_CONFIG} ;
+
+my $ok = 0 ;
+
+for my $name (keys %{$has_no_dependencies{$package}})
+	{
+	if($node_name =~ $has_no_dependencies{$package}{$name}{PATTERN})
+		{
+		if(defined $pbs_config->{DISPLAY_NO_DEPENDENCIES_OK})
+			{
+			PrintWarning("Depend: '$node_name' OK no dependencies,  rule: '$name' [$has_no_dependencies{$package}{$name}{PATTERN}]") ;
+			PrintWarning(" @ $has_no_dependencies{$package}{$name}{ORIGIN}") if defined $pbs_config->{ADD_ORIGIN} ;
+			PrintWarning(".\n") ;
+			}
+			
+		$ok = 1 ;
+		last ;
+		}
+	}
+
+return($ok) ;
+}
+
+#-------------------------------------------------------------------------------
+
 my %trigger_rules ;
 
 sub CreateDependencyTree
@@ -58,10 +119,10 @@ my $config           = shift ;
 my $inserted_nodes   = shift ;
 my $dependency_rules = shift ;
 
+return if(exists $tree->{__DEPENDED}) ;
+
 $PBS::Depend::BuildDependencyTree_calls++ ;
 my $indent = $PBS::Output::indentation ;
-
-return if(exists $tree->{__DEPENDED}) ;
 
 my $node_name = $tree->{__NAME} ;
 
@@ -88,7 +149,7 @@ if
 	|| defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}
 	)
 	{
-	PrintInfo2("Rule: target:" . INFO3("'$node_name'") . "\n")
+	PrintInfo2("Rule: target:" . INFO3("'$node_name'\n", 0))
 		if ($node_name !~ /^__/) ;
 	}
 
@@ -113,6 +174,29 @@ for my $post_build_rule (@post_build_rules)
 
 my $available = PBS::Output::GetScreenWidth() ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+
+my $node_is_source = 
+	sub
+		{
+		my($dependent, $node_name) = @_ ;
+
+		if (exists $inserted_nodes->{$node_name})
+			{
+			! PBS::Digest::IsDigestToBeGenerated
+				(
+				$inserted_nodes->{$node_name}{__LOAD_PACKAGE} // $dependent->{__LOAD_PACKAGE},
+				$inserted_nodes->{$node_name}
+				) ; 
+			}
+		else
+			{
+			! PBS::Digest::IsDigestToBeGenerated
+				(
+				$dependent->{__LOAD_PACKAGE},
+				{__NAME => $node_name, __PBS_CONFIG => $dependent->{__PBS_CONFIG}}
+				) ;
+			}
+		} ;
 
 my $rules_matching = 0 ;
 
@@ -331,7 +415,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							} 
 						}
 
-					$no_dependencies = WARNING("no dependencies", 0) ;
+					$no_dependencies = ' no dependencies' ;
 					}
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
@@ -345,19 +429,26 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						{
 						PrintInfo
 							 $indent . $indent
-							. join("\n$indent$indent", map {"'" . $em->($_) . "'"} @dependency_names)
+							. join
+								(
+								"\n$indent$indent",
+								map { $node_is_source->($tree, $_) ? "<" . $em->($_) . ">" : "'" . $em->($_) . "'"} 
+										@dependency_names
+								)
 							. "\n" ;
 						}
 					else
 						{
-						PrintNoColor "$indent$indent$no_dependencies\n" ;
+						PrintInfo "$indent$indent$no_dependencies\n" ;
 						}
 					}
 				else
 					{
 					my $dd = INFO3 "$indent'$node_name' ${node_type}${forced_trigger}" ;
 
-					$dd .= @dependency_names ? INFO(" dependencies [@dependency_names]", 0) : $no_dependencies ;
+					$dd .= @dependency_names
+						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? "<$_>" : "'$_'" } @dependency_names) . " ]", 0)
+						: INFO("[$no_dependencies ]", 0) ;
 
 					$dd .= defined $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
 						? INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]", 0)
@@ -472,7 +563,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		PrintColor('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}
 	}
-	
+
 #-------------------------------------------------------------------------
 # continue with single definition of dependencies 
 # and remove temporary dependency names
@@ -776,8 +867,8 @@ if(@has_matching_non_subpbs_rules)
 				
 			PrintWarning("Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
 			}
-			
-		unless(exists $tree->{$dependency}{__DEPENDED})
+		
+		if (! exists $tree->{$dependency}{__DEPENDED} && ! $node_is_source->($tree, $dependency) ) 
 			{
 			CreateDependencyTree
 				(
@@ -793,7 +884,6 @@ if(@has_matching_non_subpbs_rules)
 				) ;
 			}
 		}
-
 	}
 elsif(@sub_pbs)
 	{
@@ -932,8 +1022,8 @@ else
 		PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
 		)
 		{
-		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended"
-				. ", rules from '$pbs_config->{PBSFILE}'\n\n" ;
+		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended,"
+				. INFO2(" pbsfile: '$pbs_config->{PBSFILE}'\n") ;
 		}
 	}
 
@@ -1047,25 +1137,29 @@ my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
 
-if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE}, $dependency))
-	{
-	push @link_type, 'warning: not depended'      unless exists $dependency->{__DEPENDED} ;
-	push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
-	}
-else
-	{
-	push @link_type, 'source' ;
-
-	push @link_type, 'warning: depended'      if exists $dependency->{__DEPENDED} ;
-	push @link_type, 'warning: has dependencies'   if scalar ( grep { ! /^__/ } keys %$dependency ) ;
-	}
+# todo: display informmation depending on the type of node
+# 	note that warp loses the __LOAD_PACKAGE information so we
+#	get warning about undefined $package 
+#if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE}, $dependency))
+#	{
+#	push @link_type, 'warning: not depended'      unless exists $dependency->{__DEPENDED} ;
+#	push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
+#	}
+#else
+#	{
+#	push @link_type, 'source' ;
+#
+#	push @link_type, 'warning: depended'      if exists $dependency->{__DEPENDED} ;
+#	push @link_type, 'warning: has dependencies'   if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+#	}
 
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
 
 my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
 
-my $linked_node_info = INFO3("${indent}'$dependency_name'") . WARNING(" linking $link_type", 0) ;
+
+my $linked_node_info = INFO3("${indent}'$dependency_name'") . INFO2(" linking $link_type", 0) ;
 $linked_node_info .= INFO2( ", rule: $dependency->{__INSERTED_AT}{INSERTION_RULE}", 0) if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
 $linked_node_info .= "\n" ;
 	

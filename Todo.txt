@@ -1,4 +1,22 @@
 
+--nh, display compact dependency information
+	uses \K
+	anything the prints while in -nh gets on the wrong line
+
+can a node be tagged as source in another repo
+	case 1
+		add a node that doesn't exists
+		node has subpbs
+		subpbs has other rules for source
+	case2 
+		node exists but is not depended
+		late depend tag node as source
+
+
+% path in shell command for file to build and any attribute
+	%FILE_TO_BUILD_PATH1
+	%ATTRIBUTE_PATH, PATH1, ...
+
 #auto mkdir FILE_TO_BUILD_DIR
 
 Build.PL

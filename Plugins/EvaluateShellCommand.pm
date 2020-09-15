@@ -152,15 +152,48 @@ for
 		}
 	}
 
-my %attributes ;
+my (@attributes, %attributes) ;
 
 for(grep { ! /^__/ } keys %$tree)
 	{
-	$attributes{$tree->{$_}{__USER_ATTRIBUTE} // 'NO_ATTRIBUTE'} .= $tree->{$_}{__BUILD_NAME} ; 
+	if(defined $tree->{$_}{__USER_ATTRIBUTE})
+		{
+		my $user_attribute = $tree->{$_}{__USER_ATTRIBUTE} ;
+		my $attribute ;
+
+		if(defined $attributes{$user_attribute . '_PATH'})
+			{
+			$attribute = $attributes{$user_attribute . '_PATH'} ;
+			}
+		else
+			{
+			$attribute = $attributes{$user_attribute . '_PATH'} = [ $user_attribute . '_PATH' ] ;
+			push @attributes, $attribute ;
+			}
+
+		my ($basename, $path, $ext) = File::Basename::fileparse($tree->{$_}{__BUILD_NAME}, ('\..*')) ;
+		$path =~ s/\/$// ;
+
+		$attribute->[1] .= ' ' . $path ; 
+
+		if(defined $attributes{$user_attribute})
+			{
+			$attribute = $attributes{$user_attribute}  ;
+			}
+		else
+			{
+			$attribute = $attributes{$user_attribute}  = [ $user_attribute ] ;
+			push @attributes, $attribute ;
+			}
+
+		$attribute->[1] .= ' ' . $tree->{$_}{__BUILD_NAME} ; 
+		}
 	}
 
-while(my ($attribute, $value) = each %attributes)
+for(@attributes)
 	{
+	my ($attribute, $value) = @$_ ;
+
 	if($$shell_command_ref =~ m/\%$attribute/)
 		{
 		PrintInfo2 "Eval: $attribute => $value @ " . __FILE__ . "'\n"

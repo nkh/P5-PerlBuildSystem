@@ -94,21 +94,33 @@ if(exists $tree->{__CYCLIC_FLAG})
 		}
 	else
 		{
-		PrintWarning "Cycle at node '$name' $node_info (source node).\n" unless ($pbs_config->{NO_SOURCE_CYCLIC_WARNING}) ;
+		PrintWarning "Check: cycle at node '$name' $node_info (source node).\n" unless ($pbs_config->{NO_SOURCE_CYCLIC_WARNING}) ;
 		}
 	}
 	
 $tree->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 
-unless(exists $tree->{__DEPENDED})
+# warn if node isn't depended or has no dependencies
+if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 	{
-	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+	my $matching_rules = @{$tree->{__MATCHING_RULES}} ;
+	 
+	my @dependencies = grep { $_ !~ /^__/ } keys %$tree ;
+
+	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		PrintWarning "Depend: NOT DEPENDED '$name' $tree->{__INSERTED_AT}{INSERTION_RULE}\n" ;
+		PrintWarning "Check: '$name' dependencies: 0, has digest: 1"
+			. ($matching_rules ? ", matching rules: $matching_rules, " : ", not depended, ")
+			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) ;
+		}
+	elsif(0 == $matching_rules)
+		{
+		PrintWarning "Check: '$name', not depended, "
+			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) ;
 		}
 	}
-	
-my ($full_name, $is_alternative_source, $alternative_index) = 
+
+my($full_name, $is_alternative_source, $alternative_index) = 
 		LocateSource
 			(
 			$name,

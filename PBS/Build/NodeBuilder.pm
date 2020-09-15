@@ -252,11 +252,11 @@ if($node_needs_rebuild)
 		
 		if(@{$file_tree->{__MATCHING_RULES}})
 			{
-			$reason .= "No matching rule had a builder\n" ; 
+			$reason .= "\tmatching rules have no builder\n" ; 
 			}
 		else
 			{
-			$reason .= "No matching rule\n"  ;
+			$reason .= "\tno matching rule\n"  ;
 			}
 		
 		# show why the node was to be build

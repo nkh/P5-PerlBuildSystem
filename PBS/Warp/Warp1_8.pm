@@ -42,7 +42,7 @@ die "PBS: NOT SUPPORTED, pbsfile chain needs to be merged" ;
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/.warp1_8';
 my $warp_file = "$warp_path/pbsfile_$warp_signature.pl" ;
 
 $PBS::pbs_run_information->{WARP_1_8}{FILE} = $warp_file ;
@@ -273,7 +273,7 @@ my ($targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_configuratio
 #my $t0_md5_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
-my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/_warp1_8';
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/.warp1_8';
 mkpath($warp_path) unless(-e $warp_path) ;
 
 PBS::Warp::GenerateWarpInfoFile('1.8', $warp_path, $warp_signature, $targets, $pbs_config) ;

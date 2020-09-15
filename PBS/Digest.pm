@@ -608,6 +608,7 @@ for my $name (keys %exclusion_patterns)
 	$exclude_from_digest{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
 	}
 }
+
 #-------------------------------------------------------------------------------
 
 sub ForceDigestGeneration
@@ -640,8 +641,7 @@ memoize('IsDigestToBeGenerated') ;
 
 sub IsDigestToBeGenerated
 {
-my $package = shift ;
-my $node    = shift ;
+my ($package, $node) = @_ ;
 
 my $node_name  = $node->{__NAME} ;
 my $pbs_config = $node->{__PBS_CONFIG} ;
@@ -654,9 +654,8 @@ for my $name (keys %{$exclude_from_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning("Digest: '$node_name' excluded from digest generation by rule: '$name' [$exclude_from_digest{$package}{$name}{PATTERN}]") ;
-			PrintWarning(" @ $exclude_from_digest{$package}{$name}{ORIGIN}") if defined $pbs_config->{ADD_ORIGIN} ;
-			PrintWarning(".\n") ;
+			PrintWarning "Digest: '$node_name' no digest, rule: '$name', pattern: '$exclude_from_digest{$package}{$name}{PATTERN}'"
+					. INFO2(", file: $exclude_from_digest{$package}{$name}{ORIGIN}\n", 0)  ;
 			}
 			
 		$generate_digest = 0 ;
@@ -670,9 +669,8 @@ for my $name (keys %{$force_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning("Digest: '$node_name' digest generation forced by rule: '$name'") ;
-			PrintWarning(" @ $force_digest{$package}{$name}{ORIGIN}") if defined $pbs_config->{ADD_ORIGIN} ;
-			PrintWarning(".\n") ;
+			PrintWarning "Digest: '$node_name' forced digest, rule: '$name', pattern: '$force_digest{$package}{$name}{PATTERN}'"
+					. INFO2(", file: $force_digest{$package}{$name}{ORIGIN}\n", 0) ;
 			}
 			
 		$generate_digest = 1 ;

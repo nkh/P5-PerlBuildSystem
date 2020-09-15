@@ -21,7 +21,7 @@ use Cwd ;
 #
 #	cache generation is handled by the compiler, in gcc example, as a side effect of the build
 #	
-#	No need to wait for the dependency of all the C files, starts building directly
+#	No need to wait for the dependency of all the object files, starts building directly
 #	
 #	the cache is generated in parallel, if the build is done with -j option
 #

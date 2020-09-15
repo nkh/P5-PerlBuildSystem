@@ -462,6 +462,12 @@ EOT
 		'PBS won\'t display a warning message if a linked node matches local rules.',
 		'',
 		
+	'display_no_dependencies_ok'        => \$pbs_config->{DISPLAY_NO_DEPENDENCIES_OK},
+		'Display a message if a node was tagged has having no dependencies with HasNoDependencies.',
+		"Non source files (nodes with digest) are checked for dependencies since they need to be build from something, "
+		. "some nodes are generated from non files or don't always have dependencies as for C cache which dependency file "
+		. "is created on the fly if it doens't exist.",
+
 	'ndi|no_duplicate_info'           => \$pbs_config->{NO_DUPLICATE_INFO},
 		'PBS won\'t display which dependency are duplicated for a node.',
 		'',

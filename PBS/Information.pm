@@ -67,11 +67,11 @@ my $node_header = '' ;
 
 if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 	{
-	$node_header .= WARNING("Node: $type'$name':", 0) . INFO2(" $build_name", 0) . "\n" ;
+	$node_header .= INFO3("Node: $type'$name':", 0) . INFO2(" $build_name", 0) . "\n" ;
 	}
 else
 	{
-	$node_header .= WARNING("Node: $type'$name':", 0) . "\n" ;
+	$node_header .= INFO3("Node: $type'$name':", 0) . "\n" ;
 	}
 	
 return $node_header, $type, $tab ;
@@ -326,7 +326,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 			}
 		else
 			{
-			$rule_dependencies = 'no derived dependency' ;
+			$rule_dependencies = 'no dependency' ;
 			}
 			
 		my $rule_tag = '' ;
@@ -343,9 +343,16 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 						  .':' . $dependencies_and_build_rules->[$rule_number]{LINE}
 					  ) ;
 							
-		$current_node_info = INFO ("${tab}Matching rule: #$rule_number$rule_tag '$rule_info'\n") ;
-		$current_node_info .= INFO3 ("${tab}${tab}=> $rule_dependencies\n") ;
+		$current_node_info = INFO "${tab}Matching rule: #$rule_number$rule_tag '$rule_info'\n" ;
+		$current_node_info .= INFO3 "${tab}${tab}=> $rule_dependencies\n" ;
 		
+		$log_node_info .= $current_node_info ;
+		$node_info     .= $current_node_info ;
+		}
+
+	unless(@{$file_tree->{__MATCHING_RULES}})
+		{
+		my $current_node_info = INFO("${tab}Matching rules: ") . WARNING("no matching rule\n", 0) ;
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;
 		}
