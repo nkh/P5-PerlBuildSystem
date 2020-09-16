@@ -49,12 +49,10 @@ for my $source (@$dependencies)
 
 		if($node_name_matches_ddrr)
 			{
-			PrintWarning 
-				$PBS::Output::indentation
-				. "Additional 'exists_on_disk' for rule: $rule_definition->{NAME}\n"
-					 # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 
-				. $PBS::Output::indentation x 2
-				. "dependency '$source' not found on disk as '$build_name'.\n" ;
+			PrintInfo 
+				$PBS::Output::indentation x 2
+				. "'exists_on_disk: rule: $rule_definition->{NAME},"  # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 
+				. " no match\n" ;
 			}
 
 		# all listed dependencies must exist
@@ -90,17 +88,17 @@ my $indentation = $PBS::Output::indentation ;
 
 if (@dependencies > 1)
 	{
-	PrintWarning $indentation . "Additional 'only_one_dependency' for rule: $rule_definition->{NAME}\n" ;
+	PrintInfo $indentation . "'only_one_dependency': rule: $rule_definition->{NAME}\n" ;
 
-	PrintError "Error: multiple dependencies for '$dependent_to_check' inserted at ". $tree->{__INSERTED_AT}{INSERTION_RULE} ." :\n"
-			. $indentation . "Rule: '$rule_definition->{NAME} @ $rule_definition->{FILE}:$rule_definition->{LINE}\n"
+	PrintError "Depend: error: multiple dependencies for '$dependent_to_check' inserted at ". $tree->{__INSERTED_AT}{INSERTION_RULE} ." :\n"
+			. $indentation . "rule: '$rule_definition->{NAME} @ $rule_definition->{FILE}:$rule_definition->{LINE}\n"
 			. $indentation . "(try pbs options: -dpl -ddl  --display_dependency_regex --display_search_info)\n" ; 	
 
 	for (@dependencies)
 		{
 		my $rule = $tree->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[$tree->{$_}{RULE_INDEX}] ;
 
-		PrintError "\t$_ rule " . $tree->{$_}{RULE_INDEX} . ' @ ' . $rule->{NAME} . ':' . $rule->{FILE} . ':' . $rule->{LINE} . "\n" ;
+		PrintError "\t$_ rule: " . $tree->{$_}{RULE_INDEX} . ' @ ' . $rule->{NAME} . ':' . $rule->{FILE} . ':' . $rule->{LINE} . "\n" ;
 		}
 
 	die "\n";
@@ -108,9 +106,9 @@ if (@dependencies > 1)
 elsif (0 == @dependencies)
 	{
 	PrintWarning 
-		$indentation . "Additional 'only_one_dependency' for rule: $rule_definition->{NAME}\n"
+		$indentation . "'only_one_dependency': rule: $rule_definition->{NAME}\n"
 		. "Warning: no dependencies for '$dependent_to_check' inserted at ". $tree->{__INSERTED_AT}{INSERTION_RULE} ." :\n" 
-		. $indentation . "Rule: '$rule_definition->{NAME} @ $rule_definition->{FILE}:$rule_definition->{LINE}\n"
+		. $indentation . "rule: '$rule_definition->{NAME} @ $rule_definition->{FILE}:$rule_definition->{LINE}\n"
 		. $indentation . "(try pbs options: -dpl -ddl --display_dependency_regex  --display_search_info)\n" ; 	
 
 	}

@@ -1137,21 +1137,22 @@ my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
 
-# todo: display informmation depending on the type of node
-# 	note that warp loses the __LOAD_PACKAGE information so we
-#	get warning about undefined $package 
-#if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE}, $dependency))
-#	{
-#	push @link_type, 'warning: not depended'      unless exists $dependency->{__DEPENDED} ;
-#	push @link_type, 'no dependencies'   unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
-#	}
-#else
-#	{
-#	push @link_type, 'source' ;
-#
-#	push @link_type, 'warning: depended'      if exists $dependency->{__DEPENDED} ;
-#	push @link_type, 'warning: has dependencies'   if scalar ( grep { ! /^__/ } keys %$dependency ) ;
-#	}
+# display link information depending on the type of node
+# 	note that warp loses the __LOAD_PACKAGE information, but running in warp
+#	removed the warnings unless --display_warp_generated_warnings is used, we still
+#	are missing __LOAD_PACKAGE information and we just approximate it with the current node's __LOAD_PACKAGE 
+if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE} // $tree->{__LOAD_PACKAGE}, $dependency))
+	{
+	push @link_type, 'warning: not depended' unless exists $dependency->{__DEPENDED} ;
+	push @link_type, 'no dependencies'       unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	}
+else
+	{
+	push @link_type, 'source' ;
+
+	push @link_type, 'warning: depended'         if exists $dependency->{__DEPENDED} ;
+	push @link_type, 'warning: has dependencies' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	}
 
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;

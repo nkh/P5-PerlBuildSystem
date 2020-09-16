@@ -9,5 +9,5 @@ blib/
 pbs_completion_script
 MYMETA.json
 MYMETA.yml
-out_nadim
+_out_nadim
 PBS/Version.pm

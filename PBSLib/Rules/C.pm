@@ -46,11 +46,12 @@ PbsUse('Rules/Object_rules_utils') ; # for object dependencies cache generation
 
 # set of rules to pick a source file for object files
 AddRule 'c_objects',   [ '*/*.o' => '*.c'   , \&exists_on_disk],  GetConfig('CC_SYNTAX') ;
-AddRule 'cpp_objects', [ '*/*.o' => '*.cpp' , \&exists_on_disk],  GetConfig('CXX_SYNTAX') ;
-AddRule 's_objects',   [ '*/*.o' => '*.s'   , \&exists_on_disk ], GetConfig('AS_SYNTAX') ;
 
+# comment out if you have object files generated from different sources
+#AddRule 'cpp_objects', [ '*/*.o' => '*.cpp' , \&exists_on_disk],  GetConfig('CXX_SYNTAX') ;
+#AddRule 's_objects',   [ '*/*.o' => '*.s'   , \&exists_on_disk ], GetConfig('AS_SYNTAX') ;
 # make sure we only have one source
-AddRule 'one source', [ '*/*.o' => \&OnlyOneDependency] ;
+#AddRule 'one source', [ '*/*.o' => \&OnlyOneDependency] ;
 
 # object dependencies cache rules, has to be last as previous rules check for single dependency 
 PbsUse('Rules/C_depender') ;

@@ -1,5 +1,35 @@
 
---hint
+missing data in warp
+	
+	environment variables
+	nodes starting a subpbs
+	all data that's package specific
+		no digest
+		no dependencies
+		...
+
+	package data should become node data, where a subpbs node can also have the old "package" data
+
+	we can also serialize the missing package data, they are very small and simple to serialize;
+
+new warp data format
+	meso, let's us load smaller package/pbs-run in parallel as if we were running multiple pbs
+		can we distribute the graph to multiple processes?
+
+	some node trigger the whole meso warp so we can stop loading/re-vivifying after those nodes
+
+	load warp and check the nodes with minimal data while loading full data in another process
+		we get the speed of warp and all the data
+		
+		since we have two caches, we can minimize the first one for load and check speeed and keep the other
+		cache data as it was in pbs so there is no use to re-vivify nodes, just load them in memory
+
+		with meso we can also load only part of the full node data rather than whole graph
+		
+
+	can we start depending as soon as we have a node that is triggered?
+
+-hint
 	hint the user of whatever they could do
 		this is going to require some thinking
 
