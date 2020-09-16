@@ -1,4 +1,24 @@
 
+running all the rules for all the nodes
+	without scoping we get a hit rate below 30%, sometimes much less
+		each call is aot a rule that needs to be constructed (once) and called via a sub ref
+
+	if scoping the rules is unpractical, is it possible to filter out rules that we know will not match?
+		the cost of finding which rules matches is probably less than call 70% of the dependers for nothing
+		rules that never match should not be compiled
+	
+display 
+	display used/unused rules
+		per pbs run
+			display rule statistics
+			display rules not run only
+
+		global statistics
+			filter output?
+
+	use configuration variables
+
+
 missing data in warp
 	
 	environment variables
@@ -38,6 +58,18 @@ if only terminal nodes are checked the warp file can be split in terminal and no
 --quiet is the default
 	return nothing but an exit code except when the user asks for it
 
+output stream
+	pbs can't generate all the trees for every build as those are time consuming specially if many nodes are in the graph
+	the user may not want to see them anyway
+
+	the output filters could generate the graphs if they have the nodes and the filters used by pbs
+		add the nodes to the output or a link to their data in a warp/meso files
+		add the filters to the output, since the same filters are used, have just one instance
+
+	if we add the nodes to the output stream we are creating a huge cache
+		incremental builds should refer to previous caches
+			can we merge the output streams?
+
 output filters mean that the data stream needs to be on stdout
 	does it? doesn't even have to be in a stream?
 	should we write to a socket? file?
@@ -69,6 +101,28 @@ node@root
 		is it that much faster? if we want to build just that node it means that it has failed and running in warp will just 
 		rebuild it till it builds
 
+	=> node@root is extremely useful in one case, when creating the build system we want to ignore nodes that already have a 
+		build system. node@root creates a complete graph and ignores everything but node@root
+
+		warp speeds up the creation of a new graph except when the pbsfiles are changed as they invalidate the graph
+			meso is the solution to reuse partial graphs
+
+		what we want it to only build the graph portion that leads to the node@root
+			if node at root doesn't link to other graph branches we could sort out the nodes we don't need to generate a graph for
+
+			eg:
+				all -> b, c
+				b -> b/b1
+				b1-> b/b1/b10
+				c -> c/c1
+
+
+				building c/c1@all doesn't need to creat b's sub graph
+
+			note that if node at root depends on a node in a different sub graph, we can have that node@root too and pbs
+			will build the two subgraph
+
+		but doesn't meso give us an even better mechanism as it has the complete graph and still is fast?
 ENV
 	given variables are known (can be all variables if the user wants)
 	we can remember them and rebuild everything if any changes (since we don't know how they are accesses)

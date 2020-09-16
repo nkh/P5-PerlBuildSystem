@@ -404,6 +404,50 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 				) ;
 		
 		}
+
+	$PBS::Output::indentation_depth-- ;
+
+	if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
+		{
+		PrintInfo(sprintf("Depend: time in Pbsfile: %0.2f s.\n", tv_interval ($t0, [gettimeofday]))) ;
+		}
+		
+	if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
+		{
+		my $rule_name_max_length = 0 ;
+		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+			{
+			my $length = length($rule->{NAME}) ;
+			$rule_name_max_length = $length if $length > $rule_name_max_length ; 
+			}
+
+		$rule_name_max_length += 2 ; # for quotes
+
+		my $matches = 0 ;
+		my $number_of_rules = 0 ;
+		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+			{
+			$number_of_rules++ ;
+			$matches += @{$rule->{STATS}{MATCHED} // []} ; 
+			}
+
+		PrintInfo "Depend: '$Pbsfile', "
+				. "rules: $number_of_rules, "
+				. "called: $rules->{User}[0]{STATS}{CALLED}, "
+				. "calls: " . $number_of_rules * $rules->{User}[0]{STATS}{CALLED} . ', '
+				. "matches: $matches, "
+				. "match rate: " . sprintf("%0.02f", $matches / ($number_of_rules * $rules->{User}[0]{STATS}{CALLED}))
+				. "\n" ;
+
+		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+			{
+			my $name = sprintf "%${rule_name_max_length}s", "'$rule->{NAME}'" ;
+			PrintInfo "\trule: $name, matched: " . scalar(@{$rule->{STATS}{MATCHED} // []}) . "\n" 
+			}
+		}
+		
+	# save  meso file
+
 	}
 else
 	{
@@ -423,15 +467,6 @@ else
 =cut
 	die "\n";
 	}
-
-$PBS::Output::indentation_depth-- ;
-
-if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
-	{
-	PrintInfo(sprintf("Time in Pbsfile: %0.2f s.\n", tv_interval ($t0, [gettimeofday]))) ;
-	}
-	
-# save  meso file
 
 return($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package) ;
 }

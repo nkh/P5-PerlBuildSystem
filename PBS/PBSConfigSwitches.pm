@@ -769,6 +769,10 @@ EOT
 		'(DF) Display the definition of each registrated rule.',
 		'',
 		
+	'drs|display_rule_statistics'     => \$pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS},
+		'(DF) Display rule statistics after each pbs run.',
+		'',
+		
 	'dtr|display_trigger_rules'       => \$pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES},
 		'(DF) Display which triggers are registred. and which trigger packages are queried.',
 		'',

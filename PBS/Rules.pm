@@ -62,9 +62,9 @@ sub ExtractRules
 {
 # extracts out the rules named in @rule_names from the rules definitions $rules
 
-#! slave rules should be kept separately say in %slave_rules
-#! rules hsould be kept in sorted order
-#! this sub could be 1 line long => retun $rules->{@rules_namespace} ;
+#todo: slave rules should be kept separately say in %slave_rules
+#todo: rules hsould be kept in sorted order
+#	this sub could be 1 line long => retun $rules->{@rules_namespace} ;
 	
 my $rules = shift ;
 my @rules_namespaces = @_ ;

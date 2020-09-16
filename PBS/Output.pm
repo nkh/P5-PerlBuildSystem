@@ -27,7 +27,7 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 INFO INFO2 INFO3 USER SHELL DEBUG COLOR
+		ERROR WARNING WARNING2 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG COLOR
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext PrintNoColor 
 		GetColor
@@ -130,6 +130,7 @@ sub WARNING2 { return COLOR('warning_2', @_) }
 sub INFO { return COLOR('info', @_) }
 sub INFO2 { return COLOR('info_2', @_) }
 sub INFO3 { return COLOR('info_3', @_) }
+sub INFO4 { return COLOR('info_4', @_) }
 sub USER { return COLOR('user', @_) }
 sub SHELL { return COLOR('shell', @_) }
 sub DEBUG { return COLOR('debug', @_) }
@@ -178,6 +179,7 @@ sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_) ;}
 sub PrintInfo{_print(\*STDERR, \&INFO, @_ );}
 sub PrintInfo2{_print(\*STDERR, \&INFO2, @_) ;}
 sub PrintInfo3{_print(\*STDERR, \&INFO3, @_) ;}
+sub PrintInfo4{_print(\*STDERR, \&INFO4, @_) ;}
 sub PrintUser{_print(\*STDERR, \&USER, @_) ;}
 sub PrintShell {_print(\*STDERR, \&SHELL, @_) ;}
 sub PrintDebug{_print(\*STDERR, \&DEBUG, @_) ;}

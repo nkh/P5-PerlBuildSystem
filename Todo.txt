@@ -1,5 +1,5 @@
-
 --nh, display compact dependency information
+
 	uses \K
 	anything the prints while in -nh gets on the wrong line
 
@@ -12,28 +12,9 @@ can a node be tagged as source in another repo
 		node exists but is not depended
 		late depend tag node as source
 
-
-% path in shell command for file to build and any attribute
-	%FILE_TO_BUILD_PATH1
-	%ATTRIBUTE_PATH, PATH1, ...
-
-#auto mkdir FILE_TO_BUILD_DIR
-
 Build.PL
 	missing pbsfiles in distro?
 	add new files in distro ... releaser
-
-#pt not depended (OK) but no warning about resource/css!
-	pbs 1 - 0 nadim!
-
-#Linking ... "trigger inserted" ?
-	bsfile:19, dependent: ./OEM2/aaa/css
-	    './OEM2/xxx/encrypted.mol'
-		'./OEM2/xxx/css'
-		'./semla/OEM2/pt'
-		2:mols:/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/releaser/pbsfile:12  [B][S] [1]
-	    Depend: Linking './semla/OEM2/pt'[trigger inserted],
-
 
 
 touch pbs output files so they list in the right order
@@ -55,17 +36,6 @@ bug trigger, in makefile releaser example trigger '.', build sequence hangs wait
 --bni not working
 	what does it do except showing command before expansion?
 		ndpb is the one stopping node info to be shown
-
-#dependencies are not ordered yet sometime we want to depend on the tool that will be used to build the node
-	make has $< for the first dependency
-
-	we can work around it with Shell Eval but it's still not very simple
-		pbs2 has named dependencies
-
-		can we use node attributes?
-			rule n => a:attr dep dep
-				%ATTR:attr
-			
 
 Dependent in node build log for nodes at the bottom of the graph can be:
 	very large
@@ -159,9 +129,6 @@ on error generate a script that
 move NodeInformation to methods
 	many information elements are generated and added to the log or output
 		putting the computation of the information in methods allows post processing to generate the same output
-
-#log removal of environment variables
-	log the kept variables too
 
 Creator vs immediate build
 	Creator, file that need to exists before depending a node
@@ -518,6 +485,71 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+#display used/unused rules
+	per pbs run
+		display rule statistics
+		display rules not run only
+
+
+!display used/unused configuration variables
+	pbs 2.0 maybe
+
+--nh, display compact dependency information
+#% path in shell command for file to build and any attribute
+	%FILE_TO_BUILD_PATH1
+	%ATTRIBUTE_PATH, PATH1, ...
+
+#auto mkdir FILE_TO_BUILD_DIR
+
+#pt not depended (OK) but no warning about resource/css!
+	pbs 1 - 0 nadim!
+
+#Linking ... "trigger inserted" ?
+	bsfile:19, dependent: ./OEM2/aaa/css
+	    './OEM2/xxx/encrypted.mol'
+		'./OEM2/xxx/css'
+		'./semla/OEM2/pt'
+		2:mols:/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/releaser/pbsfile:12  [B][S] [1]
+	    Depend: Linking './semla/OEM2/pt'[trigger inserted],
+
+
+	global statistics
+		filter output?
+
+!display used/unused configuration variables
+	pbs 2.0 maybe
+
+#% path in shell command for file to build and any attribute
+	%FILE_TO_BUILD_PATH1
+	%ATTRIBUTE_PATH, PATH1, ...
+
+#auto mkdir FILE_TO_BUILD_DIR
+
+#pt not depended (OK) but no warning about resource/css!
+	pbs 1 - 0 nadim!
+
+#Linking ... "trigger inserted" ?
+	bsfile:19, dependent: ./OEM2/aaa/css
+	    './OEM2/xxx/encrypted.mol'
+		'./OEM2/xxx/css'
+		'./semla/OEM2/pt'
+		2:mols:/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/releaser/pbsfile:12  [B][S] [1]
+	    Depend: Linking './semla/OEM2/pt'[trigger inserted],
+
+
+#dependencies are not ordered yet sometime we want to depend on the tool that will be used to build the node
+	make has $< for the first dependency
+
+	we can work around it with Shell Eval but it's still not very simple
+		pbs2 has named dependencies
+
+		can we use node attributes?
+			rule n => a:attr dep dep
+				%ATTR:attr
+			
+#log removal of environment variables
+	log the kept variables too
+
 # EvaluateshellCommand option to show before and after eval if changed
 
 #USE and Config

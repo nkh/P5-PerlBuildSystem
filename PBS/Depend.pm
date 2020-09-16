@@ -229,6 +229,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		$DB::single = 1 if(PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 		}
 		
+	$dependency_rule->{STATS}{CALLED}++ ;
 	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $dependency_rule) ;
 	
 	my ($triggered, @dependencies ) = @$dependency_result ;
@@ -243,6 +244,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	
 	if($triggered)
 		{
+		push @{$dependency_rule->{STATS}{MATCHED}}, $tree ;
 		$rules_matching++ ;
 
 		$tree->{__DEPENDED}++ ; # depend sub tree once only flag
@@ -432,7 +434,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							. join
 								(
 								"\n$indent$indent",
-								map { $node_is_source->($tree, $_) ? "<" . $em->($_) . ">" : "'" . $em->($_) . "'"} 
+								map { $node_is_source->($tree, $_) ? INFO4("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
 										@dependency_names
 								)
 							. "\n" ;
@@ -447,7 +449,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					my $dd = INFO3 "$indent'$node_name' ${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
-						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? "<$_>" : "'$_'" } @dependency_names) . " ]", 0)
+						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? INFO4("'$_'", 0) : INFO("'$_'", 0) } @dependency_names), 0)
+							 . INFO( " ]", 0)
 						: INFO("[$no_dependencies ]", 0) ;
 
 					$dd .= defined $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
@@ -559,6 +562,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	else
 		{
 		# not triggered
+		push @{$dependency_rule->{STATS}{NOT_MATCHED}}, $tree ;
+
 		my $depender_message = $dependencies[0] // 'No match' ;
 		PrintColor('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 		}

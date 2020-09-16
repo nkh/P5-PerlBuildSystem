@@ -310,12 +310,12 @@ if($build_result == BUILD_SUCCESS)
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
 		$build_message //= '' ;
-		PrintInfo("Build: result: $build_result, message: \"$build_message\", target: " . INFO2("'$build_name'", 0) . "\n") ;
+		PrintInfo("Build: result: $build_result, message: \"$build_message\", node: " . INFO2("'$file_tree->{__NAME}'", 0) . "\n") ;
 		}
 	}
 else
 	{
-	PrintError("Build: '$build_name':\n$build_message\n") ;
+	PrintError("Build: '$file_tree->{__NAME}':\n$build_message\n") ;
 	}
 	
 my $build_time = tv_interval ($t0, [gettimeofday]) ;

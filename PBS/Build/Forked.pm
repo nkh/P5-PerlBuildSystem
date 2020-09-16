@@ -134,7 +134,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 				my $last_node = $remaining_nodes ? '' : "\r\e[KBuild: success: $number_of_already_build_node nodes\n" ;
 
 				PrintInfo "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes$last_node"
-					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} ;
+					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} || $number_of_failed_builders ;
 				}
 
 			$builder_using_perl_time += $build_time 
@@ -168,7 +168,7 @@ if($number_of_failed_builders)
 	{
 	my $plural = ('','')[$number_of_failed_builders] // 's' ;
 
-	PrintError "Build: $number_of_failed_builders error$plural:\n" ;
+	PrintError "\nBuild: $number_of_failed_builders error$plural:\n" ;
 	PrintError $error_output . "\n" ;
 	}
 
