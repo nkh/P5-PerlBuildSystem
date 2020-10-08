@@ -1,3 +1,338 @@
+Add comments directly in the node and make the comment part of the build output log
+
+	AddRule
+	  ...
+	  ...
+	  comment "somec comment" ; # node sub?
+
+	we already made the rules a bit more comprehensible by giving them names, comments can help further
+
+	we have a link in the log to the rule and it's definition line
+
+	we could extract the rule and inline it, that would also make navigation unnecessary
+
+	we also have the textual representation of the rule in the rules that could be displayed instead 
+
+	possible syntaxes
+
+		3
+		Rule [V], 'release', 'the release of release releases a release that would release a releaser released',
+		['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
+		BuildOk();
+
+		8
+		Rule [V], 'release',
+		'
+		the release of release releases a release
+		that would release a releaser
+		released
+		',
+		['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
+		BuildOk();
+
+		6
+		Rule [V], 'release',
+		['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
+		BuildOk(),
+		Comment(" the release of release releases a release
+		that would release a releaser
+		released") ;
+
+		9
+		Rule [V],
+		[
+		'release',
+		" the release of release releases a release
+		that would release a releaser
+		released"
+		],
+		['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol' ],
+		BuildOk() ;
+
+
+! web server
+	use signal and request queue (file plus index)
+	output text (html, json)
+
+	client uses ssh to send signal and send back answer
+		use timeout
+		returned data can be "massaged", eg: png file, or raw and the requester renders it
+
+
+	box 1: ssh box2 -c get_something --pid 123 request > answer
+
+		get_something
+			echo @args > uuid_request_file_time
+			kill -user2 -p 123
+			timeout inotify -exists uuid_answer
+			cat uuid_answer || echo "request failed"
+			rm uuid_answer
+
+		p123
+			get signal ->
+				read queue of requests
+					process log
+					print uuid_answer file
+				while requests
+
+	? why would we ever want to do a query on a running build system
+		if the build system is distributed, each build system has it's own data and display
+		we _may_ want to know if one of the build system is running
+
+	start_build
+		start:
+			b1 (local machine)
+			b2 (remote), give me log data -> display
+			...
+			bn
+
+	=> processing of data is best done on requesting box
+	=> the build log is structured, the main log points to sub logs
+		the build log contains the graphs meta data
+		the build log is kept small to be synched to other nodes
+			data necessary are loaded on demand
+
+
+
+Meso warp dangling subpbs and nodes
+	within a pbs run, nodes are:
+		immediately depended
+		depended in a subpbs
+		not depended
+			may be depended later or not
+
+	the pbs checks for the presence and validity of subpbs run mesos, if none is found it
+	synchronizes with other pbs runs to insure only one process is creating a node/pbs run
+
+		if no meso exists and a process gets a lock to create it, the subpbs is build
+
+	the synchronizing mechanism is via flock or a or a service which should also use flock to make it easy to
+	find the lock files on the locking server.
+
+
+Timing framework
+	pbs1 has  a breakpoint framework, it has practical advantages but the code is spread all over pbs1
+
+	the urge to time things is strong when building software
+		
+	maybe the urge is synthetic and social rather than correspond to a real need, this is the case
+	for the need to see "progress"
+
+	during debugging and optimization, timing is important
+
+	what do we want to time?
+		build time per node
+		build time per group of nodes, eg: a lib, a sub project
+		build time per type of nodes, eg: object files
+		build time of some time - specific nodes, boolean operation
+		specific operation, eg: checkout of files
+		REH time
+		rule time across multiple subpbses
+		a pbs phase, depend, check, ...
+		shell commands for a node, for all nodes, compared to sub time
+		time spend in a modeule, pbsfile, ...
+		
+	
+	implement the timing framework as a REH
+		no run time impact if not used
+
+		do we want the timing data in the output stream, just writting current time has little impact 
+			since the output filters do the work of comparing timing and displaying data (if the user wants to)
+
+	timing framework needs to handle parallel processing
+		if we use the output log as a framework the problem is moved to the output log
+
+build timeout to change control behavior
+	build system users do not trust the build system
+		build tool is too complicated to be sure it does what it should
+		build system is too complex
+		...
+
+	the control behavior is satisfied by bombarding the user with useless output in the hope that she may catch
+	something a continuously displayed build log
+
+		although this soothes the user it seldom is of any use, when error occurs the output is used
+		as a log, that its real value.
+
+		perusing the log is made difficult by unstructured logs, long logs, incomplete logs
+
+		the lack of tools that make it possible to extract information from a structured logs makes it even more
+		difficult.
+
+		the log should be made of pbjects that can be queried and acted upon
+
+			eg: extract node and show me information
+
+			eg: which node have a config set to a specicif value
+
+			eg: on whic machines is a node build and what other nodes have been build on that node
+
+	pbs2 default is to be quiet, very quiet
+		the problem is that it makes people nervous till they trust the build system (IE tests are run)
+		
+		not knowing what's going on is acceptable only if one knows the build system is not going to hang
+
+		of course the user can get a full display and she can create filters so only "interesting" portions of the
+		data is displayed most of the time the "interesting" portions are not interesting at all!
+
+	letting the user, optionally, define a "silence" timeout value may ease the apprehension
+
+		die, with trace if the build is not done within a certain amount of time
+			the timeout can be an external control process but the trace must be generated by pbs
+			the trace could be generated from the output stream (log) which makes it possible to have the
+			timeout be handled by external processes completely
+
+		start using a filter after specific amount of time
+
+		start showing progress after specific amount of time
+			percentage
+			job info
+			...
+output stream format
+	a format that can be greped ( section of log, xml, yaml, json)
+	a format that can be loaded in memory
+		preferably in section (like meso)
+	a format that cn be transformed to other format
+		eg: from perl to yaml or any other format
+
+Default REH
+	a string is a default REH (and unlike other REH it doesn't have an argument)
+
+	this let's us have the string as a shell builder REH and makes the rules much less "dense"
+
+		Rule 'name' is type => V is something_else, 
+			depender => ...
+			dependencies => ...
+			whatnot => ...
+
+			"touch %FILE_TO_BUILD" ;
+
+
+	multi line string is a shell script
+
+	operator 'is' is sugar to call REHs
+		this may force us to push REH is classes
+
+depending on an external build system
+	use case #1 source code may change
+	use case #2 source code tar ball may change
+	use case #3 version of tar may change
+	use case #4 library is never changed and always present
+
+
+	The usual way is to have a dependency on a symbolic name (phony, virtual, ... note: that pbs also has triggers)
+		disadvantages:
+
+		- no clear configuration management
+			main build needs to make sure the right version is installed not rely on the fact it is
+		- build system is run even if the system is up to date, ie: no caching
+		- no clear dependency
+			sub build is done something installed at unknown location
+			dependency is in the form of a non checked library
+			library is named in a config but is not a node
+			linker does the magic
+
+	case 4
+		copy the library in the main build and tag it as source
+
+	case 3 and 2
+		add dependency on the needed library
+
+			Rule dependent -> library
+			Rule library -> library_version.tar # where version is in the main build
+			Rule library_version.tar -> [], curl the lib
+
+	case 1
+		to be able to cache the build (only interesting when we have a global binary cache or incremental builds) we need
+			a dependency list which is generate by the sub build
+				this is a bit like object file caches generated during compilation
+				it can be achieved by taking a snapshot of the build tree in the file system
+
+
+	This caching scheme advantages are only interesting (for build time) if checking the cache takes less time than running the library build
+		there are other advantages but those may only be interesting when debugging or analyzing a build (and can be optional)
+
+
+parallel depend
+	if we run depend (on nodes) in parallel, what can we do with the generated sub graphs?
+		merge back to the main process
+
+		keep them in the depending process
+			if we reuse the same process to build, the node is already there and we don't need to fork builders
+	
+		write each node data to disk and only merge back the file name to the main process
+			we can keep the node in memory and use the same process to build it (as above)
+
+		=> depending process is more efficiently run per pbs run not per node
+			we already have a package for all the nodes in it in memory (note: also true when per node)
+
+			serializing a pbsfile run is a meso warp, simpler to do it in a single process than collecting
+			the individual nodes and putting them back together in a meso warp
+
+			the meso warp name computation is constant so we can return the meso warp name to the main process
+				we can also send other information but the information is in the meso file, that would be for efficiency only
+					an example of information is "dangling" targets, see below
+
+		=> depending a pbs run does not depend subpbses!
+			it stops at the pbs run limits
+				linked nodes and subpbs targets remain "dangling"
+
+			the main process gathers the meso information and "links them together"
+				there may not be the need to load the meso files, having the graph truly distributed
+					if showing the graph is necessary we can merge recreate the $inserted_nodes in the main process
+						cooler would be that each process can create its sub graph and the graph concatenated
+		
+		=> depending processes (we could name it a meso process) can
+			check nodes disk image validity (hash), making the checking parallel
+				this doesn't check the linked dependencies or dependencies from subpbs runs
+				that is done after "dangling" meso is "linked"
+
+				still most nodes will be checked immediately, in parallel, while other parts of the graph are depended
+
+				=> if a node doesn't have a "dangling dependency" (a dependency that can't be checked yet), and it's
+					disk image is changed, it can be immediately build
+
+		linked nodes
+			can be in the same pbs run
+				just link to them directly, like in pbs1
+
+			can be in different pbs runs
+				ie: node is created but not depended
+
+				this is close to the late dependencies mechanism in pbs1
+					in pbs 1, a node that was not depended was used later by the pbs run who has the rules to depend it
+
+					in pbs2, the node is created in multiple places and one of them, possibly more, will be depended
+						the "linker" points the dangling nodes to the depended node, if multiple non equivalent node
+						are found, an error is generated
+
+		trigger nodes ?
+
+		=> meso warp doesn't have a pbsfile chain
+			each pbsrun only depends on it's start config
+
+			which means a pbsfile cahange up the chain doesn't invalidate a meso file
+				the meso file may be invalid for the build where the pbsfile has changed but
+					it may still be valid and we don't need to run anything to check that just compare start config
+					and check the meso hashes (including dangling nodes)
+
+					if it is not valid, because of a configuration change, we can still keep the old meso files and 
+						create a new one for the new config
+
+						we need to name the meso files based on the start config
+		
+
+parallel depend, check, build, ...
+	how is the output stream put back together if multiple processes generate it?
+
+	how is log handled?
+		although log is supposed to be integrated in the output stream
+
+	during build how does a separate process wait for its dependencies to be build
+		does each process build a sub tree or nodes
+
+	how are files put back in a single file system (if needed, see LOCAL in pbs1)
+
 
 running all the rules for all the nodes
 	without scoping we get a hit rate below 30%, sometimes much less
@@ -442,11 +777,6 @@ node data
 		we could keep the nodes with just their builders, a list of sub refs or shell commands
 
 	=> this stinks "make"
-
- 
-	
-
-
 
 output filters
 	they generate the output  _and_ the node logs (or whatever they want
@@ -1987,17 +2317,8 @@ parallelization of depend step
 		gmake used a trick to control how many parallel process it runs
 
 
-
-
-
-
-
-
-
 difference between config variables and environment
 	should there be a difference
-
-
 
 add section to elf file with pbs config for the node
 

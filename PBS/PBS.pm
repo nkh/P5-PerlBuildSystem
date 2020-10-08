@@ -305,6 +305,11 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		  . "use PBS::Digest;\n"
 		  . "use PBS::Rules::Creator;\n"
 		  . "use PBS::Plugin;\n"
+	
+		  # todo: add pbs distribution to the dependencies
+		  # my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
+		  # "PBS::Digest::AddFileDependencies('/home/nadim/perl5/lib/perl5/PBS/Wizard.pm', 'pbs_wizard') ;\n"
+
 		  . $add_pbsfile_digest,
 		  
 		"\n# load OK\n1 ;\n",
@@ -414,22 +419,18 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		
 	if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		{
-		my $rule_name_max_length = 0 ;
+		my ($rule_name_max_length, $matches, $number_of_rules) = (0, 0, 0) ;
+
 		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 			{
 			my $length = length($rule->{NAME}) ;
 			$rule_name_max_length = $length if $length > $rule_name_max_length ; 
-			}
 
-		$rule_name_max_length += 2 ; # for quotes
-
-		my $matches = 0 ;
-		my $number_of_rules = 0 ;
-		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
-			{
 			$number_of_rules++ ;
 			$matches += @{$rule->{STATS}{MATCHED} // []} ; 
 			}
+
+		$rule_name_max_length += 2 ; # for quotes
 
 		PrintInfo "Depend: '$Pbsfile', "
 				. "rules: $number_of_rules, "
@@ -446,7 +447,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			}
 		}
 		
-	# save  meso file
+	# save meso file here
 
 	}
 else

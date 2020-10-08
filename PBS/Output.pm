@@ -28,7 +28,7 @@ require Exporter;
 @EXPORT  = qw
 		(
 		ERROR WARNING WARNING2 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG COLOR
-		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintUser PrintShell PrintDebug
+		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext PrintNoColor 
 		GetColor
 		) ;

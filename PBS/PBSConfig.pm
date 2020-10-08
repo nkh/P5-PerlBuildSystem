@@ -391,14 +391,7 @@ else
 	undef $pbs_config->{DISPLAY_TREE_FILTER} ;
 	}
 
-if(defined $pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII})
-	{
-	$pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII} = 1 ;
-	}
-else
-	{
-	$pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII} = 0 ;
-	}
+$pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII} //= 0 ;
 
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless defined $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} //= 3 ;
@@ -426,7 +419,7 @@ unless($pbs_config->{FORCE_BUILD})
 		}
 	}
 
-PrintInfo "Config: --no_config_inheritance\n" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
+PrintInfo4 "Config: --no_config_inheritance\n" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
 
 #--------------------------------------------------------------------------------
 
@@ -458,7 +451,7 @@ for my $plugin_path (@{$pbs_config->{PLUGIN_PATH}})
 		$plugin_path = catdir($cwd, $plugin_path)  ;
 		}
 		
-	$plugin_path = PBS::PBSConfig::CollapsePath($plugin_path ) ;
+	$plugin_path = CollapsePath($plugin_path ) ;
 	}
 	
 unless(defined $pbs_config->{BUILD_DIRECTORY})
@@ -584,7 +577,7 @@ if(defined $pbs_config->{PBSFILE})
 	
 	if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 		{
-		PrintInfo "Config: Using pbsfile '$pbsfile' (was given as argument).\n" ;
+		PrintInfo "Config: Using pbsfile '$pbsfile' (given as argument).\n" ;
 		}
 	}
 else
@@ -613,7 +606,7 @@ else
 			}
 		else
 			{
-			$error_message = "PBS: found the following Pbsfiles:\n" ;
+			$error_message = "PBS: found the following pbsfiles:\n" ;
 			
 			for my $found_pbsfile (keys %existing_pbsfile)
 				{
@@ -625,7 +618,7 @@ else
 		}
 	else
 		{
-		$error_message = "PBS: no 'Pbsfile' to define build.\n" ;
+		$error_message = "PBS: no 'pbsfile' to define build.\n" ;
 		}
 	}
 

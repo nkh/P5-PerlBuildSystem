@@ -4,7 +4,6 @@ Makefile.PL
 Changes
 INSTALL
 MANIFEST
-META.yml
 README
 Todo.txt
 
@@ -205,7 +204,6 @@ Pbsfiles/hello2/world/header/reverse.h
 Pbsfiles/frontend/frontend.pl
 Pbsfiles/color/pbsfile.pl
 Pbsfiles/error_messages/Pbsfile.pl
-Pbsfiles/my_switches/pbsfile.pl
 
 Pbsfiles/test1/Pbsfile.pl
 Pbsfiles/test1/P2.pl
@@ -222,8 +220,6 @@ Pbsfiles/java/Pbsfile.pl
 Pbsfiles/java/HelloWorld.java
 
 Pbsfiles/language_java/Pbsfile.pl
-
-Pbsfiles/language/Pbsfile.pl
 
 Pbsfiles/micro_warp/Pbsfile.pl
 
@@ -277,7 +273,6 @@ Pbsfiles/miner/miner_3.pl
 Pbsfiles/miner/miner_usb.pl
 
 Pbsfiles/pure_perl_rule/Pbsfile.pl
-Pbsfiles/pure_perl_rule/nadim.prf
 
 Pbsfiles/multi/Pbsfile.pl
 Pbsfiles/multi/sub.pl
@@ -405,7 +400,3 @@ Pbsfiles/emil_subpbs_locate/sd1/b/a.h
 Pbsfiles/emil_subpbs_locate/sd1/pbs.prf
 Pbsfiles/emil_subpbs_locate/sd1/Pbsfile.pl
 Pbsfiles/emil_subpbs_locate/sd2/b/a.h
-
-
-
-META.json
