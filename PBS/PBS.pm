@@ -414,7 +414,13 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 
 	if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 		{
-		PrintInfo(sprintf("Depend: time in Pbsfile: %0.2f s.\n", tv_interval ($t0, [gettimeofday]))) ;
+		my $time = sprintf("%0.2f s.", tv_interval ($t0, [gettimeofday])) ;
+		my $template = "Depend: time in Pbsfile: %s, time: $time\n" ;
+		my $available = PBS::Output::GetScreenWidth() - length($template) ;
+
+		my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
+
+		PrintInfo sprintf($template, $em->($Pbsfile)) ;
 		}
 		
 	if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})

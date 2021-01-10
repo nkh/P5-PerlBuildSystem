@@ -220,7 +220,7 @@ if($node_needs_rebuild)
 				}
 			else
 				{
-				unless ($file_tree->{__VIRTUL})
+				unless ($file_tree->{__VIRTUAL})
 					{
 					my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
 					make_path($path, { error => \my $make_path_errors}) ;

@@ -66,14 +66,14 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 
 my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
 
-my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
+my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
 
 my $target_string = '' ; 
 $target_string .= $em->($_) for (@$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
-PrintInfo("Depend: target: " . INFO3($target_string, 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0))
+PrintInfo("Depend: " . INFO3($target_string, 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0))
 	unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
@@ -95,10 +95,17 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
-my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
-my $added_nodes = $end_nodes - $start_nodes ;
+if ($pbs_config->{DISPLAY_DEPEND_END})
+	{
+	my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
+	my $added_nodes = $end_nodes - $start_nodes ;
 
-PrintWarning("Depend: done $package_alias\[$PBS::Output::indentation_depth], nodes:$end_nodes(+$added_nodes)\n\n") if $pbs_config->{DISPLAY_DEPEND_END} ;
+	my $template = "Depend: done %s, level:$PBS::Output::indentation_depth, nodes:$end_nodes(+$added_nodes)\n" ;
+	my $available = PBS::Output::GetScreenWidth() - length($template) ;
+	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
+
+	PrintWarning sprintf($template, $em->($Pbsfile)) ;
+	}
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

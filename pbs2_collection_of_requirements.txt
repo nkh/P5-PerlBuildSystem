@@ -1,3 +1,325 @@
+time to completion
+	we want to use pbs to generate time plan for activities
+	the activities are described as a dependency tree
+	each activity has a "build time" which can be zero, a "start time" which can be immediate, and a set of dependencies
+			#build time" and "start time" are attributes to nodes
+
+	the time to completion of a node is max(time of completion dependencies, "start time") + "build time"
+		this is computed by traversing the dependency graph
+
+		all activities are run in parallel or a dependency must be added
+
+	this can be implemented as a builder for a "time to completion" node (virtual or, better, a physical report)
+
+	a rule for "time to completion" is added in a pbsfile, the node is dependent on the top target or any target we want to compute
+	a time to completion for, the only thing needed is a dependency tree we can traverse
+
+build phases as a dependency graph:
+
+	these artifacts depend on a pbs phase being done
+		time to completion -> dependency
+		graph generation -> dependency
+		build analysis -> build
+		warp generation -> build
+		build -> warp loading
+		...
+
+	we can describe the relationship between these phases as a dependency graph
+		each "node" can be build by a builder, a perl sub for internals or even an external program which
+		returns data we can integrate in the dependency graph
+
+
+	eg:
+		pbs run
+			warp generation
+			build analysis
+				build
+					build nodes
+						generate digest
+				time to completion
+					dependency graph
+						rule execution
+							pbsfile loading
+						warp loading
+							check node digest
+								regenerate nodes
+	
+
+	since rules and REH have no knowledge about a build system we can use them to describe and implement the build system
+		eg: adding warp as dependencies rather than a piece of code at a specific place
+
+			this lets add warp/caching anywhere in the graph, ie: C dependency computation
+
+
+	to create a dependency graph for the build phases we need a description file, a "build phase pbsfile" which is an internal
+	implementation
+
+	some of the nodes in the phases graph are optional/user defined
+		graph generation
+		time to completion
+		...
+
+		the user should be able to give a "build phase pbsfile"
+
+		we could also manipulate the rules ser in the "build phases pbsfile" with code injection
+
+			options are run at every level so they can add rules and nodes to the "build phase pbsfile"
+
+			code injection (same mechanism as options) could manipulate the "build phase pbsfile" rules more deeply
+				remove some rules dynamically, insert a new phase between to phases, ...
+
+				although possible, it seems better to clone the "build phase pbsfile"
+
+
+
+alternative dependency definition
+	a more "graphical" dependency definition, note that this is what the graph looks like when depend is done
+
+		dependencies pbs run
+			warp generation
+			build analysis
+				build
+				time to completion
+					depend
+						warp loading
+
+
+Linking to an existing node can be under the control of the user
+	eg: a module knows that a node shouldn't exist before the module is run
+
+
+handle ENV in warp
+	that means handle CM for all the tools too, that can't be done automatically by pbs
+
+distribute centralized data
+	statistics can be per loaded package and merged together on demand
+
+	package config is in the PBS::Config module but should be in the package
+		this was done to force manipulation of config via API and remove the possibility to directly access the config
+		it also allows inheritance of configuration
+
+		both above can be done and still have the data itself in the package
+
+--save config saves the config in the output directory
+	the config is the parent node package config (a cow version of it), change option names to reflect it
+		save_parent_config, save_start_config?
+		we can also save the config just before we start running rules ( which can only modify node configs not package config)
+			this allows us to diff the configs and see what has been changed
+				this is also supported as a logalready
+
+	list use cases
+		subset build
+		pre-emptive warp generation
+		debugging 
+
+	how is pbs_config{LOADED_CONFIG} used? loaded in PBS::FrontEnd
+	can load and save config be used simultaneously ? make a backup of the old version
+
+	the target is also saved in the parent/start config, warn if it is used for a different target (which is OK for debugging)
+
+	document how the parent's config loading works and what effect it has
+
+	sort the saved configs so they are easily readable
+
+	load_parent_config runs should generate output in a different output directory but use the normal output directory as a binary repo
+
+	starting a subpbs build with saved config and the original build as a binary repo is error prone
+		a wizard creates a command if it finds a saved config
+
+build directory per config-target
+	rather than put everything in the same output directory create specific directories per config-target
+
+	we need a way to garbage collect
+
+	we need a way to follow logs for a specific pbs run
+		can we create a directory per config-target and link to sub trees output directories? 
+		this allows sharing output directories
+	
+
+FrontEnd
+	line 70 config is overridden without warning
+	all actions taken only for level 0 should be moved in a specific subs or a package
+
+depend log
+	rules triggering are displayed aligned the same way even if the node triggering is at a lower level
+
+		all ... a, b
+		b ... x
+		a ... y
+
+	
+		should be
+		all ... a, b
+			b ... x
+			a ... y
+
+
+	this has the disadvantaged to use more screen
+
+	dependencies should have a graph, as tt, to make it easier to follow log
+
+
+configuration
+	query an undefined variable is an error is option is used
+
+	display which variable have not been used,and where they were used
+
+	
+
+pbs switches are sorted in categories
+	a help switch per category is available
+
+pbsfile_use_statistics
+	option is implemented as a REH on the package node
+	is displayed before ** depend ** phase not at end of run, even though that's were we want it
+		best would be to let the log visualized decide
+		
+
+log visualizer/greper
+	a set of scripts that extract data from logs
+
+		eg: -- display_pbsuse_statistics
+
+		that's a data we are interested in specific cases only but it should be possible to get that information for previous builds too
+
+	all data that's not in the warp file should be in another set of files ( so we can access them but not bloat he warp file that needs to load fast)
+
+confusing -bi and -bni options
+	-bi help needs fixing, refers to not existing options
+	obscure option to control what is displayed or not ( ie: options names are bad)
+
+
+
+
+caching rules
+	rules are not cached because the pbsfiles that they are defined in may have code in them that makes the rules work differently in different context
+		this is safe but paranoid and slow
+		
+		even pbsfiles that only contain rule may have dependers that work differently depending on context and configuration ( probably what we want)
+
+	let the user decide if a rule is available, by name, for all sub nodes, and only sub nodes
+		this makes sense as we already give the top nodes control over configuration inheritance
+
+		this should be displayed clearly in the nodes' logs
+			what rules are taken from cache
+			where the cache rules where defined
+			how many of the rules in a pbs run are from the cache
+			if a rule is marked as forced
+
+		sub nodes should be able to reject parent nodes rules
+			warning are displayed
+
+	is it possible to find out if a rule definition should be re-loaded from the context?
+		probably not
+
+
+	implementation
+		Rule checks the current rule definition to see if it is
+			marked as "forced" aka ignore cached version
+			marked as "non-exportable"
+			marked as "local"
+
+			finding out if a rule matches a set of node and selectively using them or loading new rules is difficult ( but possible)
+				that could be done by a test at rule loading time
+
+			if it exists in the cache or if it needs to be loaded 
+	
+			cached rules are aliased within the pbs run package
+				it makes it easier to access them, alternatively the code running the rules can check but that's bloated
+
+			a loaded rule has an origin attribute added, the parent's or the local pbsrun
+
+			parent package can limit the rules children can use from the cache, using "local"
+
+Create warp tree via rules
+
+	MW is a dependency graph for a node
+		it corresponds to the run of a depender in a different package/pbsfile
+
+		there's no reason that MW is run dor a depender in a different package except we decided so, this means that MW could also be create
+		during a normal node dependency ( although it may be more efficient to generate all the wanted MW from the final dependency graph )
+			this gives us the possibility to decide the granularity of the MW, eg: we want a MW for each C library
+
+		since MW is a dependency graph, it's generated by a depender ( as a side effect of a pbs run), it's loading is done at pbs start time
+			pbs start time loads all the MW to create a warp tree which is used to verify node changes and minimize the parts of the graph
+			that need to be rebuild.
+
+			MW could load themselves and give a sub graph + node list back, this makes it possible to have MW generated in different formats
+		it corresponds to the run of a depender in a different package/pbsfile
+
+		there's no reason that MW is run dor a depender in a different package except we decided so, this means that MW could also be create
+		during a normal node dependency ( although it may be more efficient to generate all the wanted MW from the final dependency graph )
+			this gives us the possibility to decide the granularity of the MW, eg: we want a MW for each C library
+
+		since MW is a dependency graph, it's generated by a depender ( as a side effect of a pbs run), it's loading is done at pbs start time
+			pbs start time loads all the MW to create a warp tree which is used to verify node changes and minimize the parts of the graph
+			that need to be rebuild.
+
+			MW could load themselves and give a sub graph + node list back, this makes it possible to have MW generated in different formats
+
+			if MW can load themselves they can also check themselves, this allows parallelization of the warp tree build
+
+			MW contain references to other MW and whould load them rather than having a  pbs global loading mechanism
+				a pbs controlled loading mechanism is good for debugging but we could have log output API that needs to be followed by MW
+
+			as soon as a branch of the warp tree has been re-created ( it'as nodes as checked already) it can be rebuild if necessary
+
+			
+
+		since MW is a "depender" it can be a REH
+			this means that warp can be written using rules!
+			
+			MW_REH load the MW, check the node, create a trigger list ( it would be nice to be able to run a pbsfile with such rule, for debugging, outside a normal pbs run)
+					
+				if sub MW are found during the MW load, they can be run in parallel
+
+			or maybe it's the pbsfile_REH that should load the warp file?
+				pbsfile_REH  "links/merges" config+target trees, by using warp, and eventually using normal rule running
+
+		problems:
+			we need to control how many processes are being run simulteanously
+
+			when the same node is referred to from different branches of the warp tree, we don't want to compute their hash multiple times
+				we want a centralized digest cache, for this specific build
+					this is exactly what the watch_server is! except it also watches nodes and can handle multiple builds
+				
+				since the watch server gets modification signals it knows if a file has been changed during a build
+
+				use a watch server for hash sharing for every pbs build
+
+	implementation ideas
+		don't re-create nodes that are not needed in the build
+
+*line new c depender inserts nodes in the graph after the build to create a complete warp file
+	the c_depender injected nodes should be in their own micro warp files
+
+	if the dependencies are needed during current the pbs run a mechanism to reload the micro warp at run time is available
+		when accessing node dependencies, reload them if flagged as not loaded
+			this allows us to mark the c files dependencies as not loaded if it has changed or if they don't exist
+
+
+
+create set of scripts that run queries
+	scripts take a log to work on or use the latest build
+
+	output is in the terminal
+
+	output is structured and can be filtered to produce different formats
+
+	example of output
+		nodes in the graph
+		nodes triggering
+		nodes rebuild
+		rules run
+		...
+
+options 
+	should not interact with each other
+		if option a and b can be used separately and together but give a result that's different from
+			using a and b, then a third 
+
+	if option a has sub option a1, setting option a1 automatically set a
+
 Add comments directly in the node and make the comment part of the build output log
 
 	AddRule
@@ -8,10 +330,8 @@ Add comments directly in the node and make the comment part of the build output 
 	we already made the rules a bit more comprehensible by giving them names, comments can help further
 
 	we have a link in the log to the rule and it's definition line
-
-	we could extract the rule and inline it, that would also make navigation unnecessary
-
-	we also have the textual representation of the rule in the rules that could be displayed instead 
+		we could extract the rule and inline it, that would also make navigation unnecessary
+		we also have the textual representation of the rule in the rules that could be displayed instead 
 
 	possible syntaxes
 
@@ -213,6 +533,27 @@ Default REH
 	operator 'is' is sugar to call REHs
 		this may force us to push REH is classes
 
+example REH
+	
+	REH_BUILDER => file_name.pl ( or other language)
+		uses code in file_name to build node
+
+	REH_MATCHED
+		run as last rule, and matches only for the nodes that matches
+		run as a normal rule after at least one rule matched a node
+
+		use case: ?
+
+	REH_BUILD_AFTER after_what, code
+		only runs after another builder
+
+	REH_BUILD_SCHEDULER
+		decides which builders are run when
+
+	REH_BUILD_RESULT
+		runs after build is done and can set result to success or not
+
+
 depending on an external build system
 	use case #1 source code may change
 	use case #2 source code tar ball may change
@@ -252,6 +593,163 @@ depending on an external build system
 	This caching scheme advantages are only interesting (for build time) if checking the cache takes less time than running the library build
 		there are other advantages but those may only be interesting when debugging or analyzing a build (and can be optional)
 
+
+pbsfile chain
+	is used to invalidate a sub graph
+		if a pbsfile changes the dependency graph under it may change, because of nodes added/removed or configuration change
+		
+	the pbsfile chain should be a dependency of every node
+
+	the pbsfile chain is implemented as an internal list while it should be implemented as a node list that's in the dependency graph
+		it doesnt have to be implemented differently (except it's a reverse dependency, node at a sub level depend on pbsfiles
+		at higher levels)
+
+	the dependency on a higher level pbsfile should be added via a rule injected in the pbs run
+
+	only the graph under a pbsfile level is invalidated, upper levels aren't
+
+
+	Note: even if a parent level pbsfile invalidates the graph at lower levels, the cost is not a complete graph reconstructions as
+		when the lower level pbsfile is run, and it hasn't changed, it will be gatherer from meso warp quickly, the pbsfile is not
+		loaded
+
+	* pbsfile chain is STILL needed to remove sub graphs from warp
+
+		target : A
+		A: B
+		B: C
+		C: D
+
+		B pbsfile is changed, B is removed from the graph, may be quickly regenerate by meso
+		C and D must be removed from the graph, may be quickly regenerate by meso
+
+
+		meso files are valid independent of any graph
+
+		if a node dependency (its pbsfile in this case) has changed, the node is not present in the warp graph and thus it's pbsfile is reloaded
+		all the nodes added by that pbsfile are not in the warp graph and created during the pbs run
+		lower levels node either exist in a meso (same config, same target, same pbsfile) and is merged or a new meso is created
+
+		=> the pbsfile chain that points to levels under B's level is used to remove all sub graphs, there may be another way using dependencies
+			it would be nicer to have a distributed "pbsfile chain lower levels" than the current implementation
+
+			if the pbsfile for B has changed, all nodes from that pbsfile are invalid and removed, we must also remove the nodes dependencies
+				that's what the current pbsfile chain does, by invalidating the pbsfile sub pbsfiles
+
+				the pbsfile chain is a warp structure, it doesn't exist in the dependency graph, it's created by adding the pbsfile of every
+				node in the dependency graph, IE this done as many times as there are nodes
+
+				this would be more efficient if there were pbsfile dependency graphs, we'd be able to do the same thing but once for every
+				pbsfile rather than every node
+
+				the dependency to the sub node pbsfile should be added by subpbs rules
+
+
+				B : C(sub pbsfile) 
+
+				also means
+
+				current pbsfile : sub pbsfile ( what about "virtual pbsfiles" ( we want to avoid anyway)
+
+
+				current pbsfile (pbs run for the pbsfile) also has a builder
+				current pbsfile is also a dependency to all the pbs run nodes
+					B: C
+
+					also means
+
+					B: current pbsfile
+
+					we used to squirrel it in the digest but we now put it in the graph
+
+	* pbsfile chain is STILL needed to trigger dependents
+
+		target : A XXX
+		A: B
+		B: C
+		C: D
+
+		B pbsfile is changed, B is removed from the graph, A needs to be rebuild because its dependency has changed, the only way to rebuild
+		a node is to have its builder, the builder is in A's pbsfile, A needs to be removed so it's pbsfile is loaded
+
+		XXX is still valid
+
+		=> pbsfile chain is not needed, A is removed and the build need to restart from the top, which load the top pbsfile. pbs will load
+			the pbsfile for all the nodes that have been removed without the help of the pbsfile chain
+
+non file dependencies in the node digest
+	pbsfiles were added as a package dependency
+	pbs libs are added via package dependencies
+	configs are added with user defined code
+	ENV
+	...
+
+	we need a better way
+
+		pbsfile and libs can be added to the dependency tree
+			we need to add options to filter them out/in the graphs display
+
+		configs need to get into the dependency graph
+			since the config is a node it will get a digest, the digest contains the build time values
+
+			the config has the pbsfile as a dependency
+
+			the config is either a dependency to all nodes or a dependency to a pbs_run node which is a dependency to all nodes
+			
+			the config is directly in the package
+
+			how do we check if config has changed?
+				the pbsfile has changes
+				at parent config has changed, that means it's pbsfile has changed and thus it will remove all sub graphs
+
+		node specific configs need to get into the digest too
+
+		ENV is simple since we force the user to tell us which ENV is used
+			not all ENV are used for all nodes, we need to control it at the node/package level, not only top level
+
+digest generation and computation
+	digest is a REH that's added to all nodes
+		this allows new digest mechanisms to be added without changing the core pbs
+	
+	nodes can override the digest REH, creation and verification
+
+	stats data for generation/verification are possible
+		a config option that the REH checks and generates data ( possibly serialize it)
+
+AddFileDependency
+	used to add a dependency to all the nodes in the current package
+
+	better use: rule '*: file
+
+post_pbs and post build commands
+	should be rules
+		we should be able to inject those rules from the command line
+
+	post_pbs is limited, we want to run a script after specific nodes, packages, or the whole build
+
+	
+mic rule injection during debug
+	muhahhahhaha, with history pointer -> double muhahahahaha
+
+	we have a mechanism to inject rules when packages are loaded, on top of a current graph, during debug we could use that mechanism to 
+	add logging or rules
+
+	we have a graph we can go back into, using the log, so we can back to the point where a node is inserted, back before its pbsfile is loaded
+		add rules (including extra logging) to be injected, load the pbsfile and step through it
+
+		note that this is anoter build "branch", once we back in the log and change something, we have a new build
+
+		having the original build in a history viewer and the new build ( because of rule injection ) allows us to diff them
+			we need nodes to be inserted in the same order to be able to diff efficiently
+
+			--reproducible_build forces pbs to run serially with nodes in a specific order
+
+
+
+	
+
+Controlling ENV at the node level
+	? 
 
 parallel depend
 	if we run depend (on nodes) in parallel, what can we do with the generated sub graphs?
@@ -321,7 +819,15 @@ parallel depend
 
 						we need to name the meso files based on the start config
 		
+	biggest problem with parallel depend on different machines is that we want to avoid depending the same thing twice and veryfy that those
+		common dependencies are configured in the same way whatever branch of the dependency graph adds them.
 
+	how do we visualize a parallel depend?
+
+	how do we debug a parallel depend? how do we force the depend, and a specific state on the depend nodes?
+		reproducibility!
+
+ 
 parallel depend, check, build, ...
 	how is the output stream put back together if multiple processes generate it?
 
@@ -332,7 +838,6 @@ parallel depend, check, build, ...
 		does each process build a sub tree or nodes
 
 	how are files put back in a single file system (if needed, see LOCAL in pbs1)
-
 
 running all the rules for all the nodes
 	without scoping we get a hit rate below 30%, sometimes much less
@@ -726,7 +1231,7 @@ output filters
 
 		the serialized graph should be in parts so there is no need to load everything
 
-		IF we the node digest are build as mini graphs we could just refer to them
+		if the node digest are build as mini graphs we could just refer to them
 
 	? is the data generated like a stream which is later split and located in the nodes sub directory
 		or do we generate directly in the sub directory
@@ -3637,15 +4142,22 @@ option rules
 
 	# this allows us to define options dynamically for debugging e.g.
 
+	if option rules are called at each level of pbs
+		and passed the current level
+		they can act differently on each level
+
 	example --dd option rule
 		lives in options/-dd.pl
-		parse command line
+		parse command line (it is passed everything a PBS::Run is passed)
 			return command line minus parsed portion
 				can insert elements in command line
 					eg --all_debug can add --debug_level1 --debuge_level2 ...
 		handles --help--dd
 		returns code to be run in the package
 			debug option to show the code
+			the code is a dependency for the run
+				serialize it in the output directory
+				the option rule code, that generated the pbsfile "injection" is also a dependency
 		
 		-dd has multiple types (call time type) so it can add a config when a node is created
 			and display dependencies after a node is depended
@@ -3654,7 +4166,27 @@ option rules
 		create a new "option" which adds a rule, add it to the pbs call
 		since options can take arguments, the injection can itself decide when to act
 
+		as option rules are loaded at each level, they are add themselves as a dependency in the graph 
+			they can also add whatever option is passed to them at the level it is used
+			this makes warp trigger on the option rule implementation and options
+
 	debugging uses rule injection
+		we have spread debugging code around, instead DEBUG_REHs are run whenever a stage is run
+		debugging rules can be added in pbsfile
+
+
+		IE: in the  pbs code that inserts nodes we have a "if debug call all the breakpoints and see if one is of interest"
+
+			that can be replaced by a rule added by an option_rule:
+
+				pbs ... --display_insertion '*.c'
+
+				which adds the rule
+
+					Rule REGEX: '*.c', TYPE_NODE_INSERTION, code => if insertion echo node $node_name is inserted
+
+
+				it's not different from option --dd, but adds a rule that's of type TYPE_NODE_INSERTION rather than TYPE_NODE_DEPENDED
 
 	"options" can
 		add rules
@@ -3687,6 +4219,28 @@ option rules
 				some yaml
 					here
 			
+code/rule injection
+
+	see "option/rules"
+
+	use cases:
+		- from command line inject rule only in a specific package
+			specific package or subpbs targets can be passed as an argument to the option injecting the code,
+			including the filename to a fullblown config or even the source code of the rule
+
+
+			eg: inject a rule to show the number of dependencies to a specific node at a specific level
+
+				pbs --magnifier '{level: 7, regex: specific, rule_file: magnifier.rule}'
+		...
+
+	
+	same mechanism can handle options, code injection, debugging, ...
+		we just need to keep the dependencies right so a change will trigger a rebuild
+
+	if possible implement code/rule injection with a physical file and PbsUse, this will add it as a dependency
+
+
 
 target rule
 	parse the targets, update the target "variable"
@@ -4463,6 +5017,21 @@ multiple rules builder
 	a warning is displayed when multiple builders are used
 	warning end up in log (all warnings should)
 
+	they allow better rule and build granularity (specially if the rules can be composed from a pre-defined REHs)
+
+		rule regex '*', REH_CREATE_DIR
+
+		rule regex X, REH_CREATE_and X
+
+
+	a builder REH can
+		check if other builders have been run and fail
+		can run only for a specific condition
+	
+	can rules say in which order the builders are run?
+	can REHS decide in which order they are run, or after/before which other builder they should be run?
+
+
 --dd, ddl, ddr
 	often followed with --tno
 	ca we present --dd as a tee to start with ?
@@ -4594,6 +5163,11 @@ Microwarp composition
 					we can find which version of the source repo is used
 						or if it is a local version
 
+	
+	multiple MW can refer to the same node
+		but MW are the dependency graph of a node, can a single node have multiple MW?
+			IE, can different tools generate a dependency graph for a node and it's the sum of all the MW
+			that is the complete dependency graph for the node
 
 log is not generated
 	the log contains node information and build time information (including output from the tools)
@@ -4899,7 +5473,7 @@ declare possible top target in pbsfile
 pbs/subpbs return a miniwarp
 	there is no reason to give the top part of the graph to subnode 
 		linking to existing node?
-		better encapsulation of dub level
+		better encapsulation of sub level
 
 	the pbs serialized the miniwarp
 		calling pbs can ask for a live sub graph
