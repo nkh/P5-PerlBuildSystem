@@ -1,4 +1,10 @@
 
+time to completion example
+	when digest can't be generated we only get a warning
+	warp say ok althoug digests can be read!
+
+
+
 i:h isfname , ^wF, gF
 fzf option 
 

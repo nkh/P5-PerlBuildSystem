@@ -272,7 +272,7 @@ if($node_needs_rebuild)
 	
 	if($build_result == BUILD_SUCCESS)
 		{
-		($build_result, $build_message) = RunPostBuildCommands($pbs_config, $file_tree, $dependencies, $triggered_dependencies) ;
+		($build_result, $build_message) = RunPostBuildCommands($pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
 		}
 
 	if($build_result == BUILD_SUCCESS)

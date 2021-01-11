@@ -21,7 +21,7 @@ AddPostBuildCommand 'post build', ['all', 'a', 'b'], \&PostBuildCommandTest, 'hi
 
 sub PostBuildCommandTest
 {
-my ($config, $name, $dependencies, $triggered_dependencies, $argument, $node) = @_ ;
+my ($config, $name, $dependencies, $triggered_dependencies, $argument, $node, $inserted_nodes) = @_ ;
 
 my $dp = [$config, $name, $dependencies, $triggered_dependencies, $argument] ;
 

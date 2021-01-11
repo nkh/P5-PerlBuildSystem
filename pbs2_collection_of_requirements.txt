@@ -1,3 +1,71 @@
+From time to completion example
+	can't set config on source nodes
+		maybe we could only run node subs
+			but we need to "build" the source nodes to get any result
+
+
+		IsNodeDigestGenerated means node is source so
+			no rules is run on the node
+			the node is not build
+			no digest is generated
+
+			why?
+				as long as the source is not changed what is done in pbs data structures
+				has no impact
+
+		IsNodeDigestGenerated  can be replaced by a rule
+
+			rule the_source, builder => SourceBuilder
+
+			this lets us add node subs and extra "builders" to source nodes
+
+			SourceBuilder is called only if the source is changed and can log something interesting
+
+			another problem is that nodes have to be build to generate gant data so once a node is built
+			the node has to change so the gant data is rebuild
+				this is the problem with data that has no file like gant!
+
+				the right thing would be to have a gant data file generated for each node
+
+				rule gant
+					match, everything that's not a gant file
+					
+					post builder: find the not gant file node and use it's dependencies
+
+		post build command are only run if a build succeeds
+			shouldn't we run them anyway and pass the result of the builder?
+
+			note that post build commands should be parent nodes!
+
+	we want to run a build that does a computation on the graph, via builders, rather than the normal build
+
+	we may want to run both at the same time
+
+	not only do we want to have multiple builders but we want to chose between which ones to run
+		this has to be done via a category since we may want multiple builders in a category to be run
+
+		DefaultTarget('all') ;
+
+		# adding a rule depending on a target for all nodes is easy
+		# the rule can also match specific nodes
+
+		push @builders = \&gant if target gant
+		rule * 
+			builders => gant
+		
+		rule [V], gant, BuildOk() ;
+
+		
+		# removing the other rules is more complicated
+		push @builders = \&normal if target all
+		rule all
+			builders => @builders
+
+		pbs
+		pbs all 
+		pbs gant
+		pbs gant all
+		
 Default target
 	pbs has no default targt and certainly doesn't run the first rule in the pbsfile
 
