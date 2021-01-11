@@ -14,6 +14,13 @@ Provides the following replacement variables:
 	%FILE_TO_BUILD_NO_EXT
 	%FILE_TO_BUILD
 
+	%TARGET_PATH
+	%TARGET_DIR
+	%TARGET_NAME
+	%TARGET_BASENAME
+	%TARGET_NO_EXT
+	%TARGET
+
 	%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY
 	%TRIGGERED_DEPENDENCY_LIST
 	%DEPENDENCY_LIST
@@ -138,6 +145,12 @@ for
 	[ FILE_TO_BUILD_BASENAME                   => $basename ],
 	[ FILE_TO_BUILD_NO_EXT                     => "$path\/$basename"],
 	[ FILE_TO_BUILD                            => $file_to_build ],
+	[ TARGET_DIR                               => $path ],
+	[ TARGET_PATH                              => $path ],
+	[ TARGET_NAME                              => "$basename$ext" ],
+	[ TARGET_BASENAME                          => $basename ],
+	[ TARGET_NO_EXT                            => "$path\/$basename"],
+	[ TARGET                                   => $file_to_build ],
 	[ DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY => $dependency_list_relative_build_directory],
 	[ TRIGGERED_DEPENDENCY_LIST                => $triggered_dependency_list],
 	[ DEPENDENCY_LIST                          => $dependency_list],

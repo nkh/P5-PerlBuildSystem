@@ -1,3 +1,48 @@
+Default target
+	pbs has no default targt and certainly doesn't run the first rule in the pbsfile
+
+	targets can be added in the pbs.prf file
+
+	it should be possible to declare a target in the pbsfile which is used only if notarget is given in the prf or the command line
+		DefaultTarget => something
+		DefaultTarget('something')
+		...
+
+
+	if no default target is found we could
+		run a sub, help() for example
+			the user can define which subs to look for 
+		 
+		assign a default target, help for example
+			the user can define which target to use
+
+prf for a tree of pbsfiles
+	the prf file is searched for when running pbs in the root
+
+	sometimes we want to run pbsfiles in sub directories but still use the prf (specially if it doesn't contain a target)
+		we could scan the directories above
+
+		note that we really want to avoid changing directory to run a subpbs 
+			
+NoDigest
+	function used to record regex used to tag nodes as source files
+
+	the name could be better,specially for people who don't want to learn about digest
+		IsSouce
+		SourceNodes
+		...
+
+	we could also assume that nodes that are not depended are source node
+		we could do that depending on an option
+
+		we can display the list of node that are assumed to be source node, and log them
+
+		it's OK to assume as if the node is not present pbs will display an error
+
+		if it is a generated node and has no rule then it will be uses as is till the rules contain a builder
+		
+		NoDigest can still be used, then no assumption is made
+
 time to completion
 	we want to use pbs to generate time plan for activities
 	the activities are described as a dependency tree

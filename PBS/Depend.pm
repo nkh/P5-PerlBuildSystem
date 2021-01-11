@@ -434,7 +434,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							. join
 								(
 								"\n$indent$indent",
-								map { $node_is_source->($tree, $_) ? INFO4("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
+								map { $node_is_source->($tree, $_) ? WARNING("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
 										@dependency_names
 								)
 							. "\n" ;
@@ -449,7 +449,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					my $dd = INFO3 "$indent'$node_name' ${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
-						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? INFO4("'$_'", 0) : INFO("'$_'", 0) } @dependency_names), 0)
+						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? WARNING("'$_'", 0) : INFO("'$_'", 0) } @dependency_names), 0)
 							 . INFO( " ]", 0)
 						: INFO("[$no_dependencies ]", 0) ;
 

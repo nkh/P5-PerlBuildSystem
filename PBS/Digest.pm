@@ -636,9 +636,6 @@ for my $name (keys %force_patterns)
 
 #-------------------------------------------------------------------------------
 
-use Memoize ;
-memoize('IsDigestToBeGenerated') ;
-
 sub IsDigestToBeGenerated
 {
 my ($package, $node) = @_ ;

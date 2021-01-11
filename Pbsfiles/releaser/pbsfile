@@ -8,11 +8,11 @@ Rule [V], 'release', ['release' => glob '{'. Config('OEMS') .'}/{'. Config('LIBR
 	BuildOk() ;
 
 Rule 'mol', [ qr/encrypted\.mol$/ => './$path1/pt::PT', '$path/css'],
-	'%PT %FILE_TO_BUILD' ;
+	'%PT %TARGET' ;
 
 Rule 'pt', [ qr<pt$> => './repo/$path1/pt::OEM_PT' ],
-	'cp %OEM_PT %FILE_TO_BUILD_DIR' ;
+	'cp %OEM_PT %TARGET_DIR' ;
 
 Rule 'css', [ qr<css$> => './resources/css::CSS' ],
-	'cp %CSS %FILE_TO_BUILD' ;
+	'cp %CSS %TARGET' ;
 
