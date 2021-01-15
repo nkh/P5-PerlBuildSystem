@@ -547,7 +547,7 @@ for my $node (@$nodes_to_check)
 							? $nodes->{$node}{__LOCATION} . substr($node, 1) 
 							: $node ;
 
-		if (($nodes->{$node}{"__MD5"} // '' ) eq "not built yet")
+		if (($nodes->{$node}{"__MD5"} // '' ) eq "invalid md5")
 			{
 			$remove_this_node++ ;
 			push @reasons, "signature = '" . ($nodes->{$node}{"__MD5"} // '') . "'" ;
@@ -857,7 +857,7 @@ for my $node_name (keys %$inserted_nodes)
 				if(exists $node->{__INSERTED_AT}{INSERTION_TIME})
 					{
 					# this is a new node
-					if(defined $node->{__MD5} && $node->{__MD5} ne 'not built yet')
+					if(defined $node->{__MD5} && $node->{__MD5} ne 'invalid md5')
 						{
 						$nodes{$node_name}{__MD5} = $node->{__MD5} ;
 						}
@@ -1117,7 +1117,6 @@ PrintInfo "Warp: nodes: " . scalar (keys %nodes) . ", new nodes: $new_nodes\n" u
 for my $warp_dependent_name (keys %warp_dependents)
 	{
 	$warp_configuration->{$warp_dependent_name} = GetFileMD5($warp_dependent_name) ;
-	
 	my $warp_dependent = $warp_dependents{$warp_dependent_name} ;
 	
 	for my $dependent ( keys %{$warp_dependent->{DEPENDENTS}} )
