@@ -329,7 +329,7 @@ EOT
 		"Display where time is spend in PBS.",
 		'',
 		
-	'dmt|display_minimum_time'        => \$pbs_config->{DISPLAY_MINIMUM_TIME},
+	'dmt|display_minimum_time=f'        => \$pbs_config->{DISPLAY_MINIMUM_TIME},
 		"Don't display time if it is less than this value (in seconds, default 0.5s).",
 		'',
 		
