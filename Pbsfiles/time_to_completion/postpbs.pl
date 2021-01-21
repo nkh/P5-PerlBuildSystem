@@ -1,20 +1,13 @@
 
-traverse_graph($dependency_tree, \&ComputeDeliveryTime, $inserted_nodes) ;
+traverse_graph($dependency_tree, \&ComputeDeliveryTime) ;
 
 sub traverse_graph
 {
 my ($node, $callback, @args) = @_ ;
 
-my $enter = $callback->($node, 'entering', @args) ;
+return unless $callback->($node, 'entering', @args) ;
 
-#PrintDebug "traversing $node->{__NAME} $enter\n" ; 
-
-return unless $enter ;
-
-for my $dependency (grep {! /^__/} keys %$node)
-	{
-	traverse_graph->($node->{$dependency}, $callback, @args) ;
-	}
+traverse_graph->($node->{$_}, $callback, @args) for (grep {! /^__/} keys %$node) ;
 
 $callback->($node, 'leaving', @args) ;
 }
@@ -23,7 +16,7 @@ use List::Util qw(max) ;
 
 sub ComputeDeliveryTime
 {
-my ($node, $phase, $inserted_nodes) = @_ ;
+my ($node, $phase) = @_ ;
 my ($config, $name) = ($node->{__CONFIG}, $node->{__NAME}) ;
 
 return 1 if $name =~ /^__/ ; # enter root node
@@ -40,18 +33,19 @@ else
 				$start_time,
 				map 
 					{
-					#PrintDebug "dependency $_: delivery_time: $inserted_nodes->{$_}{__CONFIG}{_DELIVERY_TIME}\n" ;
-					$inserted_nodes->{$_}{__CONFIG}{_DELIVERY_TIME} // 0
+					#PrintDebug "dependency $_: delivery_time: $node->{$_}{__CONFIG}{_DELIVERY_TIME}\n" ;
+					$node->{$_}{__CONFIG}{_DELIVERY_TIME} // 0
 					} grep { ! /^__/ } keys %$node
 				) ;
 
 	$config->{_MIN_START_TIME} = $min_start_time ;
 	$config->{_DELIVERY_TIME} = $min_start_time + ($config->{_BUILD_TIME} // 0) ;
 
-	PrintWarning "'$name': start_time: $start_time,  min_start_time: $min_start_time, build_time: $config->{_BUILD_TIME}, delivery time: $config->{_DELIVERY_TIME}\n" ;
+	PrintInfo4 "GANT: '$name': start_time: $start_time,  min_start_time: $min_start_time, build_time: $config->{_BUILD_TIME}, delivery time: $config->{_DELIVERY_TIME}\n" ;
 	}
 }
 
 # ----------------------------------------------------------------------
-1;
+
+1 ;
 

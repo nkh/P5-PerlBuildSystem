@@ -66,6 +66,26 @@ From time to completion example
 		pbs gant
 		pbs gant all
 		
+	postpbs solved the problem but can't be run in warp as time data is not saved from the node config
+
+		should all the node config be saved?
+
+		postpbs is after build but we want this to be run post depend
+
+		post pbs works because the node are depended in the same process
+			if depend is parallelized postpbs can't see the timeing data in other processes
+
+
+		it's much better if the timing data and computation actually produce an artefact which serves as 
+			a synch object between processes
+	
+	rules, via node subs, can add elements to warped nodes
+		this would allow the gant data to be available when running warp and thus not limit gant to warp 0 (no warp)
+
+option to display some element of the node in a graph
+	should  be set via a node sub
+
+
 Default target
 	pbs has no default targt and certainly doesn't run the first rule in the pbsfile
 
@@ -83,6 +103,11 @@ Default target
 		 
 		assign a default target, help for example
 			the user can define which target to use
+
+	can targets be defined in different pbsfiles at different levels?
+		what if a target in a subpbs is itself a root
+
+		that's bit like node at root except that it's node@inserted_nodes
 
 prf for a tree of pbsfiles
 	the prf file is searched for when running pbs in the root

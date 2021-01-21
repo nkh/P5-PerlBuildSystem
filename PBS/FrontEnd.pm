@@ -320,7 +320,7 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 		{
 		unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
 			{
-			$parse_message .= WARNING "PBS plugin path not defined, using distribution plugins from $distribution_plugin_path! See --ppp.\n" ;
+			$parse_message .= WARNING "PBS: plugin path not defined, using distribution plugins from $distribution_plugin_path, see --ppp.\n" ;
 			}
 			
 		$pbs_config->{PLUGIN_PATH} = [$distribution_plugin_path] ;
@@ -328,7 +328,7 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 		}
 	else
 		{
-		die ERROR "No PBS plugin path set and couldn't found any in the distribution. See --ppp.\n" ;
+		die ERROR "PBS: no plugin path set and couldn't found any in the distribution, see --ppp.\n" ;
 		}
 	}
 
@@ -344,7 +344,7 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 		{
 		unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
 			{
-			$parse_message .= WARNING "PBS lib path not defined, using distribution lib from $distribution_library_path! See --plp.\n" ;
+			$parse_message .= WARNING "PBS: lib path not defined, using distribution lib from $distribution_library_path, see --plp.\n" ;
 			}
 			
 		$pbs_config->{LIB_PATH} = [$distribution_library_path] ;
@@ -352,7 +352,7 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 		}
 	else
 		{
-		die ERROR "No PBS library path set and couldn't found any in the distribution. See --plp.\n" ;
+		die ERROR "PBS: no library path set and couldn't found any in the distribution, see --plp.\n" ;
 		}
 	}
 	
@@ -422,7 +422,7 @@ print <<EOH ;
 
 PBS version $version
 
-Copyright 2002-2020, Nadim Khemir
+Copyright 2002-2021, Nadim Khemir
 
 Send suggestions and inqueries to <nadim.khemir\@gmail.com>.
 

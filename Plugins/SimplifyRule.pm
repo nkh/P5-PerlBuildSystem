@@ -145,6 +145,12 @@ PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddRule, input:") if $display_si
 
 my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @$rule_definition) ;
 
+PrintDebug DumpTree
+	(
+	{ TYPES => $types, NAME => $name, CREATOR => $creator, DEPENDENT => $dependent, DEPENDENCIES => $dependencies, BUILDER => $builder, NODE_SUBS => $node_subs },
+	"Plugin: SimplifyRule::AddRule ParseRule:"
+	) if $display_simplified_rule_transformation ;
+
 if(defined $dependent && 'Regexp' eq ref $dependent)
 	{
 	# compute new arguments to Addrule
@@ -155,7 +161,7 @@ if(defined $dependent && 'Regexp' eq ref $dependent)
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 1, output:") if $display_simplified_rule_transformation ;
 	}
 if(defined $dependent && '' eq ref $dependent)
 	{
@@ -187,7 +193,7 @@ if(defined $dependent && '' eq ref $dependent)
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 2, output:") if $display_simplified_rule_transformation ;
 
 	}
 elsif (defined $dependent && 'CODE' eq ref $dependent)
@@ -199,7 +205,7 @@ elsif (defined $dependent && 'CODE' eq ref $dependent)
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch 3, output:") if $display_simplified_rule_transformation ;
 	}
 elsif (defined $dependent && 'HASH' eq ref $dependent)
 	{
@@ -223,6 +229,7 @@ elsif (defined $dependent && 'HASH' eq ref $dependent)
 			if($display_simplified_rule_transformation)
 				{
 				PrintDebug "Plugin: SimplifyRule::AddRule, Replacing '$original' with '$dependent->{NODE_REGEX}' in subpbs rule '$name' at '$file_name,$line'\n" ;
+				PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 4, output:") ;
 				}
 			
 			}
@@ -266,7 +273,6 @@ else
 		}
 	}
 
-
 my ($depender_and_dependencies, @builder_node_subs) = @rule_definition ;
 
 if('ARRAY' eq ref $depender_and_dependencies)
@@ -288,19 +294,26 @@ else
 
 my (@builder, @node_subs) ; 
 
-for (@builder_node_subs)
+if('ARRAY' eq ref $builder_node_subs[0])
 	{
-	next unless defined $_ ;
+	@builder = @{shift @builder_node_subs} ;
+	@node_subs = @builder_node_subs ;
+	}
+else
+	{
+	for (@builder_node_subs)
+		{
+		next unless defined $_ ;
 
-#PrintDebug "$file_name, $line, shell or sub or node sub: $_\n" ;
-	# node subs are in array ref, even a single one
-	if('ARRAY' eq ref $_ and scalar(@$_))
-		{
-		push @node_subs,  @$_ ;
-		}
-	else
-		{
-		push @builder,  $_ ;
+		# node subs are in array ref, even a single one
+		if('ARRAY' eq ref $_ and scalar(@$_))
+			{
+			push @node_subs,  @$_ ;
+			}
+		else
+			{
+			push @builder,  $_ ;
+			}
 		}
 	}
 

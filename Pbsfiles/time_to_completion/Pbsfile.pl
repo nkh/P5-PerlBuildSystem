@@ -11,17 +11,17 @@
 
 # post pbs is called after the build, maybe we should call post "depend" instead
 
-AddRule 'all', ['all' => 'a', 'b'], "touch %TARGET", [SetTime(5, 3)] ;
-AddRule 'a', ['a', 'c'], "touch %TARGET", [SetTime(1, 2)] ;
-AddRule 'b', ['b' => 'c'], "touch %TARGET", [SetTime(3, 1)] ;
-AddRule 'c', ['c'], "touch %TARGET", [SetTime(4, 3)] ;
+AddRule 'all',	['all' => 'a', 'b'],	["touch %TARGET"],			SetTime(5, 3) ;
+AddRule 'a',	['a' => 'c'],		["touch %TARGET"],			SetTime(1, 2) ;
+AddRule 'b',	['b' => 'c'],		["touch %TARGET"],			SetTime(3, 1) ;
+AddRule 'c',	['c'],			["touch %TARGET", "touch %TARGET"],	SetTime(4, 3) ;
 
 sub SetTime 
 {
 my ($start_time, $build_time) = @_ ;
-sub 
+return sub 
 	{
-	PrintDebug "Setting node: $_[2]->{__NAME}, start_time: $start_time, build_time: $build_time\n" ;
+	PrintInfo4 "GANT: setting $_[2]->{__NAME}, start_time: $start_time, build_time: $build_time\n" ;
 	$_[2]->{__CONFIG} = { _START_TIME => $start_time, _BUILD_TIME => $build_time } ;
 	}
 }

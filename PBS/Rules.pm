@@ -44,7 +44,7 @@ my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my @rules_names = @_ ;
 my @all_rules   = () ;
 
-PrintInfo("Get package rules: $package\n") if defined $pbs_config->{DEBUG_DISPLAY_RULES} ;
+PrintInfo("PBS: Get package rules: $package\n") if defined $pbs_config->{DEBUG_DISPLAY_RULES} ;
 
 if(exists $package_rules{$package})
 	{
@@ -144,7 +144,7 @@ else
 		}
 	else
 		{
-		Carp::carp ERROR("Invalid rule at '$file_name:$line'. Expecting a string or an array ref as first argument.") ;
+		Carp::carp ERROR("Invalid rule at '$file_name:$line'. Expecting a name string, or an array ref containing types, as first argument.") ;
 		PbsDisplayErrorWithContext($file_name,$line) ;
 		die ;
 		}
@@ -438,6 +438,7 @@ my $rule_definition =
 	DEPENDER            => $depender_sub,
 	TEXTUAL_DESCRIPTION => $depender_definition, # keep a visual on how the rule was defined,
 	BUILDER             => $builder_sub,
+	NODE_SUBS	    => $node_subs,
 	%$builder_generated_types,
 	} ;
 
@@ -450,7 +451,7 @@ if(defined $node_subs)
 			{
 			if('CODE' ne ref $node_sub)
 				{
-				PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
+				PrintDebug DumpTree $rule_definition, "Rule: definition" ;
 				PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
 				PbsDisplayErrorWithContext($file_name,$line) ;
 				die ;
@@ -463,7 +464,7 @@ if(defined $node_subs)
 		}
 	else
 		{
-			PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
+		PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
 		PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
 		PbsDisplayErrorWithContext($file_name,$line) ;
 		die ;
@@ -482,18 +483,17 @@ $rule_definition->{NODE_SUBS} = $node_subs if @$node_subs ;
 if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	{
 	my $class_info = "[$class" ;
-	$class_info .= ' (POST_DEPEND)' if $rule_type{__POST_DEPEND} ;
-	$class_info .= ' (CREATOR)'     if $rule_type{__CREATOR};
-	$class_info .= ' (NODE_SUBS)'   if @$node_subs ;
+	$class_info .= ' POST_DEPEND' if $rule_type{__POST_DEPEND} ;
+	$class_info .= ' CREATOR'     if $rule_type{__CREATOR};
 	$class_info .= ']' ;
 		
 	if('HASH' eq ref $depender_definition)
 		{
-		PrintInfo("PBS: Adding subpbs rule: $class_info '$name$origin'.")  ;
+		PrintInfo("PBS: Adding subpbs rule: '$name' $class_info")  ;
 		}
 	else
 		{
-		PrintInfo("PBS: Adding rule: $class_info '$name$origin'.")  ;
+		PrintInfo("PBS: Adding rule: '$name' $class_info")  ;
 		}
 		
 	PrintInfo(DumpTree($rule_definition)) if defined $pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION} ;
@@ -546,14 +546,14 @@ else
 $name ||= 'NO_NAME!' ;	
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-PrintInfo("Removing Rule: ${package}::${class}::${name}\n") if defined $pbs_config->{DEBUG_DISPLAY_RULES} ;
+PrintInfo("PBS: Removing Rule: ${package}::${class}::${name}\n") if defined $pbs_config->{DEBUG_DISPLAY_RULES} ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub DisplayAllRules
 {
-PrintInfo(DumpTree(\%package_rules, 'All rules:')) ;
+PrintInfo(DumpTree(\%package_rules, 'PBS: All rules:')) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -614,18 +614,6 @@ my $pbs_config = GetPbsConfig($package) ;
 
 my ($rule_name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data) 
 	= RunUniquePluginSub($pbs_config, 'AddSubpbsRule', $file_name, $line, $rule_definition) ;
-
-#~ PrintWarning2 <<EOD ;
-#~ file_name $file_name
-#~ line $line
-#~ definition $rule_definition
-
-#~ rule_name $rule_name
-#~ node regex $node_regex
-#~ pbsfile $Pbsfile, 
-#~ pbs_package $pbs_package
-
-#~ EOD
 
 RegisterRule
 	(
