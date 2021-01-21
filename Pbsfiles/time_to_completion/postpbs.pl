@@ -1,5 +1,9 @@
 
-traverse_graph($dependency_tree, \&ComputeDeliveryTime) ;
+# show the gant data for gant nodes present in the dependency graph
+# if a warp is used, only the necessary nodes are in the graph so there may be no
+# gant nodes if they are up to date
+
+traverse_graph($dependency_tree, \&DisplayDeliveryTime) ;
 
 sub traverse_graph
 {
@@ -12,36 +16,43 @@ traverse_graph->($node->{$_}, $callback, @args) for (grep {! /^__/} keys %$node)
 $callback->($node, 'leaving', @args) ;
 }
 
-use List::Util qw(max) ;
+use Data::TreeDumper ;
+use File::Slurp ;
 
-sub ComputeDeliveryTime
+sub DisplayDeliveryTime
 {
 my ($node, $phase) = @_ ;
-my ($config, $name) = ($node->{__CONFIG}, $node->{__NAME}) ;
 
-return 1 if $name =~ /^__/ ; # enter root node
+return 0 unless 'HASH' eq ref $node ; # handle up to date warp  
+return 0 unless exists $node->{__NAME} ; # handle up to date warp  
 
 if ('entering' eq $phase)
 	{
-	return ! defined $config->{_DELIVERY_TIME} ; # do not traverse a sub graph twice
+	return ! exists $node->{__GANT_DELIVERY_TIME_DISPLAYED} ;
 	}
 else
 	{
-	my $start_time = $config->{_START_TIME} // 0 ;
-	my $min_start_time = max
-				(
-				$start_time,
-				map 
-					{
-					#PrintDebug "dependency $_: delivery_time: $node->{$_}{__CONFIG}{_DELIVERY_TIME}\n" ;
-					$node->{$_}{__CONFIG}{_DELIVERY_TIME} // 0
-					} grep { ! /^__/ } keys %$node
-				) ;
+	my ($name) = ($node->{__NAME}) ;
 
-	$config->{_MIN_START_TIME} = $min_start_time ;
-	$config->{_DELIVERY_TIME} = $min_start_time + ($config->{_BUILD_TIME} // 0) ;
+	if ($name =~ /\.gant$/)
+		{
+		my $file = $node->{__BUILD_NAME} ;
+		my $data ;
 
-	PrintInfo4 "GANT: '$name': start_time: $start_time,  min_start_time: $min_start_time, build_time: $config->{_BUILD_TIME}, delivery time: $config->{_DELIVERY_TIME}\n" ;
+		# use serialized nodes delivery time, so warp, parallel build, ... works
+		unless ($data = do $file)
+			{
+			PrintWarning "couldn't parse $file: $@\n" if $@ ;
+			PrintWarning "couldn't do $file: $!\n"    unless defined $data ;
+			PrintWarning "couldn't run $file\n"       unless $data ;
+
+			$data = {} ;
+			}
+
+		#PrintInfo4 DumpTree $data, "GANT: '$name'", DISPLAY_ADDRESS => 0 ;
+		PrintInfo4 "GANT: " . read_file($file) ;
+		}
+	$node->{__GANT_DELIVERY_TIME_DISPLAYED}++ ;
 	}
 }
 

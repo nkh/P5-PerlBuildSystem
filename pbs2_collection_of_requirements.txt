@@ -1,3 +1,17 @@
+Rules run order
+	rules are run in registration order in pbs1
+	
+	we want to control at the rule level in which order they are run
+
+	first/last
+	before other_rule
+	after other_rule
+		this is in itself a little dependency graph that can be wrong
+			circular
+			impossible to run
+				rules want to be before each other
+				last rule that's not last
+
 From time to completion example
 	can't set config on source nodes
 		maybe we could only run node subs
@@ -866,8 +880,8 @@ post_pbs and post build commands
 	post_pbs is limited, we want to run a script after specific nodes, packages, or the whole build
 
 	
-mic rule injection during debug
-	muhahhahhaha, with history pointer -> double muhahahahaha
+rule injection during debug
+	with history pointer?
 
 	we have a mechanism to inject rules when packages are loaded, on top of a current graph, during debug we could use that mechanism to 
 	add logging or rules

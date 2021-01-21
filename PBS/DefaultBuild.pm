@@ -189,7 +189,7 @@ eval
 	# check if any triggered top node has been left outside the build
 	for my $node_name (keys %$inserted_nodes)
 		{
-		next if $inserted_nodes->{$node_name}{__NAME} =~ /^__/ ;
+		next if (! defined $inserted_nodes->{$node_name}{__NAME}) || $inserted_nodes->{$node_name}{__NAME} =~ /^__/ ;
 		
 		unless(exists $inserted_nodes->{$node_name}{__CHECKED})
 			{

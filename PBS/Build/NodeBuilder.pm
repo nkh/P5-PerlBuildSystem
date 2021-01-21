@@ -488,7 +488,7 @@ if($@)
 			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
 			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 		
-		$build_message = ERROR("\t Building $build_name '$rule_info': Exception: $@") ;
+		$build_message = ERROR("\texception: $@\n\tbuild name: $build_name\n") ;
 		}
 	}
 
@@ -500,7 +500,7 @@ if($build_result == BUILD_FAILED)
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
 			
-	$build_message .= ERROR "\tBuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
+	$build_message .= ERROR "\tbuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
 	$file_tree->{__BUILD_FAILED} = $build_message ;
 	}
 

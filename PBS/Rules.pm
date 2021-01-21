@@ -15,7 +15,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule AddRuleTo AddSubpbsRule AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
+our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -163,6 +163,7 @@ RegisterRule
 }
 
 *Rule=\&AddRule ;
+*rule=\&AddRule ;
 
 #-------------------------------------------------------------------------------
 
