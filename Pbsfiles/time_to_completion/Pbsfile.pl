@@ -5,13 +5,11 @@
 
 # note: source nodes have no rules run on them and can't get start time and duration set
 
-PbsUse './gant_settime' ;
+PbsUse './gant' ;
 
-rule 'all',	['all' => 'a', 'b'],	["touch %TARGET"], SetTime(5, 3) ;
-rule 'a',	['a' => 'c'],		["touch %TARGET"], SetTime(1, 2) ;
-rule 'b',	['b' => 'c'],		["touch %TARGET"], SetTime(3, 1) ;
-rule 'c',	['c'],			["touch %TARGET"], SetTime(4, 3) ;
+rule 'all',	['all' => 'a', 'b'],	["touch %TARGET"], GantTime(5, 3) ;
+rule 'a',	['a' => 'c'],		["touch %TARGET"], GantTime(1, 2) ;
+rule 'b',	['b' => 'c'],		["touch %TARGET"], GantTime(3, 1) ;
+rule 'c',	['c'],			["touch %TARGET"], GantTime(4, 3) ;
 
-# insert gant nodes in the graph, normal dependencies must be defined first
-PbsUse './gant_nodes' ;
 
