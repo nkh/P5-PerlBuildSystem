@@ -1071,6 +1071,10 @@ EOT
 		'(DF) List the nodes to be build.',
 		'',
 		
+	'save_build_sequence_simple=s'      => \$pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE},
+		'Save a list of nodes to be build to a file.',
+		'',
+		
 	'f|files|nodes'                   => \$pbs_config->{DISPLAY_FILE_LOCATION},
 		'Show all the nodes in the current_dependency tree and their final location.',
 		'In warp only shows the nodes that have triggered, see option nodes_all for all nodes',

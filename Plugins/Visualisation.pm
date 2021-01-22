@@ -28,6 +28,7 @@ This plugin handles the following PBS defined switches:
 
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use Data::TreeDumper ;
+use File::Slurp ;
 
 use PBS::PBSConfigSwitches ;
 use PBS::Information ;
@@ -163,6 +164,11 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 		PrintInfo "$_\n" ;
 		}
 	print "\n" ;
+	}
+
+if($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE})
+	{
+	write_file($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE}, (map { $_->{__NAME} . "\n" } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)) ;
 	}
 }
 
