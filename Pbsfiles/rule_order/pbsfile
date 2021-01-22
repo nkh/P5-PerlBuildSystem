@@ -1,0 +1,176 @@
+# implementing rule order with a mini build system
+	
+	# rule [types, order], name, [depender], builders, node_subs ;
+
+# first everything is a dependency
+# last, is a dependency to everything
+# before, is a dependent
+# after is a dependency
+
+# build sequence is, one possible, order of rules calling
+
+sub add_rule ; sub generate_rules ;
+
+#add_rule qw(a fiorstirst) ; # ok
+
+add_rule qw(first first) ;
+# add_rule qw(second_first first) ; # ok
+#add_rule qw(after_first after first) ; # ok
+add_rule qw(before_first before first) ;
+
+add_rule qw(last last) ;
+#add_rule qw(before_last before last) ; # ok
+add_rule qw(after_last after last) ;
+
+add_rule qw(before_b before b) ; # before a is an error as a is first
+add_rule qw(before_x before x) ; 
+
+add_rule qw(after_c after c) ; # after b is an error as b is last
+add_rule qw(after_y_z after y z) ; 
+
+#add_rule qw(wrong order here) ; # ok
+
+# cycle is an error
+add_rule qw(cycle_1 before cycle_2) ;
+add_rule qw(cycle_2 before cycle_3) ;
+#add_rule qw(cycle_3 before cycle_1) ; # ok
+# add_rule qw(cycle_2 after cycle_3) ; # ok
+
+# rules are otherwise added in registration order, which is the same as g before h
+add_rule qw(index_0) ;
+add_rule qw(index_1) ;
+add_rule qw(index_2) ;
+
+generate_rules ;
+
+my %rules ;
+my $rule_index = 0 ;
+
+sub add_rule
+{
+my ($rule, $order, @rest) = @_ ;
+
+if (@_ == 1)
+	{
+	# added in rule order
+	$rules{$rule_index++} = $rule ;
+	}
+elsif (@_ == 2)
+	{
+	# first or last, we can check later if multiple are defined
+
+	die ERROR "Wrong order '$order' @ @_\n" unless $order eq 'first' or $order eq 'last' ;
+	push @{$rules{$order}}, $rule ;
+	}
+else
+	{
+	# before or after
+
+	die ERROR "Wrong order '$order' @ @_\n" unless $order eq 'before' or $order eq 'after' ;
+	push @{$rules{$order}{$rule}}, @rest ;
+	}
+}
+
+sub generate_rules
+{
+my ($show_rules, $show_registration) = (0, 0) ;
+
+use Data::TreeDumper ;
+PrintDebug DumpTree \%rules, 'rules' if $show_rules ;
+
+die DumpTree($rules{first}, "multiple first") if exists $rules{first} && @{ $rules{first} } > 1 ;
+die DumpTree($rules{last}, "multiple last") if exists $rules{last} && @{ $rules{last} } > 1 ;
+
+my $first_rule = $rules{first}[0] // 'first';
+my $last_rule = $rules{last}[0] // 'last' ;
+
+my $added_rule = 0 ;
+
+# indexed rules
+for (reverse 1 .. $rule_index - 1)
+	{
+	PrintDebug "$rules{$_} => " . $rules{$_ - 1} . "\n" if $show_registration ;
+	rule $added_rule++, [$rules{$_} => $rules{$_ - 1}] ;
+	}
+
+for (0 .. $rule_index - 1)
+	{
+	PrintDebug "$rules{$_} => $last_rule\n" if $show_registration ;
+	rule $added_rule++, [$rules{$_} => $last_rule] ;
+	}
+
+# first rule
+for (0 .. $rule_index - 1)
+	{
+	PrintDebug "$first_rule => $rules{$_}\n" if $show_registration ;
+	rule $added_rule++, [$first_rule => $rules{$_}] ;
+	}
+
+if (@{ $rules{last} })
+	{
+	PrintDebug "$first_rule => $last_rule\n" if $show_registration ;
+	rule $added_rule++, [$first_rule => $last_rule] ;
+	}
+
+for my $rule (keys %{ $rules{after} })
+	{
+	PrintDebug "$first_rule => $rule \n" if $show_registration ;
+	rule $added_rule++, [$first_rule => $rule] ;
+
+	for (@{ $rules{after}{$rule} })
+		{
+		PrintDebug "$first_rule => $_\n" if $show_registration ;
+		rule $added_rule++, [$first_rule => $_] ;
+		}
+	}
+
+for my $rule (keys %{ $rules{before} })
+	{
+	PrintDebug "$first_rule => $rule\n" if $show_registration ;
+	rule $added_rule++, [$first_rule => $rule] ;
+
+	for (@{ $rules{before}{$rule} })
+		{
+		PrintDebug "$first_rule => $_\n" if $show_registration ;
+		rule $added_rule++, [$first_rule => $_] unless $first_rule eq $_ ;
+		}
+	}
+
+# after rules
+for my $rule (keys %{ $rules{after} })
+	{
+	for (@{ $rules{after}{$rule} })
+		{
+		die "rule '$rule' can't be after if first rule '$first_rule'" if $_ eq $first_rule ;
+
+		PrintDebug "$rule => $_\n" if $show_registration ;
+		rule $added_rule++, [$rule => $_] ;
+
+		PrintDebug "$_ => $last_rule\n" if $show_registration ;
+		rule $added_rule++, [$_ => $last_rule] unless $_ eq $last_rule ;
+		}
+
+	PrintDebug "$rule => $last_rule\n" if $show_registration ;
+	rule $added_rule++, [$rule => $last_rule] ;
+	}
+
+# before rules
+for my $rule (keys %{ $rules{before} })
+	{
+	for (@{ $rules{before}{$rule} })
+		{
+		die "rule '$rule' can't be before if last rule '$last_rule'" if $_ eq $last_rule ;
+
+		PrintDebug "$_ => $rule\n" if $show_registration ;
+		rule $added_rule++, [$_ => $rule] ;
+
+		PrintDebug "$_ => $last_rule\n" if $show_registration ;
+		rule $added_rule++, [$_ => $last_rule] ;
+		}
+
+	PrintDebug "$rule => $last_rule\n" if $show_registration ;
+	rule $added_rule++, [$rule => $last_rule] ;
+	}
+}
+
+

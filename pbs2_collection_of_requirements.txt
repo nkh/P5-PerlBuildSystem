@@ -608,8 +608,12 @@ Timing framework
 	implement the timing framework as a REH
 		no run time impact if not used
 
-		do we want the timing data in the output stream, just writting current time has little impact 
+		do we want the timing data in the output stream, just writing current time has little impact 
 			since the output filters do the work of comparing timing and displaying data (if the user wants to)
+
+			we could also generate timing artefacts which are practical when debugging, no need to extract the information from the log
+				we can have an REH for log and on for timing artefact
+					REH are injected via options on the command line
 
 	timing framework needs to handle parallel processing
 		if we use the output log as a framework the problem is moved to the output log

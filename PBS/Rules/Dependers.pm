@@ -28,23 +28,10 @@ use PBS::Rules::Dependers::Subpbs ;
 
 #-------------------------------------------------------------------------------
 
-my %valid_types = map{ ("__$_", 1)} qw(UNTYPED VIRTUAL LOCAL FORCED POST_DEPEND CREATOR INTERNAL IMMEDIATE_BUILD) ;
-	
 sub GenerateDepender
 {
 my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
 
-# this test is mainly to catch the error when the user forgot to write the rule name.
-for my $rule_type (@$rule_types)
-	{
-	unless(exists $valid_types{$rule_type})
-		{
-		PrintError "Invalid rule type '$rule_type' at rule '$name' at '$file_name:$line'\n" ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
-		die ;
-		}
-	}
-	
 my @depender_node_subs_and_types ; # types is a special case to display info about dependers that are also creators
 
 for (ref $depender_definition)
@@ -121,7 +108,7 @@ my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definitio
 
 unless(@$depender_definition)
 	{
-	Carp::carp ERROR("Nothing defined in rule definition at: $name at '$file_name:$line'") ;
+	Carp::carp ERROR("Depend: Nothing defined in rule definition at: $name at '$file_name:$line'") ;
 	PbsDisplayErrorWithContext($file_name,$line) ;
 	die ;
 	}
@@ -159,7 +146,7 @@ if('ARRAY' eq ref $dependent_regex_definition)
 		}
 	}
 	
-# remove spurious undefs. Those are allowed so one can write [ 'x' => undef]
+# remove spurious undefs. those are allowed so one can write [ 'x' => undef]
 @dependencies = grep {defined $_} @dependencies ;
 
 my ($dependencies_evaluator, $dependent_matcher) ;

@@ -42,6 +42,12 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		post_depend
 		creator
 		immediate_build
+
+		FIRST
+		first
+
+		LAST
+		last
 		
 		BUILD_SUCCESS
 		BUILD_FAILED
@@ -98,6 +104,11 @@ use constant POST_DEPEND        => '__POST_DEPEND' ;
 use constant post_depend        => '__POST_DEPEND' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
+
+use constant FIRST              => '__FIRST' ;
+use constant first              => '__FIRST' ;
+use constant LAST               => '__LAST' ;
+use constant last               => '__LAST' ;
 
 #builders results ---------------------------------------------------------------------
 

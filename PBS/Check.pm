@@ -26,6 +26,7 @@ use PBS::Digest ;
 #-------------------------------------------------------------------------------
 
 my $checked_dependency_tree = 0 ;
+my @traversal ;
 
 sub CheckDependencyTree
 {
@@ -52,40 +53,35 @@ my $triggered = 0 ;
 $tree->{__LEVEL} = $node_level ;
 my $name = $tree->{__NAME} ;
 
+push @traversal, $tree ;
+
 if(exists $tree->{__CYCLIC_FLAG})
 	{
-	# lets this sub find the cycle
-	if($tree->{__CYCLIC_FLAG} > 1)
+	$tree->{__CYCLIC_ROOT}++; # used in graph generation
+	
+	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		$tree->{__CYCLIC_ROOT}++; # used in graph generation
-		
-		# already displayed the cycle, stop cycling
-		
-		if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
-			{
-			my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config) ; 
-			PrintError "\e[KCyclic dependencies detected ($number_of_cycles):\n$cycles" ;
+		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@traversal) ; 
+		PrintError "\e[KCheck: Cyclic dependencies detected:\n$cycles", 1 ;
 
-			die "DEPENDENCY_CYCLE_DETECTED\n" ;
-			}
-		
-		if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
+		die "Dependency cycle detected\n" ;
+		}
+	
+	if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
+		{
+		die ;
+		}
+	else
+		{
+		if(exists $tree->{__TRIGGERED})
 			{
-			die ;
+			return(1) ;
 			}
 		else
 			{
-			if(exists $tree->{__TRIGGERED})
-				{
-				return(1) ;
-				}
-			else
-				{
-				return(0) ;
-				}
+			return(0) ;
 			}
 		}
-	
 	my $node_info = "inserted at '$tree->{__INSERTED_AT}{INSERTION_FILE}' rule '$tree->{__INSERTED_AT}{INSERTION_RULE}'" ;
 	
 	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
@@ -516,6 +512,8 @@ else
 	}
 	
 delete($tree->{__CYCLIC_FLAG}) ;
+pop @traversal ;
+
 $tree->{__CHECKED}++ ;
 
 return($triggered) ;

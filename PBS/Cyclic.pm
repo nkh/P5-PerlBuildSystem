@@ -24,7 +24,25 @@ use Devel::Cycle ;
 
 sub GetUserCyclicText
 {
-my ($cyclic_tree_root, $inserted_nodes, $pbs_config) = @_ ;
+my ($cyclic_tree_root, $inserted_nodes, $pbs_config, $traversal) = @_ ;
+
+my $cycles = '' ;
+my $indent = '' ;
+
+shift @$traversal ;
+
+for my $node (@$traversal)
+	{
+	$cycles .= "$indent'$node->{__NAME}' inserted at '$node->{__INSERTED_AT}{INSERTION_RULE_FILE}':$node->{__INSERTED_AT}{INSERTION_RULE_LINE}\n" ;
+	$indent .= "\t" ;
+	}
+
+return(1, $cycles) ;
+}
+
+sub GetAllUserCyclicText
+{
+my ($cyclic_tree_root, $inserted_nodes, $pbs_config, $traversal) = @_ ;
 
 my $number_of_cycles = 0 ;
 my $all_cycles = '' ;
@@ -61,7 +79,8 @@ my $cycle_display_sub = sub
 	} ;
 	
 local $SIG{'__WARN__'} = sub {} ;
-find_cycle($cyclic_tree_root, $cycle_display_sub);
+#find_cycle($cyclic_tree_root, $cycle_display_sub);
+find_cycle($cyclic_tree_root);
 
 return($number_of_cycles, $all_cycles) ;
 }

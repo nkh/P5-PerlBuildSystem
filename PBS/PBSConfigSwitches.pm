@@ -468,8 +468,8 @@ EOT
 		. "some nodes are generated from non files or don't always have dependencies as for C cache which dependency file "
 		. "is created on the fly if it doens't exist.",
 
-	'ndi|no_duplicate_info'           => \$pbs_config->{NO_DUPLICATE_INFO},
-		'PBS won\'t display which dependency are duplicated for a node.',
+	'display_duplicate_info'           => \$pbs_config->{DISPLAY_DUPLICATE_INFO},
+		'PBS will display which dependency are duplicated for a node.',
 		'',
 	
 	'ntii|no_trigger_import_info'     => \$pbs_config->{NO_TRIGGER_IMPORT_INFO},

@@ -2178,11 +2178,13 @@ Add switch for only showing a nodes data without it's child nodes data.
 	tying and blessing are orthognal but we still need to change all code that expects a HASH to a PBS::Node
 	? should we bless or tag
 
-... Defered build: build only what is needed to work now but Q the less important nodes (ex doc)
+... Defered build: build only what is needed to work now but queue the less important nodes (ex doc)
 	should this be a rule attribute?
 	should we let the user define new attributes and handlers?
+		rule ordering could be done this way
 		GenerateDepender verifies that the rule type is one of the registred types
 	?! why should PBS be involved here? this has to do with builder and PBS knows nothing about builders
+		builders that are not important should handle it themselves
 
 Display: do not display build name if it's the same as the node name (for the html documentation)
 -gtg_html: insertion rule looks weird!

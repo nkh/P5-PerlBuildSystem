@@ -521,7 +521,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				{
 				unless($dependency_name =~ /^__/)
 					{
-					unless (defined $pbs_config->{NO_DUPLICATE_INFO})
+					if(defined $pbs_config->{DISPLAY_DUPLICATE_INFO})
 						{
 						my $rule_info = $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
 											
@@ -531,10 +531,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 											
 						PrintWarning
 							(
-							  "Depend: in pbsfile : $Pbsfile, while at rule '$rule_info', node '$node_name':\n"
-							. "    $dependency_name already inserted by rule "
-							. "'$inserting_rule_index:$inserting_rule_info'"
-							. ", Ignoring duplicate dependency.\n"
+							  "Depend: Ignoring duplicate dependency '$dependency_name'\n"
+							. "\tpbsfile: $Pbsfile\n"
+							. "\trule: $rule_info\n"
+							. "\tnode: '$node_name'\n"
+							. "\tinserting rule: $inserting_rule_index:$inserting_rule_info\n"
 							) ;
 						}
 					}

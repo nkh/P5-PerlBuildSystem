@@ -68,6 +68,8 @@ use Data::TreeDumper ;
 PrintInfo4 DumpTree eval($gant), "GANT: '$name'" ;
 
 # serialize the data
+# having artefacts makes it makes it possible to run with warp and parallel builds
+
 RunShellCommands
 	(
 	PBS::Rules::Builders::EvaluateShellCommandForNode

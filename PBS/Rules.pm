@@ -336,6 +336,21 @@ sub RegisterRule
 {
 my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_definition, $node_subs) = @_ ;
 
+# this test is mainly to catch the error when the user forgot to write the rule name.
+my %valid_types = map{ ("__$_", 1)} qw(FIRST UNTYPED VIRTUAL LOCAL FORCED POST_DEPEND CREATOR INTERNAL IMMEDIATE_BUILD) ;
+for my $rule_type (@$rule_types)
+	{
+	next if $rule_type =~ /^\s*before\s/i ;
+	next if $rule_type =~ /^\s*after\s/i ;
+
+	unless(exists $valid_types{$rule_type})
+		{
+		PrintError "Rule: invalid type '$rule_type' at rule '$name' at '$file_name:$line'\n" ;
+		PbsDisplayErrorWithContext($file_name, $line) ;
+		die ;
+		}
+	}
+	
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 if(exists $package_rules{$package}{$class})
@@ -345,7 +360,7 @@ if(exists $package_rules{$package}{$class})
 		{
 		if($rule->{NAME} eq $name)
 			{
-			Carp::carp ERROR("'$name' name is already used for for rule defined at $rule->{FILE}:$rule->{LINE}:$package\n") ;
+			Carp::carp ERROR("Rule: '$name' name is already used for for rule defined at $rule->{FILE}:$rule->{LINE}:$package\n") ;
 			PbsDisplayErrorWithContext($file_name,$line) ;
 			PbsDisplayErrorWithContext($rule->{FILE},$rule->{LINE}) ;
 			die ;
