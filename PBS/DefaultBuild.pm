@@ -60,7 +60,7 @@ my ($package, $file_name, $line) = caller() ;
 my $t0_depend = [gettimeofday];
 
 my $config           = { PBS::Config::ExtractConfig($config_snapshot, $config_namespaces)	} ;
-my $dependency_rules = [PBS::Rules::ExtractRules($rules, @$rules_namespaces)];
+my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, @$rules_namespaces)];
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
@@ -110,7 +110,7 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-return(BUILD_SUCCESS, 'Dependended successfuly') if(DEPEND_ONLY == $build_type) ;
+return(BUILD_SUCCESS, 'Dependended successfuly', []) if(DEPEND_ONLY == $build_type) ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -130,11 +130,11 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday]))) ;
 	}
 else
 	{
-	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes,  warp: $warp_nodes, other:$non_warp_nodes\n" ;
+	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
 my ($build_node, @build_sequence, %trigged_nodes) ;
@@ -322,7 +322,7 @@ else
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
-		if($debug_flag =~ /^DEBUG/ && defined $value)
+		if(! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value)
 			{
 			PrintWarning("Build: $debug_flag\n") ;
 			}
@@ -334,7 +334,7 @@ else
 RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
-return($build_result, $build_message) ;
+return($build_result, $build_message, \@build_sequence) ;
 }
 
 #-------------------------------------------------------------------------------

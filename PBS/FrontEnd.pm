@@ -172,7 +172,7 @@ $pbs_config->{PACKAGE} = 'PBS' ; #hmm, should be unique
 # make the variables below accessible from a post pbs script
 our $build_success = 1 ;
 my ($build_result, $build_message) ;
-our ($dependency_tree, $inserted_nodes) = ({}, {}) ;
+our ($dependency_tree, $inserted_nodes, $build_package, $load_package, $build_sequence) = ({}, {}, '', {}) ;
 
 my $parent_config = $pbs_config->{LOADED_CONFIG} || {} ;
 
@@ -183,7 +183,7 @@ if(@$targets)
 	
 	eval
 		{
-		($build_result, $build_message, $dependency_tree, $inserted_nodes)
+		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 			= PBS::Warp::WarpPbs($targets, $pbs_config, $parent_config) ;
 		} ;
 		
@@ -254,7 +254,7 @@ else
 	}
 
 my $plural= @$targets < 2 ? '' : 's' ;
-return($build_success, "PBS: target$plural: [@$targets], pbsfile: $pbs_config->{PBSFILE}\n") ;
+return($build_success, "PBS: target$plural: [@$targets], pbsfile: $pbs_config->{PBSFILE}\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }
 
 #-------------------------------------------------------------------------------

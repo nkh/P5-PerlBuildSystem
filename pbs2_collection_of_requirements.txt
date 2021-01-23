@@ -1,4 +1,17 @@
+
+completion, documentation, help, ...
+	ask pbs to do completion rather than a bash script
+
+	-doc seems broken in pbs 1, what did we want to achieve compared to static doc
+
+	perldoc like help or info format
+
+	man pages
+
 Rules run order
+
+	see rule_order example in pbs 1
+
 	rules are run in registration order in pbs1
 	
 	we want to control at the rule level in which order they are run

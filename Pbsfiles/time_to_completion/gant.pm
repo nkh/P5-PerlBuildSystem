@@ -17,12 +17,14 @@ sub
 PbsUse('Dependers/Matchers') ;
 
 # all nodes get a gant node dependency, except PBS internal nodes
-Rule 'gant_dependency', [AndMatch(qr<.>, NoMatch(qr/__PBS/), NoMatch(qr/\.gant$/)) => '$path/$basename.gant'] ;
+Rule ['first_plus 10'], 'gant_dependency', [AndMatch(qr<.>, NoMatch(qr/__PBS/), NoMatch(qr/\.gant$/)) => '$path/$basename.gant'] ;
+#Rule 'gant_dependency', [AndMatch(qr<.>, NoMatch(qr/__PBS/), NoMatch(qr/\.gant$/)) => '$path/$basename.gant'] ;
 
 # gant node rule
 #	depender adds the original node's dependencies
 #	builder compute delivery time
-Rule ['after last'], 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
+Rule ['first_plus 9'], 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
+#Rule 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
 
 sub GANTDepender
 {

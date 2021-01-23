@@ -33,7 +33,7 @@ touch pbs output files so they list in the right order
 
 display list of built nodes
 
-display each command's result not just the last one
+#display each command's result not just the last one
 	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
 	Build: command: cp -r /home/nadim/nadim/devel/divers/div_make/releaser/resources/css /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css
 

@@ -96,6 +96,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 	
 $tree->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 
+PrintInfo "\e[K\e[K" ;
 # warn if node isn't depended or has no dependencies
 if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 	{
@@ -107,7 +108,8 @@ if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintWarning "Check: '$name' dependencies: 0, has digest: 1"
 			. ($matching_rules ? ", matching rules: $matching_rules, " : ", not depended, ")
-			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) ;
+			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) 
+				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{

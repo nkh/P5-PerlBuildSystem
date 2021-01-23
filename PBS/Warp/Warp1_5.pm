@@ -193,7 +193,7 @@ if($run_in_warp_mode)
 		# let the rest of the system know about this (ex graph generator)
 		$pbs_config->{IN_WARP} = 1 ;
 
-		my ($build_result, $build_message, $new_dependency_tree) ;
+		my ($build_result, $build_message, $new_dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 		
 		eval
 			{
@@ -201,7 +201,7 @@ if($run_in_warp_mode)
 			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
 			
 			local $PBS::Output::indentation_depth = -1 ; 
-			($build_result, $build_message, $new_dependency_tree)
+			($build_result, $build_message, $new_dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 				= PBS::PBS::Pbs
 					(
 					[$pbs_config->{PBSFILE}],
@@ -255,12 +255,12 @@ if($run_in_warp_mode)
 			RunUniquePluginSub($pbs_config, 'ClearWatchedFilesList', $pbs_config, $warp_signature) ;
 			}
 			
-		@build_result = ($build_result, $build_message, $new_dependency_tree, $nodes) ;
+		@build_result = ($build_result, $build_message, $new_dependency_tree, $nodes, $load_package, $build_sequence) ;
 		}
 	else
 		{
 		PrintInfo("\e[KWarp: Up to date\n") unless $pbs_config->{QUIET} ;
-		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
+		@build_result = (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes, 'warp up to date', []) ;
 		}
 	}
 else
@@ -286,13 +286,13 @@ else
 			) ;
 		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
 		
-	my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
+	my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 
 	eval
 		{
 		local $PBS::Output::indentation_depth = -1 ;
 
-		($build_result, $build_message, $dependency_tree, $inserted_nodes)
+		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 			= PBS::PBS::Pbs
 				(
 				[$pbs_config->{PBSFILE}],
@@ -337,7 +337,7 @@ else
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
 			}
 			
-	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
+	@build_result = ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 	}
 
 #PrintInfo "Warp: done\n" unless $pbs_config->{QUIET} ;

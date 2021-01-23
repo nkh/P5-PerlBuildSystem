@@ -219,7 +219,7 @@ my %tree_hash =
 
 my $dependency_tree = \%tree_hash ;
 my $build_point = '' ;
-my ($build_result, $build_message) ;
+my ($build_result, $build_message, $build_sequence) ;
 
 if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	{
@@ -368,7 +368,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			PrintInfo("User Build(). package: $package, rules $rules_namespaces, config: $config_namspaces.\n") ;
 			}
 											
-		($build_result, $build_message)
+		($build_result, $build_message, $build_sequence)
 			= $user_build->
 				(
 				$Pbsfile,
@@ -389,7 +389,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		}
 	else
 		{
-		($build_result, $build_message)
+		($build_result, $build_message, $build_sequence)
 			= PBS::DefaultBuild::DefaultBuild
 				(
 				$pbsfile_chain,
@@ -475,7 +475,7 @@ else
 	die "\n";
 	}
 
-return($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package) ;
+return($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -713,8 +713,7 @@ if($type eq 'Pbsfile')
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{
-		PrintError("PBS: Error: Pbsfile '$file' and PBSFILE_CONTENT can't be used simultaneously.\n") ;
-		die ;
+		PrintInfo("PBS: using virtual Pbsfile\n") ;
 		}
 	
 	if(exists $pbs_config->{PBSFILE_CONTENT})

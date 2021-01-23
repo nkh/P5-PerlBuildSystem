@@ -457,6 +457,9 @@ EOT
 	'nli|no_link_info'                => \$pbs_config->{NO_LINK_INFO},
 		'PBS won\'t display which dependency node are linked instead of generated.',
 		'',
+	'no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
+		'PBS won\'t warn if a node has no dependencies but a matching rule.',
+		'',
 		
 	'nlmi|no_local_match_info'        => \$pbs_config->{NO_LOCAL_MATCHING_RULES_INFO},
 		'PBS won\'t display a warning message if a linked node matches local rules.',
@@ -657,6 +660,10 @@ EOT
 		
 	'de|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
 		'Display when a depend ends.',
+		'',
+		
+	'display_rule_ordering'          => \$pbs_config->{DISPLAY_RULES_ORDERING},
+		'Display the pbsfile used to order rules.',
 		'',
 		
 	'dur|display_used_rules'          => \$pbs_config->{DISPLAY_USED_RULES},

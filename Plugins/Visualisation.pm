@@ -153,12 +153,12 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 		} ;
 	
-	PrintInfo(DumpTree($build_sequence, "\nBuildSequence:", FILTER => $GetBuildNames)) ;
+	PrintInfo(DumpTree($build_sequence, "\nSequence:", FILTER => $GetBuildNames)) ;
 	}
 
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 	{
-	PrintInfo "\nBuildSequence:\n" ;
+	PrintInfo "\nSequence:\n" ;
 	for (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)
 		{	
 		PrintInfo "$_\n" ;

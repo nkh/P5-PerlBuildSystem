@@ -39,7 +39,7 @@ add_rule qw(first_plus_6 first_plus 6) ;
 add_rule qw(first_plus_3 first_plus 3) ;
 
 
-add_rule qw(before_b before b) ; # before a is an error as a is first
+add_rule qw(before_b before b) ; 
 add_rule qw(before_x before x) ; 
 
 add_rule qw(after_c after c) ; # after b is an error as b is last
@@ -55,6 +55,7 @@ add_rule qw(cycle_2 before cycle_3) ;
 
 # rules are otherwise added in registration order, which is the same as g before h
 add_rule qw(index_0) ;
+add_rule qw(index_0 before before_first ) ; #we can have multiple position rules 
 add_rule qw(index_1) ;
 add_rule qw(index_2) ;
 

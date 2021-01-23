@@ -36,12 +36,12 @@ sub WarpPbs
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
 	
-my ($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
+my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 eval
 	{
 	local $PBS::Output::indentation_depth = -1 ;
 
-	($build_result, $build_message, $dependency_tree, $inserted_nodes)
+	($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 		= PBS::PBS::Pbs
 			(
 			[$pbs_config->{PBSFILE}],
@@ -59,7 +59,7 @@ eval
 
 die $@ if $@ ;
 
-return($build_result, $build_message, $dependency_tree, $inserted_nodes) ;
+return($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
