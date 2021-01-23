@@ -23,7 +23,7 @@ Rule ['first_plus 10'], 'gant_dependency', [AndMatch(qr<.>, NoMatch(qr/__PBS/), 
 # gant node rule
 #	depender adds the original node's dependencies
 #	builder compute delivery time
-Rule ['first_plus 19'], 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
+Rule ['first_plus 9'], 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
 #Rule 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
 
 sub GANTDepender

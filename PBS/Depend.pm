@@ -206,8 +206,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	my $dependency_rule = $dependency_rules->[$rule_index] ;
 	my $rule_name = $dependency_rule->{NAME} ;
 	my $rule_line = $dependency_rule->{LINE} ;
-	my $rule_info = $rule_name . INFO2(" @ $dependency_rule->{FILE}:$rule_line", 0) ;
+
+	my $file = defined $pbs_config->{PBSFILE_CONTENT} ? 'virtual' : $dependency_rule->{FILE} ;
+	my $rule_info = $rule_name . INFO2(" @ $file:$rule_line", 0) ;
 	
+PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 	my $depender  = $dependency_rule->{DEPENDER} ;
    
 	#DEBUG
