@@ -20,15 +20,16 @@ use PBS::FrontEnd ;
 
 #-------------------------------------------------------------------------------
 
-my ($success, $message) = PBS::FrontEnd::Pbs(COMMAND_LINE_ARGUMENTS => [@ARGV]) ;
+my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
+	PBS::FrontEnd::Pbs(COMMAND_LINE_ARGUMENTS => [@ARGV]) ;
 
-if($success)
+if($build_result == 1)
 	{
 	}
 else
 	{
-	PrintError($message) ;
-	exit(! $success) ;
+	PrintError($build_message) ;
+	exit(1) ;
 	}
 
 #-------------------------------------------------------------------------------

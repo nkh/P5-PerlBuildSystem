@@ -170,9 +170,9 @@ $targets =
 $pbs_config->{PACKAGE} = 'PBS' ; #hmm, should be unique
 
 # make the variables below accessible from a post pbs script
-our $build_success = 1 ;
-my ($build_result, $build_message) ;
-our ($dependency_tree, $inserted_nodes, $build_package, $load_package, $build_sequence) = ({}, {}, '', {}) ;
+my $build_success = 1 ;
+my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
+	 = (BUILD_FAILED, 'no_message', {}, {}, '', {}) ;
 
 my $parent_config = $pbs_config->{LOADED_CONFIG} || {} ;
 
@@ -192,7 +192,7 @@ if(@$targets)
 		print STDERR $@ ;
 		}
 		
-	$build_result = BUILD_FAILED unless defined  $build_result;
+	$build_result = BUILD_FAILED unless defined $build_result;
 	
 	$build_success = 0 if($@ || ($build_result != BUILD_SUCCESS)) ;
 
@@ -224,6 +224,10 @@ if(@$targets)
 		{
 		$run++ ;
 		
+		our $x_build_success = $build_success ;
+		our $x_dependency_tree = $dependency_tree ;
+		our $inserted_nodes = $inserted_nodes ;
+
 		eval
 			{
 			PBS::PBS::LoadFileInPackage
@@ -235,9 +239,9 @@ if(@$targets)
 				"use strict ;\nuse warnings ;\n"
 				  . "use PBS::Output ;\n"
 				  . "my \$pbs_config = \$pbs_config ;\n"
-				  . "my \$build_success = \$PBS::FrontEnd::build_success ;\n"
-				  . "my \$dependency_tree = \$PBS::FrontEnd::dependency_tree ;\n"
-				  . "my \$inserted_nodes = \$PBS::FrontEnd::inserted_nodes ; \n"
+				  . "my \$build_success = \$PBS::FrontEnd::x_build_success ;\n"
+				  . "my \$dependency_tree = \$PBS::FrontEnd::x_dependency_tree ;\n"
+				  . "my \$inserted_nodes = \$PBS::FrontEnd::x_inserted_nodes ; \n"
 				  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n",
 				) ;
 			} ;
@@ -252,7 +256,6 @@ else
 		
 	$build_success = 0 ;
 	}
-
 my $plural= @$targets < 2 ? '' : 's' ;
 return($build_success, "PBS: target$plural: [@$targets], pbsfile: $pbs_config->{PBSFILE}\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }

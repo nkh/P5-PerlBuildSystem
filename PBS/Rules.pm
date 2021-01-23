@@ -164,14 +164,16 @@ if($must_sort)
 			(
 			COMMAND_LINE_ARGUMENTS => 
 				[
-				qw(--no_warning_matching_with_zero_dependencies -q -no_build -nh -w 0 --no_default_path_warning),
+				qw(--no_warning_matching_with_zero_dependencies -q -nh -w 0 --no_default_path_warning),
 				qw(--no_pbs_response_file),
 				$target
 				],
 			  
-			PBS_CONFIG => {},
+			PBS_CONFIG => {DEPEND_AND_CHECK => 1},
 			PBSFILE_CONTENT => $order_pbsfile,
 			) ;
+
+	die ERROR("PBS: error ordering rules") . "\n" unless $build_success ;
 
 	my @rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
 	PrintInfo3 DumpTree \@rules_order, 'Rules: ordered', DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDERING} ;
@@ -191,8 +193,8 @@ use Data::TreeDumper ;
 PrintInfo3 DumpTree $rules, 'rules' if $show_rules ;
 
 my ($first, $last) = (FIRST, LAST) ; # can't use constant as hash key directly
-die ERROR DumpTree($rules->{$first}, "Rule: multiple first") if exists $rules->{$first} && @{ $rules->{$first} } > 1 ;
-die ERROR DumpTree($rules->{$last}, "Rule: multiple last") if exists $rules->{$last} && @{ $rules->{$last} } > 1 ;
+die ERROR(DumpTree($rules->{$first}, "Rule: multiple first")) ."\n" if exists $rules->{$first} && @{ $rules->{$first} } > 1 ;
+die ERROR(DumpTree($rules->{$last}, "Rule: multiple last")) ."\n" if exists $rules->{$last} && @{ $rules->{$last} } > 1 ;
 
 my $first_rule = $rules->{$first}[0] // FIRST;
 my $last_rule = $rules->{$last}[0] // LAST ;
@@ -268,7 +270,7 @@ for my $rule (keys %{ $rules->{after} })
 	{
 	for (@{ $rules->{after}{$rule} })
 		{
-		die "Rule: rule '$rule' can't be run after first rule '$first_rule'" if $_ eq $first_rule ;
+		die ERROR("Rule: rule '$rule' can't be run after first rule '$first_rule'") . "\n" if $_ eq $first_rule ;
 
 		$pbsfile .= "Rule $added_rule, ['$rule' => '$_'] ; # after rule 1\n" ;
 		$targets{$rule}++ ;
@@ -292,7 +294,7 @@ for my $rule (keys %{ $rules->{before} })
 	{
 	for (@{ $rules->{before}{$rule} })
 		{
-		die "Rule: rule '$rule' can't be run before last rule '$last_rule'" if $_ eq $last_rule ;
+		die ERROR("Rule: rule '$rule' can't be run before last rule '$last_rule'") . "\n" if $_ eq $last_rule ;
 
 		$pbsfile .= "Rule $added_rule, ['$_' => '$rule'] ; # before rule 1\n" ;
 		$targets{$_}++ ;
@@ -313,7 +315,7 @@ my @first_plus_indexes = sort {$a <=> $b } keys %{$rules->{first_plus}} ;
 for (0 .. $#first_plus_indexes)
 	{
 	my $rule_index = $first_plus_indexes[$_] ;
-	die DumpTree($rules->{first_plus}{$rule_index}, "Rule: multiple entries at first plus index $rule_index") if @{ $rules->{first_plus}{$rule_index } } > 1 ;
+	die ERROR(DumpTree($rules->{first_plus}{$rule_index}, "Rule: multiple entries at first plus index $rule_index")) . "\n" if @{ $rules->{first_plus}{$rule_index } } > 1 ;
 	}
 
 for (0 .. $#first_plus_indexes - 1)
@@ -351,7 +353,7 @@ my @last_minus_indexes = sort {$a <=> $b } keys %{$rules->{last_minus}} ;
 for (0 .. $#last_minus_indexes)
 	{
 	my $rule_index = $last_minus_indexes[$_] ;
-	die DumpTree($rules->{last_minus}{$rule_index}, "Rule: multiple entries at last minus index $rule_index") if @{ $rules->{last_minus}{$rule_index } } > 1 ;
+	die ERROR(DumpTree($rules->{last_minus}{$rule_index}, "Rule: multiple entries at last minus index $rule_index")) . "\n" if @{ $rules->{last_minus}{$rule_index } } > 1 ;
 	}
 
 for (reverse 1 .. $#last_minus_indexes)

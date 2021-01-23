@@ -110,7 +110,7 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-return(BUILD_SUCCESS, 'Dependended successfuly', []) if(DEPEND_ONLY == $build_type) ;
+return(BUILD_SUCCESS, 'Dependended successfuly', []) if(DEPEND_ONLY == $build_type || $pbs_config->{DEPEND_ONLY}) ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -243,7 +243,6 @@ if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 		} 
 	}
 
-	
 # die later if check failed (ex: cyclic tree), run visualisation plugins first
 my $check_failed = $@ ;
 
@@ -266,7 +265,7 @@ if ($check_failed)
 
 $dependency_tree->{__BUILD_SEQUENCE} = \@build_sequence ;
 
-return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AND_CHECK == $build_type) ;
+return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence) if(DEPEND_AND_CHECK == $build_type || $pbs_config->{DEPEND_AND_CHECK}) ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

@@ -511,7 +511,9 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $rule_info = $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
 									
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
-				PrintError( "Depend: self referencial rule #$rule_index '$rule_info' for $node_name: $dependency_names.\n") ;
+				PrintError "\nDepend: Error: self referencial rule\n"
+						. "\trule: '$rule_info'\n"
+						. "\tcycle: $node_name => $dependency_names\n" ;
 				
 				PbsDisplayErrorWithContext($dependency_rule->{FILE}, $dependency_rule->{LINE}) ;
 				die "\n";
