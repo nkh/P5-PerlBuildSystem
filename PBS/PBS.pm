@@ -713,7 +713,7 @@ if($type eq 'Pbsfile')
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{
-		PrintInfo("PBS: using virtual Pbsfile\n") ;
+		PrintInfo("PBS: using virtual pbsfile\n") unless $pbs_config->{QUIET} ;
 		}
 	
 	if(exists $pbs_config->{PBSFILE_CONTENT})

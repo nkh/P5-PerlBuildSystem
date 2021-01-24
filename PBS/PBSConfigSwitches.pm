@@ -662,8 +662,16 @@ EOT
 		'Display when a depend ends.',
 		'',
 		
+	'display_rule_to_order'          => \$pbs_config->{DISPLAY_RULES_TO_ORDER},
+		'Display that there are rules order.',
+		'',
+		
+	'display_rule_order'          => \$pbs_config->{DISPLAY_RULES_ORDER},
+		'Display the order rules.',
+		'',
+		
 	'display_rule_ordering'          => \$pbs_config->{DISPLAY_RULES_ORDERING},
-		'Display the pbsfile used to order rules.',
+		'Display the pbsfile used to order rules and the rules order.',
 		'',
 		
 	'dur|display_used_rules'          => \$pbs_config->{DISPLAY_USED_RULES},

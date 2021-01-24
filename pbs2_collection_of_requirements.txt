@@ -1,3 +1,27 @@
+rule merging
+	in pbs1 we generate rules to find order of execution of ordered rules
+		the rules are generated then merged to speed up the execution 
+
+		all rules with the same targets are merged in one rule
+
+		the rules are bare bones, just dependent and dependency
+
+
+	it's seldom we have many rules with the same dependent (same regex works too)
+		we'd need to merge the REHs too
+
+	one case that attractive is when a rule matches everything that can be merged to
+	all other rules, if options are implemented as rules we could merge the option
+	rules to other rules.
+		
+	a simpler, and maybe cleaner, implementation would be to keep the rules that
+	match everything in a separate group and apply them when a node is added
+		that works if the rules don't have an order
+
+	handling the option-match_all separately allows us to not show dependency data on the display
+	for them
+		using log output we could filter those out instead
+
 
 completion, documentation, help, ...
 	ask pbs to do completion rather than a bash script
@@ -4356,6 +4380,14 @@ option rules
 
 
 				it's not different from option --dd, but adds a rule that's of type TYPE_NODE_INSERTION rather than TYPE_NODE_DEPENDED
+
+		applying rule depending on context
+			rules are added to a package and applied to all nodes in a package
+
+			in some instances, eg: debugging,  we want to apply rules on specific packages, nodes, if an attribute
+			in the node exists, depending on a configuration, if some node is in the dependency graph, ...
+
+			rules need to be able to check the context
 
 	"options" can
 		add rules

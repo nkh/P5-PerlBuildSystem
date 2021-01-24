@@ -146,28 +146,31 @@ for my $rule (@dependency_rules)
 
 if($sort_rules)
 	{
-	PrintInfo "PBS: ordering rules, pbsfile: '$pbsfile'.\n" ;
+	PrintInfo "PBS: ordering rules for '$pbsfile'.\n" if $pbs_config->{DISPLAY_RULES_TO_ORDER} || $pbs_config->{DISPLAY_RULES_ORDER} ;
 
-	my ($order_pbsfile, $target) = order_rules($rules_to_sort, $rule_to_sort_index, $pbs_config->{DISPLAY_RULES_ORDERING}) ;
+	my ($order_pbsfile, $target) = order_rules($rules_to_sort, $rule_to_sort_index, $pbs_config) ;
 
 	my ($build_success, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
 		PBS::FrontEnd::Pbs
 			(
-			COMMAND_LINE_ARGUMENTS => 
-				[
-				qw(--no_warning_matching_with_zero_dependencies -q -nh -w 0 --no_default_path_warning),
-				qw(--no_pbs_response_file),
-				$target
-				],
+			COMMAND_LINE_ARGUMENTS => [ $target , '--no_pbs_response_file', '--no_default_path_warning' ],
 			  
-			PBS_CONFIG => {DEPEND_AND_CHECK => 1},
+			PBS_CONFIG => 
+				{
+				WARP => 0,
+				DEPEND_AND_CHECK => 1,
+				QUIET => 1,
+				DISPLAY_NO_STEP_HEADER => 1,
+				NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES => 1,
+				},
+
 			PBSFILE_CONTENT => $order_pbsfile,
 			) ;
 
-	die ERROR("PBS: error ordering rules") . "\n" unless $build_success ;
+	die ERROR("PBS: error ordering rules for '$pbsfile'.") . "\n" unless $build_success ;
 
 	my @rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
-	PrintInfo3 DumpTree \@rules_order, 'Rules: ordered', DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDERING} ;
+	PrintInfo3 DumpTree \@rules_order, 'Rules: ordered', DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDER} ;
 
 	# re-order rules
 	@dependency_rules = map{ $rule_lookup{$_} } grep { ! /^__/ } @rules_order ;
@@ -178,7 +181,8 @@ return(@creator_rules, @dependency_rules, @post_dependency_rules) ;
 
 sub order_rules
 {
-my ($rules, $rule_index, $show_rules) = @_ ;
+my ($rules, $rule_index, $pbs_config) = @_ ;
+my $show_rules = $pbs_config->{DISPLAY_RULES_ORDERING} ;
 
 use Data::TreeDumper ;
 PrintInfo3 DumpTree $rules, 'rules' if $show_rules ;
@@ -196,7 +200,7 @@ my %dependents ;
 my %one_rule ;
 
 #last has no dependencies
-$pbsfile .= "Rule $added_rule, ['$last_rule'] ; # last rule \n" ;
+$pbsfile .= "Rule $added_rule, ['$last_rule'] ; # last rule \n" if $show_rules ;
 $dependents{$last_rule}++ ;
 $added_rule++ ;
 
@@ -206,7 +210,7 @@ $one_rule{$last_rule} = [] ;
 if ($rule_index > 0) # we have at least one indexed rule
 	{
 	my $target = $rules->{0} ;
- 	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # indexed rule 1\n" ;
+	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # indexed rule 1\n" if $show_rules ;
 	$dependents{$target}++ ;
 	$added_rule++ ;
 
@@ -215,7 +219,7 @@ if ($rule_index > 0) # we have at least one indexed rule
 
 for (reverse 1 .. $rule_index - 1)
 	{
-	$pbsfile .= "Rule $added_rule, ['$rules->{$_}' => '" . $rules->{$_ - 1} ."'] ; # indexed rule 2\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rules->{$_}' => '" . $rules->{$_ - 1} ."'] ; # indexed rule 2\n" if $show_rules ;
 	$dependents{$rules->{$_}}++ ;
 	$added_rule++ ;
 
@@ -225,14 +229,14 @@ for (reverse 1 .. $rule_index - 1)
 # first rule
 for (0 .. $rule_index - 1)
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{$_}'] ; # first rule (indexed) 1\n" ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{$_}'] ; # first rule (indexed) 1\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
 	push @{$one_rule{$first_rule}}, $rules->{$_} ;
 	}
 
-$pbsfile .= "Rule $added_rule, ['$first_rule' => '$last_rule'] ; # first rule (last) 2\n" ;
+$pbsfile .= "Rule $added_rule, ['$first_rule' => '$last_rule'] ; # first rule (last) 2\n" if $show_rules ;
 $dependents{$first_rule}++ ;
 $added_rule++ ;
 
@@ -240,7 +244,7 @@ push @{$one_rule{$first_rule}}, $last_rule ;
 
 for my $rule (keys %{ $rules->{after} })
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (after) 3\n" ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (after) 3\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
@@ -248,7 +252,7 @@ for my $rule (keys %{ $rules->{after} })
 
 	for (grep { $_ ne LAST} @{ $rules->{after}{$rule} })
 		{
-		$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (after) 4\n" ;
+		$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (after) 4\n" if $show_rules ;
 		$dependents{$first_rule}++ ;
 		$added_rule++ ;
 
@@ -258,7 +262,7 @@ for my $rule (keys %{ $rules->{after} })
 
 for my $rule (keys %{ $rules->{before} })
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (before) 5\n" ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (before) 5\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
@@ -268,7 +272,7 @@ for my $rule (keys %{ $rules->{before} })
 		{
 		if ($first_rule ne $_)
 			{
-			$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (before) 6\n" ;
+			$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (before) 6\n" if $show_rules ;
 			$dependents{$first_rule}++ ;
 			$added_rule++ ;
 
@@ -287,7 +291,7 @@ for my $rule (keys %{ $rules->{after} })
 
 		if ($_ eq LAST)
 			{
-			$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 1\n" ;
+			$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 1\n" if $show_rules ;
 			$dependents{$rule}++ ;
 			$added_rule++ ;
 
@@ -295,13 +299,13 @@ for my $rule (keys %{ $rules->{after} })
 			}
 		else
 			{
-			$pbsfile .= "Rule $added_rule, ['$rule' => '$_'] ; # after rule 1\n" ;
+			$pbsfile .= "Rule $added_rule, ['$rule' => '$_'] ; # after rule 1\n" if $show_rules ;
 			$dependents{$rule}++ ;
 			$added_rule++ ;
 
 			push @{$one_rule{$rule}}, $_ ;
 
-			$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # after rule 2\n" ;
+			$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # after rule 2\n" if $show_rules ;
 			$dependents{$_}++ ;
 			$added_rule++ ;
 
@@ -309,7 +313,7 @@ for my $rule (keys %{ $rules->{after} })
 			}
 		}
 
-	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 3\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 3\n" if $show_rules ;
 	$dependents{$rule}++ ;
 	$added_rule++ ;
 
@@ -326,20 +330,20 @@ for my $rule (keys %{ $rules->{before} })
 
 		$_ = $first_rule if $_ eq FIRST ;
 
-		$pbsfile .= "Rule $added_rule, ['$_' => '$rule'] ; # before rule 1\n" ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$rule'] ; # before rule 1\n" if $show_rules ;
 		$dependents{$_}++ ;
 		$added_rule++ ;
 
 		push @{$one_rule{$_}}, $rule ;
 
-		$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # before rule 2\n" ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # before rule 2\n" if $show_rules ;
 		$dependents{$_}++ ;
 		$added_rule++ ;
 
 		push @{$one_rule{$_}}, $last_rule ;
 		}
 
-	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # before rule 3\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # before rule 3\n" if $show_rules ;
 	$dependents{$rule}++ ;
 	$added_rule++ ;
 
@@ -360,7 +364,7 @@ for (0 .. $#first_plus_indexes - 1)
 	my $next_rule_index = $first_plus_indexes[$_ + 1] ;
 
 	# depend on each other
-	$pbsfile .= "Rule $added_rule, ['$rules->{first_plus}{$rule_index}[0]' => '$rules->{first_plus}{$next_rule_index}[0]'] ; # first_plus rule 1\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rules->{first_plus}{$rule_index}[0]' => '$rules->{first_plus}{$next_rule_index}[0]'] ; # first_plus rule 1\n" if $show_rules ;
 	$added_rule++ ;
 
 	push @{$one_rule{$rules->{first_plus}{$rule_index}[0]}}, $rules->{first_plus}{$next_rule_index}[0] ;
@@ -370,7 +374,7 @@ if (@first_plus_indexes)
 	{
 	my $rule_index = $first_plus_indexes[0] ;
 
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{first_plus}{$rule_index}[0]'] ; # first_plus rule 2\n" ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{first_plus}{$rule_index}[0]'] ; # first_plus rule 2\n" if $show_rules ;
 	$added_rule++ ;
 
 	push @{$one_rule{$first_rule}}, $rules->{first_plus}{$rule_index}[0] ;
@@ -380,7 +384,7 @@ if (@first_plus_indexes)
 	#all nodes except those in list and first are dependencies to last in list
 	for (grep {$_ ne $first_rule } keys %dependents)
 		{
-		$pbsfile .= "Rule $added_rule, ['$last_rule_in_list' => '$_'] ; # first_plus rule 3\n" ;
+		$pbsfile .= "Rule $added_rule, ['$last_rule_in_list' => '$_'] ; # first_plus rule 3\n" if $show_rules ;
 		$added_rule++ ;
 
 		push @{$one_rule{$last_rule_in_list}}, $_ ;
@@ -404,7 +408,7 @@ for (reverse 1 .. $#last_minus_indexes)
 	my $previous_rule_index = $last_minus_indexes[$_ - 1] ;
 
 	# depend on each other
-	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$rules->{last_minus}{$previous_rule_index}[0]'] ; # last_minus rule 1\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$rules->{last_minus}{$previous_rule_index}[0]'] ; # last_minus rule 1\n" if $show_rules ;
 	$added_rule++ ;
 
 	push @{$one_rule{$rules->{last_minus}{$rule_index}[0]}}, $rules->{last_minus}{$previous_rule_index}[0] ;
@@ -415,7 +419,7 @@ if (@last_minus_indexes)
 	# first rule in list depends on "last"
 	my $rule_index = $last_minus_indexes[0] ;
 
-	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$last_rule'] ; # last_minus rule 2\n" ;
+	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$last_rule'] ; # last_minus rule 2\n" if $show_rules ;
 	$added_rule++ ;
 
 	push @{$one_rule{$rules->{last_minus}{$rule_index}[0]}}, $last_rule ;
@@ -425,7 +429,7 @@ if (@last_minus_indexes)
 
 	for (grep {$_ ne $last_rule } keys %dependents)
 		{
-		$pbsfile .= "Rule $added_rule, ['$_' => '$first_rule_in_list'] ; # last_minus rule 3\n" ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$first_rule_in_list'] ; # last_minus rule 3\n" if $show_rules ;
 		$added_rule++ ;
 
 		push @{$one_rule{$_}}, $first_rule_in_list ;

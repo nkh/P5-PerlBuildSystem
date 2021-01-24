@@ -270,6 +270,8 @@ $pbs_config->{DISPLAY_HELP}++ if defined $pbs_config->{DISPLAY_HELP_NARROW_DISPL
 $pbs_config->{DEBUG_DISPLAY_RULES}++ if defined $pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION} ;
 
 $pbs_config->{DISPLAY_USED_RULES}++ if defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY} ;
+
+$pbs_config->{DISPLAY_RULES_ORDER}++ if defined $pbs_config->{DISPLAY_RULES_ORDERING} ;
 	
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
