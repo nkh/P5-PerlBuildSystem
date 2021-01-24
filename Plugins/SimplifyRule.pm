@@ -53,7 +53,7 @@ if('ARRAY' eq ref $triggered_and_triggering)
 		unless($build_ok)
 			{
 			PrintError("Plugin: SimplifyRule::AddTriger, Invalid rule at '$file_name:$line' $build_message\n") ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 			die ;
 			}
 			
@@ -122,7 +122,7 @@ unless('Regexp' eq ref $node_regex)
 	else
 		{	
 		PrintError("Plugin: SimplifyRule::AddSubpbsRule, Invalid rule at '$file_name:$line' $build_message\n") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -177,7 +177,7 @@ if(defined $dependent && '' eq ref $dependent)
 	unless($dependency_regex_ok)
 		{
 		PrintError("Pluigin: SimplifyRule::AddRule, Invalid rule at '$file_name:$line' $dependency_regex_message\n") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 		
@@ -236,7 +236,7 @@ elsif (defined $dependent && 'HASH' eq ref $dependent)
 		else
 			{	
 			PrintError("Plugin: SimplifyRule::AddRule, Invalid rule at  '$file_name:$line' $build_message\n") ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 			die ;
 			}
 		}
@@ -268,7 +268,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Plugin: Invalid rule at '$file_name:$line'. Expecting a string or an array ref as first argument.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}

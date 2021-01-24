@@ -76,7 +76,7 @@ my $from = shift ; # namespace
 unless(defined $from)
 	{
 	PrintWarning("Config: 'GetConfigFrom' mandatory argument missing at '$file_name:$line'\n") ;
-	#~ PbsDisplayErrorWithContext($file_name,$line) ;
+	#~ PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	return() ;
 	}
 
@@ -185,7 +185,7 @@ for my $config_variable (@config_variables)
 			PrintWarning("Config: User config variable '$config_variable' doesn't exist at '$file_name:$line'; returning undef\n") ;
 			}
 			
-		#~ PbsDisplayErrorWithContext($file_name,$line) ;
+		#~ PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		push @user_config, undef ;
 		}
 	}
@@ -211,7 +211,7 @@ my $from = shift ; # from namespace
 unless(defined $from)
 	{
 	PrintWarning("Config: 'GetConfigFromAsList' mandatory argument missing at '$file_name:$line'\n") ;
-	#~ PbsDisplayErrorWithContext($file_name,$line) ;
+	#~ PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	return() ;
 	}
 
@@ -315,7 +315,7 @@ for my $config_variable (@config_variables)
 	else
 		{
 		PrintWarning("Config: GetConfigAsList:variable '$config_variable' doesn't exist $caller_location; ignoring request\n") ;
-		#~ PbsDisplayErrorWithContext($file_name,$line) ;
+		#~ PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		}
 	}
 

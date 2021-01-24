@@ -15,7 +15,7 @@ if($node_name =~ /\s/ || $node_name =~ /\\/)
 	{
 	PrintError "Node '$node_name' contains spaces and/or backslashes. rule $rule->{NAME}$rule->{ORIGIN}\n" ;
 		
-	PbsDisplayErrorWithContext($rule->{FILE}, $rule->{LINE}) ;
+	PbsDisplayErrorWithContext($pbs_config, $rule->{FILE}, $rule->{LINE}) ;
 	die ;
 	}
 }

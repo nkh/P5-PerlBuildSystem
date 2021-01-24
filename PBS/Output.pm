@@ -190,6 +190,81 @@ sub PrintDebug{_print(\*STDERR, \&DEBUG, @_) ;}
 
 sub GetLineWithContext
 {
+my ($pbs_config) = @_ ;
+
+if($pbs_config->{PBSFILE_CONTENT})
+	{
+	GetLineWithContextFromPbsfileContent(@_) ;
+	}
+else
+	{
+	GetLineWithContextFromFile(@_) ;
+	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetLineWithContextFromPbsfileContent
+{
+my $pbs_config                  = shift ;
+my $file_name                   = shift ;
+my $number_of_blank_lines       = shift ;
+my $number_of_context_lines     = shift ;
+my $center_line_index           = shift ;
+my $center_line_colorizing_sub  = shift || sub{ COLOR('reset', @_) } ;
+my $context_colorizing_sub      = shift || sub{ COLOR('reset', @_) } ;
+
+my @file = map {" $_\n" } split(/\n/, $pbs_config->{PBSFILE_CONTENT}) ;
+my $number_of_lines_skip = ($center_line_index - $number_of_context_lines) - 1 ;
+
+my $top_context = $number_of_context_lines ;
+$top_context += $number_of_lines_skip if $number_of_lines_skip < 0 ;
+
+my $line_with_context = '' ;
+
+$line_with_context.= "\n" for (1 .. $number_of_blank_lines) ;
+
+shift @file for (1 .. $number_of_lines_skip) ;
+my $line_number = $number_of_lines_skip ;
+
+my $t = $PBS::Output::indentation;
+$line_with_context .= INFO2("$pbs_config->{VIRTUAL_PBSFILE_NAME}\n", 0) ;
+
+for(1 .. $top_context)
+	{
+	my $text = shift @file ;
+	$line_number++ ;
+
+	next unless defined $text ;
+
+	$line_with_context .= $context_colorizing_sub->("$t$t$line_number $text", 0) ;
+	}
+		
+my $center_line_text = shift @file ;
+$line_number++ ;
+
+$line_with_context .= $center_line_colorizing_sub->("$t$t$line_number $center_line_text", 0) if defined $center_line_text ;
+
+for(1 .. $number_of_context_lines)
+	{
+	my $text = shift @file ;
+	$line_number++ ;
+
+	next unless defined $text ;
+	
+	$line_with_context .= $context_colorizing_sub->("$t$t$line_number $text", 0) ;
+	}
+
+$line_with_context .= "\n" for (1 .. $number_of_blank_lines) ;
+
+return($line_with_context) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetLineWithContextFromFile
+{
+my $pbs_config                  = shift ;
 my $file_name                   = shift ;
 my $number_of_blank_lines       = shift ;
 my $number_of_context_lines     = shift ;
@@ -251,7 +326,7 @@ _print(\*STDERR, \&ERROR, GetLineWithContext(@_)) ;
 
 sub PbsDisplayErrorWithContext
 {
-PrintWithContext($_[0], 1, 4, $_[1], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
+PrintWithContext($_[0], $_[1],1, 4, $_[2], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
 }
 
 #-------------------------------------------------------------------------------

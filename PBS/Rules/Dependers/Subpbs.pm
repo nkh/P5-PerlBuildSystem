@@ -29,7 +29,7 @@ use PBS::Rules ;
 
 sub GenerateSubpbsDepender
 {
-my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_sub) = @_ ;
+my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_sub) = @_ ;
 
 # sub pbs definition
 for my $key (keys %$depender_definition)
@@ -37,7 +37,7 @@ for my $key (keys %$depender_definition)
 	if($key !~ /^[A-Z_]+$/)
 		{
 		Carp::carp ERROR("Invalid sub Pbs rule at: '$name'. Keys must be upper case. '$key' is not at $file_name:$line.\n") ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 	}
@@ -45,14 +45,14 @@ for my $key (keys %$depender_definition)
 unless(exists $depender_definition->{NODE_REGEX})
 	{
 	Carp::carp ERROR("No 'NODE_REGEX' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($file_name, $line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 	die ;
 	}
 	
 unless(exists $depender_definition->{PBSFILE})
 	{
 	Carp::carp ERROR("No 'PBSFILE' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($file_name, $line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 	die ;
 	}
 	
@@ -65,7 +65,7 @@ unless
 	)
 	{
 	Carp::carp ERROR("Invalid or missing 'PACKAGE' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($file_name, $line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 	die ;
 	}
 	
@@ -74,7 +74,7 @@ if(exists $depender_definition->{ALIAS})
 	if($depender_definition->{ALIAS} eq '')
 		{
 		Carp::carp ERROR("Empty alias for '$name' at $file_name:$line.\n") ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 	
@@ -84,7 +84,7 @@ if(exists $depender_definition->{ALIAS})
 		}
 	}
 	
-my $pbs_config = GetPbsConfig($package) ;
+$pbs_config = GetPbsConfig($package) ;
 
 if(exists $depender_definition->{BUILD_DIRECTORY} && !file_name_is_absolute($depender_definition->{BUILD_DIRECTORY}))
 	{
@@ -101,7 +101,7 @@ if(ref $depender_definition->{NODE_REGEX} eq 'Regexp')
 else
 	{
 	PrintError "NODE_REGEX in rule '$name' @ '$file_name:$line' is not a perl regex.\n" ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 

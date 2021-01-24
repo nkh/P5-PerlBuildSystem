@@ -30,7 +30,7 @@ use PBS::Rules::Dependers::Subpbs ;
 
 sub GenerateDepender
 {
-my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
+my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
 
 my @depender_node_subs_and_types ; # types is a special case to display info about dependers that are also creators
 
@@ -56,7 +56,7 @@ for (ref $depender_definition)
 		
 	# DEFAULT
 		print STDERR ERROR("Invalid depender definition '$depender_definition' at rule '$name' at '$file_name:$line'.\n") ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 	}
 	
@@ -104,12 +104,12 @@ sub GenerateDependerFromArray
 # $dependent_matcher matches the dependent
 # $dependencies_evaluator is to ,ie, replace $name by the node name ... it  is only called if the above sub matches.
 
-my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition) = @_ ;
+my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) = @_ ;
 
 unless(@$depender_definition)
 	{
 	Carp::carp ERROR("Depend: Nothing defined in rule definition at: $name at '$file_name:$line'") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 
@@ -141,7 +141,7 @@ if('ARRAY' eq ref $dependent_regex_definition)
 	else
 		{
 		Carp::carp ERROR("Invalid creator definition, first element must be a creator sub reference at rule '$name' at '$file_name:$line'.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -154,7 +154,7 @@ my ($dependencies_evaluator, $dependent_matcher) ;
 if('' eq ref $dependent_regex_definition)
 	{
 	PrintError "Depend: Unexpected non regex or sub matcher definition at file '$name' at '$file_name:$line'\n" ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 elsif('Regexp' eq ref $dependent_regex_definition)
@@ -196,7 +196,7 @@ elsif('CODE' eq ref $dependent_regex_definition)
 else
 	{
 	PrintError "Depend: Unexpected matcher definition at file '$name' at '$file_name:$line'\n" ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 	
@@ -222,7 +222,7 @@ for my $dependency (@dependencies)
 		else
 			{
 			Carp::carp ERROR("Invalid depender definition, first element must be a depender sub reference at rule '$name' at '$file_name:$line'.") ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 			die ;
 			}
 		}
@@ -237,7 +237,7 @@ for my $dependency (@dependencies)
 	else
 		{
 		Carp::carp ERROR("Invalid dependency definition at rule '$name' at '$file_name:$line'.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	

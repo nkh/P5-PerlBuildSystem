@@ -88,8 +88,8 @@ if(exists $post_build_commands{$package})
 			)
 			{
 			Carp::carp ERROR("'$name' name is already used for for post build command defined at $post_build_commands->{FILE}:$post_build_commands->{LINE}\n") ;
-			PbsDisplayErrorWithContext($file_name, $line) ;
-			PbsDisplayErrorWithContext($post_build_commands->{FILE}, $post_build_commands->{LINE}) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
+			PbsDisplayErrorWithContext($pbs_config, $post_build_commands->{FILE}, $post_build_commands->{LINE}) ;
 			die ;
 			}
 		}
@@ -98,14 +98,14 @@ if(exists $post_build_commands{$package})
 if('' eq ref $switch || 'HASH' eq ref $switch)
 	{
 	Carp::carp ERROR("Invalid post build command definition") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 	
 if(defined $builder_sub && 'CODE' ne ref $builder_sub)
 	{
 	Carp::carp ERROR("Error: Builder must be a sub reference.\n") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 	
@@ -116,7 +116,7 @@ if('ARRAY' eq ref $switch)
 	unless(@$switch)
 		{
 		Carp::carp ERROR("Nothing defined in post build definition at: $name") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 
@@ -140,7 +140,7 @@ if('ARRAY' eq ref $switch)
 		unless($build_ok)
 			{
 			Carp::carp ERROR($build_message) ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 			die ;
 			}
 			

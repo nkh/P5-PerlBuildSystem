@@ -1,5 +1,6 @@
 
-when using virtual file show werrors in the virtual file not the pbsfile file on disk
+#when using virtual file show werrors in the virtual file not the pbsfile file on disk
+add line number to generated rule ordering pbsfile
 
 #time to completion example
 	when digest can't be generated we only get a warning

@@ -56,7 +56,7 @@ if(0 == @matching_nodes)
 	{
 	PrintError "LocateUnique: '$regex' didn't matched any node @ $file_name:$line!\n" ;
 	$file_name =~ s/'//g ;
-	PbsDisplayErrorWithContext($file_name, $line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 	die ;
 	}
 else
@@ -75,7 +75,7 @@ else
 			}
 			
 		$file_name =~ s/'//g ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 	}
@@ -151,7 +151,7 @@ sub
 			}
 			
 		$file_name =~ s/'//g ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 		

@@ -45,7 +45,7 @@ for my $trigger (@triggers)
 		unless($build_ok)
 			{
 			PrintError($build_message) ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 			die ;
 			}
 			
@@ -106,7 +106,7 @@ EOE
 	else
 		{	
 		Carp::carp ERROR($build_message) ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -143,7 +143,7 @@ if('' eq ref $dependent)
 	unless($dependency_regex_ok)
 		{
 		Carp::carp ERROR($dependency_regex_message) ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 		
@@ -241,7 +241,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at '$file_name:$line'. Expecting a string or an array ref as first argument.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}

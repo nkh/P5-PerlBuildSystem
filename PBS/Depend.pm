@@ -511,14 +511,16 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 			
 			if($node_name eq $dependency_name)
 				{
-				my $rule_info = $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
-									
+				my $rule_info = defined $pbs_config->{VIRTUAL_PBSFILE_TARGET}
+							? $dependency_rule->{NAME} . ':virtual_pbsfile:' . $pbs_config->{VIRTUAL_PBSFILE_TARGET} . ':' . $dependency_rule->{LINE} 
+							: $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
+				
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
 				PrintError "\nDepend: Error: self referencial rule\n"
 						. "\trule: '$rule_info'\n"
 						. "\tcycle: $node_name => $dependency_names\n" ;
 				
-				PbsDisplayErrorWithContext($dependency_rule->{FILE}, $dependency_rule->{LINE}) ;
+				PbsDisplayErrorWithContext($pbs_config, $dependency_rule->{FILE}, $dependency_rule->{LINE}) ;
 				die "\n";
 				}
 			

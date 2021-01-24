@@ -116,7 +116,7 @@ for my $rule (@dependency_rules)
 	if( grep { $_ eq '__INTERNAL' } @{$rule->{TYPE}} )
 		{
 		# add once and leave as it doesn't get any order from user
-		add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}) ;
+		add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, $rule->{LINE}) ;
 		next ;
 		}
 
@@ -133,14 +133,14 @@ for my $rule (@dependency_rules)
 			|| $rule_type =~ /^\s*last_minus\s(.*)/i
 			)
 			{
-			add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, split(/\s/, $rule_type)) ;
+			add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, $rule->{LINE}, split(/\s/, $rule_type)) ;
 			$matches_order++;
 			}
 
 		}
 
 	# rule with no order
-	add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}) unless $matches_order ;
+	add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, $rule->{LINE} // '?') unless $matches_order ;
 	$sort_rules += $matches_order ;
 	}
 
@@ -150,6 +150,9 @@ if($sort_rules)
 
 	my ($order_pbsfile, $target) = order_rules($rules_to_sort, $rule_to_sort_index, $pbs_config) ;
 
+	my $t = $PBS::Output::indentation;
+	my $virtual_pbsfile_name = "$t${t}virtual pbsfile: 'rule_ordering'\n$t$t${t} rules from '$pbs_config->{PBSFILE}'\n" ;
+
 	my ($build_success, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
 		PBS::FrontEnd::Pbs
 			(
@@ -157,6 +160,8 @@ if($sort_rules)
 			  
 			PBS_CONFIG => 
 				{
+				VIRTUAL_PBSFILE_TARGET => 'rule_ordering',
+				VIRTUAL_PBSFILE_NAME => $virtual_pbsfile_name,
 				WARP => 0,
 				DEPEND_AND_CHECK => 1,
 				QUIET => 1,
@@ -185,14 +190,17 @@ my ($rules, $rule_index, $pbs_config) = @_ ;
 my $show_rules = $pbs_config->{DISPLAY_RULES_ORDERING} ;
 
 use Data::TreeDumper ;
-PrintInfo3 DumpTree $rules, 'rules' if $show_rules ;
+PrintInfo3 DumpTree $rules, 'rules', DISPLAY_ADDRESS => 0 if $show_rules ;
 
 my ($first_constant, $last_constant) = (FIRST, LAST) ; # can't use constant as hash key directly
-die ERROR(DumpTree($rules->{$first_constant}, "Rule: multiple first")) ."\n" if exists $rules->{$first_constant} && @{ $rules->{$first_constant} } > 1 ;
-die ERROR(DumpTree($rules->{$last_constant}, "Rule: multiple last")) ."\n" if exists $rules->{$last_constant} && @{ $rules->{$last_constant} } > 1 ;
+die ERROR(DumpTree($rules->{$first_constant}, "Rule: multiple first")) ."\n" if exists $rules->{$first_constant} && @{ $rules->{$first_constant}{rules} } > 1 ;
+die ERROR(DumpTree($rules->{$last_constant}, "Rule: multiple last")) ."\n" if exists $rules->{$last_constant} && @{ $rules->{$last_constant}{rules} } > 1 ;
 
-my $first_rule = $rules->{$first_constant}[0] // FIRST;
-my $last_rule = $rules->{$last_constant}[0] // LAST ;
+my $first_rule = $rules->{$first_constant}{rules}[0] // FIRST;
+my $first_rule_line = (keys %{ $rules->{$first_constant}{lines}})[0] // '?' ;
+
+my $last_rule = $rules->{$last_constant}{rules}[0] // LAST ;
+my $last_rule_line = (keys %{$rules->{$last_constant}{lines}})[0] // '?' ;
 
 my $pbsfile = '' ;
 my $added_rule = 0 ;
@@ -200,7 +208,7 @@ my %dependents ;
 my %one_rule ;
 
 #last has no dependencies
-$pbsfile .= "Rule $added_rule, ['$last_rule'] ; # last rule \n" if $show_rules ;
+$pbsfile .= "Rule $added_rule, ['$last_rule'] ; # last rule @ $last_rule_line\n" if $show_rules ;
 $dependents{$last_rule}++ ;
 $added_rule++ ;
 
@@ -209,74 +217,87 @@ $one_rule{$last_rule} = [] ;
 # indexed rules
 if ($rule_index > 0) # we have at least one indexed rule
 	{
-	my $target = $rules->{0} ;
-	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # indexed rule 1\n" if $show_rules ;
+	my $target = $rules->{0}{rule} ;
+	my $target_line = $rules->{0}{line} ;
+
+	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # indexed rule 1 @ $target_line\n" if $show_rules ;
 	$dependents{$target}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$target}}, $last_rule ;
+	push @{$one_rule{$target}}, {dependency =>$last_rule, line => $target_line} ;
 	}
 
 for (reverse 1 .. $rule_index - 1)
 	{
-	$pbsfile .= "Rule $added_rule, ['$rules->{$_}' => '" . $rules->{$_ - 1} ."'] ; # indexed rule 2\n" if $show_rules ;
-	$dependents{$rules->{$_}}++ ;
+	my $target_line = $rules->{$_}{line} ;
+	my $target = $rules->{$_}{rule} ;
+	my $dependency = $rules->{$_ - 1}{rule} ;
+
+	$pbsfile .= "Rule $added_rule, ['$target' => '$dependency'] ; # indexed rule 2 @ $target_line\n" if $show_rules ;
+	$dependents{$target}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rules->{$_}}}, $rules->{$_ - 1} ;
+	push @{$one_rule{$target}}, {dependency => $dependency, line => $target_line} ;
 	}
 
 # first rule
 for (0 .. $rule_index - 1)
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{$_}'] ; # first rule (indexed) 1\n" if $show_rules ;
+	my $target_line = $rules->{$_}{line} ;
+	my $dependency = $rules->{$_}{rule} ;
+
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$dependency'] ; # first rule (indexed) 1 @ $target_line\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$first_rule}}, $rules->{$_} ;
+	push @{$one_rule{$first_rule}}, {dependency => $dependency, line => $target_line} ;
 	}
 
-$pbsfile .= "Rule $added_rule, ['$first_rule' => '$last_rule'] ; # first rule (last) 2\n" if $show_rules ;
+$pbsfile .= "Rule $added_rule, ['$first_rule' => '$last_rule'] ; # first rule (last) 2 @ $first_rule_line\n" if $show_rules ;
 $dependents{$first_rule}++ ;
 $added_rule++ ;
 
-push @{$one_rule{$first_rule}}, $last_rule ;
+push @{$one_rule{$first_rule}}, {dependency => $last_rule, line => $first_rule_line} ;
 
 for my $rule (keys %{ $rules->{after} })
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (after) 3\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (after) 3 @ $first_rule_line\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$first_rule}}, $rule ;
+	push @{$one_rule{$first_rule}}, {dependency => $rule, line => $first_rule_line} ;
 
-	for (grep { $_ ne LAST} @{ $rules->{after}{$rule} })
+	for (grep { $_ ne LAST} @{ $rules->{after}{$rule}{rules} })
 		{
-		$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (after) 4\n" if $show_rules ;
+		my $target_line = join (', ', sort keys %{ $rules->{after}{$rule}{lines} }) ;
+
+		$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (after) 4 @ $target_line\n" if $show_rules ;
 		$dependents{$first_rule}++ ;
 		$added_rule++ ;
 
-		push @{$one_rule{$first_rule}}, $_ ;
+		push @{$one_rule{$first_rule}}, {dependency => $_, line => $target_line} ;
 		}
 	}
 
 for my $rule (keys %{ $rules->{before} })
 	{
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (before) 5\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rule'] ; # first rule (before) 5 $first_rule_line\n" if $show_rules ;
 	$dependents{$first_rule}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$first_rule}}, $rule ;
+	push @{$one_rule{$first_rule}}, {dependency => $rule, line => $first_rule_line} ;
 
-	for (@{ $rules->{before}{$rule} })
+	for (@{ $rules->{before}{$rule}{rules} })
 		{
 		if ($first_rule ne $_)
 			{
-			$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (before) 6\n" if $show_rules ;
+			my $target_line = join (', ', sort keys %{ $rules->{before}{$rule}{lines} }) ;
+
+			$pbsfile .= "Rule $added_rule, ['$first_rule' => '$_'] ; # first rule (before) 6 @ $target_line\n" if $show_rules ;
 			$dependents{$first_rule}++ ;
 			$added_rule++ ;
 
-			push @{$one_rule{$first_rule}}, $_ ;
+			push @{$one_rule{$first_rule}}, {dependency => $_, line => $target_line} ;
 			}
 		}
 	}
@@ -284,70 +305,74 @@ for my $rule (keys %{ $rules->{before} })
 # after rules
 for my $rule (keys %{ $rules->{after} })
 	{
-	for (@{ $rules->{after}{$rule} })
+	my $target_line = join (', ', sort keys %{ $rules->{after}{$rule}{lines} }) ;
+
+	for (@{ $rules->{after}{$rule}{rules} })
 		{
 		die ERROR("Rule: rule '$rule' can't be run after first rule '$first_rule'") . "\n" if $_ eq $first_rule ;
 		die ERROR("Rule: rule '$rule' can't be run after first rule '$_'" ) . "\n" if $_ eq FIRST ;
 
 		if ($_ eq LAST)
 			{
-			$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 1\n" if $show_rules ;
+			$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 1 @ $target_line\n" if $show_rules ;
 			$dependents{$rule}++ ;
 			$added_rule++ ;
 
-			push @{$one_rule{$rule}}, $last_rule ;
+			push @{$one_rule{$rule}}, {dependency => $last_rule, line => $target_line} ;
 			}
 		else
 			{
-			$pbsfile .= "Rule $added_rule, ['$rule' => '$_'] ; # after rule 1\n" if $show_rules ;
+			$pbsfile .= "Rule $added_rule, ['$rule' => '$_'] ; # after rule 1 @ $target_line\n" if $show_rules ;
 			$dependents{$rule}++ ;
 			$added_rule++ ;
 
-			push @{$one_rule{$rule}}, $_ ;
+			push @{$one_rule{$rule}}, {dependency => $_, line => $target_line} ;
 
-			$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # after rule 2\n" if $show_rules ;
+			$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # after rule 2 @ $target_line\n" if $show_rules ;
 			$dependents{$_}++ ;
 			$added_rule++ ;
 
-			push @{$one_rule{$_}}, $last_rule ;
+			push @{$one_rule{$_}}, {dependency => $last_rule, line => $target_line} ;
 			}
 		}
 
-	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 3\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # after rule 3 @ $target_line\n" if $show_rules ;
 	$dependents{$rule}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rule}}, $last_rule ;
+	push @{$one_rule{$rule}}, {dependency => $last_rule, line => $target_line} ;
 	}
 
 # before rules
 for my $rule (keys %{ $rules->{before} })
 	{
-	for (@{ $rules->{before}{$rule} })
+	my $target_line = join (', ', sort keys %{ $rules->{before}{$rule}{lines} }) ;
+
+	for (@{ $rules->{before}{$rule}{rules} })
 		{
 		die ERROR("Rule: rule '$rule' can't be run before last rule '$last_rule'") . "\n" if $_ eq $last_rule ;
 		die ERROR("Rule: rule '$rule' can't be run before last rule '$_'") . "\n" if $_ eq LAST ;
 
 		$_ = $first_rule if $_ eq FIRST ;
 
-		$pbsfile .= "Rule $added_rule, ['$_' => '$rule'] ; # before rule 1\n" if $show_rules ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$rule'] ; # before rule 1 @ $target_line\n" if $show_rules ;
 		$dependents{$_}++ ;
 		$added_rule++ ;
 
-		push @{$one_rule{$_}}, $rule ;
+		push @{$one_rule{$_}}, {dependency => $rule, line => $target_line} ;
 
-		$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # before rule 2\n" if $show_rules ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$last_rule'] ; # before rule 2 @ $target_line\n" if $show_rules ;
 		$dependents{$_}++ ;
 		$added_rule++ ;
 
-		push @{$one_rule{$_}}, $last_rule ;
+		push @{$one_rule{$_}}, {dependency => $last_rule, line => $target_line} ;
 		}
 
-	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # before rule 3\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$rule' => '$last_rule'] ; # before rule 3 @ $target_line\n" if $show_rules ;
 	$dependents{$rule}++ ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rule}}, $last_rule ;
+	push @{$one_rule{$rule}}, {dependency => $last_rule, line => $target_line} ;
 	}
 
 # first_plus rules
@@ -363,35 +388,41 @@ for (0 .. $#first_plus_indexes - 1)
 	my $rule_index = $first_plus_indexes[$_] ;
 	my $next_rule_index = $first_plus_indexes[$_ + 1] ;
 
+	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{$rule_index}{lines} }) ;
+	my $target = $rules->{first_plus}{$rule_index}{rules}[0] ;
+	my $dependency = $rules->{first_plus}{$next_rule_index}{rules}[0] ;
+
 	# depend on each other
-	$pbsfile .= "Rule $added_rule, ['$rules->{first_plus}{$rule_index}[0]' => '$rules->{first_plus}{$next_rule_index}[0]'] ; # first_plus rule 1\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$target' => '$dependency'] ; # first_plus rule 1 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rules->{first_plus}{$rule_index}[0]}}, $rules->{first_plus}{$next_rule_index}[0] ;
+	push @{$one_rule{$target}}, {dependency => $dependency, line => $target_line} ;
 	}
 
 if (@first_plus_indexes)
 	{
+	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{$rule_index}{lines} }) ;
 	my $rule_index = $first_plus_indexes[0] ;
+	my $dependency = $rules->{first_plus}{$rule_index}{rules}[0] ;
 
-	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$rules->{first_plus}{$rule_index}[0]'] ; # first_plus rule 2\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$dependency'] ; # first_plus rule 2 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
 
-	push @{$one_rule{$first_rule}}, $rules->{first_plus}{$rule_index}[0] ;
+	push @{$one_rule{$first_rule}}, {dependency => $dependency, line => $target_line} ;
 
-	my $last_rule_in_list = $rules->{first_plus}{$first_plus_indexes[$#first_plus_indexes]}[0] ;
+	my $last_rule_in_list = $rules->{first_plus}{$first_plus_indexes[$#first_plus_indexes]}{rules}[0] ;
 
 	#all nodes except those in list and first are dependencies to last in list
 	for (grep {$_ ne $first_rule } keys %dependents)
 		{
-		$pbsfile .= "Rule $added_rule, ['$last_rule_in_list' => '$_'] ; # first_plus rule 3\n" if $show_rules ;
+		$pbsfile .= "Rule $added_rule, ['$last_rule_in_list' => '$_'] ; # first_plus rule 3 @ $target_line\n" if $show_rules ;
 		$added_rule++ ;
 
-		push @{$one_rule{$last_rule_in_list}}, $_ ;
+		push @{$one_rule{$last_rule_in_list}}, {dependency => $_, line => $target_line} ;
 		}
 
 	# add rules to dependents
-	$dependents{$_}++ for (map{ @$_[0] } values %{$rules->{first_plus}}) ;
+	$dependents{$_}++ for (map{ @{$_->{rules}}[0] } values %{$rules->{first_plus}}) ;
 	}
 
 # last_minus rules
@@ -407,11 +438,15 @@ for (reverse 1 .. $#last_minus_indexes)
 	my $rule_index = $last_minus_indexes[$_] ;
 	my $previous_rule_index = $last_minus_indexes[$_ - 1] ;
 
+	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{$rule_index}{lines} }) ;
+	my $target = $rules->{last_minus}{$rule_index}{rules}[0] ;
+	my $dependency = $rules->{last_minus}{$previous_rule_index}{rules}[0] ;
+
 	# depend on each other
-	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$rules->{last_minus}{$previous_rule_index}[0]'] ; # last_minus rule 1\n" if $show_rules ;
+	$pbsfile .= "Rule $added_rule, ['$target' => '$dependency'] ; # last_minus rule 1 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rules->{last_minus}{$rule_index}[0]}}, $rules->{last_minus}{$previous_rule_index}[0] ;
+	push @{$one_rule{$target}}, {dependency => $dependency, line => $target_line} ;
 	}
 
 if (@last_minus_indexes)
@@ -419,24 +454,28 @@ if (@last_minus_indexes)
 	# first rule in list depends on "last"
 	my $rule_index = $last_minus_indexes[0] ;
 
-	$pbsfile .= "Rule $added_rule, ['$rules->{last_minus}{$rule_index}[0]' => '$last_rule'] ; # last_minus rule 2\n" if $show_rules ;
+	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{$rule_index}{lines} }) ;
+	my $target = $rules->{last_minus}{$rule_index}{rules}[0] ;
+
+	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # last_minus rule 2 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
 
-	push @{$one_rule{$rules->{last_minus}{$rule_index}[0]}}, $last_rule ;
+	push @{$one_rule{$target}}, {dependency => $last_rule, line => $target_line} ;
 
 	#all other rules depend on first in this list
-	my $first_rule_in_list = $rules->{last_minus}{$last_minus_indexes[$#last_minus_indexes]}[0] ;
+	my $first_rule_in_list = $rules->{last_minus}{$last_minus_indexes[$#last_minus_indexes]}{rules}[0] ;
+	$target_line = join (', ', sort keys %{ $rules->{last_minus}{$last_minus_indexes[$#last_minus_indexes]}{lines} }) ;
 
 	for (grep {$_ ne $last_rule } keys %dependents)
 		{
-		$pbsfile .= "Rule $added_rule, ['$_' => '$first_rule_in_list'] ; # last_minus rule 3\n" if $show_rules ;
+		$pbsfile .= "Rule $added_rule, ['$_' => '$first_rule_in_list'] ; # last_minus rule 3 @ $target_line\n" if $show_rules ;
 		$added_rule++ ;
 
-		push @{$one_rule{$_}}, $first_rule_in_list ;
+		push @{$one_rule{$_}}, {dependency => $first_rule_in_list, line => $target_line} ;
 		}
 
 	# add rules to dependents
-	$dependents{$_}++ for (map{ @$_[0] } values %{$rules->{last_minus}}) ;
+	$dependents{$_}++ for (map{ @{$_->{rules}}[0] } values %{$rules->{last_minus}}) ;
 	}
 
 PrintInfo3 DumpTree \%dependents, "dependents:", DISPLAY_ADDRESS => 0 if $show_rules ;
@@ -446,10 +485,14 @@ PrintInfo3 "pbsfile, rules: $added_rule\n$pbsfile\n" if $show_rules ;
 my $merged_pbsfile = '' ;
 for (sort keys %one_rule)
 	{
-	my %dependencies = map {$_, 1} @{$one_rule{$_}} ;
+	my %dependencies = map {$_->{dependency}, 1} @{ $one_rule{$_} } ;
 	my @dependencies = sort keys %dependencies ;
 
-	$merged_pbsfile .= "rule $added_rule, ['$_' => " . join(', ', map { "'$_'" } @dependencies). "] ;\n" ;
+	my %lines = map {$_->{line}, 1} @{ $one_rule{$_}} ;
+	my $lines = keys %lines > 1 ? "lines: " : "line: " ;
+	$lines .= join(', ',  sort keys %lines) ;
+
+	$merged_pbsfile .= "rule $added_rule, ['$_' => " . join(', ', map { "'$_'" } @dependencies). "] ; # $lines\n" ;
 	$added_rule++ ;
 	}
 
@@ -460,24 +503,26 @@ return $merged_pbsfile, $first_rule ;
 
 sub add_rule_to_order
 {
-my ($rules, $rule_index, $rule, $order, @rest) = @_ ;
+my ($rules, $rule_index, $rule, $rule_line, $order, @rest) = @_ ;
 $order //= 'indexed' ;
 
 #PrintDebug "Rule: adding sort order: $rule, $order, @rest\n" ;
 
-if (@_ == 3)
+if (@_ == 4)
 	{
 	# added in rule order
-	$rules->{$$rule_index++} = $rule ;
+	$rules->{$$rule_index}{line} = $rule_line ;
+	$rules->{$$rule_index++}{rule} = $rule ;
 	}
-elsif (@_ == 4)
+elsif (@_ == 5)
 	{
 	# first or last, we can check later if multiple are defined
 
 	die ERROR "Rule: wrong order '$order' at rule: @_\n" unless $order eq FIRST or $order eq LAST ;
-	push @{$rules->{$order}}, $rule ;
+	$rules->{$order}{lines}{$rule_line}++ ;
+	push @{$rules->{$order}{rule}}, $rule ;
 	}
-elsif (@_ == 5)
+elsif (@_ == 6)
 	{
 	# before or after
 
@@ -485,13 +530,15 @@ elsif (@_ == 5)
 
 	if ($order eq 'before' or $order eq 'after')
 		{
-		push @{$rules->{$order}{$rule}}, @rest ;
+		$rules->{$order}{$rule}{lines}{$rule_line}++ ;
+		push @{$rules->{$order}{$rule}{rules}}, @rest ;
 		}
 	else
 		{
 		die ERROR "Rule: only one index allowed at rule: @_\n" if @rest > 1 ;
 
-		push @{$rules->{$order}{$rest[0]}}, $rule ;
+		$rules->{$order}{lines}{$rest[0]}{$rule_line}++ ;
+		push @{$rules->{$order}{rules}{$rest[0]}}, $rule ;
 		}
 	}
 else
@@ -538,7 +585,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at '$file_name:$line'. Expecting a name string, or an array ref containing types, as first argument.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -566,17 +613,18 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
+my $pbs_config = GetPbsConfig($package) ;
+
 my $class = shift ;
 unless('' eq ref $class)
 	{
 	Carp::carp ERROR("Class name expected as first argument at '$file_name:$line'") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 
 my @rule_definition = @_ ;
 
-my $pbs_config = GetPbsConfig($package) ;
 RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition;
@@ -597,7 +645,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at: '$name'. Expecting a string or an array ref.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -647,7 +695,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at: '$name'. Expecting a string or an array ref.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -686,7 +734,7 @@ my ($name, $rule_type) ;
 unless('' eq ref $class)
 	{
 	Carp::carp ERROR("Class name expected as first argument at: $name") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 
@@ -705,7 +753,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at: '$name'. Expecting a string or an array ref.") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
@@ -729,6 +777,8 @@ sub RegisterRule
 {
 my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_definition, $node_subs) = @_ ;
 
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+
 # this test is mainly to catch the error when the user forgot to write the rule name.
 my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST UNTYPED VIRTUAL LOCAL FORCED POST_DEPEND CREATOR INTERNAL IMMEDIATE_BUILD) ;
 for my $rule_type (@$rule_types)
@@ -742,13 +792,11 @@ for my $rule_type (@$rule_types)
 	unless(exists $valid_types{$rule_type})
 		{
 		PrintError "Rule: invalid type '$rule_type' at rule '$name' at '$file_name:$line'\n" ;
-		PbsDisplayErrorWithContext($file_name, $line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 	}
 	
-my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-
 if(exists $package_rules{$package}{$class})
 	{
 	#todo: replace loop below by hash lookup
@@ -757,8 +805,8 @@ if(exists $package_rules{$package}{$class})
 		if($rule->{NAME} eq $name)
 			{
 			Carp::carp ERROR("Rule: '$name' name is already used for for rule defined at $rule->{FILE}:$rule->{LINE}:$package\n") ;
-			PbsDisplayErrorWithContext($file_name,$line) ;
-			PbsDisplayErrorWithContext($rule->{FILE},$rule->{LINE}) ;
+			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
+			PbsDisplayErrorWithContext($pbs_config, $rule->{FILE},$rule->{LINE}) ;
 			die ;
 			}
 		}
@@ -809,7 +857,7 @@ if($rule_type{__CREATOR})
 my ($builder_sub, $node_subs1, $builder_generated_types) = GenerateBuilder(undef, $builder_definition, $package, $name, $file_name, $line) ;
 $builder_generated_types ||= {} ;
 
-my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
+my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
 $depender_generated_types  ||= [] ; 
 
 my $origin = ":$package:$class:$file_name:$line";
@@ -822,21 +870,21 @@ for my $rule_type (@$rule_types)
 if($rule_type{__VIRTUAL} && $rule_type{__LOCAL})
 	{
 	PrintError("Rule can't be 'VIRTUAL' and 'LOCAL'.") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 	
 if($rule_type{__POST_DEPEND} && $rule_type{__CREATOR})
 	{
 	PrintError("Rule can't be 'POST_DEPEND' and 'CREATOR'.") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die ;
 	}
 
 if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
 	{
 	PrintError("Rule can't be 'VIRTUAL' and 'CREATOR'.") ;
-	PbsDisplayErrorWithContext($file_name,$line) ;
+	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 	die "\n" ;
 	}
 	
@@ -865,7 +913,7 @@ if(defined $node_subs)
 				{
 				PrintDebug DumpTree $rule_definition, "Rule: definition" ;
 				PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
-				PbsDisplayErrorWithContext($file_name,$line) ;
+				PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 				die ;
 				}
 			}
@@ -878,7 +926,7 @@ if(defined $node_subs)
 		{
 		PrintDebug DumpTree \@_, "Rule: RegisterRule" ;
 		PrintError("Invalid node sub at rule '$name' @ '$file_name:$line'. Expecting a sub or a sub array.\n") ;
-		PbsDisplayErrorWithContext($file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
 		die ;
 		}
 	}
