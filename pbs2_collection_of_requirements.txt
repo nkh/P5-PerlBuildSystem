@@ -1,3 +1,39 @@
+
+meso are graph "libraries"
+	building a graph with meso looks like linking an executable
+		there are symbols (nodes) that are needed and libraries of
+		symbols (themselves possibly containing needed symbols) that we try to link
+		to generate an executable (a graph)
+
+	what can we learn from linking technologies
+
+		symbol table for quick lookup
+
+		library format in sections
+
+		tools to manipulate libraries: concatenate, strip, linker, loader, ...
+
+		
+	dynamic libraries are loaded at run time, how does that relate to graph construction?
+
+virtual pbsfile
+	once a virtual pbsfile has been accepted as the pbs source it should be THE pbsfile
+		no two different ways to handle virtual and non virtual pbsfile
+			same error message, ...
+
+		we can keep an origin and display it
+		virtual pbsfiles are generated for various reasons
+			to replace another type of souce, IE: virtual studio projects get transformed to pbsfiles
+			to run a mini "build", IE: rule ordering
+
+			the virtual pbsfile has a purpose, it's target but the target name doesn't reflect what's to
+			be done
+		
+
+			=> 
+				pbsfile (file or virtual)
+				origin
+				purpose
 rule merging
 	in pbs1 we generate rules to find order of execution of ordered rules
 		the rules are generated then merged to speed up the execution 
@@ -10,7 +46,7 @@ rule merging
 	it's seldom we have many rules with the same dependent (same regex works too)
 		we'd need to merge the REHs too
 
-	one case that attractive is when a rule matches everything that can be merged to
+	one case is when a rule matches everything, those can be merged to
 	all other rules, if options are implemented as rules we could merge the option
 	rules to other rules.
 		
@@ -77,23 +113,33 @@ From time to completion example
 				this is the problem with data that has no file like gant!
 
 				the right thing would be to have a gant data file generated for each node
+					done!
 
 				rule gant
 					match, everything that's not a gant file
-					
 					post builder: find the not gant file node and use it's dependencies
 
-		post build command are only run if a build succeeds
-			shouldn't we run them anyway and pass the result of the builder?
+					better idea is to have a node added for each non gant node
+						=> implemented in example
 
-			note that post build commands should be parent nodes!
+						not gant node get a gant dependency
+						gant dependency depender finds the matching node and extracts it's dependencies
+
+						rule order doesn't matter as the not gant node is always completely depended before
+						it's dependencies (including it's gant node) are depended.
 
 	we want to run a build that does a computation on the graph, via builders, rather than the normal build
+		post pbs would do but we need a target!
+		
+		how do we "not build" the graph? eg: if a has a builder and we want to compute a.gant without building a
+			specially if a.gant is a dependency to a, once it's build a will also be build
 
-	we may want to run both at the same time
+	we may want to run both a normal build plus the graph computation at the same time, or one of them
 
 	not only do we want to have multiple builders but we want to chose between which ones to run
 		this has to be done via a category since we may want multiple builders in a category to be run
+			eg node a has two builder, one to be run for normal build and one, doing nothing but succeeding
+			to run for graph computation.
 
 		DefaultTarget('all') ;
 
@@ -117,25 +163,25 @@ From time to completion example
 		pbs gant
 		pbs gant all
 		
-	postpbs solved the problem but can't be run in warp as time data is not saved from the node config
+	postpbs solved the graph computation but can't be run in warp as time data is not saved from the node config
 
 		should all the node config be saved?
 
 		postpbs is after build but we want this to be run post depend
 
-		post pbs works because the node are depended in the same process
-			if depend is parallelized postpbs can't see the timeing data in other processes
+		postpbs works because the node are depended in the same process
+			if depend is parallelized postpbs can't see the timing data in other processes
 
 
-		it's much better if the timing data and computation actually produce an artefact which serves as 
+		=> it's much better if the timing data and computation actually produce an artefact which serves as 
 			a synch object between processes
 	
-	rules, via node subs, can add elements to warped nodes
-		this would allow the gant data to be available when running warp and thus not limit gant to warp 0 (no warp)
+		rules, via node subs, can add elements to warped nodes
+			this would allow the gant data to be available when running warp and thus not limit gant to warp 0 (no warp)
 
 option to display some element of the node in a graph
 	should  be set via a node sub
-
+		¡ thought this was already implemented !
 
 Default target
 	pbs has no default targt and certainly doesn't run the first rule in the pbsfile

@@ -175,7 +175,7 @@ if($sort_rules)
 	die ERROR("PBS: error ordering rules for '$pbsfile'.") . "\n" unless $build_success ;
 
 	my @rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
-	PrintInfo3 DumpTree \@rules_order, 'Rules: ordered', DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDER} ;
+	PrintInfo3 DumpTree \@rules_order, "Rules: ordered rules for '$pbs_config->{PBSFILE}'", DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDER} ;
 
 	# re-order rules
 	@dependency_rules = map{ $rule_lookup{$_} } grep { ! /^__/ } @rules_order ;
@@ -376,21 +376,21 @@ for my $rule (keys %{ $rules->{before} })
 	}
 
 # first_plus rules
-my @first_plus_indexes = sort {$a <=> $b } keys %{$rules->{first_plus}} ;
-for (0 .. $#first_plus_indexes)
+for (sort {$a <=> $b } keys %{$rules->{first_plus}{rules}})
 	{
-	my $rule_index = $first_plus_indexes[$_] ;
-	die ERROR(DumpTree($rules->{first_plus}{$rule_index}, "Rule: multiple entries at first plus index $rule_index")) . "\n" if @{ $rules->{first_plus}{$rule_index } } > 1 ;
+	die ERROR(DumpTree($rules->{first_plus}{rules}{$_}, "Rule: multiple entries at first plus index $_\n"))
+		if @{ $rules->{first_plus}{rules}{$_ } } > 1 ;
 	}
 
+my @first_plus_indexes = sort {$a <=> $b } keys %{$rules->{first_plus}{rules}} ;
 for (0 .. $#first_plus_indexes - 1)
 	{
 	my $rule_index = $first_plus_indexes[$_] ;
 	my $next_rule_index = $first_plus_indexes[$_ + 1] ;
 
-	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{$rule_index}{lines} }) ;
-	my $target = $rules->{first_plus}{$rule_index}{rules}[0] ;
-	my $dependency = $rules->{first_plus}{$next_rule_index}{rules}[0] ;
+	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{lines}{$rule_index} }) ;
+	my $target = $rules->{first_plus}{rules}{$rule_index}[0] ;
+	my $dependency = $rules->{first_plus}{rules}{$next_rule_index}[0] ;
 
 	# depend on each other
 	$pbsfile .= "Rule $added_rule, ['$target' => '$dependency'] ; # first_plus rule 1 @ $target_line\n" if $show_rules ;
@@ -401,16 +401,16 @@ for (0 .. $#first_plus_indexes - 1)
 
 if (@first_plus_indexes)
 	{
-	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{$rule_index}{lines} }) ;
+	my $target_line = join (', ', sort keys %{ $rules->{first_plus}{lines}{$rule_index} }) ;
 	my $rule_index = $first_plus_indexes[0] ;
-	my $dependency = $rules->{first_plus}{$rule_index}{rules}[0] ;
+	my $dependency = $rules->{first_plus}{rules}{$rule_index}[0] ;
 
 	$pbsfile .= "Rule $added_rule, ['$first_rule' => '$dependency'] ; # first_plus rule 2 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
 
 	push @{$one_rule{$first_rule}}, {dependency => $dependency, line => $target_line} ;
 
-	my $last_rule_in_list = $rules->{first_plus}{$first_plus_indexes[$#first_plus_indexes]}{rules}[0] ;
+	my $last_rule_in_list = $rules->{first_plus}{rules}{$first_plus_indexes[$#first_plus_indexes]}[0] ;
 
 	#all nodes except those in list and first are dependencies to last in list
 	for (grep {$_ ne $first_rule } keys %dependents)
@@ -422,25 +422,25 @@ if (@first_plus_indexes)
 		}
 
 	# add rules to dependents
-	$dependents{$_}++ for (map{ @{$_->{rules}}[0] } values %{$rules->{first_plus}}) ;
+	$dependents{$_}++ for (map{ $_->[0] } values %{$rules->{first_plus}{rules}}) ;
 	}
 
 # last_minus rules
-my @last_minus_indexes = sort {$a <=> $b } keys %{$rules->{last_minus}} ;
-for (0 .. $#last_minus_indexes)
+for (sort {$a <=> $b } keys %{$rules->{last_minus}{rules}})
 	{
-	my $rule_index = $last_minus_indexes[$_] ;
-	die ERROR(DumpTree($rules->{last_minus}{$rule_index}, "Rule: multiple entries at last minus index $rule_index")) . "\n" if @{ $rules->{last_minus}{$rule_index } } > 1 ;
+	die ERROR(DumpTree($rules->{last_minus}{rules}{$_}, "Rule: multiple entries at last minus index $_\n"))
+		if @{ $rules->{last_minus}{rules}{$_ } } > 1 ;
 	}
 
+my @last_minus_indexes = sort {$a <=> $b } keys %{$rules->{last_minus}{rules}} ;
 for (reverse 1 .. $#last_minus_indexes)
 	{
 	my $rule_index = $last_minus_indexes[$_] ;
 	my $previous_rule_index = $last_minus_indexes[$_ - 1] ;
 
-	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{$rule_index}{lines} }) ;
-	my $target = $rules->{last_minus}{$rule_index}{rules}[0] ;
-	my $dependency = $rules->{last_minus}{$previous_rule_index}{rules}[0] ;
+	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{lines}{$rule_index} }) ;
+	my $target = $rules->{last_minus}{rules}{$rule_index}[0] ;
+	my $dependency = $rules->{last_minus}{rules}{$previous_rule_index}[0] ;
 
 	# depend on each other
 	$pbsfile .= "Rule $added_rule, ['$target' => '$dependency'] ; # last_minus rule 1 @ $target_line\n" if $show_rules ;
@@ -454,8 +454,8 @@ if (@last_minus_indexes)
 	# first rule in list depends on "last"
 	my $rule_index = $last_minus_indexes[0] ;
 
-	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{$rule_index}{lines} }) ;
-	my $target = $rules->{last_minus}{$rule_index}{rules}[0] ;
+	my $target_line = join (', ', sort keys %{ $rules->{last_minus}{lines}{$rule_index} }) ;
+	my $target = $rules->{last_minus}{rules}{$rule_index}[0] ;
 
 	$pbsfile .= "Rule $added_rule, ['$target' => '$last_rule'] ; # last_minus rule 2 @ $target_line\n" if $show_rules ;
 	$added_rule++ ;
@@ -463,8 +463,8 @@ if (@last_minus_indexes)
 	push @{$one_rule{$target}}, {dependency => $last_rule, line => $target_line} ;
 
 	#all other rules depend on first in this list
-	my $first_rule_in_list = $rules->{last_minus}{$last_minus_indexes[$#last_minus_indexes]}{rules}[0] ;
-	$target_line = join (', ', sort keys %{ $rules->{last_minus}{$last_minus_indexes[$#last_minus_indexes]}{lines} }) ;
+	my $first_rule_in_list = $rules->{last_minus}{rules}{$last_minus_indexes[$#last_minus_indexes]}[0] ;
+	$target_line = join (', ', sort keys %{ $rules->{last_minus}{lines}{$last_minus_indexes[$#last_minus_indexes]} }) ;
 
 	for (grep {$_ ne $last_rule } keys %dependents)
 		{
@@ -475,7 +475,7 @@ if (@last_minus_indexes)
 		}
 
 	# add rules to dependents
-	$dependents{$_}++ for (map{ @{$_->{rules}}[0] } values %{$rules->{last_minus}}) ;
+	$dependents{$_}++ for (map{ $_->[0] } values %{$rules->{last_minus}{rules}}) ;
 	}
 
 PrintInfo3 DumpTree \%dependents, "dependents:", DISPLAY_ADDRESS => 0 if $show_rules ;

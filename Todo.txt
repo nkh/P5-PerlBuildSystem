@@ -1,5 +1,5 @@
 
-#when using virtual file show werrors in the virtual file not the pbsfile file on disk
+#when using virtual file show errors in the virtual file not the pbsfile file on disk
 add line number to generated rule ordering pbsfile
 
 #time to completion example

@@ -516,7 +516,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 							: $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
 				
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
-				PrintError "\nDepend: Error: self referencial rule\n"
+				PrintError "\nDepend: Error: self referential rule\n"
 						. "\trule: '$rule_info'\n"
 						. "\tcycle: $node_name => $dependency_names\n" ;
 				
