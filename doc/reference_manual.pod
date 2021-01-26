@@ -391,10 +391,6 @@ The depender sub should return:
 
 return variables 2 and 3 are for advanced use, you can safely ignore them (return only the first variable).
 
-This construct allow us to handle the case of generated c files quite easily. Say we have a c file that is
-generated from a flex file. We need to generate the c file before the I<'c depender'> kicks in. The 
-I<'c depender'> is a B<POST_DEPEND> rule so we know it is going to be runafter all the non B<POST_DEPEND> dependers.
-
 Uncomplete example!!!
 
 # flex example
@@ -683,33 +679,6 @@ so you declare the node to be 'VIRTUAL' but if none of the 'test 'target trigger
 	AddRule              [VIRTUAL, FORCED],   'test',  ...
 
 See also switch B<--bi>.
-
-=head2 POST_DEPEND and __REMOVE_DEPENDENCIES_AND_BUILDERS / __ERROR_IF_DEPENDENCIES
-
-You can also use POST_DEPEND to force a dependers to be run last. In the dependency list,
-you can insert __REMOVE_DEPENDENCIES_AND_BUILDERS or __ERROR_IF_DEPENDENCIES. __REMOVE_DEPENDENCIES_AND_BUILDERS
-removes all the dependencies that were added by the other dependers. __ERROR_IF_DEPENDENCIES will stop the
-build with an error message if any dependency was added to the node. 
-
-POST_DEPEND and __REMOVE_DEPENDENCIES_AND_BUILDERS / __ERROR_IF_DEPENDENCIES were implemented while doing a test
-and they are left in B<PBS> in case they are helpfull.
-
-	Ex:
-	AddRule 'all', [all => 'a.o'] ;
-	AddRule [POST_DEPEND], 'post_all', [all => '__REMOVE_DEPENDENCIES_AND_BUILDERS', 'z.o'] ;
-	AddRule 'all2', [all => 'b.o'] ;
-	
-the above rules give the following display when run with the --dd switch:
-
-	$ perl -Mblib pbs.pl -p test.pl -dd all
-	**Depending**
-	./all has dependencies [./a.o], rule 2:all
-	./all has dependencies [./b.o], rule 3:all2
-	POST_DEPEND rule: 'post_all' at ./test.pl:22 is Running __REMOVE_DEPENDENCIES_AND_BUILDERS command for node './all'
-	    Removing dependency: './a.o'
-	    Removing dependency: './b.o'
-	./all has dependencies [./z.o], rule 5:post_all
-	./z.o has no locally defined dependencies
 
 =head1 REUSING RULES, CONFIG AND BUILDERS
 

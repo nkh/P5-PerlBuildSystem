@@ -27,7 +27,6 @@ add test for creator
 
 add test for:
 	if($rule_type{__VIRTUAL} && $rule_type{__LOCAL})
-	if($rule_type{__POST_DEPEND} && $rule_type{__CREATOR})
 	if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
 
 test for -gtg only if graphviz is installed

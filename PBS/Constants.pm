@@ -33,13 +33,11 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		V
 		LOCAL
 		FORCED
-		POST_DEPEND
 		CREATOR
 		IMMEDIATE_BUILD
 		untyped
 		virtual
 		forced
-		post_depend
 		creator
 		immediate_build
 
@@ -100,8 +98,6 @@ use constant FORCED             => '__FORCED' ;
 use constant forced             => '__FORCED' ;
 use constant CREATOR            => '__CREATOR' ;
 use constant creator            => '__CREATOR' ;
-use constant POST_DEPEND        => '__POST_DEPEND' ;
-use constant post_depend        => '__POST_DEPEND' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
 

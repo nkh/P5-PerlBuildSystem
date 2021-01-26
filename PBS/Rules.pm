@@ -80,7 +80,6 @@ for my $rules_namespace (@rules_namespaces)
 			
 			for my $rule_type (@{$rule->{TYPE}})
 				{
-				$post_depend++ if $rule_type eq POST_DEPEND ;
 				$creator++ if $rule_type eq CREATOR ;
 				}
 				
@@ -780,7 +779,7 @@ my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definitio
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 # this test is mainly to catch the error when the user forgot to write the rule name.
-my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST UNTYPED VIRTUAL LOCAL FORCED POST_DEPEND CREATOR INTERNAL IMMEDIATE_BUILD) ;
+my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST UNTYPED VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
 for my $rule_type (@$rule_types)
 	{
 	next if $rule_type =~ /^\s*indexed\s/i ;
@@ -874,13 +873,6 @@ if($rule_type{__VIRTUAL} && $rule_type{__LOCAL})
 	die ;
 	}
 	
-if($rule_type{__POST_DEPEND} && $rule_type{__CREATOR})
-	{
-	PrintError("Rule can't be 'POST_DEPEND' and 'CREATOR'.") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-	die ;
-	}
-
 if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
 	{
 	PrintError("Rule can't be 'VIRTUAL' and 'CREATOR'.") ;
@@ -943,7 +935,6 @@ $rule_definition->{NODE_SUBS} = $node_subs if @$node_subs ;
 if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	{
 	my $class_info = "[$class" ;
-	$class_info .= ' POST_DEPEND' if $rule_type{__POST_DEPEND} ;
 	$class_info .= ' CREATOR'     if $rule_type{__CREATOR};
 	$class_info .= ']' ;
 		

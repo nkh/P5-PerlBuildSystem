@@ -6392,28 +6392,6 @@ prefix all the REH that have an impact on internal implementation
 
 	except if it is the DISPLAY_DEPENDENCIES REH itself that does the displaying
 
-generalize the C depender
-	- what configuration variables must be in the configuration should not be in the code but arguments
-	- the same code can be used for other types of files
-		- creators use an equivalent mechanism, could be merged
-
-	AddRuleTo 'BuiltIn', [POST_DEPEND], 'C_dependencies', \&C_SourceDepender, \&C_Builder ;
-
-	Rule 
-		NAME =>  'C_Depender'
-		REGEX => '*.cpp'
-		C_DEPENDER => { ........ }
-
-	Rule 
-		NAME =>  'C_config'
-		REGEX => '*.cpp'
-		CONFIG => { ........ }
-
-		C_DEPENDER_VARIABLES => named list
-
-
-
-
 -bni ,which show a node header, makes it clear which node is being build, there is no such system
 	for -dd, the display is very compact
 

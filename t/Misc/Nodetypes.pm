@@ -131,28 +131,6 @@ _EOF_
     $t->test_target_contents('file2 contentsfile contentsfile2 contents');
 }
 
-sub type_post_depend : Test(2) {
-    # The end result is dependent on the dependency order.
-    # POST_DEPEND changes the resulting dependency order,
-    # and hence the end result.
-
-    # Write files
-    $t->write_pbsfile(<<'_EOF_');
-    ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
-    AddRule 'target', ['file.target' => 'file.in'];
-    AddRule [POST_DEPEND], 'post_depend', ['file.target' => 'file2.in'];
-    AddRule 'target2', ['file.target' => 'file3.in'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
-_EOF_
-    $t->write('file.in', 'file contents');
-    $t->write('file2.in', 'file2 contents');
-    $t->write('file3.in', 'file3 contents');
-
-    # Build
-    $t->build_test();
-    $t->test_target_contents('file contentsfile3 contentsfile2 contents');
-}
-
 unless (caller()) {
     $ENV{"TEST_VERBOSE"} = 1;
     Test::Class->runtests;
