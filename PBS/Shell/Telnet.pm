@@ -74,7 +74,7 @@ unless(defined $self->{LOGGED_IN})
 		$self->RunCommand($command, $prompt) ;
 		}
 		
-	PrintInfo(sprintf("Telnet setup done. (%0.2f s).\n", tv_interval ($t0, [gettimeofday]))) ;
+	PrintInfo(sprintf("Telnet: setup done. (%0.2f s).\n", tv_interval ($t0, [gettimeofday]))) ;
 	}
 	
 my $colorizer = $self->{COMMAND_COLOR} || \&PrintInfo2  ;

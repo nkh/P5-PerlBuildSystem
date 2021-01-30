@@ -1,4 +1,12 @@
 
+why does Rules::Builders @120 add a node sub for shell generator?
+
+add an option that less verbose than ndpb
+	node name
+	builder
+	and a list what options to use to get more data
+		put all the option under display_node_info_xxx
+
 #when using virtual file show errors in the virtual file not the pbsfile file on disk
 add line number to generated rule ordering pbsfile
 

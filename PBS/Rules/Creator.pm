@@ -152,7 +152,7 @@ if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$depen
 		}
 	}
 
-#this makes it unnecessay (and checked) that a rule with creator also has a builder.
+#this makes it unnecessary (and checked) that a rule with creator also has a builder.
 $builder_override = GenerateCreatorBuilder($rule_definition->{NAME} . '_' . $dependent_to_check, $tree->{__LOAD_PACKAGE}) ;
 
 return($dependencies, $builder_override) ;
@@ -175,24 +175,19 @@ unless($no_output)
 	{
 	my $name = $node->{__NAME} ;
 	my $build_name = GetNodeBuildName($node) ;
-	$rule_info = 'Creator ' . $rule_info . "\n" ;
 	
 	my $node_header ;
 	if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
 		{
-		$node_header = "Creating node '$name' [$build_name]:\n" ;
+		$node_header = "Creator: node:'$name', build name: '$build_name'" ;
 		}
 	else
 		{
-		$node_header = "Creating node '$name':\n" ;
+		$node_header = "Creator: node: '$name'" ;
 		}
 	
-	my $columns = length($rule_info) > length($node_header) ? length($rule_info) : length($node_header) ;
-	my $separator = '#' . ('-' x ($columns - 1)) . "\n"  ;
 	
-	$node_header = $separator . $node_header  . $rule_info . $separator ;
-	
-	PrintInfo $node_header ;
+	PrintInfo $node_header . INFO2(", rule: " . $rule_info . "\n") ;
 	}
 	
 #TODO: Log
@@ -217,7 +212,7 @@ if(-e $dependency_file_name)
 		
 		unless('HASH' eq ref $digest)
 				{
-				PrintWarning("Creator: '$dependent_to_check' [Empty].\n") ;
+				PrintWarning("Creator: '$dependent_to_check' [digest empty].\n") ;
 				$dependency_file_needs_update = NEED_REBUILD ;
 				}
 				
@@ -257,7 +252,7 @@ if(-e $dependency_file_name)
 					}
 				else
 					{
-					PrintInfo("Creator: Can't compute MD5 for '$dependency' (found in dependency file)! Rebuilding!\n") ;
+					PrintInfo("Creator: Can't compute MD5 for '$dependency'.\n") ;
 					$dependency_file_needs_update = NEED_REBUILD ;
 					last ;
 					}
@@ -291,11 +286,6 @@ sub GenerateCreatorDigest
 {
 my ($dependent_to_check, $tree, $dependencies, $display_info, $caller_info) = @_ ;
 
-if ($display_info)
-	{
-	PrintInfo "Creator: Generating creator digest for '$dependent_to_check' at rule $caller_info.\n" ;
-	}
-
 my %dependency_file_digest ;
 my %dependency_md5 ;
 
@@ -312,7 +302,7 @@ for my $dependency (@$dependencies)
 			}
 		else
 			{
-			PrintError("Creator: Can't compute '$dependency' MD5 while generating digest for '$dependent_to_check' at rule $caller_info!\n") ;
+			PrintError("Creator: Can't compute '$dependency' MD5 while generating digest for '$dependent_to_check' at rule $caller_info.\n") ;
 			die ;
 			}
 		}

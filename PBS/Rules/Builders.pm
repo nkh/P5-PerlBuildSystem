@@ -213,10 +213,11 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		my $perl_sub_name = sub_name($shell_command) ;
 
 		my ($file, $line) = get_code_location($shell_command) ;
-		$perl_sub_name .= " $file:$line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
+		$perl_sub_name .= " $file:$line" ;
 
-		PrintInfo2 $command_information . "sub: $perl_sub_name\n"
-			if $display_command_information || ($tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} && ! $PBS::Shell::silent_commands) ;
+		PrintInfo2 $command_information . "Build: sub: $perl_sub_name\n" if $display_command_information ;
+		
+		PrintUser "Build: sub\n" unless $PBS::Shell::silent_commands ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		
@@ -229,7 +230,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	else
 		{
-		PrintInfo2 $command_information . "Build: command: $shell_command\n" if $display_command_information ;
+		PrintInfo2 $command_information . "Build: shell command: $shell_command\n" if $display_command_information ;
 
 		my $command = EvaluateShellCommandForNode
 						(
@@ -240,8 +241,6 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		#PrintInfo3 "$command\n\n" if $display_command_information ;
-
 		$node_shell->RunCommand($command) ;
 		}
 	}
@@ -310,12 +309,12 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 my $perl_sub_name = sub_name($builder) ;
 
 my ($sub_file, $sub_line) = get_code_location($builder) ;
-$perl_sub_name .= " $sub_file:$sub_line" if $tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} ;
+$perl_sub_name .= " $sub_file:$sub_line" ;
 
 PrintInfo2 "Build: sub: $perl_sub_name\n"
-	if ($tree->{__PBS_CONFIG}{DISPLAY_SUB_BUILDER} 
-		|| ($tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} && ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER})) 
-		&& ! $PBS::Shell::silent_commands ;
+		if $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}
+			&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER}
+			&& ! $PBS::Shell::silent_commands ;
 
 return
 	(

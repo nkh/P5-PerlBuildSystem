@@ -115,7 +115,7 @@ unless(defined $self->{LOGGED_IN})
 	}
 
 my $colorizer = $self->{COMMAND_COLOR} || \&PrintInfo2  ;
-$colorizer->("$command $host_info\n") unless defined $PBS::Shell::silent_commands ;
+$colorizer->("SSH: $command $host_info\n") unless defined $PBS::Shell::silent_commands ;
 
 my($stdout, $stderr, $exit) = $self->{SSH_CONNECTION}->cmd($command) ;
 
@@ -154,7 +154,7 @@ my $perl_sub = shift ;
 unless(defined $PBS::Shell::silent_commands)
 	{
 	my $colorizer = $self->{COMMAND_COLOR} || \&PrintInfo2  ;
-	$colorizer->( __PACKAGE__ . " running perl sub locally.\n") ;
+	$colorizer->( __PACKAGE__ . " SSH: running perl sub locally.\n") ;
 	}
 
 $perl_sub->(@_) ;

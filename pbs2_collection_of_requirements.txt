@@ -1,4 +1,160 @@
 
+single run builder
+	builder that's runs only once and build multiple files
+
+	this is useful if a tool generates multiple artefacts
+	we can list all the dependencies and when one is build the other are build too
+
+	in pbs 1 we either wrapped the builder or used a node sub that wrapped the builder when a node matches
+
+	we must insure that the builder is only called once, even if the build is run in parallel
+		if depend is not run in parallel
+			we can wrap the builder so it checks a semaphore 
+				we can listen to a socket on the main process
+					heavy
+
+				we can use a lock file
+					doesn't support distributed build except if FS is shared
+
+					when is the lock file removed?
+		
+				we can use pbs as a key value db and have a tmp/ dir that's remove after each run
+					we can use the file system as back-end in /tmp and a unique directory per run
+
+must IMMEDIATE_BUILD be inherited?
+	IMMEDIATE BUILD builds a node just after it is depended
+		before the rest of the graph is depended
+
+	=>  no, as the node dependencies are build first
+		so there is no need to inherit the IMMEDIATE_BUILD type
+
+	it is still interesting to know when a node is build due to IMMEDIATE_BUILD
+		the node itself
+		the dependencies, including the information about which node started the build
+
+		pbs1 display a build cause, not found on disk, digest. dependencies, or --triger
+			this would be a good place to add the information
+
+
+how do we make build and parallel build into real nodes?
+
+
+log data sources, viewer, and time line
+	
+	log display is based on the idea that everything is output by the system and
+	a different process displays what's relevant, this allow us to change what's
+	relevant dynamically and even go back in "log time" and re-display data
+		eg, late i the build we want to see how a top node was created and
+		where it's config was changed. We can look at the top node was created
+		and continue from where we left
+
+
+	log is a serialization of time
+		we can look back in time anywhere in the log
+
+		we can look while the system is building or when the system is build
+
+	
+	time travel in log (also called history in other requirements)
+		we know what node are in the graph at each log step, so we can run from a specific point
+			the closes specific point to a pbsfile node creation and even node creation
+			if we serialize the rules used to create nodes with the nodes
+
+			not sure there's use case, using the log to find an error is usually followed
+			by a fix and running a build again not continuing in the debugger which would
+			be another time line but it's possible even if it requires a more advanced UI
+	
+
+	given the parallel nature of a build system (specially if depend is also run in parallel) the
+	log data sources are also generated in parallel. the visualization system must be aware of
+	when the sources are available, this can split in two processes, one that "simply" displays data
+	based on an incoming stream and another process creating the stream from the different sources
+
+
+build from top vs triggers build
+
+	most build are driven by a target, eg: some top node all
+
+	we have a list of all the nodes in the graph 
+		all the dependencies
+
+		all the dependents
+
+	we can check the nodes and start all relevant builds (that contain a triggered node) 
+		computing all the top targets
+			top targets are for one specific configuration (node may not exists in all configurations)
+
+	we can also have multiple dependency graphs ("builds") with different configurations
+		merge the parts that have the same configuration -> that's meso except meso doesn't need merging
+
+		point at parts that are different
+			that's different meso warp files, if they were named after the top target
+			we could find all the meso that build the same node 
+
+
+	trigger build are very useful when we want to discover paths or don't know which top target to build
+
+		ISO9000 example
+			all: doc_ok, lamp_off, air_clean
+
+			air_clean: ventilation_ok, no_toxins
+
+			no_toxins: no(toxins)
+
+			toxin: display_toxin_warning, call_help(toxin), open_ventilation
+				
+		
+		#note: call_help(toxin) and no(toxins) are unique nodes based on a template
+
+
+		we can search in the graph for "toxin", "call_help(toxin)", ...
+		we can see the "toxin" graph lines
+			what todo (can be multiple)
+			what they depend on
+
+		verify the completeness, in the examples toxins is named but not handled "toxin" is
+
+		nodes can be assigned data, eg: timing, so we could get the minimum time it taxes to
+			handle toxics in the air
+
+pbsfile nodes
+	correspond to real files
+	contains the data that's internal to pbs and serializes them
+
+	possibility to ask for a pbsfile "build" in a pbsfile
+		with different targets: depend, check, build, postbs, ...
+
+		have a node for each of those targets
+
+		the idea is to have an alternative to PBSFILE_CONTENT and make the api to build it
+		available in the pbsfile
+
+			pbsfile: ordered_rules
+				REH_RUN_PBSFILE_RULES
+
+			ordered_rules : rule_ordering_pbsfile
+				IMMEDIATE_BUILD
+				re-order_rules_builder rule_ordering_pbsfile
+
+			rule_ordering_pbsfile
+
+				CREATOR (not needed if dependent is IMMEDIATE_BUILD)
+
+				serialize curent pbsfile rules # because we like having artefacts
+				create rule_ordering_pbsfile
+
+
+	we can access the internal data in rules
+		pbsfile: subpbsfile
+			build (we know subpbsfile node is up to date)
+				print subpbsfile.some_data
+					eg: compute cumulative time for this branch of the graph
+
+	we can get a build sequence for the pbsfile node chain and build it in parallel
+		as if each pbsfile node was a mini build system
+		in a different process, makes the build more robust and we can re-start where an error occured
+
+
 meso are graph "libraries"
 	building a graph with meso looks like linking an executable
 		there are symbols (nodes) that are needed and libraries of
@@ -340,7 +496,7 @@ distribute centralized data
 		save_parent_config, save_start_config?
 		we can also save the config just before we start running rules ( which can only modify node configs not package config)
 			this allows us to diff the configs and see what has been changed
-				this is also supported as a logalready
+				this is also supported as a log already
 
 	list use cases
 		subset build
@@ -6492,8 +6648,6 @@ Use file type "matchers"
 	
 multiple GetBuildName subs defined in the code
 
-example in Pbsfile/Creator do not work
-
 Merge STE PBS
 
 Create template/example for STE like data driven pbsfile (neo)
@@ -6652,7 +6806,7 @@ CREATOR differs from IMMEDIATE_BUILD as the node is immediately available for ot
 	next problem is that a node that has been depended (possibly by multiple rules in the same package) will
 		not be depended again but linked to
 
-		the example above works ass all the rules are in the same package but if the are created in one package 
+		the example above works as all the rules are in the same package but if the are created in one package 
 		and the rules to build them are in another package, those rules will not be run
 
 	next problem is that the node is build twice and nodes are never build twice
@@ -6662,15 +6816,19 @@ CREATOR differs from IMMEDIATE_BUILD as the node is immediately available for ot
 	we REALLY want IMMEDIATE_BUILD to be a normal build and CREATOR to be an IMMEDIATE_BUILD because we just have one system then
 	and there is no need to handle digests, caches, warp in a special way as we do for CREATOR in pbs1
 
+		CREATOR is useful on it's own, interestingly it's not needed if it's dependent is an IMMEDIATE_BUILD node!
+			creator is run at depend time but if the dependent is iMMEDIATE_BUILD it will be build at depend time and
+			all it's dependencies will also be build, so the CREATOR node can be a normal node with a normal builder
+
 	REH_CREATOR can run before the depend step
-		here's arequirement that says REHs can define their step name and put it before other steps
+		here's a requirement that says REHs can define their step name and put it before other steps
 			REH_CREATOR, STEP_CREATOR before STEP_DEPEND
 
 
 		REH_CREATOR has its own dependencies
 		REH_CREATOR can do whatever it wants, including generating a build system and run it!
 			we don't need to generate files (PBS_CONTENT) but it's a good idea, we get a log of the build to
-				pbs genertes a file for PBS_CONTENT anyway
+				pbs generates a file for PBS_CONTENT anyway
 			
 			it's possible to run pbs (since we are in pbs) and ask the core to build in a different graph layer
 

@@ -113,7 +113,7 @@ for my $shell_command (@_)
 	{
 	if('' eq ref $shell_command)
 		{
-		PrintUser("Build: command: $shell_command \n") unless $PBS::Shell::silent_commands ;
+		PrintUser("Build: shell command: $shell_command \n") unless $PBS::Shell::silent_commands ;
 	
 		if($PBS::Shell::silent_commands_output)
 			{

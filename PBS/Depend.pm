@@ -293,7 +293,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 					. INFO2(" '$rule_name:$dependency_rule->{FILE}:$dependency_rule->{LINE}'\n", 0))
 						if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
-				my @r = $sub->($node_name, $config, $tree, $inserted_nodes) ;
+				my @r = $sub->($node_name, $config, $tree, $inserted_nodes, $dependency_rule) ;
 				
 				PrintInfo2("$indent${indent}node sub returned: @r\n") 
 					if @r && $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
