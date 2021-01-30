@@ -487,24 +487,6 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 				next ;
 				}
 				
-			if(ref $dependency_name eq 'PBS_SYNCHRONIZE')
-				{
-				my 
-				(
-				$unsynchronized_dependency_file_name,
-				$dependency_file_name,
-				$message_format,
-				) = @$dependency_name{'SOURCE_FILE', 'DESTINATION_FILE', 'MESSAGE_FORMAT'} ;
-				
-				$tree->{__SYNCHRONIZE}{$unsynchronized_dependency_file_name} = 
-					{
-					TO_FILE        => $dependency_file_name,
-					MESSAGE_FORMAT => $message_format,
-					} ;
-					
-				next ;
-				}
-				
 			next if $dependency_name =~ /^__/ ;
 			
 			RunPluginSubs($pbs_config, 'CheckNodeName', $dependency_name, $dependency_rule) ;

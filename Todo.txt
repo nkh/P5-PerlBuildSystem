@@ -1,4 +1,8 @@
 
+#changing a h file gives message
+	h file only found in old digest
+		not very friendly
+
 why does Rules::Builders @120 add a node sub for shell generator?
 
 add an option that less verbose than ndpb

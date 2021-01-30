@@ -778,7 +778,7 @@ if(IsDigestToBeGenerated($package, $node))
 		}
 	else
 		{
-		PrintInfo("Digest: file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
+		PrintWarning("Digest: file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
 		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ["Digest file '$digest_file_name' not found"], 1) ;
 		}
 	
@@ -925,7 +925,7 @@ my @digest_different_text ;
 
 if($digest_is_different)
 	{
-	PrintInfo("Digest: file: $name differences [$digest_is_different]:\n") if($display_digest) ;
+	PrintWarning("Digest: file: $name differences [$digest_is_different]:\n") if($display_digest) ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
@@ -1013,7 +1013,7 @@ my @digest_different_text ;
 
 if($digest_is_different)
 	{
-	PrintInfo("Digest: file $name differences [$digest_is_different]:\n") if($display_digest) ;
+	PrintWarning("Digest: file $name differences [$digest_is_different]:\n") if($display_digest) ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{

@@ -80,6 +80,11 @@ if(-e $digest_file_name)
 				{
 				if($digest->{$dependency} ne  PBS::Digest::GetFileMD5($dependency))
 					{
+					my  $pbs_config = $tree->{__PBS_CONFIG} ;
+
+					PrintWarning "Depend: C depender: '$tree->{__NAME}' dependency '$dependency' changed, removing cached dependencies.\n" 
+						if $pbs_config->{DISPLAY_DIGEST} ;
+
 					@my_dependencies = () ;
 					last ;
 					}
