@@ -17,6 +17,7 @@ our @EXPORT = qw(CheckDependencyTree) ;
 our $VERSION = '0.04' ;
 
 use File::Basename ;
+use File::Slurp qw (write_file) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Cyclic ;
@@ -376,6 +377,24 @@ if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 # node is checked, add it to the build sequence if triggered
 if($triggered)
 	{
+	use Data::Dumper ;
+	local $Data::Dumper::Terse = 1 ;
+	local $Data::Dumper::Pad = "\t" ;
+	local $Data::Dumper::Sortkeys = 1 ;
+
+	write_file
+		(
+		$pbs_config->{TRIGGERS_FILE},
+		{append => 1, err_mode => "carp"},
+		"{NAME => '$tree->{__NAME}', TRIGGERS =>\n"
+			. Data::Dumper->Dump([$tree->{__TRIGGERED}])
+			."},\n"
+		) or do
+			{
+			PrintError "Check: Couldn't append to trigger file '$pbs_config->{TRIGGERS_FILE}'\n" ;
+			die "\n" ;
+			} ;
+
 	my $full_name ;
 	if(exists $tree->{__FIXED_BUILD_NAME})
 		{

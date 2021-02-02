@@ -126,26 +126,13 @@ else
 		{
 		if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS})
 			{
-			if(defined $pbs_config->{LIGHT_WEIGHT_FORK})
-				{
-				eval "use PBS::Build::LightWeightServer ;" ;
-				die $@ if $@ ;
-				
-				return
-					(
-					PBS::Build::LightWeightServer::Build($pbs_config, $build_sequence, $inserted_nodes) 
-					) ;
-				}
-			else
-				{
-				eval "use PBS::Build::Forked ;" ;
-				die $@ if $@ ;
+			eval "use PBS::Build::Forked ;" ;
+			die $@ if $@ ;
 
-				return
-					(
-					PBS::Build::Forked::Build($pbs_config, $build_sequence, $inserted_nodes) 
-					) ;
-				}
+			return
+				(
+				PBS::Build::Forked::Build($pbs_config, $build_sequence, $inserted_nodes) 
+				) ;
 			}
 		else
 			{
@@ -268,7 +255,15 @@ sub NodeBuilderUsesPerlSubs
 {
 my $file_tree = shift ;
 
-return(! defined $file_tree->{__SHELL_COMMANDS_GENERATOR}) ;
+for my $rule (@{$file_tree->{__MATCHING_RULES}})
+	{
+	if (exists $rule->{RULE}{DEFINITION}{SHELL_COMMANDS_GENERATOR})
+		{
+		return 1;
+		}
+	}
+
+return 0 ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------------------

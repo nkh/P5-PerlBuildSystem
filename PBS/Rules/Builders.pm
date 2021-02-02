@@ -71,7 +71,7 @@ $shell = new PBS::Shell() unless defined $shell ;
  
 my $shell_commands = ref $builder eq '' ? [$builder] : $builder ;
 
-my $builder_uses_perl_sub ;
+my %rule_type ;
 
 for (@$shell_commands)
 	{
@@ -82,45 +82,13 @@ for (@$shell_commands)
 		
 	if(ref $_ eq 'CODE')
 		{
-		$builder_uses_perl_sub++ ;
+		$rule_type{SHELL_COMMANDS_GENERATOR}++ ;
 		next ;
 		}
 		
-	die ERROR "Invalid command for '$name' at '$file_name:$line'\n" ;
+	die ERROR "Rule: invalid command type for '$name' at '$file_name:$line', mut be string or code reference.\n" ;
 	}
 
-my @node_subs_from_builder_generator ;
-
-my %rule_type ;
-unless($builder_uses_perl_sub)
-	{
-	my $shell_command_generator =
-		sub 
-		{
-		return
-			(
-			ShellCommandGenerator
-				(
-				$shell_commands, $name, $file_name, $line,
-				@_,
-				)
-			) ;
-		} ;
-			
-	$rule_type{SHELL_COMMANDS_GENERATOR} = $shell_command_generator ;
-	
-	push @node_subs_from_builder_generator,
-		sub # node_sub
-		{
-		my ($dependent_to_check, $config, $tree, $inserted_nodes) = @_ ;
-		
-		$tree->{__SHELL_COMMANDS_GENERATOR} = $shell_command_generator ;
-		push @{$tree->{__SHELL_COMMANDS_GENERATOR_HISTORY}}, "rule '$name' @ '$file_name:$line'";
-		
-		return 'setting __SHELL_COMMANDS_GENERATOR' ;
-		} ;
-	}
-	
 my $generated_builder = 
 	sub 
 	{
@@ -134,7 +102,7 @@ my $generated_builder =
 		) ;
 	} ;
 
-return($generated_builder, \@node_subs_from_builder_generator, \%rule_type) ;
+return($generated_builder, [], \%rule_type) ;
 }
 
 #-------------------------------------------------------------------------------

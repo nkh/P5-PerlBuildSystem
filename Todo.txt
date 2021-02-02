@@ -1,20 +1,4 @@
-
-warp 0 doesn't save triggers
-	other warp save the check log but w 0 doesn't have it it run's pbs directly
-
-#display list of built nodes
-	save them with the trigger
-	
-
 Single rule builder doesn't work in -j
-
-why does Rules::Builders @120 add a node sub for shell generator?
-
-add an option that less verbose than ndpb
-	node name
-	builder
-	and a list what options to use to get more data
-		put all the option under display_node_info_xxx
 
 i:h isfname , ^wF, gF
 
@@ -457,6 +441,25 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+# warp 0 doesn't save triggers
+	other warp save the check log but w 0 doesn't have it it run's pbs directly
+
+#display list of built nodes
+	save them with the trigger
+	
+#why does Rules::Builders @120 add a node sub for shell generator?
+	=> rule added an entry in the node when it matched
+		this was used to
+			display if the node uses a perl sub builder, determination replaced by simple system
+			to save the commands for a lightWeightServer, removed LightWeightServer
+
+#add an option that less verbose than ndpb -> ndpbm
+	node name
+	builder
+	and a list what options to use to get more data
+		put all the option under display_node_info_xxx
+
 
 #display each command's result not just the last one
 

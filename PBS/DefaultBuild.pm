@@ -277,11 +277,8 @@ if($pbs_config->{DO_BUILD})
 	($build_result, $build_message) 
 		= PBS::Build::BuildSequence($pbs_config, \@build_sequence, $inserted_nodes) ;
 
-	if($build_result != BUILD_SUCCESS)
-		{
-		PrintError("Build: failed\n") ;
-		}
-		
+	PrintError("Build: failed\n") unless $build_result == BUILD_SUCCESS ;
+	
 	# run a global post build
 	# this allows nodes to modify the dependency tree before warp
 	# it was added to support c dependency scanning done by the compiler, in parallel

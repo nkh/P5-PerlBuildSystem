@@ -163,7 +163,7 @@ if($run_in_warp_mode)
 			$nodes->{$dependent}{$node} = $nodes->{$node} if(exists $nodes->{$dependent})
 			}
 		}
-	write_file $pbs_config->{TRIGGERS_FILE}, "[ #triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
+	write_file $pbs_config->{TRIGGERS_FILE}, "[ # warp triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
 
 
 	if($pbs_config->{DISPLAY_WARP_TIME} && (!$pbs_config->{QUIET} || $number_of_removed_nodes))

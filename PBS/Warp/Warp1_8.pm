@@ -501,7 +501,7 @@ for my $node_name (sort keys %$node_md5s)
 		}
 	}
 
-write_file $pbs_config->{TRIGGERS_FILE}, "[ #triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
+write_file $pbs_config->{TRIGGERS_FILE}, "[ # warp triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
 		
 
 my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/_warp1_8/warp_${warp_signature}" ;
