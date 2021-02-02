@@ -1122,6 +1122,10 @@ EOT
 		"Verbose build mode.",
 		'',
 		
+	'ndpbm|display_no_progress_bar_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
+		"Slightly less verbose build mode.",
+		'',
+		
 	'bre|display_build_result'       => \$pbs_config->{DISPLAY_BUILD_RESULT},
 		'Shows the result returned by the builder.',
 		'',

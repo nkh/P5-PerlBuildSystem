@@ -13,7 +13,6 @@ my ($package, $file_name, $line) = caller() ;
 
 my $builder ;
 
-PrintDebug "Generating single builder\n" ;
 if(@_ == 1)
 	{
 	if('CODE' eq ref $_[0])
@@ -46,15 +45,17 @@ if(@_ == 1)
 		}
 	else
 		{
-		die ERROR "Error: SingleRunBuilder only accepts a single sub ref or string argument at '$file_name:$line'." ;
+		die ERROR "Rule: Error: SingleRunBuilder only accepts a single sub ref or string argument at '$file_name:$line'." ;
 		}
 	}
 else
 	{
-	die ERROR "Error: SingleRunBuilder only accepts a single argument at '$file_name:$line'." ;
+	die ERROR "Rule: Error: SingleRunBuilder only accepts a single argument at '$file_name:$line'." ;
 	}
 
-my @already_built ;
+my @already_built ; # see node sub below for limitation in parallel builds
+
+PrintInfo "Rule: Generating single builder at '$file_name:$line'\n" ;
 
 return
 	(
@@ -110,10 +111,22 @@ return if exists $single_run_builder{$builder} ;
 
 my @already_built ;
 
+PrintInfo "Rule: Generating single builder at '$file_name:$line'\n" ;
 $rule->{BUILDER} = 
 	sub
 		{
 		my (undef, $file_to_build) = @_ ;
+
+		# this mechanism doesn't work when building nodes in parallel
+		# each build process has it's own @already_built and it is unlikely that
+		# all the nodes to build will end up in the same build process
+		#
+		# forcing the nodes matching the same rule to be build in the same process is bad design
+		# the solution would be to have a shared @already_build we can access from all processes
+		# the @already build can be kept in the main process and manipulated via a protocol over
+		# the socket pair already setup for the forked builder
+		#
+		# $result = send_command($file_to_build->{SOCKET}, 'already_build', 'rule', $file_to_build) ;
 
 		unless(@already_built)
 			{
@@ -133,7 +146,7 @@ $rule->{BUILDER} =
 			}
 		} ;
 
-# node_dub is called for all matching nodes
+# node_sub is called for all matching nodes
 # make sub we apply this wrapper only once
 
 $single_run_builder{$rule->{BUILDER}}++ ;
@@ -141,4 +154,4 @@ $single_run_builder{$rule->{BUILDER}}++ ;
 
 #----------------------------------------------------------------------------------------------------------
 
-1; 
+1 ; 

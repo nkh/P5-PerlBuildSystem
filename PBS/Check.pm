@@ -168,7 +168,7 @@ if($is_virtual)
 			}
 		else
 			{
-			PrintWarning2("$name is VIRTUAL but file '$full_name' exists!\n") ;
+			PrintWarning2("Check: '$name' is VIRTUAL but file '$full_name' exists.\n") ;
 			}
 		}
 	}

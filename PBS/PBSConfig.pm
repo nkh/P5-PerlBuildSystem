@@ -195,8 +195,8 @@ if(defined $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 	{
 	$pbs_config->{NO_SUBPBS_INFO}++ ;
 	}
-	
-if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR})
+
+if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
 	{
 	delete $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 	}
@@ -290,21 +290,27 @@ $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} = undef if(defined $pbs_conf
 
 $pbs_config->{DISPLAY_DIGEST}++ if defined $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
-
 $pbs_config->{DISPLAY_SEARCH_INFO}++ if defined $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
 
-if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
+if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
 	undef $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} if (@{$pbs_config->{DISPLAY_BUILD_INFO}}) ;
 	
-	$pbs_config->{DISPLAY_NODE_ORIGIN}++ ;
-	$pbs_config->{DISPLAY_NODE_DEPENDENCIES}++ ;
-	$pbs_config->{DISPLAY_NODE_BUILD_CAUSE}++ ;
-	$pbs_config->{DISPLAY_NODE_BUILD_RULES}++ ;
+	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
+
+	unless ($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
+		{
+		$pbs_config->{DISPLAY_NODE_ORIGIN}++ ;
+		$pbs_config->{DISPLAY_NODE_PARENTS}++ ;
+		$pbs_config->{DISPLAY_NODE_DEPENDENCIES}++ ;
+		$pbs_config->{DISPLAY_NODE_BUILD_CAUSE}++ ;
+		$pbs_config->{DISPLAY_NODE_BUILD_RULES}++ ;
+		$pbs_config->{DISPLAY_NODE_CONFIG}++ ;
+		$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
+		}
+
 	$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
 	$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
-	
-	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 	}
 	
 $pbs_config->{DISPLAY_NODE_ORIGIN}++ if defined $pbs_config->{DISPLAY_NODE_PARENTS} ;

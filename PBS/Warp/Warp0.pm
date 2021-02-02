@@ -36,6 +36,14 @@ sub WarpPbs
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
 	
+my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/.warp0';
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
+my $triggers_file = "$warp_path/Triggers_${now_string}.pl" ;
+
+$pbs_config->{TRIGGERS_FILE} = $triggers_file ;
+mkpath($warp_path) unless(-e $warp_path) ;
+
 my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 eval
 	{

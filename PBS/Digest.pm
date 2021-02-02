@@ -155,7 +155,7 @@ else
 		}
 	else
 		{
-		PrintWarning  "Digest: Warning: can't read file '$file' to generate MD5\n" if $warn ;
+		PrintWarning  "Digest: warning: can't read file '$file' to generate MD5\n" if $warn ;
 		}
 	}
 
@@ -1097,6 +1097,18 @@ sub GetDigestGenerationStats
 "Digest generation calls: $generate_digest_calls total: $generate_digest_time write: $generate_digest_write get:$generate_digest_get dumper:$generate_digest_dump\n" ;
 }
 
+sub RemoveNodeDigest
+{
+my ($node) = @_ ;
+my $digest_file_name = GetDigestFileName($node) ;
+
+if(-e $digest_file_name)
+	{
+	#PrintWarning "Digest: removing digest file: '$digest_file_name'.\n" ;
+	unlink($digest_file_name) ;
+	}
+}
+
 sub GenerateNodeDigest
 {
 $generate_digest_calls++ ;
@@ -1109,7 +1121,7 @@ if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 	{
 	if(-e $digest_file_name)
 		{
-		PrintInfo("Digest: removing digest file: '$digest_file_name', node is virtual.\n") ;
+		#PrintInfo("Digest: removing digest file: '$digest_file_name', node is virtual.\n") ;
 		unlink($digest_file_name) ;
 		}
 		

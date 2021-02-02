@@ -277,34 +277,44 @@ if($node_needs_rebuild)
 
 	if($build_result == BUILD_SUCCESS)
 		{
-		PBS::Digest::FlushMd5Cache($build_name) ;
-		
-		eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
-			
-		($build_result, $build_message) = (BUILD_FAILED, "Error Generating node digest: $@") if $@ ;
-		}
-		
-	if($build_result == BUILD_SUCCESS)
-		{
 		# record MD5 while the file is still fresh in the OS file cache
 		if(exists $file_tree->{__VIRTUAL})
 			{
 			$file_tree->{__MD5} = 'VIRTUAL' ;
+			eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
+			($build_result, $build_message) = (BUILD_FAILED, "Error Generating node digest: $@") if $@ ;
+		
+			if(-e $build_name)
+				{
+				PrintWarning2("Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n") 
+					unless (-d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
+				}
 			}
 		else
 			{
-			if(defined (my $current_md5 = GetFileMD5($build_name)))
+			PBS::Digest::FlushMd5Cache($build_name) ;
+			my $current_md5 = GetFileMD5($build_name) ;
+
+			$file_tree->{__MD5} = $current_md5 ;
+
+			if( $current_md5 ne "invalid md5")
 				{
 				$file_tree->{__MD5} = $current_md5 ;
+
+				eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
+				($build_result, $build_message) = (BUILD_FAILED, "Error Generating node digest: $@") if $@ ;
 				}
 			else
 				{
+				PBS::Digest::RemoveNodeDigest($file_tree) ;
 				($build_result, $build_message) = (BUILD_FAILED, "Error Generating MD5 for '$build_name', $!.") ;
 				}
 			}
 		}
 	}
 	
+my $build_time = tv_interval ($t0, [gettimeofday]) ;
+
 if($build_result == BUILD_SUCCESS)
 	{
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
@@ -312,20 +322,15 @@ if($build_result == BUILD_SUCCESS)
 		$build_message //= '' ;
 		PrintInfo("Build: result: $build_result, message: \"$build_message\", node: " . INFO2("'$file_tree->{__NAME}'", 0) . "\n") ;
 		}
+
+	$file_tree->{__BUILD_DONE} = "BuildNode Done." ;
+	$file_tree->{__BUILD_TIME} = $build_time  ;
 	}
 else
 	{
 	PrintError("Build: '$file_tree->{__NAME}':\n$build_message\n") ;
 	}
 	
-my $build_time = tv_interval ($t0, [gettimeofday]) ;
-
-if($build_result == BUILD_SUCCESS)
-	{
-	$file_tree->{__BUILD_DONE} = "BuildNode Done." ;
-	$file_tree->{__BUILD_TIME} = $build_time  ;
-	}
-
 if($pbs_config->{TIME_BUILDERS} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	{
 	my $c = $build_result == BUILD_SUCCESS ? \&INFO : \&ERROR ;

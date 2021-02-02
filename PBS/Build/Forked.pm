@@ -31,6 +31,7 @@ use String::Truncate ;
 use Term::Size::Any qw(chars) ;
 use Term::ANSIColor qw( :constants color) ;
 use Text::ANSI::Util qw( ta_highlight );
+use File::Slurp qw(append_file write_file);
 
 $|++ ;
 
@@ -102,6 +103,13 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			 CollectNodeBuildResult($pbs_config, $built_node, $builders) ;
 		
 		$number_of_already_build_node++ ;
+		
+		write_file($pbs_config->{TRIGGERS_FILE}, {append => 1, err_mode => "carp"}, "{NAME => '$built_node->{__NAME}', BUILD_RESULT => $build_result},\n") or 
+			do
+			{
+			PrintError "Build: Couldn't append to trigger file '$pbs_config->{TRIGGERS_FILE}'\n" ;
+			die "\n" ;
+			} ;
 		
 		if($build_result == BUILD_SUCCESS)
 			{
@@ -635,10 +643,10 @@ else
 
 				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
-				PrintNoColor "$o\n" unless $no_output ;
+				PrintVerbatim "$o\n" unless $no_output ;
 				}
 
-			PrintNoColor "\n" ;
+			PrintVerbatim "\n" ;
 			}
 		}
 	else

@@ -43,10 +43,16 @@ my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
 my $warp_path = $pbs_config->{BUILD_DIRECTORY} . '/.warp1_8';
+mkpath($warp_path) unless(-e $warp_path) ;
 my $warp_file = "$warp_path/pbsfile_$warp_signature.pl" ;
 
 $PBS::pbs_run_information->{WARP_1_8}{FILE} = $warp_file ;
 PrintInfo "Warp file name: '$warp_file'\n" if defined $pbs_config->{DISPLAY_WARP_FILE_NAME} ;
+
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
+my $triggers_file = "$warp_path/Triggers_${now_string}.pl" ;
+$pbs_config->{TRIGGERS_FILE} = $triggers_file ;
 
 my ($run_in_warp_mode, $nodes, $number_of_removed_nodes, $warp_configuration) = CheckMd5File($targets, $pbs_config) ;
 
@@ -495,10 +501,7 @@ for my $node_name (sort keys %$node_md5s)
 		}
 	}
 
-my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
-
-write_file "$warp_path/Triggers_${now_string}.pl", "[\n" . $trigger_log . "]\n" unless $trigger_log eq '' ;
+write_file $pbs_config->{TRIGGERS_FILE}, "[ #triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
 		
 
 my $warp_node_path = $pbs_config->{BUILD_DIRECTORY} . "/_warp1_8/warp_${warp_signature}" ;

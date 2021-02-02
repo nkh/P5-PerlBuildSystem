@@ -177,8 +177,8 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 				) ;
 
 	$log_node_info .= $current_node_info . "\n" ;
-	$node_info     .= $current_node_info . "\n" ;
-	}
+	$node_info     .= $current_node_info . "\n" if $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN} ;
+ 	}
 
 #----------------------
 # environment variables
@@ -223,7 +223,7 @@ for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
 #----------------------
 # dependencies
 #----------------------
-if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
+if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
 	{
 	my (%triggered_dependencies) ;
 
@@ -270,7 +270,7 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_confi
 		for keys %triggered_dependencies ;
 		
 	$log_node_info .= $current_node_info ;
-	$node_info     .= $current_node_info ;
+	$node_info     .= $current_node_info if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE} ;
 	}
 
 #----------------------
@@ -366,7 +366,7 @@ if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_t
 	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Config:", INDENTATION => $tab, USE_ASCII => 1)) ;
 
 	$log_node_info .= $config ;
-	$node_info .= $config ;
+	$node_info .= $config if $pbs_config->{DISPLAY_NODE_CONFIG} ;
 	}
 
 #----------------------
@@ -399,7 +399,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILDER})
 		$current_node_info = INFO ("${tab}Using builder from rule: #$rule_info\n") ;
 		
 		$log_node_info .= $current_node_info ;
-		$node_info     .= $current_node_info
+		$node_info     .= $current_node_info if $pbs_config->{DISPLAY_NODE_BUILDER} ;
 		}
 	}
 
@@ -447,12 +447,12 @@ if(@rules_with_builders)
 		}
 	}
 
-#-------------------------------------------------
-#display shell and commands if any
-#-------------------------------------------------
+#-------------------------
+#display shell  if any
+#-------------------------
 if(exists $pbs_config->{DISPLAY_BUILD_INFO} && @{$pbs_config->{DISPLAY_BUILD_INFO}})
 	{
-	#display shell and commands if any
+	#display shell if any
 	}
 	
 #----------------------

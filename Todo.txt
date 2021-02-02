@@ -1,7 +1,12 @@
 
-#changing a h file gives message
-	h file only found in old digest
-		not very friendly
+warp 0 doesn't save triggers
+	other warp save the check log but w 0 doesn't have it it run's pbs directly
+
+#display list of built nodes
+	save them with the trigger
+	
+
+Single rule builder doesn't work in -j
 
 why does Rules::Builders @120 add a node sub for shell generator?
 
@@ -11,17 +16,7 @@ add an option that less verbose than ndpb
 	and a list what options to use to get more data
 		put all the option under display_node_info_xxx
 
-#when using virtual file show errors in the virtual file not the pbsfile file on disk
-add line number to generated rule ordering pbsfile
-
-#time to completion example
-	when digest can't be generated we only get a warning
-	warp say ok althoug digests can be read!
-
-
-
 i:h isfname , ^wF, gF
-#fzf option 
 
 add pbs distribution to the dependencies
 
@@ -38,22 +33,8 @@ can a node be tagged as source in another repo
 		node exists but is not depended
 		late depend tag node as source
 
-#Build.PL
-	missing pbsfiles in distro?
-	add new files in distro ... releaser
-
-
 touch pbs output files so they list in the right order
 	many are in the same second!
-
-display list of built nodes
-
-#display each command's result not just the last one
-	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
-	Build: command: cp -r /home/nadim/nadim/devel/divers/div_make/releaser/resources/css /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css
-
-	Build: './OEM1/xxx/css': build result: 1, message:
-
 
 bug trigger, in makefile releaser example trigger '.', build sequence hangs waitng for someting to be build
 	? the trigger removes/adds too many nodes
@@ -62,49 +43,6 @@ bug trigger, in makefile releaser example trigger '.', build sequence hangs wait
 --bni not working
 	what does it do except showing command before expansion?
 		ndpb is the one stopping node info to be shown
-
-#Dependent in node build log for nodes at the bottom of the graph can be:
-	very large
-	take time to generate ( how is the 800 nodes generation time after we speedup this?)
-		=> 0.8s to 0.5s
-
-	difficult to read because we have the dependents + its node log link
-
-	This goes in the build log too, it slows all the builds not only the pre build log
-
-	bug: doesn't seem to be sorted properly
-
-	    Dependents:
-	    |- ./OEM1/aaa/css: rule: 4:csss
-	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/aaa/css.pbs_log
-	    |  `- ./OEM1/aaa/encrypted.mol: rule: 2:mols
-	    |     |- node info:
-	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/aaa/encrypted.mol.pbs_log
-	    |     `- ./release: rule: 1:release
-	    |        `- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/release.pbs_log
-	    |- ./OEM2/aaa/css: rule: 4:csss
-	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/aaa/css.pbs_log
-	    |  `- ./OEM2/aaa/encrypted.mol: rule: 2:mols
-	    |     |- node info:
-	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/aaa/encrypted.mol.pbs_log
-	    |     `- ./release: rule: 1:release
-	    |- ./OEM1/xxx/css: rule: 4:csss
-	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css.pbs_log
-	    |  `- ./OEM1/xxx/encrypted.mol: rule: 2:mols
-	    |     |- node info:
-	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/encrypted.mol.pbs_log
-	    |     `- ./release: rule: 1:release
-	    `- ./OEM2/xxx/css: rule: 4:csss
-	       |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/xxx/css.pbs_log
-	       `- ./OEM2/xxx/encrypted.mol: rule: 2:mols
-		  |- node info:
-		  |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/xxx/encrypted.mol.pbs_log
-		  `- ./release: rule: 1:release
-
-	=> not much to do, if we want it in the log we need to pay for the generation time
-		- opt it out
-		- speedup the generation
-		- cache the generation
 
 ?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
 we get the same digest and think it's the same thus nothing needs to be buid!
@@ -519,6 +457,75 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#display each command's result not just the last one
+
+#changing a h file gives message
+	h file only found in old digest
+		not very friendly
+
+#when using virtual file show errors in the virtual file not the pbsfile file on disk
+add line number to generated rule ordering pbsfile
+
+#time to completion example
+	when digest can't be generated we only get a warning
+	warp say ok althoug digests can be read!
+
+#fzf option 
+#Build.PL
+	missing pbsfiles in distro?
+	add new files in distro ... releaser
+
+
+	Build: command: mkdir -p /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx
+	Build: command: cp -r /home/nadim/nadim/devel/divers/div_make/releaser/resources/css /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css
+
+	Build: './OEM1/xxx/css': build result: 1, message:
+
+
+#Dependent in node build log for nodes at the bottom of the graph can be:
+	very large
+	take time to generate ( how is the 800 nodes generation time after we speedup this?)
+		=> 0.8s to 0.5s
+
+	difficult to read because we have the dependents + its node log link
+
+	This goes in the build log too, it slows all the builds not only the pre build log
+
+	bug: doesn't seem to be sorted properly
+
+	    Dependents:
+	    |- ./OEM1/aaa/css: rule: 4:csss
+	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/aaa/css.pbs_log
+	    |  `- ./OEM1/aaa/encrypted.mol: rule: 2:mols
+	    |     |- node info:
+	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/aaa/encrypted.mol.pbs_log
+	    |     `- ./release: rule: 1:release
+	    |        `- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/release.pbs_log
+	    |- ./OEM2/aaa/css: rule: 4:csss
+	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/aaa/css.pbs_log
+	    |  `- ./OEM2/aaa/encrypted.mol: rule: 2:mols
+	    |     |- node info:
+	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/aaa/encrypted.mol.pbs_log
+	    |     `- ./release: rule: 1:release
+	    |- ./OEM1/xxx/css: rule: 4:csss
+	    |  |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/css.pbs_log
+	    |  `- ./OEM1/xxx/encrypted.mol: rule: 2:mols
+	    |     |- node info:
+	    |     |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM1/xxx/encrypted.mol.pbs_log
+	    |     `- ./release: rule: 1:release
+	    `- ./OEM2/xxx/css: rule: 4:csss
+	       |- node info: /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/xxx/css.pbs_log
+	       `- ./OEM2/xxx/encrypted.mol: rule: 2:mols
+		  |- node info:
+		  |  /home/nadim/nadim/devel/divers/div_make/releaser/_out_nadim/OEM2/xxx/encrypted.mol.pbs_log
+		  `- ./release: rule: 1:release
+
+	=> not much to do, if we want it in the log we need to pay for the generation time
+		- opt it out
+		- speedup the generation
+		- cache the generation
+
 #display used/unused rules
 	per pbs run
 		display rule statistics

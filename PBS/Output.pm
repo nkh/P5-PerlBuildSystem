@@ -31,7 +31,7 @@ require Exporter;
 		PrintColor
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintUser PrintShell PrintDebug
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
-		PrintNoColor 
+		PrintNoColor PrintVerbatim
 		GetColor
 		) ;
 		
@@ -114,6 +114,7 @@ sub COLOR
 {
 use Carp ;
 #print Carp::longmess() ;
+
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
 my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $depth) ;
 
@@ -125,7 +126,7 @@ $string =~ s/\n(.)/$reset\n$color$indent$1/g ;
 
 return $color. $string . $reset ;
 }
-#sub RESET { return COLOR('reset', @_) }
+
 sub ERROR { return COLOR('error', @_) }
 sub WARNING  { return COLOR('warning', @_) }
 sub WARNING2 { return COLOR('warning_2', @_) }
@@ -145,25 +146,24 @@ sub _print
 #use Carp qw(cluck longmess shortmess);
 #cluck "This is how we got here!"; 
 
+my ($glob, $color_and_depth, $data, $indent, $no_header) = @_ ;
 
-my ($glob, $color_and_depth, $data, $indent) = @_ ;
-
-$_ //= '' ;
+return if $data eq q{} ;
 
 $data =~ s/^(\t+)/$indentation x length($1)/gsme if $indent ;
 
 my $reset = $cc{$cd}{reset} // '' ;
 my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
 
-print $glob $output_info_label, 
-	join
-		(
-		"\n$output_info_label",
-		map { $color_and_depth->($_) }
-			split /\n(?:\Q$reset\E)?/, $data
-		) ;
+my $lines =  join
+			(
+			"\n$output_info_label",
+			map { $_ ne "\e[K\e[K" ? $color_and_depth->($_) : q{} }
+				split /\n(?:\Q$reset\E)?/, $data
+			)
+		. ($ends_with_newline ? $ends_with_newline : '') ;
 
-$ends_with_newline && print $glob $ends_with_newline ;
+print $glob "$output_info_label$lines" unless $lines eq q{} ;
 }
 
 sub PrintStdOut {_print(\*STDOUT, \&RESET, @_);}
@@ -173,6 +173,7 @@ sub PrintStdOutColor {_print(\*STDOUT, @_);} # pass a color handler as first arg
 sub PrintStdErrColor {_print(\*STDERR, @_);} # pass a color handler as first argument
 
 sub PrintNoColor {_print(\*STDERR, \&RESET, @_);}
+sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
 sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_);}
 
 sub PrintError {_print(\*STDERR, \&ERROR, @_);}

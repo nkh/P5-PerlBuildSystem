@@ -1,4 +1,22 @@
 
+FORCED and __PBS_FORCE_TRIGGER
+	both are used to force the triggering of a node
+
+	FORCED always forces the triggering
+
+	__PBS_FORCE_TRIGGER is a dependency added by a depender to force the triggering
+		the depender can dynamically decide to trigger the dependentg
+
+		the check phase handles __PBS_FORCE_TRIGGER
+
+		we could have triggered the node directly rather than add a dependency
+
+	is this useful? 
+		the old use case was the C depender triggering if a H file was changed
+		but we now integrate the H files in the graph and pbs handles them as 
+		any nodes
+
+
 single run builder
 	builder that's runs only once and build multiple files
 
