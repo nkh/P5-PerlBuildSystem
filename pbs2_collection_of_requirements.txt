@@ -1,15 +1,151 @@
+distributed pbs, sub graph selection
+	to work efficiently on a sub graph in a build process we need to get a sub graph
+	that has as little dependencies as possible on other sub graphs, preferably none
+	which remove the need for synchronization
+
+	to find such graphs we need to start "numbering the nodes"
+
+	A -> 1 2 3
+	1 -> a aa aaa 
+	2 -> b bb bbb
+	3 -> c cc aaa
+	
+	A: 1
+		1: 11
+			a: 111
+			aa: 112
+			aaa: 113
+
+		2: 12
+			b: 121
+			bb: 122
+			bbb: 123
+
+		3: 13
+			c: 131
+			cc: 132
+			aaa: 113
+
+	we can also tag sub graphs that link to other sub graph, 13 in this example
+		3: 13, links: 113
+	
+	counting the nodes in the sub graph also helps us balance the load
+		A: 1, nodes: 13
+			1: 11, nodes: 4
+
+	the tag also gives the depth of the node so we can indent the rule matching and dependency list
+		
+	different processes will build different sub graphs but two sub graphs can hold a very different
+		number of nodes, a build process is allowed to split its sub graph into smaller sub graphs
+		and build them in other processes, the processes would preferably be on the same computer
+		but can also be send to remote machines
+
+
+	when checking the graph we look into a distributed node repository, among all the build nodes, that information
+		can also be used to distribute sub graphs more efficiently
+
+		the build nodes need to be synched to the build nodes that will _use_ them, ie a node with those dependencies
+		needs to be rebuild, there's no use to synch all the nodes
+
+		the node repos could synch which each other continuously if no build is ongoing (as to save resources for the build)
+	
+	before building we try to find already build artefacts on the build nodes, we get a triggered graph
+		triggering information is part of the node so it's available in the sub graph
+		if we need to remote a subgraph for build we can send start a pbs instance at the sub graph root
+			since we have a config for the package, we can also send a warp/meso file to speedup
+			the instance. it will have to rebuild the graph, load rules, ... but it's a simple distribution scheme
+			what it returns is a location for the build nodes, or it can put them in the local node repository
+
+	pbsfiles could be a nice boundary for the distributed depend
+		we could also reload a pbsfile to depend a specific node
+			the node@root builds a whole graph and build only node, we want a different mechanism for 
+			depend node@root, we want only the sub graph containing node to be created, we do have more information
+			than node@root to help, we have the full path to the node, since it is being depended in another process
+			that wants to off load it to another process, node@root/dep1/dep2/dep3/... in a single pbsfile
+
+	distributed nodes have their own pool of processes but can query the main pbs for other distributed nodes that have free
+	resources, the distributed nodes work directly with each other distributing the graph in a mesh of pbs nodes
+		the nodes could ask each other for resources without the main pbs having any knowledge about it
+
+	depending in a distributed environment
+		we need to synch the pbsfiles, only the needed pbsfiles, the nodes could fetch the needed pbsfiles on demand, from the mesh
+			there's no need to synch although a simple VCS command can do it more efficiently and in a simpler to control way
+
+		nodes are added unless they exist in which case they are linked
+			nodes can be anywhere in the distributed graph
+
+			we need an efficient mechanism to check for existing nodes
+
+
+		what when a process has finished depending a sub graph?
+			check it and create meso files
+
+			the process could serialize the sub graph and exit but it's more
+			efficient to keep the process in memory and have it handle multiple sub graphs
+				we need a pbs front end that accepts commands via RPC and that will create multiple separate graphs
+
+
+	 	we can create the same node in multiple graphs as long it is exactly equivalent (config, pbsfile, build system, ...)
+			we just want to build it only once, on the most logical node
+
+			what if two pbs depend nodes add the same node, to which one other would link?
+				to the one on the same pbs depend node but in other process
+				to one on another pbs depend node
+				to whichever, they are equivalent
+
+				we just want to build one, although we could build it multiple times
+
+			to build just once we need to synch the triggered nodes before we generate a build sequence
+				if all the pbs nodes build everything it would be a monumental waste of time!
+
+			LOCAL needs to be implemented so we actually get the nodes we need locally
+
+			if a build is done but not all nodes are local we can run a build with a rules that adds LOCAL to all nodes
+				the graph will be build, distributed too, and checked before a nothing to build and a LOCAL
+				suych of all nodes
+
+				the other way is to get the nodes from the warp file and synch them, if one is sure the latest build is done 
+
+		still it is a better to link to nodes than to re-create them as they may have a deep sub graph themselves
+			we can ask the other nodes what they have in they sub graphs
+			they return a list of nodes and the highest index so we only need to synch the new nodes next time
+
+			we can ask for other nodes every X amount of nodes added and handle discrepancy if it happens
+			
+			if an equivalent node is available on another pbs node we can cut its sub graph and just link to it
+				it important that the other nodes doesn't do the same thing
+				the sub graph we want to remove may itself have nodes we are linking to, those nodes should be in the other
+				sub graph but it may not be in it yet, the linked node may just have appeared, the machine is slower to run rules
+				more processes are running on that machine, ...
+
+				we don't need to cut the subgraph, we need to link the nodes to the "master" nodes
+
+				we want to link to the nodes so we don't have to depend them at all locally
+			
+				it doesn't matter which node become the linked node "source" as long as all the pbs nodes know which one it is
+					if the processes are numbered in start order, for each sub graph, we can link to the lowest process
+					number node
+
+		checking out files is on demand
+			if each build node has to checkout everything we are wasting resources since we want to work on sub graphs only
+
+			we need a list of the files and their hashes as well as a way to get them, either via a vcs or via a shared repo
+				there's no reason to not add pbsfile, source files, ... to the "binary" repo
+
+			synch of large files should not be done at all, we should remote the build on the nodes where the files are
+	
 
 FORCED and __PBS_FORCE_TRIGGER
 	both are used to force the triggering of a node
 
 	FORCED always forces the triggering
 
-	__PBS_FORCE_TRIGGER is a dependency added by a depender to force the triggering
+	__PBS_FORCE_TRIGGER[:reason] is a dependency added by a depender to force the triggering
 		the depender can dynamically decide to trigger the dependentg
 
 		the check phase handles __PBS_FORCE_TRIGGER
 
-		we could have triggered the node directly rather than add a dependency
+		we get a nice message and it's easier to debug the way it's implemented
 
 	is this useful? 
 		the old use case was the C depender triggering if a H file was changed

@@ -1,8 +1,8 @@
 Single rule builder doesn't work in -j
 
-i:h isfname , ^wF, gF
-
 add pbs distribution to the dependencies
+
+i:h isfname , ^wF, gF
 
 --nh, display compact dependency information
 	uses \K

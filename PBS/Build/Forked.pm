@@ -92,7 +92,9 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 	
 	my @builders = WaitForBuilderToFinish($pbs_config, $builders) ;
 	@builders || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
-		
+	
+	# PBS::RPC::Handle(@builder) # todo: check if build send an RPC request
+	
 	for my $builder (@builders)
 		{
 		my $built_node = $builder->{NODE} ;
@@ -583,7 +585,7 @@ unless ($builder_channel)
 	die "\n" ;
 	}
 
-my ($build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, (<$builder_channel> // "0__PBS_FORKED_BUILDER__No message\n") ;
+my ($type, $build_result,$build_message) = split /__PBS_FORKED_BUILDER__/, (<$builder_channel> // "0__PBS_FORKED_BUILDER__No message\n") ;
 chomp $build_message ;
 $build_message = '"' . $build_message . '"' ;
 

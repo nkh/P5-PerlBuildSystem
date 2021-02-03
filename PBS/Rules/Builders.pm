@@ -183,9 +183,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		my ($file, $line) = get_code_location($shell_command) ;
 		$perl_sub_name .= " $file:$line" ;
 
-		PrintInfo2 $command_information . "Build: sub: $perl_sub_name\n" if $display_command_information ;
-		
-		PrintUser "Build: sub\n" unless $PBS::Shell::silent_commands ;
+		PrintUser $command_information . "Build: sub: $perl_sub_name\n" ;
 		
 		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
 		

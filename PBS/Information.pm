@@ -223,16 +223,14 @@ for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
 #----------------------
 # dependencies
 #----------------------
+my (%triggered_dependencies) ;
+
 if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config->{DISPLAY_NODE_BUILD_CAUSE})
 	{
-	my (%triggered_dependencies) ;
-
 	if(exists $file_tree->{__TRIGGERED})
 		{
 		for my $triggered_dependency_data (@{$file_tree->{__TRIGGERED}})
 			{
-			next if(ref $triggered_dependency_data eq 'PBS_FORCE_TRIGGER') ;
-			
 			$triggered_dependencies{$triggered_dependency_data->{NAME}} = $triggered_dependency_data->{REASON} ;
 			}
 		}
@@ -322,7 +320,10 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 		my $rule_dependencies ;
 		if(@{$rule->{DEPENDENCIES}})
 			{
-			$rule_dependencies = join ' ', map {$_->{NAME}} @{$rule->{DEPENDENCIES}} ;
+			$rule_dependencies = join ' ', 
+				map { exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED} ? ERROR($_) : $_ } 
+					map {$_->{NAME}}
+						@{$rule->{DEPENDENCIES}} ;
 			}
 		else
 			{

@@ -7,13 +7,8 @@
 
 AddRule [VIRTUAL], "all", ['all' => 'A', 'A_B', 'A_C', 'A_D'], BuildOk() ;
 
-#PbsUse 'Builders/SingleRunBuilder' ;
-#AddRule "A_or_B", [qr/A/]
-#	=> SingleRunBuilder("touch  %FILE_TO_BUILD_PATH/A %FILE_TO_BUILD_PATH/A_B %FILE_TO_BUILD_PATH/A_C") ;
-
-#using a node_sub
 PbsUse 'Builders/SingleRunBuilder' ;
-AddRule [V], "x", [qr/A_D/ => 'dependency'] ;
+AddRule [V], "x", [qr/A_D/ => 'dependency', '__PBS_FORCE_TRIGGER'] ;
 AddRule "dependency", ['dependency'] , 'touch %FILE_TO_BUILD' ;
 
 AddRule "files to build together", [qr/A|A_B|A_C|A_D/],
@@ -22,5 +17,6 @@ AddRule "files to build together", [qr/A|A_B|A_C|A_D/],
 	    	"echo another command",
 	    	sub {PrintDebug "third build_command\n"},
 	    ],
+	#using a node_sub
 	\&SingleRunBuilder_node_sub ;
 

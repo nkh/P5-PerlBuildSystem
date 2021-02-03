@@ -386,26 +386,19 @@ my (@triggered_dependencies, %triggered_dependencies_build_names) ;
 # build a list of triggering_dependencies and weed out doublets
 for my $triggering_dependency (@{$file_tree->{__TRIGGERED}})
 	{
-	if('PBS_FORCE_TRIGGER' eq ref $triggering_dependency )
+	my $dependency_name = $triggering_dependency->{NAME} ;
+	
+	next if $dependency_name =~ /^__/ ; #__SELF is triggering but is not a real dependency
+	
+	if(exists $triggering_dependency->{__BUILD_NAME})
 		{
-		#~ my $message = $forced_trigger->{MESSAGE} ;
+		$dependency_name = $triggering_dependency->{__BUILD_NAME};
 		}
-	else
+		
+	if(! exists $triggered_dependencies_build_names{$dependency_name})
 		{
-		my $dependency_name = $triggering_dependency->{NAME} ;
-		
-		next if $dependency_name =~ /^__/ ; #__SELF is triggering but is not a real dependency node
-		
-		if(exists $triggering_dependency->{__BUILD_NAME})
-			{
-			$dependency_name = $triggering_dependency->{__BUILD_NAME};
-			}
-			
-		if(! exists $triggered_dependencies_build_names{$dependency_name})
-			{
-			push @triggered_dependencies, $dependency_name  ;
-			$triggered_dependencies_build_names{$dependency_name} = $dependency_name  ;
-			}
+		push @triggered_dependencies, $dependency_name  ;
+		$triggered_dependencies_build_names{$dependency_name} = $dependency_name  ;
 		}
 	}
 	

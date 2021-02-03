@@ -32,18 +32,6 @@ use PBS::Information ;
 
 #-----------------------------------------------------------------------------------------
 
-sub FORCE_TRIGGER
-{
-my $reason = shift || die "Forced trigger must have a reason\n" ;
-
-return
-	(
-	bless ( { MESSAGE => $reason }, "PBS_FORCE_TRIGGER" ) 
-	) ;
-}
-
-#-------------------------------------------------------------------------------
-
 my %has_no_dependencies ;
 
 sub HasNoDependencies
@@ -401,7 +389,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 				
 				
 				my $forced_trigger = '' ;
-				if(grep {'PBS_FORCE_TRIGGER' eq ref $_->{NAME}} @dependencies) # use List::Utils::Any
+				if(grep {$_->{NAME} =~ '__PBS_FORCE_TRIGGER' } @dependencies)
 					{
 					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
@@ -481,9 +469,11 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 		for my $dependency (@dependencies)
 			{
 			my $dependency_name = $dependency->{NAME} ;
-			if(ref $dependency_name eq 'PBS_FORCE_TRIGGER')
+			if(my ($reason) = $dependency_name =~ /__PBS_FORCE_TRIGGER:?(.*)?/)
 				{
-				push @{$tree->{__PBS_FORCE_TRIGGER}}, $dependency_name ;
+				$reason .= ' ' . $dependency_rule->{NAME} . $dependency_rule->{ORIGIN} ;
+
+				push @{$tree->{__PBS_FORCE_TRIGGER}}, {NAME => $dependency_name, REASON => $reason} ;
 				next ;
 				}
 				
@@ -728,7 +718,7 @@ for my $dependency (@dependencies)
 		my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
 		my $rule_file = $dependency_rules->[$rule_index]{FILE} ;
 		my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
-		my $rule_info = $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+		my $rule_info = $rule_name . ':' . $rule_file . ':' . $rule_line ;
 
 		my $time = Time::HiRes::time() ;
 		
@@ -1155,8 +1145,8 @@ push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_F
 my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
 
 
-my $linked_node_info = INFO3("${indent}'$dependency_name'") . INFO2(" linking $link_type", 0) ;
-$linked_node_info .= INFO2( ", rule: $dependency->{__INSERTED_AT}{INSERTION_RULE}", 0) if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
+my $linked_node_info = INFO2("${indent}${indent}'$dependency_name'") . INFO2(" linked $link_type", 0) ;
+$linked_node_info .= INFO2( ", rule: $dependency->{__INSERTED_AT}{INSERTION_RULE}", 0) if $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
 $linked_node_info .= "\n" ;
 	
 if($dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)

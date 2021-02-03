@@ -28,7 +28,9 @@ use PBS::Build::NodeBuilder ;
 sub NodeBuilder
 {
 my $parent_channel = shift ; # communication channel to/from parent
-my $pbs_config     = $_[0] ;
+my ($pbs_config) = @_ ;
+
+$pbs_config->{PARENT_CHANNEL} = $parent_channel ; # make it available for RPC requests
 
 my ($build_log, $build_output) ; # file names for the last build
 my ($build_result, $build_message, $build_time) ; #last node build info
@@ -74,7 +76,9 @@ while(defined (my $command_and_args = <$parent_channel>))
 			($build_result, $build_message, $build_log, $build_output, $build_time)
 				= BuildNode($parent_channel, $node_name, $node_build_sequencer_info, @_) ;
 
-			print $parent_channel "${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
+			my $BUILD_DONE = 'BUILD_DONE' ;
+
+			print $parent_channel "${BUILD_DONE}__PBS_FORKED_BUILDER__${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 			
 			last ;
 			} ;

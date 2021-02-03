@@ -846,8 +846,12 @@ EOT
 		'(DF) Display the regex used to depend a node.',
 		'',
 		
-	'ddmr|display_dependency_matchin_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
+	'ddmr|display_dependency_matching_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
 		'Display the rule which matched the node.',
+		'',
+		
+	'dlmr|display_link_matching_rule' => \$pbs_config->{DISPLAY_LINK_MATCHING_RULE},
+		'Display the rule which matched the node that is being linked.',
 		'',
 		
 	'dtin|display_trigger_inserted_nodes' => \$pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES},

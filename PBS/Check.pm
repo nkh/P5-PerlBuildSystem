@@ -107,8 +107,8 @@ if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		PrintWarning "Check: '$name' dependencies: 0, has digest: 1"
-			. ($matching_rules ? ", matching rules: $matching_rules, " : ", not depended, ")
+		PrintWarning "Check: '$name' no dependencies"
+			. ($matching_rules ? ", rules: $matching_rules, " : ", not depended, ")
 			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) 
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
@@ -209,19 +209,12 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 	{
 	for my $forced_trigger (@{$tree->{__PBS_FORCE_TRIGGER}})
 		{
-		if('PBS_FORCE_TRIGGER' eq ref $forced_trigger )
-			{
-			my $message = $forced_trigger->{MESSAGE} ;
-			
-			PrintInfo("$name: trigged because of $message\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-			
-			push @{$tree->{__TRIGGERED}}, $forced_trigger ;
-			$triggered++ ;
-			}
-		else
-			{
-			die "trigger is not of type 'PBS_FORCE_TRIGGER'!" ;
-			}
+		my $message = $forced_trigger->{MESSAGE} // $forced_trigger->{REASON} // 'no message' ;
+		
+		PrintInfo("Check: '$name': trigged because of '$message'\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
+		
+		push @{$tree->{__TRIGGERED}}, $forced_trigger ;
+		$triggered++ ;
 		}
 	}
 

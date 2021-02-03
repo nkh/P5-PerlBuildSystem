@@ -306,10 +306,9 @@ if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DIS
 		$pbs_config->{DISPLAY_NODE_BUILD_CAUSE}++ ;
 		$pbs_config->{DISPLAY_NODE_BUILD_RULES}++ ;
 		$pbs_config->{DISPLAY_NODE_CONFIG}++ ;
-		$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
+		#$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
 		}
 
-	$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
 	$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
 	}
 	
