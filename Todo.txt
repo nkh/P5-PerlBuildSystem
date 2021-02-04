@@ -1,6 +1,14 @@
+
+replace all warn with PrintWarning
+
 Single rule builder doesn't work in -j
 
-add pbs distribution to the dependencies
+# add pbs distribution to the dependencies
+	create a single file that contains the hash of the distribution
+	include that file so the distribution is not listed in every single node digest
+	also add the digest of the included file
+
+	warp also needs to check distribution
 
 i:h isfname , ^wF, gF
 

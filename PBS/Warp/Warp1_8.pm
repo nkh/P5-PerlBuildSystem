@@ -20,14 +20,12 @@ our $VERSION = '0.04' ;
 use PBS::Output ;
 use PBS::Digest ;
 use PBS::Constants ;
-#use PBS::Plugin;
 use PBS::Warp;
 
 use Cwd ;
 use File::Path;
 use Data::Dumper ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
-#use POSIX qw(strftime);
 use File::Slurp ;
 
 use constant RUN_NOT_NEEDED => -1 ;
@@ -38,7 +36,7 @@ use constant RUN_IN_WARP_MODE => 1 ;
 
 sub WarpPbs
 {
-die "PBS: NOT SUPPORTED, pbsfile chain needs to be merged" ;
+die "PBS: NOT SUPPORTED, pbsfile chain needs to be merged, distribution digest must be saved in warp file" ;
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
 my ($warp_signature) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;
@@ -54,7 +52,21 @@ my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
 my $triggers_file = "$warp_path/Triggers_${now_string}.pl" ;
 $pbs_config->{TRIGGERS_FILE} = $triggers_file ;
 
-my ($run_in_warp_mode, $nodes, $number_of_removed_nodes, $warp_configuration) = CheckMd5File($targets, $pbs_config) ;
+my ($run_in_warp_mode, $nodes, $number_of_removed_nodes, $warp_configuration) ;
+
+# check distribution
+# todo: we must save the pbs distribution in the warp file 
+#my ($rebuild_because_of_digest, $result_message, $number_of_difference) = PBS::Digest::CheckDistribution($pbs_config) ;
+
+if ($rebuild_because_of_digest)
+	{
+	PrintWarning "Warp: changes in pbs distribution.\n" ;
+	$run_in_warp_mode = 0 ;
+	}
+else
+	{
+	($run_in_warp_mode, $nodes, $number_of_removed_nodes, $warp_configuration) = CheckMd5File($targets, $pbs_config) ;
+	}
 
 my $t0_warp = [gettimeofday];
 my $t0_warp_check = $t0_warp ;

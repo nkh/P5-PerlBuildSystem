@@ -874,6 +874,16 @@ EOT
 		'Only display when a digest are diffrent.',
 		'',
 		
+	'devel_no_distribution_check'  => \$pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK},
+		'A development flag, not for user.',
+		<<EOT,
+Pbs checks its distribution when building and rebuilds everything if it has changed.
+
+While developping we are constantly changing the distribution but want to see the effect
+of the latest change without rebuilding everything which makes finding the effect of the
+latest change more difficult.
+EOT
+
 	'wnmw|warp_no_md5_warning'             => \$pbs_config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND},
 		'Do not display a warning if the file to compute hash for does not exist during warp verification.',
 		'',

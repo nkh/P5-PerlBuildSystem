@@ -1,3 +1,7 @@
+
+pbs distribution digest is computed for every build process
+	makes sense if it's distributed but on the same machine it's a waste of resources
+
 distributed pbs, sub graph selection
 	to work efficiently on a sub graph in a build process we need to get a sub graph
 	that has as little dependencies as possible on other sub graphs, preferably none

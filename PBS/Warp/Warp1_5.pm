@@ -49,7 +49,7 @@ my $triggers_file = "$warp_path/Triggers_${now_string}.pl" ;
 $pbs_config->{TRIGGERS_FILE} = $triggers_file ;
 
 my ($nodes, $node_names, $global_pbs_config, $warp_dependents) ;
-my ($version, $number_of_nodes_in_the_dependency_tree, $warp_configuration) ;
+my ($version, $number_of_nodes_in_the_dependency_tree, $warp_configuration, $distribution_digest) ;
 
 my ($t0_warp, $t0_warp_check) = ([gettimeofday]) ;
 
@@ -64,7 +64,7 @@ my $warp_load_time = 0 ;
 if(-e $warp_file)
 	{
 	($nodes, $node_names, $global_pbs_config, $warp_dependents,
-	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration)
+	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration, $distribution_digest)
 		= do $warp_file or do
 			{
 			PrintError("Warp: Couldn't evaluate warp file '$warp_file'\nFile error: $!\nCompilation error: $@") ;
@@ -84,6 +84,15 @@ if(-e $warp_file)
 		}
 
 	$run_in_warp_mode = 0  unless $number_of_nodes_in_the_dependency_tree ;
+
+	# check distribution
+	my ($rebuild_because_of_digest, $result_message, $number_of_difference) = PBS::Digest::CheckDistribution($pbs_config, $distribution_digest, 'Warp1_5') ;
+
+	if ($rebuild_because_of_digest)
+		{
+		PrintWarning "Warp: changes in pbs distribution.\n" ;
+		$run_in_warp_mode = 0 ;
+		}
 	}
 else
 	{
@@ -674,10 +683,13 @@ print WARP '$node_names = decode_json qq{' . $js->encode( $node_names ) . "} ;\n
 print WARP '$warp_dependents = decode_json qq{' . $js->encode( $warp_dependents ) . "} ;\n\n" ;
 print WARP '$warp_configuration = decode_json qq{' . $js->encode( $warp_configuration ) . "} ;\n\n" ;
 
+my ($pbs_digest) = PBS::Digest::GetPbsDigest($pbs_config) ; 
+print WARP '$pbs_distribution_digest = decode_json qq{' . $js->encode( $pbs_digest ) . "} ;\n\n" ;
+
 print WARP "\$version = $VERSION ;\n\$number_of_nodes_in_the_dependency_tree = $number_of_nodes_in_the_dependency_tree ;\n" ;
 
 print WARP 'return $nodes, $node_names, $global_pbs_config, $warp_dependents,
-	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration;';
+	$version, $number_of_nodes_in_the_dependency_tree, $warp_configuration, $pbs_distribution_digest;';
 
 close(WARP) ;
 
