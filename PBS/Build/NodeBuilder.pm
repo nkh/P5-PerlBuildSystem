@@ -282,7 +282,7 @@ if($node_needs_rebuild)
 			{
 			$file_tree->{__MD5} = 'VIRTUAL' ;
 			eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
-			($build_result, $build_message) = (BUILD_FAILED, "Error Generating node digest: $@") if $@ ;
+			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 		
 			if(-e $build_name)
 				{
@@ -302,12 +302,12 @@ if($node_needs_rebuild)
 				$file_tree->{__MD5} = $current_md5 ;
 
 				eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
-				($build_result, $build_message) = (BUILD_FAILED, "Error Generating node digest: $@") if $@ ;
+				($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 				}
 			else
 				{
 				PBS::Digest::RemoveNodeDigest($file_tree) ;
-				($build_result, $build_message) = (BUILD_FAILED, "Error Generating MD5 for '$build_name', $!.") ;
+				($build_result, $build_message) = (BUILD_FAILED, "Build: error generating MD5 for '$build_name', $!.") ;
 				}
 			}
 		}

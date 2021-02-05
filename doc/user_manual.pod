@@ -459,7 +459,7 @@ source tree and only put rules to build the files in that location in it. That i
 The SimplifyRule plugin also provides a simplified pattern matching syntax of the form
 [ '*.ext1' => '*.ext2' ] for simple basename/extension transformations. The syntax '*/*.ext1' is
 used to match nodes that have a path prefix, i.e. in a subpbs. %TARGET_PATH is available in the
-simplified pattern syntax as well, and is sometimes preferrable since it only matches nodes with the
+simplified pattern syntax as well, and is sometimes preferable since it only matches nodes with the
 subpbs' path prefix rather than all nodes with the same extension. Note that %TARGET_PATH is the path
 prefix of the node(s) the Pbsfile was invoked to depend, and 
 

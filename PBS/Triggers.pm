@@ -182,7 +182,7 @@ push @{$triggers{$package}}, $trigger_rule ;
 
 sub DisplayAllTriggers
 {
-warn DumpTree(\%triggers, 'All triggers:') ;
+PrintInfo DumpTree(\%triggers, 'Triggers:') ;
 }
 
 #-------------------------------------------------------------------------------

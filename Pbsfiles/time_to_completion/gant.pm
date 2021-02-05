@@ -57,9 +57,9 @@ my $min_start_time = max
 				# use serialized nodes delivery time, so warp, parallel build, ... works
 				unless ($data = do $file)
 					{
-					warn "couldn't parse $file: $@" if $@ ;
-					warn "couldn't do $file: $!"    unless defined $data ;
-					warn "couldn't run $file"       unless $data ;
+					PrintWarning "GANT: couldn't parse $file: $@" if $@ ;
+					PrintWarning "GANT: couldn't do $file: $!"    unless defined $data ;
+					PrintWarning "GANT: couldn't run $file"       unless $data ;
 
 					$data = {} ;
 					}

@@ -15,7 +15,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
+our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -890,7 +890,7 @@ my $rule_definition =
 	DEPENDER            => $depender_sub,
 	TEXTUAL_DESCRIPTION => $depender_definition, # keep a visual on how the rule was defined,
 	BUILDER             => $builder_sub,
-	NODE_SUBS	    => $node_subs,
+	NODE_SUBS           => $node_subs,
 	%$builder_generated_types,
 	} ;
 
@@ -1051,6 +1051,9 @@ $file_name =~ s/'$// ;
 
 __AddSubpbsRule($package, $file_name, $line, \@_) ;
 }
+
+*Subpbs=\&AddiSubpbsRule ;
+*subpbs=\&AddSubpbsRule ;
 
 sub __AddSubpbsRule
 {

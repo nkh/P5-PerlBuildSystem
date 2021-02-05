@@ -90,7 +90,7 @@ if(@$rule_definition < 2 || @$rule_definition == 3)
 elsif(@$rule_definition == 2)
 	{
 	($node_regex, $Pbsfile, $pbs_package) = @$rule_definition ;
-	$pbs_package = $name = "$node_regex | $Pbsfile" ; 
+	$pbs_package = $name = "$node_regex @ $Pbsfile" ; 
 	}
 else
 	{

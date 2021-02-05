@@ -654,10 +654,18 @@ EOT
 		'Display sub pbs definition.',
 		'',
 		
+	'display_nodes_per_pbsfile'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE},
+		'Display how many nodes where added by each pbsfile run.',
+		'',
+		
 	'de|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
 		'Display when a depend ends.',
 		'',
 		
+	'display_too_many_nodes_warning=i'        => \$pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING},
+		'Display a warning when a pbsfile adds too many nodes.',
+
+		'',
 	'display_rule_to_order'          => \$pbs_config->{DISPLAY_RULES_TO_ORDER},
 		'Display that there are rules order.',
 		'',
@@ -668,6 +676,14 @@ EOT
 		
 	'display_rule_ordering'          => \$pbs_config->{DISPLAY_RULES_ORDERING},
 		'Display the pbsfile used to order rules and the rules order.',
+		'',
+		
+	'maximum_rule_recursion'          => \$pbs_config->{MAXIMUM_RULE_RECURSION},
+		'Set the maximum rule recusion before pbs, aborts the build',
+		'',
+		
+	'rule_recursion_warning'          => \$pbs_config->{RULE_RECURSION_WARNING},
+		'Set the level at which pbs starts warning aabout rule recursion',
 		'',
 		
 	'dur|display_used_rules'          => \$pbs_config->{DISPLAY_USED_RULES},

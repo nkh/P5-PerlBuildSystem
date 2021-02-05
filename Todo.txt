@@ -1,5 +1,39 @@
 
-replace all warn with PrintWarning
+bug! number of nodes displayed by "depend done" is not the same a s the nodes in the graph
+
+#warn when many nodes are added in the same pbsfile
+	not efficient to run so many rules (at least till we scope the rules)
+	probably a large pbsfile with many unrelated nodes
+
+#infinite loop rules
+	we catch self referential rules but not infinite loops
+
+	rule 21, [ '*/2' => 'xxx/2'  ] ;
+
+	or worse
+
+	rule 21, [ '*/2' => 'xxx/3'  ] ;
+	rule 22, [ '*/3' => 'yyy/2'  ] ;
+
+	we can place a soft limit on
+		how many rules can match
+		how many times a rule can match
+		how many nodes can be added
+
+	# it would be nice to see the recursion and display it
+		rule #1 -> node -> rule -> node - rule #1 again
+			when the recusion is detected,we can crawl back the dependency graph till we find the
+			parent node that matched the same rule, nice but seldom useful, a quick look in the
+			pbsfile is often enough
+
+		in sub CreateDependencyTree
+			pass the chain of rules applied (hash) to recursive call
+			pop when back from call
+			if rule is recusive and soft limit passed, warn, then stop on hard limit
+			
+
+#replace all warn with PrintWarning
+
 
 Single rule builder doesn't work in -j
 
@@ -36,8 +70,8 @@ bug trigger, in makefile releaser example trigger '.', build sequence hangs wait
 	what does it do except showing command before expansion?
 		ndpb is the one stopping node info to be shown
 
-?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
-we get the same digest and think it's the same thus nothing needs to be buid!
+#?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
+	we get the same digest and think it's the same thus nothing needs to be buid!
 	this happens when node say they are generated but are not and VIRTUAL is not set
 
 ?bug: warp doesn't care about variables, just node digests
@@ -72,7 +106,7 @@ broken in vi with color
 	Matching rule: #1[B] 'c_objects:/home/nadim/perl5/perlbrew/perls/perl-5.28.1/lib/site_perl/5.28.1/PBS/PBSLib/Rules/C.pm:48'
 
 warp 1.8 pbs chain merge
-linking during non warp depend must also update the pbsfile chain 
+	linking during non warp depend must also update the pbsfile chain 
 
 ddr
 	rule matching PBS_WARP_TREE is not shown
@@ -94,19 +128,6 @@ move NodeInformation to methods
 	many information elements are generated and added to the log or output
 		putting the computation of the information in methods allows post processing to generate the same output
 
-Creator vs immediate build
-	Creator, file that need to exists before depending a node
-		often a file that itself points to other dependencies
-
-		often a single file but mechanism should be good enough to handle complicated dependencies
-			a: b at dependency time but
-			b:c and b:d at dependency time
-			d: needs to exist
-
-	C: "list that is included in C"(LIC)
-	LIC: processed "files in a diretory"
-
-		
 Fix all examples in pbsfiles
 	make run
 	document

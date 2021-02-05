@@ -93,6 +93,12 @@ return($ok) ;
 
 #-------------------------------------------------------------------------------
 
+my %nodes_per_pbs_run ;
+
+sub GetNodesPerPbsRun { \%nodes_per_pbs_run  } 
+
+#-------------------------------------------------------------------------------
+
 my %trigger_rules ;
 
 sub CreateDependencyTree
@@ -107,7 +113,12 @@ my $config           = shift ;
 my $inserted_nodes   = shift ;
 my $dependency_rules = shift ;
 
+my $parent_matching_rules = shift // {} ;
+my @node_matching_rules ;
+
 return if(exists $tree->{__DEPENDED}) ;
+
+$nodes_per_pbs_run{$load_package}++ ;
 
 $PBS::Depend::BuildDependencyTree_calls++ ;
 my $indent = $PBS::Output::indentation ;
@@ -310,6 +321,8 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 		else
 			{
 			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rule->{FILE}:$dependency_rule->{LINE}'" ;
+
+			push @node_matching_rules, $rule_name ;
 			}
 		
 		# transform the node name into an internal structure and check for node attributes
@@ -372,7 +385,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 					push @node_type, "$type" if exists $tree->{$type} ;
 					}
 
-				my $node_type = scalar(@node_type) ? '[' . join(', ', @node_type) . '] ' : '' ;
+				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . '] ' : '' ;
 				
 				my $rule_info =  $dependency_rule->{NAME}
 						. (defined $pbs_config->{ADD_ORIGIN} 
@@ -413,7 +426,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					PrintInfo3($em->("$indent'$node_name' ${node_type}${forced_trigger}\n")) ;
+					PrintInfo3($em->("$indent'$node_name'${node_type}${forced_trigger}\n")) ;
 					
 					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n"))
 						if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
@@ -437,7 +450,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 					}
 				else
 					{
-					my $dd = INFO3 "$indent'$node_name' ${node_type}${forced_trigger}" ;
+					my $dd = INFO3 "$indent'$node_name'${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
 						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? WARNING("'$_'", 0) : INFO("'$_'", 0) } @dependency_names), 0)
@@ -463,6 +476,45 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 				}
 			}
 			
+		if( exists $parent_matching_rules->{$rule_name})
+			{
+			if(@{$parent_matching_rules->{$rule_name}} + 1 > $pbs_config->{MAXIMUM_RULE_RECURSION})
+				{
+				PrintError "Depend: maximum rule recusion, rule: '$rule_name', pbsfile '$Pbsfile'\n" ;
+
+				my @trace = ("rule '$rule_name' => '$node_name'") ;
+
+				my $parent_rule = $tree->{__INSERTED_AT}{INSERTION_RULE_NAME} ;
+				my $parent = $tree->{__INSERTED_AT}{INSERTING_NODE} ;
+				while (defined $parent)
+					{
+					push @trace, "rule '$parent_rule' => '$parent'" ;
+
+					$parent_rule =  $inserted_nodes->{$parent}{__INSERTED_AT}{INSERTION_RULE_NAME} ;
+					$parent = $inserted_nodes->{$parent}{__INSERTED_AT}{INSERTING_NODE} ;
+					}
+				
+				pop @trace ; # PBS root, for this package
+				PrintError "Depend: rules trace:\n" ;
+				PrintError "\t$_\n" for reverse @trace ;
+
+				die "\n" ;
+				}
+
+			if(@{$parent_matching_rules->{$rule_name}} == 1)
+				{
+				PrintWarning "\t\twarning: rule '$rule_name' matched node and also matched parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
+				}
+
+			if
+				(
+				@{$parent_matching_rules->{$rule_name}} >= $pbs_config->{RULE_RECURSION_WARNING}
+				&& ! (@{$parent_matching_rules->{$rule_name}} % 5)
+				)
+				{
+				PrintWarning "\t\twarning: rule '$rule_name' matched node and also matched " . scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
+				}
+			} 
 		#----------------------------------------------------------------------------
 		# Check the dependencies
 		#----------------------------------------------------------------------------
@@ -565,7 +617,7 @@ for my $dependency_name (keys %$tree)
 if(@sub_pbs > 1)
 	{
 	PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple matching subpbs:\n" ;
-	PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
+	PrintError(DumpTree(\@sub_pbs, "Subpbs:")) ;
 	
 	Carp::croak  ;
 	}
@@ -855,6 +907,9 @@ if(@has_matching_non_subpbs_rules)
 		
 		if (! exists $tree->{$dependency}{__DEPENDED} && ! $node_is_source->($tree, $dependency) ) 
 			{
+			my %sum_matching_rules = %{$parent_matching_rules} ;
+			push @{$sum_matching_rules{$_}}, $node_name for (@node_matching_rules) ;
+
 			CreateDependencyTree
 				(
 				$pbsfile_chain,
@@ -865,7 +920,8 @@ if(@has_matching_non_subpbs_rules)
 				$tree->{$dependency},
 				$config,
 				$inserted_nodes,
-				$dependency_rules
+				$dependency_rules,
+				\%sum_matching_rules
 				) ;
 			}
 		}
@@ -997,7 +1053,7 @@ elsif(@sub_pbs)
 	}
 else
 	{
-	# no subpbs no non-subpbs
+	# no subpbs and no non-subpbs
 
 	if 
 		(
@@ -1007,8 +1063,8 @@ else
 		PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
 		)
 		{
-		PrintWarning "$PBS::Output::indentation'$node_name' wasn't depended,"
-				. INFO2(" pbsfile: '$pbs_config->{PBSFILE}'\n") ;
+		PrintWarning "$PBS::Output::indentation'$node_name' no matching rules,"
+				. INFO2(" pbsfile: '$pbs_config->{PBSFILE}'\n", 0) ;
 		}
 	}
 
@@ -1076,7 +1132,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		else
 			{
 			PrintError("Depend: -- Immediate build of node '$node_name' Failed --\n") ;
-			die "BUILD_FAILED\n" ;
+			die "Depend: IMMEDIATE_BUILD FAILED\n" ;
 			}
 		}
 	else

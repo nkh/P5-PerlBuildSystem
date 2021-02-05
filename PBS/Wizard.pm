@@ -64,16 +64,16 @@ if($wizard ne '')
 			{
 			my $paths = join ', ', @{$lib_paths} ;
 			
-			die ERROR("Can't locate '$wizard' in PBS libs [$paths]\n")  ;
+			die ERROR("Wizard: Can't locate '$wizard' in PBS libs [$paths]\n")  ;
 			}
 			
 		our $wizard_location = $located_source_name ;
 		
 		unless (my $return = do $located_source_name) 
 			{
-			warn "couldn't parse '$located_source_name': $@" if $@;
-			warn "couldn't do '$located_source_name': $!"    unless defined $return;
-			warn "couldn't run '$located_source_name' (forgot to return '1'?)."       unless $return;
+			PrintWarning "Wizard: couldn't parse '$located_source_name': $@" if $@;
+			PrintWarning "Wizard: couldn't do '$located_source_name': $!"    unless defined $return;
+			PrintWarning "Wizard: couldn't run '$located_source_name' (forgot to return '1'?)."       unless $return;
 			}
 		}
 	else

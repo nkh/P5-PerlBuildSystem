@@ -196,6 +196,8 @@ if(defined $pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 	$pbs_config->{NO_SUBPBS_INFO}++ ;
 	}
 
+$pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
+
 if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
 	{
 	delete $pbs_config->{DISPLAY_PROGRESS_BAR} ;
@@ -272,7 +274,10 @@ $pbs_config->{DEBUG_DISPLAY_RULES}++ if defined $pbs_config->{DEBUG_DISPLAY_RULE
 $pbs_config->{DISPLAY_USED_RULES}++ if defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY} ;
 
 $pbs_config->{DISPLAY_RULES_ORDER}++ if defined $pbs_config->{DISPLAY_RULES_ORDERING} ;
-	
+
+$pbs_config->{MAXIMUM_RULE_RECURSION} //= 15 ;
+$pbs_config->{RULE_RECURSION_WARNING} //= 5 ;
+
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;

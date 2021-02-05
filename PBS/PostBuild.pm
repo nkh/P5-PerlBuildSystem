@@ -214,7 +214,7 @@ push @{$post_build_commands{$package}}, $post_build_definition ;
 
 sub DisplayAllPostBuildCommands
 {
-warn DumpTree(\%post_build_commands, "All post build commands:") ;
+PrintInfo DumpTree(\%post_build_commands, "PostBuild: commands:") ;
 }
 
 #-------------------------------------------------------------------------------

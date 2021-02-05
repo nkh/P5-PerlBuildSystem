@@ -159,7 +159,7 @@ if(-e $digest_file)
 		my $digest ; 
 		unless ($digest = do $digest_file) 
 			{
-			warn "Digest: couldn't parse '$digest_file': $@" if $@;
+			PrintWarning "Digest: couldn't parse '$digest_file': $@" if $@;
 			}
 			
 		my ($pbs_digest) = GetPbsDigest($pbs_config) ; # writes the digest to disk
@@ -302,7 +302,7 @@ else
 		}
 	else
 		{
-		PrintWarning  "Digest: warning: can't read file '$file' to generate MD5\n" if $warn ;
+		PrintWarning  "Digest: can't read file '$file' to generate MD5\n" if $warn ;
 		}
 	}
 
@@ -899,7 +899,7 @@ if(IsDigestToBeGenerated($package, $node))
 		my ($digest, $sources, $pbs_digest) ;
 		unless (($digest, $sources, $pbs_digest) = do $digest_file_name) 
 			{
-			warn "PBS: couldn't parse '$digest_file_name': $@" if $@;
+			PrintWarning "Digest: couldn't parse '$digest_file_name': $@" if $@;
 			}
 			
 		if('HASH' eq ref $digest)

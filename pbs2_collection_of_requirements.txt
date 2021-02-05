@@ -156,6 +156,32 @@ FORCED and __PBS_FORCE_TRIGGER
 		but we now integrate the H files in the graph and pbs handles them as 
 		any nodes
 
+Creator vs IMMEDIATE_BUILDi
+	Creator, file that need to exists before depending a node
+		often a file that itself points to other dependencies
+
+		often a single file but mechanism should be good enough to handle complicated dependencies
+			a: b at dependency time but
+			b:c and b:d at dependency time
+			d: needs to exist
+
+	C: "list that is included in C"(LIC)
+	LIC: processed "files in a diretory"
+
+must IMMEDIATE_BUILD be inherited?
+	IMMEDIATE BUILD builds a node just after it is depended
+		before the rest of the graph is depended
+
+	=>  no, as the node dependencies are build first
+		so there is no need to inherit the IMMEDIATE_BUILD type
+
+	it is still interesting to know when a node is build due to IMMEDIATE_BUILD
+		the node itself
+		the dependencies, including the information about which node started the build
+
+		pbs1 display a build cause, not found on disk, digest. dependencies, or --triger
+			this would be a good place to add the information
+
 
 single run builder
 	builder that's runs only once and build multiple files
@@ -178,21 +204,6 @@ single run builder
 		
 				we can use pbs as a key value db and have a tmp/ dir that's remove after each run
 					we can use the file system as back-end in /tmp and a unique directory per run
-
-must IMMEDIATE_BUILD be inherited?
-	IMMEDIATE BUILD builds a node just after it is depended
-		before the rest of the graph is depended
-
-	=>  no, as the node dependencies are build first
-		so there is no need to inherit the IMMEDIATE_BUILD type
-
-	it is still interesting to know when a node is build due to IMMEDIATE_BUILD
-		the node itself
-		the dependencies, including the information about which node started the build
-
-		pbs1 display a build cause, not found on disk, digest. dependencies, or --triger
-			this would be a good place to add the information
-
 
 how do we make build and parallel build into real nodes?
 

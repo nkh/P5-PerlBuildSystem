@@ -458,20 +458,11 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	}
 else
 	{
-	my $error = "PBS: Error: no pbsfile: $Pbsfile" ;
-	$error .= ", at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
+	my $error = "PBS: error: no pbsfile: $Pbsfile" ;
+	$error .= "\n\t@ $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
 
 	PrintError $error ;
 
-=pod alternative_output
-	PrintError DumpTree
-			(
-			{subpbs => $pbs_config->{SUBPBS_HASH}},
-			"Error: no pbsfile: '$Pbsfile', targets: [@$targets], at: $pbs_config->{SUBPBS_HASH}{ORIGIN}" ,
-			DISPLAY_ADDRESS => 0
-			) ;
-
-=cut
 	die "\n";
 	}
 
@@ -681,7 +672,9 @@ for my $source_name (@{[@_]})
 
 sub GetPbsUseStatistic
 {
-return DumpTree($files_loaded_via_PbsUse{__STATISTIC}, "'PbsUse' statistic:", DISPLAY_ADDRESS => 0) ;
+return defined $files_loaded_via_PbsUse{__STATISTIC}
+	? DumpTree($files_loaded_via_PbsUse{__STATISTIC}, "PBS: 'PbsUse' statistic:", DISPLAY_ADDRESS => 0)
+	: "PBS: 'PbsUse' statistic: not used\n" ;
 }
 
 #-------------------------------------------------------------------------------

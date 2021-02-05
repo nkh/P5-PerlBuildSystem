@@ -137,18 +137,18 @@ unless($switch_parse_ok)
 	return(0, $parse_message) ;
 	}
 	
-print STDERR $parse_message ;
+PrintInfo2 $parse_message ;
 
 for my $target (@$targets)
 	{
 	if($target =~ /^\@/ || $target =~ /\@$/ || $target =~ /\@/ > 1)
 		{
-		die "PBS: invalid composite target definition\n" ;
+		die ERROR "PBS: invalid composite target definition\n" ;
 		}
 
 	if($target =~ /@/)
 		{
-		die "PBS: only one composite target allowed\n" if @$targets > 1 ;
+		die ERROR "PBS: only one composite target allowed\n" if @$targets > 1 ;
 		}
 	}
 	
@@ -198,6 +198,13 @@ if(@$targets)
 
 	# move all stat into the nodes as they are build in different process
 	# the stat displaying would need to traverse the tree, after synchronizing from the build processes
+
+	if($pbs_config->{DISPLAY_NODES_PER_PBSFILE})
+		{
+		my $nodes_per_pbsfile = PBS::Depend::GetNodesPerPbsRun() ;
+		my $keys = keys %{$nodes_per_pbsfile} ;
+		PrintInfo DumpTree $nodes_per_pbsfile, 'PBS: nodes per pbsfile run:', DISPLAY_ADDRESS => 0 if $keys ;
+		}
 
 	if($pbs_config->{DISPLAY_MD5_STATISTICS})
 		{
@@ -313,18 +320,17 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 # nothing defined on the command line and in a prf, last resort, use the distribution files
 my $plugin_path_is_default ;
 
+my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
+my $distribution_plugin_path = $path . 'Plugins' ;
+	
 if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 	{
-	my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
-	
-	my $distribution_plugin_path = $path . 'Plugins' ;
-	
 	if(-e $distribution_plugin_path)
 		{
-		unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
-			{
-			$parse_message .= WARNING "PBS: plugin path not defined, using distribution plugins from $distribution_plugin_path, see --ppp.\n" ;
-			}
+		#unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
+		#	{
+		#	$parse_message .= "PBS: using plugins from distribution: $distribution_plugin_path, see --ppp.\n" ;
+		#	}
 			
 		$pbs_config->{PLUGIN_PATH} = [$distribution_plugin_path] ;
 		$plugin_path_is_default++ ;
@@ -334,21 +340,24 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 		die ERROR "PBS: no plugin path set and couldn't found any in the distribution, see --ppp.\n" ;
 		}
 	}
+else
+	{
+	push @{$pbs_config->{PLUGIN_PATH}}, $distribution_plugin_path ;
+	my $paths = join ', ', @{$pbs_config->{PLUGIN_PATH}} ;
+	$parse_message .= "PBS: using plugins from: $paths\n" ;
+	}
 
 my $lib_path_is_default ;
+my $distribution_library_path = $path . 'PBSLib/' ;
 
 if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 	{
-	my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
-	
-	my $distribution_library_path = $path . 'PBSLib/' ;
-	
 	if(-e $distribution_library_path )
 		{
-		unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
-			{
-			$parse_message .= WARNING "PBS: lib path not defined, using distribution lib from $distribution_library_path, see --plp.\n" ;
-			}
+		#unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
+		#	{
+		#	$parse_message .= "PBS: using libs from distribution: $distribution_library_path, see --plp.\n" ;
+		#	}
 			
 		$pbs_config->{LIB_PATH} = [$distribution_library_path] ;
 		$lib_path_is_default++ ;
@@ -357,6 +366,12 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 		{
 		die ERROR "PBS: no library path set and couldn't found any in the distribution, see --plp.\n" ;
 		}
+	}
+else
+	{
+	push @{$pbs_config->{LIB_PATH}}, $distribution_library_path ;
+	my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
+	$parse_message .= "PBS: using libs from: $paths\n" ;
 	}
 	
 # load the plugins

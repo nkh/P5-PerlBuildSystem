@@ -108,13 +108,13 @@ if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintWarning "Check: '$name' no dependencies"
-			. ($matching_rules ? ", rules: $matching_rules, " : ", not depended, ")
+			. ($matching_rules ? ", rules: $matching_rules, " : ", no matching rules, ")
 			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) 
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{
-		PrintWarning "Check: '$name', not depended, "
+		PrintWarning "Check: '$name', no matching rules, "
 			. INFO2("inserted: $tree->{__INSERTED_AT}{INSERTION_RULE}\n", 0) ;
 		}
 	}

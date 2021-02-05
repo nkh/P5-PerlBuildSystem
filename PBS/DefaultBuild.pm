@@ -64,7 +64,7 @@ my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, 
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-my $start_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
+my $start_nodes = ($PBS::Depend::BuildDependencyTree_calls // 1) -1 ;
 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
@@ -95,16 +95,23 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
+my $added_nodes_in_run = PBS::Depend::GetNodesPerPbsRun()->{$load_package} ;
+
 if ($pbs_config->{DISPLAY_DEPEND_END})
 	{
-	my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 0 ;
+	my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 1 ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	my $template = "Depend: done %s, level:$PBS::Output::indentation_depth, nodes:$end_nodes(+$added_nodes)\n" ;
+	my $template = "Depend: done %s, level: $PBS::Output::indentation_depth, nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n" ;
 	my $available = PBS::Output::GetScreenWidth() - length($template) ;
 	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
 
-	PrintWarning sprintf($template, $em->($Pbsfile)) ;
+	PrintInfo sprintf($template, $em->($Pbsfile)) ;
+	}
+
+if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
+	{
+	PrintWarning "Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
 	}
 
 #-------------------------------------------------------------------------------
