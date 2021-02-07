@@ -1,0 +1,2 @@
+AddTargets 'all' ;
+AddCommandLineSwitches qw(--no_default_path_warning -dd) ;

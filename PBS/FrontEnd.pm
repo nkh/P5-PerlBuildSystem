@@ -66,7 +66,7 @@ if($pbs_config->{GENERATE_BASH_COMPLETION_SCRIPT})
 
 if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	{
-	PrintWarning "PBS: Warning --check_only_terminal_nodes is set.\n" ;
+	PrintWarning "PBS: warning --check_only_terminal_nodes is set.\n" ;
 	}
 
 # override with callers pbs_config

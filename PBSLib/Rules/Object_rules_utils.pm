@@ -107,7 +107,7 @@ elsif (0 == @dependencies)
 	{
 	PrintWarning 
 		$indentation . "'only_one_dependency': rule: $rule_definition->{NAME}\n"
-		. "Warning: no dependencies for '$dependent_to_check' inserted at ". $tree->{__INSERTED_AT}{INSERTION_RULE} ." :\n" 
+		. "warning: no dependencies for '$dependent_to_check' inserted at ". $tree->{__INSERTED_AT}{INSERTION_RULE} ." :\n" 
 		. $indentation . "rule: '$rule_definition->{NAME} @ $rule_definition->{FILE}:$rule_definition->{LINE}\n"
 		. $indentation . "(try pbs options: -dpl -ddl --display_dependency_regex  --display_search_info)\n" ; 	
 

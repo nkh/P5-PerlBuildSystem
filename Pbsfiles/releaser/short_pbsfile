@@ -1,0 +1,8 @@
+Config OEMS => 'OEM1,OEM2', LIBRARIES => 'aaa,xxx' ;
+
+NoDigest './repo', './resources/css' ;
+
+Rule [ 'all'            => glob '{'. Config('OEMS') .'}/{'. Config('LIBRARIES') .'}/encrypted.mol'], 'touch %@' ;
+Rule [ 'encrypted.mol'  => './$path1/pt::PT', 'css'   ], '%PT %@' ;
+Rule [ 'pt'             => './repo/$path1/pt::OEM_PT' ], 'cp %OEM_PT %@D' ;
+Rule [ 'css'            => './resources/css::CSS'     ], 'cp %CSS %@' ;

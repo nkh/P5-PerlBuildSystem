@@ -1,0 +1,5 @@
+# find out if it is worth having TARGET_PATH set in pbs
+
+rule [V], 'all', ['all' => 'sub_dir/2' ], BuildOk() ;
+
+subpbs '*/2' => 'pbsfile2' ;  

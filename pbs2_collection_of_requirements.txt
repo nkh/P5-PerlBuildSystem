@@ -1,4 +1,17 @@
 
+Documentation
+	guided tours
+	vocabulary list
+	snapshots of runs
+		debug session
+		graph generation
+		...
+	videos
+	pod site to generate HTML or other formats
+	debugging document
+	option documentation
+		each option is documented and it's effects shown as well as how it interacts with other options 
+
 pbs distribution digest is computed for every build process
 	makes sense if it's distributed but on the same machine it's a waste of resources
 

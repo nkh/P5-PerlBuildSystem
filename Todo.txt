@@ -1,5 +1,13 @@
 
-bug! number of nodes displayed by "depend done" is not the same a s the nodes in the graph
+DISPLAY_COMPACT_DEPEND_INFORMATION
+	is it needed?
+
+#bug! number of nodes displayed by "depend done" is not the same a s the nodes in the graph
+
+cleanup modo example and add to distribution
+
+move rule order tests to test
+
 
 #warn when many nodes are added in the same pbsfile
 	not efficient to run so many rules (at least till we scope the rules)

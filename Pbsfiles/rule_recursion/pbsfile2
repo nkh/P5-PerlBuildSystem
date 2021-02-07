@@ -1,0 +1,4 @@
+rule 2, [ '%TARGET_PATH/2' => 'xxx/2'  ] ;
+rule 21, [ '*/2' => 'y/5'  ] ;
+
+rule 23, [ '*/5' => 'x/2'  ] ; # test rule recusion 

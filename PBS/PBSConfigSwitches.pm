@@ -826,6 +826,14 @@ EOT
 		'',
 		
 	#-------------------------------------------------------------------------------	
+	'display_full_dependency_path'         => \$pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH},
+		'Display full dependency_path.',
+		'',
+		
+	'short_dependency_path_string=s'         => \$pbs_config->{SHORT_DEPENDENCY_PATH_STRING},
+		'Replace full dependency_path with argument.',
+		'',
+		
 	'dd|display_dependencies'         => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES},
 		'(DF) Display the dependencies for each file processed.',
 		'',

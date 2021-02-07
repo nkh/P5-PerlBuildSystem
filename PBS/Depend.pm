@@ -1,6 +1,4 @@
 
-$PBS::Dependency::BuildDependencyTree_calls = 0 ;
-
 package PBS::Depend ;
 use PBS::Debug ;
 
@@ -120,7 +118,6 @@ return if(exists $tree->{__DEPENDED}) ;
 
 $nodes_per_pbs_run{$load_package}++ ;
 
-$PBS::Depend::BuildDependencyTree_calls++ ;
 my $indent = $PBS::Output::indentation ;
 
 my $node_name = $tree->{__NAME} ;
@@ -209,7 +206,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	my $file = defined $pbs_config->{PBSFILE_CONTENT} ? 'virtual' : $dependency_rule->{FILE} ;
 	my $rule_info = $rule_name . INFO2(" @ $file:$rule_line", 0) ;
 	
-PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 	my $depender  = $dependency_rule->{DEPENDER} ;
    
 	#DEBUG
@@ -313,7 +309,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo3("${indent}'$node_name' has matching subpbs: $rule_index:$rule_info\n") ;
+				PrintInfo3("${indent}'$node_name' will be depended in subpbs: '$rule_name'\n") ;
 				}
 				
 			next ;
@@ -424,9 +420,18 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 					$no_dependencies = ' no dependencies' ;
 					}
 
+				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
+
+				my $glyph = '' eq $pbs_config->{TARGET_PATH}
+						? "./"
+						: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					PrintInfo3($em->("$indent'$node_name'${node_type}${forced_trigger}\n")) ;
+					my $short_node_name = $node_name ;
+					$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
+					PrintInfo3($em->("$indent'$short_node_name'${node_type}${forced_trigger}\n")) ;
 					
 					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n"))
 						if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
@@ -439,6 +444,10 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 								(
 								"\n$indent$indent",
 								map { $node_is_source->($tree, $_) ? WARNING("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
+									map
+										{
+										s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_
+										}
 										@dependency_names
 								)
 							. "\n" ;
@@ -450,11 +459,28 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 					}
 				else
 					{
-					my $dd = INFO3 "$indent'$node_name'${node_type}${forced_trigger}" ;
+					my $short_node_name = $node_name ;
+					$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
+					my $dd = INFO3 "$indent'$short_node_name'${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
-						? INFO(" dependencies [ " . join(' ', map { $node_is_source->($tree, $_) ? WARNING("'$_'", 0) : INFO("'$_'", 0) } @dependency_names), 0)
-							 . INFO( " ]", 0)
+						? INFO
+							(
+							" dependencies [ "
+							. join
+								(
+								' ',
+								map { $node_is_source->($tree, $_) ? WARNING("'$_'", 0) : INFO("'$_'", 0) }
+									map
+										{
+										s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_
+										}
+										 @dependency_names
+								)
+							, 0
+							)
+							. INFO( " ]", 0)
 						: INFO("[$no_dependencies ]", 0) ;
 
 					$dd .= defined $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
@@ -503,7 +529,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 
 			if(@{$parent_matching_rules->{$rule_name}} == 1)
 				{
-				PrintWarning "\t\twarning: rule '$rule_name' matched node and also matched parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
+				PrintWarning "\t\twarning: rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
 				}
 
 			if
@@ -512,7 +538,7 @@ PrintDebug DumpTree $dependency_rule unless defined $rule_line;
 				&& ! (@{$parent_matching_rules->{$rule_name}} % 5)
 				)
 				{
-				PrintWarning "\t\twarning: rule '$rule_name' matched node and also matched " . scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
+				PrintWarning "\t\twarning: rule '$rule_name' matched '$node_name' and " . scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
 				}
 			} 
 		#----------------------------------------------------------------------------
@@ -794,9 +820,7 @@ for my $dependency (@dependencies)
 			$DB::single = 1 if(PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 			}
 		
-		my %dependency_tree_hash ;
-		
-		$tree->{$dependency_name}                     = \%dependency_tree_hash ;
+		$tree->{$dependency_name}                     = {} ;
 		$tree->{$dependency_name}{__MATCHING_RULES}   = [] ;
 		$tree->{$dependency_name}{__CONFIG}           = $config ;
 		$tree->{$dependency_name}{__NAME}             = $dependency_name ;
@@ -811,7 +835,7 @@ for my $dependency (@dependencies)
 								INSERTION_FILE         => $Pbsfile,
 								INSERTION_PACKAGE      => $package_alias,
 								INSERTION_LOAD_PACKAGE => $load_package,
-								INSERTION_RULE         => $rule_info,
+								INSERTION_RULE         => "$rule_info",
 								INSERTION_RULE_NAME    => $rule_name,
 								INSERTION_RULE_FILE    => $rule_file,
 								INSERTION_RULE_LINE    => $rule_line,
@@ -821,6 +845,8 @@ for my $dependency (@dependencies)
 								
 		$inserted_nodes->{$dependency_name} = $tree->{$dependency_name} ;
 			
+		$nodes_per_pbs_run{$load_package}++ if $node_is_source->($tree, $dependency_name) ; 
+
 		#DEBUG
 		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1)) ;
 		}
@@ -841,7 +867,7 @@ if(@has_matching_non_subpbs_rules)
 		}
 		
 	# a node can be inserted from different pbsfile, still the result should be the same
-	# if the rules applied to the node are identical, we thus only remember the pbsfile with matching rules
+	# if the rules applied to the node are identical, only remember the pbsfile with matching rules
 	$tree->{__DEPENDING_PBSFILE} = PBS::Digest::GetFileMD5($Pbsfile) ;
 	$tree->{__LOAD_PACKAGE} = $load_package;
 	

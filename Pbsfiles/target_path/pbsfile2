@@ -1,0 +1,5 @@
+rule 2, [ '%TARGET_PATH/2' => 'xxx/2'  ] ;
+rule 20, [ '%TARGET_PATH/2' => 'abc'  ] ;
+rule 21, [ '*/2' => 'y/5'  ] ;
+
+subpbs '*/5' => 'pbsfile3' ;  

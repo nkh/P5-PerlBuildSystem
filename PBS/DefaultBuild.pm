@@ -64,7 +64,8 @@ my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, 
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-my $start_nodes = ($PBS::Depend::BuildDependencyTree_calls // 1) -1 ;
+my $start_nodes = scalar(keys %$inserted_nodes) ;
+$start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
@@ -73,13 +74,12 @@ my $target_string = '' ;
 $target_string .= $em->($_) for (@$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
-PrintInfo("Depend: " . INFO3($target_string, 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes\n", 0))
+PrintInfo("Depend: " . INFO3("'$target_string'", 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, total nodes: $start_nodes\n", 0))
 	unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
 	{
-	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $number_of_nodes", 0)) ;
+	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes", 0)) ;
 	}
 		
 PBS::Depend::CreateDependencyTree
@@ -95,18 +95,17 @@ PBS::Depend::CreateDependencyTree
 	$dependency_rules,
 	) ;
 
-my $added_nodes_in_run = PBS::Depend::GetNodesPerPbsRun()->{$load_package} ;
+my $added_nodes_in_run = PBS::Depend::GetNodesPerPbsRun()->{$load_package} - 1 ; # don't count internal PBS node
+$added_nodes_in_run -= 1 unless 0 == $PBS::Output::indentation_depth; # subpbses target is already counted in the parents count
 
 if ($pbs_config->{DISPLAY_DEPEND_END})
 	{
-	my $end_nodes = $PBS::Depend::BuildDependencyTree_calls // 1 ;
+	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	my $template = "Depend: done %s, level: $PBS::Output::indentation_depth, nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n" ;
-	my $available = PBS::Output::GetScreenWidth() - length($template) ;
-	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
+	PrintInfo "Depend: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
+			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
 
-	PrintInfo sprintf($template, $em->($Pbsfile)) ;
 	}
 
 if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
