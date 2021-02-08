@@ -113,6 +113,7 @@ my $dependency_rules = shift ;
 
 my $parent_matching_rules = shift // {} ;
 my @node_matching_rules ;
+my @node_dependencies ;
 
 return if(exists $tree->{__DEPENDED}) ;
 
@@ -318,7 +319,34 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $short_node_name = $node_name ;
 				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
 
-				PrintInfo3 "${indent}'$short_node_name' " . INFO("dependencies ", 0) . INFO3( "[ subpbs: '$rule_name' ]\n", 0) ;
+				my $subpbs_file = $dependency_rule->{TEXTUAL_DESCRIPTION}{PBSFILE} ;
+				$subpbs_file =~ s/^.\//$glyph\// unless $no_short_name ;
+
+				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
+					{
+					PrintInfo3
+						(
+						"${indent}'$short_node_name'\n"
+						. INFO("$indent${indent}subpbs match", 0)
+						. INFO2(", pbsfile:'$subpbs_file'\n", 0)
+						. ($pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+							? INFO2($em->("$indent$indent$rule_index:$rule_info\n"), 0)
+							: "\n")
+						) ;
+					}
+				else
+					{
+					PrintInfo3
+						(
+						"${indent}'$short_node_name'"
+						. INFO(" subpbs match", 0)
+						. INFO2(", pbsfile: '$subpbs_file'\n", 0)
+						. ($pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+							? INFO2($em->("$indent$indent$rule_index:$rule_info\n"), 0)
+							: "\n")
+						) ;
+					}
+
 				}
 				
 			next ;
@@ -326,7 +354,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		else
 			{
 			push @has_matching_non_subpbs_rules, "rule '$rule_name', file '$dependency_rule->{FILE}:$dependency_rule->{LINE}'" ;
-
 			push @node_matching_rules, $rule_name ;
 			}
 		
@@ -426,7 +453,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							} 
 						}
 
-					$no_dependencies = ' no dependencies' ;
+					$no_dependencies = '' ;
 					}
 
 				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
@@ -440,11 +467,14 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					my $short_node_name = $node_name ;
 					$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
 
-					PrintInfo3($em->("$indent'$short_node_name'${node_type}${forced_trigger}\n")) ;
-					
-					PrintInfo2($em->("$indent$indent$rule_index:$rule_info $rule_type [$rules_matching]\n"))
-						if $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
-					
+					PrintInfo3
+						(
+						$em->("$indent'$short_node_name'${node_type}${forced_trigger}")
+						. ($pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+							? INFO2(" $rule_index:$rule_info $rule_type [$rules_matching]\n", 0)
+							: "\n")
+						) ;
+
 					if(@dependency_names)
 						{
 						PrintInfo
@@ -476,7 +506,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$dd .= @dependency_names
 						? INFO
 							(
-							" dependencies [ "
+							" => [ "
 							. join
 								(
 								' ',
@@ -490,7 +520,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							, 0
 							)
 							. INFO( " ]", 0)
-						: INFO("[$no_dependencies ]", 0) ;
+						: INFO(" => []", 0) ;
 
 					$dd .= defined $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
 						? INFO2(" $rule_index:$rule_info$rule_type [$rules_matching]", 0)
@@ -538,7 +568,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 			if(@{$parent_matching_rules->{$rule_name}} == 1)
 				{
-				PrintWarning "\t\twarning: rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
+				PrintWarning "\t\twarning, rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
 				}
 
 			if
@@ -547,9 +577,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				&& ! (@{$parent_matching_rules->{$rule_name}} % 5)
 				)
 				{
-				PrintWarning "\t\twarning: rule '$rule_name' matched '$node_name' and " . scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
+				PrintWarning "\t\twarning, rule '$rule_name' matched '$node_name' and " . scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
 				}
 			} 
+
 		#----------------------------------------------------------------------------
 		# Check the dependencies
 		#----------------------------------------------------------------------------
@@ -625,6 +656,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				},
 			DEPENDENCIES => \@dependencies,
 			};
+
+		push @node_dependencies, @dependencies ;
 		}
 	else
 		{
@@ -636,17 +669,14 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		}
 	}
 
-#-------------------------------------------------------------------------
-# continue with single definition of dependencies 
-# and remove temporary dependency names
-#-------------------------------------------------------------------------
-my @dependencies = () ;
-for my $dependency_name (keys %$tree)
+#-----------------------------
+# remove dependency doubles 
+#-----------------------------
+my (@dependencies, %seen) ;
+
+for my $dependency (@node_dependencies)
 	{
-	if(($dependency_name !~ /^__/) && ('' eq ref $tree->{$dependency_name}{NAME}))
-		{
-		push @dependencies, $tree->{$dependency_name}  ;
-		}
+	push @dependencies, $tree->{$dependency->{NAME}} unless $seen{$dependency->{NAME}}++ ;
 	}
 
 if(@sub_pbs > 1)
@@ -881,7 +911,7 @@ if(@has_matching_non_subpbs_rules)
 	$tree->{__LOAD_PACKAGE} = $load_package;
 	
 	# order so dependencies that do not match subpbs are depended first
-	my (@non_subpbs_dependencies, @subpbs_dependencies) ;
+	my (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies) ;
 
 	my $sort_tree                    = {} ;
 	$sort_tree->{__CONFIG}           = $config ;
@@ -889,19 +919,26 @@ if(@has_matching_non_subpbs_rules)
 	$sort_tree->{__LOAD_PACKAGE}     = $load_package ;
 	$sort_tree->{__PBS_CONFIG}       = $pbs_config ;
 			
-	for my $dependency (keys %$tree)
+	for my $dependency (map {$_->{NAME}} @dependencies)
 		{
-		next if $dependency =~ /^__/ ;
+		if ($node_is_source->($tree, $dependency))
+			{
+			push @non_subpbs_dependencies, $dependency ;
+			next ;
+			}
+
+		my $matched = 0 ;
 
 		$sort_tree->{__NAME} = $dependency ;
-		my $matched = 0 ;
 
 		for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			{
 			my $dependency_rule = $dependency_rules->[$rule_index] ;
 			my $depender  = $dependency_rule->{DEPENDER} ;
 
+			local $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} = 0 ; # temporarily disable message
 			my ($dependency_result) = $depender->($dependency, $config, $sort_tree, $inserted_nodes, $dependency_rule) ;
+
 			my ($triggered, @dependencies ) = @$dependency_result ;
 			
 			if($triggered)
@@ -920,13 +957,11 @@ if(@has_matching_non_subpbs_rules)
 				}
 			}
 		
-		push @non_subpbs_dependencies, $dependency unless $matched ;
+		push @non_matching, $dependency unless $matched ;
 		}
 
-	for my $dependency (@non_subpbs_dependencies, @subpbs_dependencies)
+	for my $dependency (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies)
 		{
-		next if $dependency =~ /^__/ ;
-		
 		# keep parent relationship
 		my $key_name = $node_name . ': ' ;
 		
@@ -1141,8 +1176,21 @@ else
 		PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree)
 		)
 		{
-		PrintWarning "$PBS::Output::indentation'$node_name' no matching rules,"
-				. INFO2(" pbsfile: '$pbs_config->{PBSFILE}'\n", 0) ;
+		my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
+		my $glyph = '' eq $pbs_config->{TARGET_PATH}
+				? "./"
+				: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+
+		my $short_node_name = $node_name ;
+		$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
+		my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+					? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
+					: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
+
+		PrintInfo3 "$PBS::Output::indentation'$short_node_name'"
+				. WARNING(" no matching rules", 0)
+				. INFO2(", inserted at: $inserted_at'\n", 0) ;
 		}
 	}
 
@@ -1262,14 +1310,14 @@ my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
 #	are missing __LOAD_PACKAGE information and we just approximate it with the current node's __LOAD_PACKAGE 
 if(PBS::Digest::IsDigestToBeGenerated($dependency->{__LOAD_PACKAGE} // $tree->{__LOAD_PACKAGE}, $dependency))
 	{
-	push @link_type, 'warning: not depended' unless exists $dependency->{__DEPENDED} ;
-	push @link_type, 'no dependencies'       unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	push @link_type, 'not depended' unless exists $dependency->{__DEPENDED} ;
+	push @link_type, 'no dependencies' unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
 	}
 else
 	{
 	push @link_type, 'source' ;
 
-	push @link_type, 'warning: depended'         if exists $dependency->{__DEPENDED} ;
+	push @link_type, 'warning: depended' if exists $dependency->{__DEPENDED} ;
 	push @link_type, 'warning: has dependencies' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
 	}
 

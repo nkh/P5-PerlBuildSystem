@@ -1,3 +1,6 @@
+#keep dependencies in rule insertion order
+	we now take them from the tree which is a hash
+	but depend  non matches first
 
 DISPLAY_COMPACT_DEPEND_INFORMATION
 	is it needed?
@@ -6,7 +9,7 @@ DISPLAY_COMPACT_DEPEND_INFORMATION
 
 cleanup modo example and add to distribution
 
-move rule order tests to test
+move rule_order tests to t/
 
 
 #warn when many nodes are added in the same pbsfile

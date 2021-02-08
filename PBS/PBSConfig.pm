@@ -278,7 +278,7 @@ $pbs_config->{DISPLAY_RULES_ORDER}++ if defined $pbs_config->{DISPLAY_RULES_ORDE
 $pbs_config->{MAXIMUM_RULE_RECURSION} //= 15 ;
 $pbs_config->{RULE_RECURSION_WARNING} //= 5 ;
 
-$pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '...' ;
+$pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '…' ;
 
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
