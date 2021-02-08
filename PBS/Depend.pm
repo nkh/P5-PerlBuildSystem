@@ -309,7 +309,16 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				PrintInfo3("${indent}'$node_name' will be depended in subpbs: '$rule_name'\n") ;
+				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
+
+				my $glyph = '' eq $pbs_config->{TARGET_PATH}
+						? "./"
+						: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+
+				my $short_node_name = $node_name ;
+				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
+				PrintInfo3 "${indent}'$short_node_name' " . INFO("dependencies ", 0) . INFO3( "[ subpbs: '$rule_name' ]\n", 0) ;
 				}
 				
 			next ;
@@ -871,7 +880,50 @@ if(@has_matching_non_subpbs_rules)
 	$tree->{__DEPENDING_PBSFILE} = PBS::Digest::GetFileMD5($Pbsfile) ;
 	$tree->{__LOAD_PACKAGE} = $load_package;
 	
+	# order so dependencies that do not match subpbs are depended first
+	my (@non_subpbs_dependencies, @subpbs_dependencies) ;
+
+	my $sort_tree                    = {} ;
+	$sort_tree->{__CONFIG}           = $config ;
+	$sort_tree->{__PACKAGE}          = $package_alias ;
+	$sort_tree->{__LOAD_PACKAGE}     = $load_package ;
+	$sort_tree->{__PBS_CONFIG}       = $pbs_config ;
+			
 	for my $dependency (keys %$tree)
+		{
+		next if $dependency =~ /^__/ ;
+
+		$sort_tree->{__NAME} = $dependency ;
+		my $matched = 0 ;
+
+		for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
+			{
+			my $dependency_rule = $dependency_rules->[$rule_index] ;
+			my $depender  = $dependency_rule->{DEPENDER} ;
+
+			my ($dependency_result) = $depender->($dependency, $config, $sort_tree, $inserted_nodes, $dependency_rule) ;
+			my ($triggered, @dependencies ) = @$dependency_result ;
+			
+			if($triggered)
+				{
+				if(@dependencies && 'HASH' eq ref $dependencies[0])
+					{
+					push @subpbs_dependencies, $dependency ;
+					}
+				else
+					{
+					push @non_subpbs_dependencies, $dependency ;
+					}
+
+				$matched++ ;
+				last ;
+				}
+			}
+		
+		push @non_subpbs_dependencies, $dependency unless $matched ;
+		}
+
+	for my $dependency (@non_subpbs_dependencies, @subpbs_dependencies)
 		{
 		next if $dependency =~ /^__/ ;
 		
