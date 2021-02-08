@@ -894,6 +894,7 @@ my $rule_definition =
 	%$builder_generated_types,
 	} ;
 
+$rule_definition->{PBS_STACK} = GetPbsStack($pbs_config, "RegisterRule $name") if ($pbs_config->{DEBUG_TRACE_PBS_STACK}) ;
 
 if(defined $node_subs)
 	{
@@ -1041,6 +1042,53 @@ for(@_)
 	{
 	__AddSubpbsRule($package, $file_name, $line, $_) ;
 	}
+}
+
+sub GetPbsStack
+{
+my ($pbs_config, $tag) = @_ ;
+
+# whichever calls this may not be run inside a PBS:Runs
+# IE PBS registers a rule before loading the pbsfile to depend the target
+
+# display stack from our caller back to the last PBS::Runs
+my $level_to_dump = 1_000_000 ; ## no critic ValuesAndExpressions::ProhibitMagicNumbers
+my $current_level = 2 ; # skip this function 
+
+$level_to_dump += $current_level ; #
+
+my @pbs_stack ;
+my $seen_pbs_run = 0 ;
+
+while ($current_level < $level_to_dump) 
+	{
+	my  ($package, $filename, $line, $subroutine, $has_args, $wantarray,
+	    $evaltext, $is_require, $hints, $bitmask) = eval " package DB ; caller($current_level) ;" ;  ## no critic BuiltinFunctions::ProhibitStringyEval
+	    
+	last unless defined $package;
+	
+	$filename =~ s/^'// ;
+	$filename =~ s/'$// ;
+ 
+	$current_level++;
+
+	$seen_pbs_run++ if $package =~ /^PBS::Runs/ ;
+
+	last if $seen_pbs_run && $package !~ /^PBS::Runs/ ;
+
+	unshift @pbs_stack, [$package, $subroutine, $filename, $line] if $seen_pbs_run ;
+	}
+
+if ($seen_pbs_run)
+	{
+	#PrintDebug DumpTree \@pbs_stack,"pbs stack for '$tag'" ;
+	}
+else
+	{
+	#PrintDebug "pbs stack: '$tag' is not running in pbsfile\n\n" ;
+	}
+
+\@pbs_stack ;
 }
 
 sub AddSubpbsRule

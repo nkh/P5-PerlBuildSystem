@@ -1,0 +1,8 @@
+# To be used as a subpbs only!
+
+my @tests = qw< x.t a.t > ;
+
+Rule 'compiler', [qr<.*/compiler[_0-9]*$> => './runtime', '$name.test', '$name.jar'] ;
+Rule 'test', ['*/*.test' => '*.jar', @tests] ;
+Rule 'source', ['*/*.jar' => '*.java'] ;
+

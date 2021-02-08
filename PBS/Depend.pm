@@ -36,7 +36,7 @@ sub HasNoDependencies
 {
 my ($package, $file_name, $line) = caller() ;
 
-die ERROR "Invalid 'ExcludeFromDigestGeneration' arguments at $file_name:$line\n" if @_ % 2 ;
+die ERROR "Invalid 'HasNoDependencies' arguments at $file_name:$line\n" if @_ % 2 ;
 
 _HasNoDependencies($package, $file_name, $line, @_) ;
 }
@@ -89,11 +89,61 @@ for my $name (keys %{$has_no_dependencies{$package}})
 return($ok) ;
 }
 
+sub NodeIsSource
+{
+my($dependent, $node_name, $inserted_nodes) = @_ ;
+
+if (exists $inserted_nodes->{$node_name})
+	{
+	! PBS::Digest::IsDigestToBeGenerated
+		(
+		$inserted_nodes->{$node_name}{__LOAD_PACKAGE} // $dependent->{__LOAD_PACKAGE},
+		$inserted_nodes->{$node_name}
+		) ; 
+	}
+else
+	{
+	! PBS::Digest::IsDigestToBeGenerated
+		(
+		$dependent->{__LOAD_PACKAGE},
+		{__NAME => $node_name, __PBS_CONFIG => $dependent->{__PBS_CONFIG}}
+		) ;
+	}
+}
+
 #-------------------------------------------------------------------------------
 
 my %nodes_per_pbs_run ;
 
 sub GetNodesPerPbsRun { \%nodes_per_pbs_run  } 
+
+#-------------------------------------------------------------------------------
+
+sub DisplayRuleTrace
+{
+my ($pbs_config, $dependency_rule) = @_ ;
+my $indent = $PBS::Output::indentation ;
+
+#PrintDebug DumpTree $dependency_rule->{PBS_STACK}, "trace for rule '$dependency_rule->{NAME}'" , DISPLAY_ADDRESS => 0, INDENTATION => $indent ;
+
+if 
+	(
+	1 == @{$dependency_rule->{PBS_STACK}}
+	&& $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+	&& $dependency_rule->{FILE} eq $dependency_rule->{PBS_STACK}[0][2]
+	&& $dependency_rule->{LINE} eq $dependency_rule->{PBS_STACK}[0][3]
+	)
+	{
+	}
+else
+	{
+	PrintInfo2 "${indent}rule '$dependency_rule->{NAME}' trace:\n" ;
+	for my $trace (@{$dependency_rule->{PBS_STACK}})
+		{
+		PrintInfo2 "$indent$indent$trace->[1] @ $trace->[2]:$trace->[3]\n" ;
+		}
+	}
+}
 
 #-------------------------------------------------------------------------------
 
@@ -171,29 +221,6 @@ for my $post_build_rule (@post_build_rules)
 
 my $available = PBS::Output::GetScreenWidth() ;
 my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
-
-my $node_is_source = 
-	sub
-		{
-		my($dependent, $node_name) = @_ ;
-
-		if (exists $inserted_nodes->{$node_name})
-			{
-			! PBS::Digest::IsDigestToBeGenerated
-				(
-				$inserted_nodes->{$node_name}{__LOAD_PACKAGE} // $dependent->{__LOAD_PACKAGE},
-				$inserted_nodes->{$node_name}
-				) ; 
-			}
-		else
-			{
-			! PBS::Digest::IsDigestToBeGenerated
-				(
-				$dependent->{__LOAD_PACKAGE},
-				{__NAME => $node_name, __PBS_CONFIG => $dependent->{__PBS_CONFIG}}
-				) ;
-			}
-		} ;
 
 my $rules_matching = 0 ;
 
@@ -347,6 +374,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						) ;
 					}
 
+				DisplayRuleTrace($pbs_config, $dependency_rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 				}
 				
 			next ;
@@ -414,7 +442,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my @node_type ;
 				for my $type (VIRTUAL, LOCAL, FORCED, TRIGGER_INSERTED)
 					{
-					push @node_type, "$type" if exists $tree->{$type} ;
+					push @node_type, ($type =~ s/^__//r) if exists $tree->{$type} ;
 					}
 
 				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . '] ' : '' ;
@@ -462,11 +490,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						? "./"
 						: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
 
+				my $short_node_name = $node_name ;
+				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					my $short_node_name = $node_name ;
-					$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
-
 					PrintInfo3
 						(
 						$em->("$indent'$short_node_name'${node_type}${forced_trigger}")
@@ -482,7 +510,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							. join
 								(
 								"\n$indent$indent",
-								map { $node_is_source->($tree, $_) ? WARNING("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
+								map { NodeIsSource($tree, $_, $inserted_nodes) ? WARNING("'" . $em->($_) . "'", 0) : INFO("'" . $em->($_) . "'", 0) } 
 									map
 										{
 										s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_
@@ -498,9 +526,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					my $short_node_name = $node_name ;
-					$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
-
 					my $dd = INFO3 "$indent'$short_node_name'${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
@@ -510,7 +535,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							. join
 								(
 								' ',
-								map { $node_is_source->($tree, $_) ? WARNING("'$_'", 0) : INFO("'$_'", 0) }
+								map { NodeIsSource($tree, $_, $inserted_nodes) ? WARNING("'$_'", 0) : INFO("'$_'", 0) }
 									map
 										{
 										s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_
@@ -531,6 +556,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					PrintNoColor '' . $dd ;
 					}
 					
+				DisplayRuleTrace($pbs_config, $dependency_rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
+
 				PrintWithContext
 					(
 					$dependency_rule->{FILE},
@@ -884,7 +911,7 @@ for my $dependency (@dependencies)
 								
 		$inserted_nodes->{$dependency_name} = $tree->{$dependency_name} ;
 			
-		$nodes_per_pbs_run{$load_package}++ if $node_is_source->($tree, $dependency_name) ; 
+		$nodes_per_pbs_run{$load_package}++ if NodeIsSource($tree, $dependency_name, $inserted_nodes) ; 
 
 		#DEBUG
 		$DB::single = 1 if($PBS::Debug::debug_enabled && PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1)) ;
@@ -921,7 +948,7 @@ if(@has_matching_non_subpbs_rules)
 			
 	for my $dependency (map {$_->{NAME}} @dependencies)
 		{
-		if ($node_is_source->($tree, $dependency))
+		if (NodeIsSource($tree, $dependency, $inserted_nodes))
 			{
 			push @non_subpbs_dependencies, $dependency ;
 			next ;
@@ -1018,7 +1045,7 @@ if(@has_matching_non_subpbs_rules)
 			PrintWarning("Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
 			}
 		
-		if (! exists $tree->{$dependency}{__DEPENDED} && ! $node_is_source->($tree, $dependency) ) 
+		if (! exists $tree->{$dependency}{__DEPENDED} && ! NodeIsSource($tree, $dependency, $inserted_nodes) ) 
 			{
 			my %sum_matching_rules = %{$parent_matching_rules} ;
 			push @{$sum_matching_rules{$_}}, $node_name for (@node_matching_rules) ;
@@ -1324,10 +1351,15 @@ else
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
 
-my $link_type = @link_type ? '[' . join(', ', @link_type) . ']' : '' ;
+my $link_type = @link_type ? ' [' . join(', ', @link_type) . ']' : '' ;
 
+my $linked_node_info = INFO("${indent}linking node ")
+			. (NodeIsSource($tree, $dependency_name, $inserted_nodes)
+				? WARNING("'$dependency_name'", 0)
+				: INFO3("'$dependency_name'", 0)) ;
 
-my $linked_node_info = INFO2("${indent}${indent}'$dependency_name'") . INFO2(" linked $link_type", 0) ;
+$linked_node_info .= INFO2 $link_type, 0 ;
+
 $linked_node_info .= INFO2( ", rule: $dependency->{__INSERTED_AT}{INSERTION_RULE}", 0) if $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} ;
 $linked_node_info .= "\n" ;
 	
@@ -1364,8 +1396,8 @@ if($dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
 			}
 		}
 	}
-	
-PrintNoColor($linked_node_info) if $display_linked_node_info ;
+
+PrintDebug($linked_node_info) if $display_linked_node_info ;
 }
 
 #-------------------------------------------------------------------------------

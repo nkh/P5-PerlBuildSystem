@@ -1,0 +1,19 @@
+Use './sugar' ;
+use subs qw( MyAddRule Module get_modules) ;
+
+Config
+	COMPILER => 'gcc',
+	GENERATE_DOC => 1,
+
+	MODULES => 'compiler_1 compiler_2' ;
+
+Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests']
+	=> BuildOk("Done 'oct'") ;
+
+MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
+
+Module '*/compiler_1' => 'compiler/compiler' ; # can set extra configuration just for that module
+Module '*/compiler_2' => 'compiler/compiler' ;
+AddSubpbsRule '*/runtime'    => 'runtime/runtime' ;
+
+

@@ -109,16 +109,24 @@ if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
 				: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
 
+	my $inserted_in_file = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}
+				: $tree->{__INSERTED_AT}{INSERTION_FILE} ;
+
+	my $depended_in_file = $tree->{__DEPENDED_AT} // $inserted_in_file ;
+
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintWarning "Check: '$name' no dependencies"
-			. ($matching_rules ? ", rules: $matching_rules, " : ", no matching rules, ")
-			. INFO2("inserted: $inserted_at\n", 0)
+			. ($matching_rules ? ", rules: $matching_rules, " : ", no matching rules")
+			. INFO2(", inserted: $inserted_at", 0)
+			. ($inserted_in_file ne $depended_in_file ?  INFO2(", depended at: $depended_in_file", 0) : '')
+			. "\n"
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{
-		PrintWarning "Check: '$name', no matching rules, "
+		PrintWarning "Check: $name', no matching rules, "
 			. INFO2("inserted: $inserted_at\n", 0) ;
 		}
 	}

@@ -1,4 +1,25 @@
 
+sugar wrapping pbs calls
+	when a complex set of operation is needed, it's easy to create new function that call the pbs API
+	
+	the pbs API remembers where it is called to display the call site
+
+	all the wrapped calls get the wrong call site
+
+	we can call PBS internal rule registration and give another call site
+		this would show the place where the wrapper was called
+
+	but we also want to know where the wrapper is, not only its call site
+
+	we want a call stack from the pbsfile down to the API call
+
+	either implement it with the API taking the call stack till it finds a pbsfile or
+		by setting a call stack in each wrapper, that lets the wrapper writter
+		show/hide what she wants and add the text she wants to the caller place
+
+	an option controls if the stack is displayed
+
+
 Documentation
 	guided tours
 	vocabulary list

@@ -862,6 +862,10 @@ EOT
 		'Show when a node sub is run.',
 		'',
 
+	'trace_pbs_stack'        => \$pbs_config->{DEBUG_TRACE_PBS_STACK},
+		'(DF) Display the call stack within pbs runs.',
+		'',
+		
 	'ddrd|display_dependency_rule_definition' => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION},
 		'Display the definition of the rule that generates a dependency.',
 		'',

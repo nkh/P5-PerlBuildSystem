@@ -328,7 +328,11 @@ my $dependencies_evaluator = sub
 			$dependency =~ s/\$path/$path/g ;
 
 			$dependency =~ s/\$ext/$ext/g ;
-			$dependency =~ s/\$file_no_ext/$path\/$basename/g ;
+
+			my $path_no_dot = $path ;
+			$path_no_dot =~ s/^\.\/// ;
+
+			$dependency =~ s/\$file_no_ext/$path_no_dot\/$basename/g ;
 			
 			push @all_dependencies, $dependency ;
 			}

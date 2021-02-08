@@ -77,11 +77,11 @@ my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 PrintInfo("Depend: " . INFO3("'$target_string'", 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, total nodes: $start_nodes\n", 0))
 	unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
-if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
+if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes", 0)) ;
 	}
-		
+
 PBS::Depend::CreateDependencyTree
 	(
 	$pbsfile_chain,
@@ -121,7 +121,7 @@ return(BUILD_SUCCESS, 'Dependended successfuly', []) if(DEPEND_ONLY == $build_ty
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-if($pbs_config->{DISPLAY_COMPACT_DEPEND_INFORMATION})
+if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
 	PrintInfo("\r\e[K") ;

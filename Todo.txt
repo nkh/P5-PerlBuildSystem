@@ -1,59 +1,11 @@
-#keep dependencies in rule insertion order
-	we now take them from the tree which is a hash
-	but depend  non matches first
-
-DISPLAY_COMPACT_DEPEND_INFORMATION
+# DISPLAY_COMPACT_DEPEND_INFORMATION
 	is it needed?
 
-#bug! number of nodes displayed by "depend done" is not the same a s the nodes in the graph
-
-cleanup modo example and add to distribution
+#cleanup modo example and add to distribution
 
 move rule_order tests to t/
 
-
-#warn when many nodes are added in the same pbsfile
-	not efficient to run so many rules (at least till we scope the rules)
-	probably a large pbsfile with many unrelated nodes
-
-#infinite loop rules
-	we catch self referential rules but not infinite loops
-
-	rule 21, [ '*/2' => 'xxx/2'  ] ;
-
-	or worse
-
-	rule 21, [ '*/2' => 'xxx/3'  ] ;
-	rule 22, [ '*/3' => 'yyy/2'  ] ;
-
-	we can place a soft limit on
-		how many rules can match
-		how many times a rule can match
-		how many nodes can be added
-
-	# it would be nice to see the recursion and display it
-		rule #1 -> node -> rule -> node - rule #1 again
-			when the recusion is detected,we can crawl back the dependency graph till we find the
-			parent node that matched the same rule, nice but seldom useful, a quick look in the
-			pbsfile is often enough
-
-		in sub CreateDependencyTree
-			pass the chain of rules applied (hash) to recursive call
-			pop when back from call
-			if rule is recusive and soft limit passed, warn, then stop on hard limit
-			
-
-#replace all warn with PrintWarning
-
-
 Single rule builder doesn't work in -j
-
-# add pbs distribution to the dependencies
-	create a single file that contains the hash of the distribution
-	include that file so the distribution is not listed in every single node digest
-	also add the digest of the included file
-
-	warp also needs to check distribution
 
 i:h isfname , ^wF, gF
 
@@ -481,6 +433,53 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#warn when many nodes are added in the same pbsfile
+
+#keep dependencies in rule insertion order
+	we now take them from the tree which is a hash
+	but depend  non matches first
+
+#bug! number of nodes displayed by "depend done" is not the same a s the nodes in the graph
+
+	not efficient to run so many rules (at least till we scope the rules)
+	probably a large pbsfile with many unrelated nodes
+
+#infinite loop rules
+	we catch self referential rules but not infinite loops
+
+	rule 21, [ '*/2' => 'xxx/2'  ] ;
+
+	or worse
+
+	rule 21, [ '*/2' => 'xxx/3'  ] ;
+	rule 22, [ '*/3' => 'yyy/2'  ] ;
+
+	we can place a soft limit on
+		how many rules can match
+		how many times a rule can match
+		how many nodes can be added
+
+	# it would be nice to see the recursion and display it
+		rule #1 -> node -> rule -> node - rule #1 again
+			when the recusion is detected,we can crawl back the dependency graph till we find the
+			parent node that matched the same rule, nice but seldom useful, a quick look in the
+			pbsfile is often enough
+
+		in sub CreateDependencyTree
+			pass the chain of rules applied (hash) to recursive call
+			pop when back from call
+			if rule is recusive and soft limit passed, warn, then stop on hard limit
+			
+
+#replace all warn with PrintWarning
+
+# add pbs distribution to the dependencies
+	create a single file that contains the hash of the distribution
+	include that file so the distribution is not listed in every single node digest
+	also add the digest of the included file
+
+	warp also needs to check distribution
 
 # warp 0 doesn't save triggers
 	other warp save the check log but w 0 doesn't have it it run's pbs directly
