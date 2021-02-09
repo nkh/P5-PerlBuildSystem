@@ -1,3 +1,13 @@
+#Check.pm
+	display all nodes that are not subpbs depended but are inserted in a different
+	package than the inserting one
+
+	display_nodes_depended_in_different_package
+
+#reduce Pbsfile name in display
+
+put new Pbsfiles/... in MANIFEST
+
 # DISPLAY_COMPACT_DEPEND_INFORMATION
 	is it needed?
 

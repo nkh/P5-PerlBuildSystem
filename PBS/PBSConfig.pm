@@ -188,6 +188,7 @@ $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROC
 if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	$pbs_config->{NO_SUBPBS_INFO}++ ;
+	delete $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 	}
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;

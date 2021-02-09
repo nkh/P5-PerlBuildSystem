@@ -33,6 +33,8 @@ require Exporter;
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		PrintNoColor PrintVerbatim
 		GetColor
+
+		GetRunRelativePath
 		) ;
 		
 $VERSION = '0.06' ;
@@ -329,6 +331,28 @@ sub PbsDisplayErrorWithContext
 {
 PrintWithContext($_[0], $_[1],1, 4, $_[2], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
 }
+
+#-------------------------------------------------------------------------------
+
+use Cwd ;
+sub GetRunRelativePath
+{
+my ($pbs_config, $file, $no_target_path) = @_ ;
+
+unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
+	{
+	my $cwd = Cwd::getcwd() ;
+	$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
+
+	my $target_path = $pbs_config->{TARGET_PATH} ;
+	$file =~ s/\Q$target_path/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g unless $no_target_path ;
+
+	$file =~ s/$_/PBS_LIB\//g for (@{$pbs_config->{LIB_PATH}}) ;
+	}
+
+$file
+}
+
 
 #-------------------------------------------------------------------------------
 1 ;

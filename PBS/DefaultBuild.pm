@@ -52,6 +52,9 @@ my
 
 my $indent = $PBS::Output::indentation ;
 
+# display pbsfile 
+my $short_pbsfile = GetRunRelativePath($pbs_config, $Pbsfile, 1) ;
+
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 
@@ -74,12 +77,24 @@ my $target_string = '' ;
 $target_string .= $em->($_) for (@$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
-PrintInfo("Depend: " . INFO3("'$target_string'", 0) . INFO2(", run: $pbs_runs, level: $PBS::Output::indentation_depth, total nodes: $start_nodes\n", 0))
-	unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+
+PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: run: $pbs_runs, level: $PBS::Output::indentation_depth, nodes: $start_nodes", 0)) ;
+	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: nodes: $start_nodes [$pbs_runs/$PBS::Output::indentation_depth]", 0)) ;
+	}
+else
+	{
+	if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
+		{
+		PrintInfo  "Depend: " . INFO3("'$target_string'\n", 0) ;
+		PrintInfo2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]\n" ;
+		}
+	else
+		{
+		PrintInfo("Depend: " . INFO3("'$target_string'", 0) . INFO2(", pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]\n", 0))
+		}
 	}
 
 PBS::Depend::CreateDependencyTree
@@ -107,6 +122,8 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
 
 	}
+
+PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 	{

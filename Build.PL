@@ -59,6 +59,7 @@ PBS/SubpbsResult.pm
 PBS/Watch/InotifyWatcher.pm
 PBS/Watch/Win32Watcher.pm
 PBS/Watch/Client.pm
+PBS/Stack.pm
 
 PBS/Version.pm
 );

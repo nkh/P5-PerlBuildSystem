@@ -84,6 +84,8 @@ PBS/SubpbsResult.pm
 PBS/Watch/Client.pm
 PBS/Watch/Win32Watcher.pm
 PBS/Watch/InotifyWatcher.pm
+PBS/Stack.pm
+
 PBS/Version.pm
 
 doc/crazy_pbs

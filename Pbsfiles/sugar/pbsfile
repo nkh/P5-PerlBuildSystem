@@ -7,13 +7,13 @@ Config
 
 	MODULES => 'compiler_1 compiler_2' ;
 
-Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests']
+Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests', 'depended_somewhere_else']
 	=> BuildOk("Done 'oct'") ;
 
 MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
 
 Module '*/compiler_1' => 'compiler/compiler' ; # can set extra configuration just for that module
-Module '*/compiler_2' => 'compiler/compiler' ;
-AddSubpbsRule '*/runtime'    => 'runtime/runtime' ;
+AddSubpbsRule 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
+AddSubpbsRule '*/runtime' => 'runtime/runtime' ;
 
 

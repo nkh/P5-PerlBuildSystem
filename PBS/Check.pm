@@ -41,6 +41,8 @@ return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once o
 # we also build data for the build step
 $tree->{__CHILDREN_TO_BUILD} = 0 ;
 
+my $indent = $PBS::Output::indentation ;
+
 PrintInfo "Check: $checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
 
 $build_sequence //= [] ; 
@@ -108,26 +110,47 @@ if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
 	my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
 				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
 				: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
+	$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 
 	my $inserted_in_file = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
 				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}
 				: $tree->{__INSERTED_AT}{INSERTION_FILE} ;
 
 	my $depended_in_file = $tree->{__DEPENDED_AT} // $inserted_in_file ;
+	my $depend_in_different_package = $inserted_in_file ne $depended_in_file && ! $tree->{__MATCHED_SUBPBS} ;
+
+	my $depended_at = '' ;
+
+	if($tree->{__DEPENDED})
+		{
+		my $matching_rule = $tree->{__MATCHING_RULES}[0]{RULE} ;
+		my $rule = $matching_rule->{DEFINITIONS}[$matching_rule->{INDEX}] ;
+
+		$depended_at  = $rule->{NAME} . ':' ;
+		$depended_at .= GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' ;
+		$depended_at .= $rule->{LINE} ;
+		}
+
+	PrintWarning "Check: '$name' inserted and depended in different pbsfiles\n"
+			. INFO2("${indent}inserted: $inserted_at\n", 0)
+			. INFO2("${indent}depended: $depended_at\n", 0)
+		if $depend_in_different_package && $pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} ;
 
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintWarning "Check: '$name' no dependencies"
-			. ($matching_rules ? ", rules: $matching_rules, " : ", no matching rules")
-			. INFO2(", inserted: $inserted_at", 0)
-			. ($inserted_in_file ne $depended_in_file ?  INFO2(", depended at: $depended_in_file", 0) : '')
-			. "\n"
+			. ($matching_rules ? ", rules: $matching_rules\n" : ", no matching rules\n")
+			. INFO2("${indent}inserted: $inserted_at\n", 0)
+
+			# display different depend package if not already displayed
+			. ($depend_in_different_package && !$pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} 
+				? INFO2("${indent}depended: $depended_at\n", 0) 
+				: '')
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{
-		PrintWarning "Check: $name', no matching rules, "
-			. INFO2("inserted: $inserted_at\n", 0) ;
+		PrintWarning "Check: $name', no matching rules\n". INFO2("\tinserted: $inserted_at\n", 0) ;
 		}
 	}
 

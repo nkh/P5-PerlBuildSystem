@@ -306,13 +306,14 @@ dependency graph. Rules, Perl code and variables are still private to each subpb
 puts each subpbs into its own namespace (called a 'package' in Perl). Here's an example of a rule to
 build the shared library MyLib.so in the MyLib subdirectory.
 
-  AddRule 'subpbs_example', {
-														# Mandatory parameters.
-														NODE_REGEX => qr(.*/MyLib/MyLib.so),
-														PBSFILE    => 'MyLib/Pbsfile.pl',
-														PACKAGE    => 'MyLib',
-														# Other parameter can go here...
-														} ;
+  AddRule 'subpbs_example',
+			{
+			# Mandatory parameters.
+			NODE_REGEX => qr(.*/MyLib/MyLib.so),
+			PBSFILE    => 'MyLib/Pbsfile.pl',
+			PACKAGE    => 'MyLib',
+			# Other parameter can go here...
+			} ;
 
 That's a mouthful, but you can add many parameters to a subpbs: See XXX Subpbs in the reference section for
 all options. For the simple task of just adding a subdirectory to your hierarchical build, PBS provides the

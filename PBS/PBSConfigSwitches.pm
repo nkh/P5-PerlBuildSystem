@@ -471,6 +471,10 @@ EOT
 		. "some nodes are generated from non files or don't always have dependencies as for C cache which dependency file "
 		. "is created on the fly if it doens't exist.",
 
+	'cddp|check_nodes_depended_in_different_package' => \$pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE},
+		'Display a warning if a node is added in a package but depended in another one, except for subpbs.',
+		'',
+	
 	'display_duplicate_info'           => \$pbs_config->{DISPLAY_DUPLICATE_INFO},
 		'PBS will display which dependency are duplicated for a node.',
 		'',
@@ -654,11 +658,19 @@ EOT
 		'Display sub pbs definition.',
 		'',
 		
+	'dspc|display_sub_pbs_config' => \$pbs_config->{DISPLAY_SUB_PBS_CONFIG},
+		'Display sub pbs config.',
+		'',
+		
 	'display_nodes_per_pbsfile'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE},
 		'Display how many nodes where added by each pbsfile run.',
 		'',
 		
-	'de|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
+	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},
+		'Display an extra blank line araound a depend.',
+		'',
+		
+	'dde|display_depend_end'        => \$pbs_config->{DISPLAY_DEPEND_END},
 		'Display when a depend ends.',
 		'',
 		
@@ -876,6 +888,10 @@ EOT
 		
 	'ddmr|display_dependency_matching_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
 		'Display the rule which matched the node.',
+		'',
+		
+	'ddir|display_dependency_insertion_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE},
+		'Display the rule which added the node.',
 		'',
 		
 	'dlmr|display_link_matching_rule' => \$pbs_config->{DISPLAY_LINK_MATCHING_RULE},

@@ -1,1 +1,4 @@
-Rule 'runtime', ['*/runtime'] ;
+Rule 'runtime', ['*/runtime' => 'depended_somewhere_else'] ;
+
+Rule 'depended_somewhere_else', ['depended_somewhere_else'] ;
+
