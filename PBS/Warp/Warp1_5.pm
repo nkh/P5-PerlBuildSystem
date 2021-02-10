@@ -780,7 +780,7 @@ for my $node_name (keys %$inserted_nodes)
 			
 		if(exists $node->{__LOAD_PACKAGE})
 			{
-			unless(PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node))
+			if(NodeIsSource($node))
 				{
 				# remember which node is terminal for later optimization
 				$nodes{$node_name}{__TERMINAL} = 1 ;

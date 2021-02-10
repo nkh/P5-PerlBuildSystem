@@ -80,6 +80,8 @@ return
 		box_2_1   => color('on_grey3'),
 		box_2_2   => color('on_grey3'),
 
+		test_bg   => color('rgb220 on_rgb101'),
+
 		reset     => color('reset'),
 		},
 

@@ -1,5 +1,4 @@
-Use './sugar' ;
-use subs qw( MyAddRule Module get_modules) ;
+Use './sugar' ; use subs qw( MyAddRule Module get_modules) ;
 
 Config
 	COMPILER => 'gcc',
@@ -7,13 +6,14 @@ Config
 
 	MODULES => 'compiler_1 compiler_2' ;
 
-Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests', 'depended_somewhere_else']
-	=> BuildOk("Done 'oct'") ;
-
+Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests', 'depended_somewhere_else'] => BuildOk("Done 'oct'") ;
 MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
 
-Module '*/compiler_1' => 'compiler/compiler' ; # can set extra configuration just for that module
-AddSubpbsRule 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
+
+Module '*/compiler_1' => 'compiler/compiler' ;
 AddSubpbsRule '*/runtime' => 'runtime/runtime' ;
+
+# set extra configuration to module
+Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
 
 

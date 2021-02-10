@@ -62,7 +62,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 	{
 	$tree->{__CYCLIC_ROOT}++; # used in graph generation
 	
-	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+	if(NodeIsGenerated($tree))
 		{
 		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@traversal) ; 
 		PrintError "\e[KCheck: Cyclic dependencies detected:\n$cycles", 1 ;
@@ -87,7 +87,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 		}
 	my $node_info = "inserted at '$tree->{__INSERTED_AT}{INSERTION_FILE}' rule '$tree->{__INSERTED_AT}{INSERTION_RULE}'" ;
 	
-	if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+	if(NodeIsGenerated($tree))
 		{
 		#PrintError "Cycle at node '$name' $node_info.\n" ;
 		}
@@ -99,9 +99,10 @@ if(exists $tree->{__CYCLIC_FLAG})
 	
 $tree->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 
-PrintInfo "\e[K\e[K" ;
+PrintInfo "\e[K\e[K" ; # bleah!
+
 # warn if node isn't depended or has no dependencies
-if (PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+if (NodeIsGenerated($tree))
 	{
 	my $matching_rules = @{$tree->{__MATCHING_RULES}} ;
 	 
@@ -322,7 +323,7 @@ for my $dependency_name (keys %$tree)
 			}
 		}
 
-	if(! PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $dependency))
+	if(DependencyIsSource($tree, $dependency->{__NAME}, $inserted_nodes))
 		{
 		# trigger on our dependencies because they won't trigger themselves if they match 
 		# and are a source node. If a source node triggered, it would need to be rebuild.
@@ -384,7 +385,7 @@ else
 		}
 	}
 
-if(PBS::Digest::IsDigestToBeGenerated($tree->{__LOAD_PACKAGE}, $tree))
+if(NodeIsGenerated($tree))
 	{
 	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})

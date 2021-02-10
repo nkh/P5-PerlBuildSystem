@@ -886,6 +886,7 @@ my $rule_definition =
 	TYPE                => $rule_types,
 	NAME                => $name,
 	ORIGIN              => $origin,
+	PACKAGE             => $package,
 	FILE                => $file_name,
 	LINE                => $line,
 	DEPENDER            => $depender_sub,
@@ -1055,7 +1056,7 @@ $file_name =~ s/'$// ;
 __AddSubpbsRule($package, $file_name, $line, \@_) ;
 }
 
-*Subpbs=\&AddiSubpbsRule ;
+*Subpbs=\&AddSubpbsRule ;
 *subpbs=\&AddSubpbsRule ;
 
 sub __AddSubpbsRule

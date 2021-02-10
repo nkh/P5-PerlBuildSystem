@@ -26,13 +26,15 @@ our @EXPORT = qw(
 		AddConfigVariableDependencies AddNodeConfigVariableDependencies
 		AddSwitchDependencies         AddNodeSwitchDependencies
 		
-		ExcludeFromDigestGeneration   NoDigest
+		ExcludeFromDigestGeneration   NoDigest SourcesMatch
 		ForceDigestGeneration         GenerateNodeDigest
 		GetDigest
 		
 		GetFileMD5
+
+		NodeIsGenerated NodeIsSource DependencyIsSource
 		) ;
-					
+
 our $VERSION = '0.06' ;
 our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
@@ -727,6 +729,8 @@ my ($package, $file_name, $line) = caller() ;
 _ExcludeFromDigestGeneration($package, $file_name, $line, map { ; "$_" => $_ } @_ ) ;
 }
 
+*SourcesMatch =\&NoDigest ;
+
 sub ExcludeFromDigestGeneration
 {
 my ($package, $file_name, $line) = caller() ;
@@ -782,6 +786,57 @@ for my $name (keys %force_patterns)
 }
 
 #-------------------------------------------------------------------------------
+
+sub NodeIsSource { ! NodeIsGenerate(@_) }
+
+sub NodeIsGenerated
+{
+my($node) = @_ ;
+
+PBS::Digest::IsDigestToBeGenerated
+	(
+	exists $node->{__MATCHING_RULES} && @{$node->{__MATCHING_RULES}} > 0
+		? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+		: $node->{__LOAD_PACKAGE},
+
+	$node
+	) ; 
+}
+
+sub DependencyIsSource
+{
+my($dependent, $node_name, $inserted_nodes) = @_ ;
+
+my $is_source ;
+if (exists $inserted_nodes->{$node_name})
+	{
+	my $package = @{$inserted_nodes->{$node_name}{__MATCHING_RULES}} > 0
+				? $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+				: exists $dependent->{__MATCHING_RULES}
+					? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+					: $dependent->{__LOAD_PACKAGE} ;
+
+	$is_source = ! PBS::Digest::IsDigestToBeGenerated
+			(
+			$package,
+			$inserted_nodes->{$node_name}
+			) ; 
+	}
+else
+	{
+	my $package =  exists $dependent->{__MATCHING_RULES}
+				? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+				: $dependent->{__LOAD_PACKAGE} ;
+
+	$is_source = ! PBS::Digest::IsDigestToBeGenerated
+			(
+			$package,
+			{__NAME => $node_name, __PBS_CONFIG => $dependent->{__PBS_CONFIG}}
+			) ;
+	}
+
+$is_source
+}
 
 sub IsDigestToBeGenerated
 {
@@ -873,11 +928,10 @@ my $comparator = shift ;
 my $digest_file_name = GetDigestFileName($node) ;
 
 my $pbs_config = $node->{__PBS_CONFIG} ;
-my $package = $node->{__LOAD_PACKAGE} ;
 
 my ($rebuild_because_of_digest, $result_message, $number_of_differences) = (0, ['digest OK'] , 0) ;
 
-if(IsDigestToBeGenerated($package, $node))
+if(NodeIsGenerated($node))
 	{
 	if(-e $digest_file_name)
 		{
@@ -1277,9 +1331,7 @@ if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 	return() ;
 	}
 
-my $package = $node->{__LOAD_PACKAGE} ;
-
-if(IsDigestToBeGenerated($package, $node))
+if(NodeIsGenerated($node))
 	{
 	my $t0_generate_write = [gettimeofday] ;
 
@@ -1287,7 +1339,7 @@ if(IsDigestToBeGenerated($package, $node))
 
 	for my $dependency (grep { ! /^__/ } keys %$node)
 		{
-		$sources .= "\t'$dependency' => 1,\n" unless IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node->{$dependency}) ;
+		$sources .= "\t'$dependency' => 1,\n" if NodeIsSource($dependency) ;
 		}
 
 	$sources .= "\t} ;\n" ;

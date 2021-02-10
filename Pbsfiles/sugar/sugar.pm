@@ -1,4 +1,4 @@
-NoDigest qr/\.java$/, qr/\.test$/ ;
+SourcesMatch qr/\.java$/, qr/\.test$/ ;
 
 sub Module { AddSubpbsRule @_ } 
 sub MyAddRule { AddRule @_ } 

@@ -113,7 +113,7 @@ if (@{$pbs_config->{LOG_NODE_INFO}})
 		(
 		grep { 
 			(! $inserted_nodes->{$_}{__WARP_NODE})
-			&& PBS::Digest::IsDigestToBeGenerated($inserted_nodes->{$_}{__LOAD_PACKAGE}, $inserted_nodes->{$_}) 
+			&& NodeIsGenerated($inserted_nodes->{$_}) 
 			}
 			keys %$inserted_nodes
 		)

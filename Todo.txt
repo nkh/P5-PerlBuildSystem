@@ -1,3 +1,7 @@
+pbs completion via pbs to be always up to date
+
+pbs completion script to two streams or give root name for files
+
 #Check.pm
 	display all nodes that are not subpbs depended but are inserted in a different
 	package than the inserting one

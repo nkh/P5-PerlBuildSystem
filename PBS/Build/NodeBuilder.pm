@@ -58,13 +58,7 @@ my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
 for my $triggered_dependency (@$triggered_dependencies)
 	{
 	# triggered source dependencies always trigger even if they have the same md5
-	my $dependency_is_generated = PBS::Digest::IsDigestToBeGenerated
-					(
-					$node->{$triggered_dependency}{__LOAD_PACKAGE},
-					$node->{$triggered_dependency}
-					) ;
-	
-	unless($dependency_is_generated)
+	if (NodeIsGenerate($node->{$triggered_dependency}))
 		{
 		$rebuild++ ;
 		last ;
@@ -101,7 +95,7 @@ else
 			}
 		else
 			{
-			if ( ! PBS::Digest::IsDigestToBeGenerated($node->{__LOAD_PACKAGE}, $node) )
+			if ( NodeIsSource($node) )
 				{
 				if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
 					{
@@ -493,7 +487,7 @@ if($@)
 if($build_result == BUILD_FAILED)
 	{
 	#~ PrintInfo("Removing '$build_name'.\n") ;
-	unlink($build_name) if PBS::Digest::IsDigestToBeGenerated($file_tree->{__LOAD_PACKAGE}, $file_tree) ;
+	unlink($build_name) if NodeIsGenerated($file_tree) ;
 		
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
@@ -627,7 +621,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 	if($build_result == BUILD_FAILED)
 		{
-		unlink($build_name) if PBS::Digest::IsDigestToBeGenerated($file_tree->{__LOAD_PACKAGE}, $file_tree) ;
+		unlink($build_name) if NodeIsGenerated($file_tree) ;
 		$file_tree->{__BUILD_FAILED} = $build_message ;
 		last ;
 		}

@@ -1,4 +1,15 @@
 
+multiple matching pbsfiles rules
+	we want to be able to match multiple times a node that is to be depended in a obsfile
+		for example to add switches to the subpbs run
+			particularely via rule injection
+
+	as long as we don't define dependencies and builders
+		what if we want to depend in another pbsfile too?
+
+		why can't a pbsfile node have a builder somewhere else?
+	
+
 sugar wrapping pbs calls
 	when a complex set of operation is needed, it's easy to create new function that call the pbs API
 	
@@ -19,6 +30,7 @@ sugar wrapping pbs calls
 
 	an option controls if the stack is displayed
 
+	=> see PBS::Stack
 
 Documentation
 	guided tours
