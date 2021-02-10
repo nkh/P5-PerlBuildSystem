@@ -132,7 +132,7 @@ if (@traces)
 	{
 	my $indent = $PBS::Output::indentation ;
 
-	PrintInfo2 "${indent}${indent}rule '$dependency_rule->{NAME}' trace:\n" ;
+	PrintInfo2 "${indent}${indent}rule '$dependency_rule->{NAME}':\n" ;
 	for my $trace (@traces)
 		{
 		PrintInfo2 "${indent}$indent$indent$trace\n" ;
@@ -1377,7 +1377,7 @@ my ($pbs_config, $dependency_name, $tree, $inserted_nodes, $Pbsfile, $config, $d
 
 # user defined plugin which can fail the graph generation
 RunPluginSubs($pbs_config, 'CheckLinkedNode', @_) ;
-	
+
 my $indent = $PBS::Output::indentation ;
 
 # the dependency already exists within the graph, link to it
@@ -1391,6 +1391,9 @@ my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
 my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
 
 my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
+
+my $local_node = $dependency->{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile ;
+return if $pbs_config->{NO_LOCAL_LINK_INFO} && $local_node ;
 
 # display link information depending on the type of node
 # 	note that warp loses the __LOAD_PACKAGE information, but running in warp
@@ -1410,7 +1413,7 @@ else
 	}
 
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
-push @link_type, 'different pbsfile' if $dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile ;
+push @link_type, $local_node ? 'local node' : 'different pbsfile' ;
 
 my $link_type = @link_type ? ' [' . join(', ', @link_type) . ']' : '' ;
 
@@ -1431,7 +1434,7 @@ if ($pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENC
 
 			if (@traces)
 				{
-				$linked_node_info .= INFO2 "\n${indent}${indent}inserted at rule '$dependency->{__INSERTED_AT}{INSERTION_RULE_NAME}' trace:" ;
+				$linked_node_info .= INFO2 "\n${indent}${indent}inserted at rule '$dependency->{__INSERTED_AT}{INSERTION_RULE_NAME}':" ;
 
 				for my $trace (GetRuleTrace($pbs_config, $dependency->{__INSERTED_AT}{INSERTION_RULE_DEFINITION}, 1))
 					{

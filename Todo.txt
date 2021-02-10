@@ -1,21 +1,8 @@
+Do we need to have TARGET path set?
+
 pbs completion via pbs to be always up to date
-
-pbs completion script to two streams or give root name for files
-
-#Check.pm
-	display all nodes that are not subpbs depended but are inserted in a different
-	package than the inserting one
-
-	display_nodes_depended_in_different_package
-
-#reduce Pbsfile name in display
-
+	
 put new Pbsfiles/... in MANIFEST
-
-# DISPLAY_COMPACT_DEPEND_INFORMATION
-	is it needed?
-
-#cleanup modo example and add to distribution
 
 move rule_order tests to t/
 
@@ -47,10 +34,6 @@ bug trigger, in makefile releaser example trigger '.', build sequence hangs wait
 	what does it do except showing command before expansion?
 		ndpb is the one stopping node info to be shown
 
-#?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
-	we get the same digest and think it's the same thus nothing needs to be buid!
-	this happens when node say they are generated but are not and VIRTUAL is not set
-
 ?bug: warp doesn't care about variables, just node digests
 	definition on command line is ignore
 		that can be added to the pbs dependencies
@@ -63,7 +46,6 @@ bug trigger, in makefile releaser example trigger '.', build sequence hangs wait
 	
 	anything saved in package data or not serialized is lost
 
-Do we need to have TARGET path set?
 
 md5 stats doesn't work as checks are in sub processes 
 	merge stats
@@ -447,6 +429,25 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#pbs completion script to two streams or give root name for files
+
+#?bug, if node can't be read for digest generation, the has is set to "invalid md5", when we re-run pbs
+	we get the same digest and think it's the same thus nothing needs to be buid!
+	this happens when node say they are generated but are not and VIRTUAL is not set
+
+#Check.pm
+	display all nodes that are not subpbs depended but are inserted in a different
+	package than the inserting one
+
+	display_nodes_depended_in_different_package
+
+#reduce Pbsfile name in display
+
+# DISPLAY_COMPACT_DEPEND_INFORMATION
+	is it needed?
+
+#cleanup modo example and add to distribution
 
 #warn when many nodes are added in the same pbsfile
 

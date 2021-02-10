@@ -169,7 +169,7 @@ my @flags_and_help =
 		'',
 
 	'generate_bash_completion_script'   => \$pbs_config->{GENERATE_BASH_COMPLETION_SCRIPT},
-		'Output a bash completion script and exits.',
+		'create a bash completion script and exits.',
 		'',
 
 	'pp|pbsfile_pod'                    => \$pbs_config->{DISPLAY_PBSFILE_POD},
@@ -455,7 +455,10 @@ EOT
 		'',
 		
 	'nli|no_link_info'                => \$pbs_config->{NO_LINK_INFO},
-		'PBS won\'t display which dependency node are linked instead of generated.',
+		'PBS won\'t display which dependency node are linked instead for generated.',
+		'',
+	'nlli|no_local_link_info'                => \$pbs_config->{NO_LOCAL_LINK_INFO},
+		'PBS won\'t display linking to local nodes.',
 		'',
 	'no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
 		'PBS won\'t warn if a node has no dependencies but a matching rule.',
@@ -1521,6 +1524,21 @@ use Term::Bash::Completion::Generator ;
 
 sub GenerateBashCompletionScript
 {
+my $file_name = 'pbs_perl_completion' ;
+
+if (-e $file_name)
+	{
+	if (-e "$file_name.bak")
+		{
+		PrintWarning "PBS: backup file '$file_name.bak' for command completion exist, nothing generated\n" ;
+		return ;
+		}
+	else
+		{
+		rename $file_name, "$file_name.bak" ;
+		}
+	}
+
 my @flags_and_help = GetSwitches() ;
 
 my @switches ;
@@ -1534,8 +1552,15 @@ my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@swi
 
 my ($completion_command, $perl_script) = Term::Bash::Completion::Generator::generate_perl_completion_script('pbs', $completion_list, 1) ;
 
-print STDOUT $completion_command ;
-print STDERR $perl_script ;
+open my $completion_file, '+>', $file_name ;
+print $completion_file $perl_script ;
+chmod 0755, $completion_file ;
+
+use Cwd ;
+my $cwd = Cwd::getcwd() ;
+
+PrintInfo                                "# Bash completion script 'pbs_perl_completion' generated, add the completion to Bash with:\n" ;
+PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_completion' pbs\n" ;
 }
 
 #-------------------------------------------------------------------------------
