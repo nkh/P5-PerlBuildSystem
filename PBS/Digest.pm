@@ -787,7 +787,7 @@ for my $name (keys %force_patterns)
 
 #-------------------------------------------------------------------------------
 
-sub NodeIsSource { ! NodeIsGenerate(@_) }
+sub NodeIsSource { ! NodeIsGenerated(@_) }
 
 sub NodeIsGenerated
 {
@@ -1339,7 +1339,7 @@ if(NodeIsGenerated($node))
 
 	for my $dependency (grep { ! /^__/ } keys %$node)
 		{
-		$sources .= "\t'$dependency' => 1,\n" if NodeIsSource($dependency) ;
+		$sources .= "\t'$dependency' => 1,\n" if NodeIsSource($node->{$dependency}) ;
 		}
 
 	$sources .= "\t} ;\n" ;

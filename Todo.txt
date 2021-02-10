@@ -1,6 +1,15 @@
-Do we need to have TARGET path set?
+write the generate file in cmake in pbs
+	all the examples, including generation of subpbs and super build
+
+	can evaluate shell command be used as a templating function
+
+	comment that there is no use to re-generate anything
+
+#Do we need to have TARGET path set?
+	it has it's uses specially when showing dependencies with -dd
 
 pbs completion via pbs to be always up to date
+	? too slow
 	
 put new Pbsfiles/... in MANIFEST
 
@@ -56,7 +65,7 @@ md5 stats doesn't work as checks are in sub processes
 build regex
 	allows us to point at nodes to be build
 		the problem is that parallel build takes any node in any order, making it difficult
-		to debug a specfic node manually (or look at what's generated before it is build
+		to debug a specific node manually or look at what's generated before it is build
 
 broken in vi with color
 	first time goes to the file but not the line
@@ -95,7 +104,7 @@ Fix all examples in pbsfiles
 Roadmap 
 	*  is for next version, either not possible in current architecture or too little win for the effort
 	+  high prio
-	! don't
+	!  don't
 	-> some work done
 	#  done
 	?  still needs thinking (basic thinking, not details)
@@ -109,6 +118,7 @@ Roadmap
 				less data
 				on demand regeneration
 					we regenerate the nodes but very few are reused in non warp run
+					how long does the regeneration take?
 		distribution
 
 	Depend
@@ -172,6 +182,7 @@ Roadmap
 		light weight build node (just run commands know nothing about context)
 			gearman
 			? docker fs context
+			lihtWeightServer was removed from pbs code
 
 	Watch server
 		make robust using lib or other external server
@@ -216,10 +227,16 @@ Roadmap
 
 		#Zero ENV
 
-		rename pbs switches
+		+rename pbs switches
 
-		rename/alias ExcludeFromDigestGeneration
-			use REH_SOURCE
+		#rename/alias ExcludeFromDigestGeneration
+			use REH_SOURCE in pbs2 so a matching rule makes a node a source
+
+			so we replace SourcesMatch with rules, expensive but easier tot see when a rule was made a node
+			
+			rules that only manipulate the node without adding dependencies or building it could be considered
+			"meta data" rules and we could display them in a special way
+
 
 move package dependent digest data to runtime package
 	rather than in Digest.pm

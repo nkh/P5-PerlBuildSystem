@@ -91,10 +91,22 @@ $node_info .= $node_header unless $no_output ;
 $log_node_info .= $node_header ;
 
 #----------------------
+# is source
+#----------------------
+if(NodeIsSource($file_tree))
+	{
+	$current_node_info = WARNING2 "${tab}Type: 'source node', source node must exist not be generated.\n\n" ;
+	$log_node_info .= $current_node_info ;
+	$node_info     .= $current_node_info ;
+	}
+
+#----------------------
 # insertion origin
 #----------------------
 if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
+	$current_node_info = '' ;
+
 	if(exists $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}) # inserted and depended in different pbsfiles
 		{
 		my $origin = "${tab}Originated at rule: " 

@@ -978,29 +978,49 @@ $entry = eval "\"$entry\";" ;
 $entry =~ s/\x100/"/g ;
 
 # replace uppercase words by their values within the config
-while($entry =~ /\%([_A-Z0-9]+)/g)
+while($entry =~ /\%([_a-zA-Z0-9]+)/g)
 	{
 	my $element = $1 ;
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning "Eval: $config->{$1} doesn't exist @ $origin, @ '" . __FILE__ . "'\n" ;
+		PrintWarning "Eval: config '$element' doesn't exist @ $origin\n" ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning "Eval: $config->{$1} isn't defined @ $origin, @ '" . __FILE__ . "'\n" ;
+		PrintWarning "Eval: config '$element' isn't defined @ $origin\n" ;
 		$undefined_config++ ;
 		}
 
-	PrintInfo2 "Eval: $element => " . ($config->{$element} // 'undef') . " @ $origin, @ '" . __FILE__ . "'\n"
+	PrintInfo2 "Eval: '$element' => "
+			. (exists $config->{$element} && defined $config->{$element} ? $config->{$element} : 'undef')
+			. " @ $origin\n"
 		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 	
 
-$entry =~ s/\%([_A-Z0-9]+)/defined $config->{$1} ? $config->{$1} : "%$1"/eg ;
+$entry =~ s/\%([_a-zA-Z0-9]+)/
+	if(exists $config->{$1} && defined $config->{$1})
+		{
+		my $v = $config->{$1};
+
+		if('' eq ref $v)
+			{
+			$v
+			}
+		else
+			{
+			DumpTree $v, $1, DISPLAY_ADDRESS => 0 ;
+			}
+		}
+	else
+		{
+		"%$1"
+		}
+	/eg ;
 $entry =~ s/__PBS__PERCENT__/\%/g ;
 
 return $entry ;
