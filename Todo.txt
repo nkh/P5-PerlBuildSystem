@@ -1,3 +1,15 @@
+
+match once rules
+	then don̈́'t run again, scoped to one, we want them run first
+
+	-option to globally override and warn if match multiple times
+
+
+rule objects is never used in subpbs
+	but it could but it should be added when running the subpbs as top, IE TARGET_PATH eq ''
+
+
+
 write the generate file in cmake in pbs
 	all the examples, including generation of subpbs and super build
 

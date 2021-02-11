@@ -128,6 +128,47 @@ if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 	PrintWarning "Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
 	}
 
+if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
+	{
+	my $time = sprintf("%0.2f s.", tv_interval ($t0_depend, [gettimeofday])) ;
+	my $template = "Depend: %s, time: $time\n" ;
+	my $available = PBS::Output::GetScreenWidth() - length($template) ;
+
+	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
+
+	PrintInfo sprintf($template, $em->(GetRunRelativePath($pbs_config, $Pbsfile, 1))) ;
+	}
+	
+if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
+	{
+	my ($rule_name_max_length, $matches, $number_of_rules) = (0, 0, 0) ;
+
+	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+		{
+		my $length = length($rule->{NAME}) ;
+		$rule_name_max_length = $length if $length > $rule_name_max_length ; 
+
+		$number_of_rules++ ;
+		$matches += @{$rule->{STATS}{MATCHED} // []} ; 
+		}
+
+	$rule_name_max_length += 2 ; # for quotes
+
+	PrintInfo "Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
+			. "rules: $number_of_rules, "
+			#. "called: $rules->{User}[0]{STATS}{CALLED}, "
+			. "calls: " . $number_of_rules * $rules->{User}[0]{STATS}{CALLED} . ', '
+			. "matches: $matches, "
+			. "match rate: " . sprintf("%0.02f", $matches / ($number_of_rules * $rules->{User}[0]{STATS}{CALLED}))
+			. "\n" ;
+
+	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+		{
+		my $name = sprintf "%${rule_name_max_length}s", "'$rule->{NAME}'" ;
+		PrintInfo "\trule: $name, matched: " . scalar(@{$rule->{STATS}{MATCHED} // []}) . "\n" 
+		}
+	}
+
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 

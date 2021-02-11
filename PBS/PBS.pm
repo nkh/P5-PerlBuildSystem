@@ -412,46 +412,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 
 	$PBS::Output::indentation_depth-- ;
 
-	if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
-		{
-		my $time = sprintf("%0.2f s.", tv_interval ($t0, [gettimeofday])) ;
-		my $template = "Depend: time in Pbsfile: %s, time: $time\n" ;
-		my $available = PBS::Output::GetScreenWidth() - length($template) ;
-
-		my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
-
-		PrintInfo sprintf($template, $em->($Pbsfile)) ;
-		}
-		
-	if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
-		{
-		my ($rule_name_max_length, $matches, $number_of_rules) = (0, 0, 0) ;
-
-		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
-			{
-			my $length = length($rule->{NAME}) ;
-			$rule_name_max_length = $length if $length > $rule_name_max_length ; 
-
-			$number_of_rules++ ;
-			$matches += @{$rule->{STATS}{MATCHED} // []} ; 
-			}
-
-		$rule_name_max_length += 2 ; # for quotes
-
-		PrintInfo "Depend: '$Pbsfile', "
-				. "rules: $number_of_rules, "
-				. "called: $rules->{User}[0]{STATS}{CALLED}, "
-				. "calls: " . $number_of_rules * $rules->{User}[0]{STATS}{CALLED} . ', '
-				. "matches: $matches, "
-				. "match rate: " . sprintf("%0.02f", $matches / ($number_of_rules * $rules->{User}[0]{STATS}{CALLED}))
-				. "\n" ;
-
-		for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
-			{
-			my $name = sprintf "%${rule_name_max_length}s", "'$rule->{NAME}'" ;
-			PrintInfo "\trule: $name, matched: " . scalar(@{$rule->{STATS}{MATCHED} // []}) . "\n" 
-			}
-		}
 		
 	# save meso file here
 

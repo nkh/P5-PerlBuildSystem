@@ -261,10 +261,10 @@ for my $node (@$build_sequence)
 		
 		if(defined $node->{__CHILDREN_TO_BUILD} && exists $node->{$child}{__TRIGGERED} && defined $node->{$child}{__BUILD_DONE})
 			{
-			$already_built_nodes{$child}++ ;
+			#$already_built_nodes{$child}++ ;
 			$node->{__CHILDREN_TO_BUILD}-- ;
 
-			PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child'\n" ;
+			#PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child'\n" ;l
 			}
 		}
 
@@ -288,10 +288,7 @@ for my $node (@$build_sequence)
 		}
 	}
 	
-	if ($pbs_config->{DISPLAY_JOBS_INFO})
-		{
-		PrintInfo2 "Build: already built node: '$_' ($already_built_nodes{$_})\n" for (sort keys %already_built_nodes) ;
-		}
+	#PrintInfo2 "Build: already built node: '$_' ($already_built_nodes{$_})\n" for (sort keys %already_built_nodes) ;
 
 return($build_queue, $number_of_terminal_nodes, \@level_statistics) ;
 }

@@ -27,11 +27,14 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG COLOR
-		PrintColor
+		ERROR WARNING WARNING2 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
+		_ERROR_ _WARNING_ _WARNING2_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _USER_ _SHELL_ _DEBUG_
+
+		COLOR PrintColor PrintNoColor PrintVerbatim
+
 		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintUser PrintShell PrintDebug
+
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
-		PrintNoColor PrintVerbatim
 		GetColor
 
 		GetRunRelativePath
@@ -114,7 +117,7 @@ else
 
 sub COLOR
 {
-use Carp ;
+#use Carp ;
 #print Carp::longmess() ;
 
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
@@ -129,16 +132,16 @@ $string =~ s/\n(.)/$reset\n$color$indent$1/g ;
 return $color. $string . $reset ;
 }
 
-sub ERROR { return COLOR('error', @_) }
-sub WARNING  { return COLOR('warning', @_) }
-sub WARNING2 { return COLOR('warning_2', @_) }
-sub INFO { return COLOR('info', @_) }
-sub INFO2 { return COLOR('info_2', @_) }
-sub INFO3 { return COLOR('info_3', @_) }
-sub INFO4 { return COLOR('info_4', @_) }
-sub USER { return COLOR('user', @_) }
-sub SHELL { return COLOR('shell', @_) }
-sub DEBUG { return COLOR('debug', @_) }
+sub ERROR { return COLOR('error', @_) }           sub _ERROR_ { return COLOR('error', @_, 0) }
+sub WARNING  { return COLOR('warning', @_) }      sub _WARNING_  { return COLOR('warning', @_, 0) }
+sub WARNING2 { return COLOR('warning_2', @_) }    sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
+sub INFO { return COLOR('info', @_) }             sub _INFO_ { return COLOR('info', @_, 0) }
+sub INFO2 { return COLOR('info_2', @_) }          sub _INFO2_ { return COLOR('info_2', @_, 0) }
+sub INFO3 { return COLOR('info_3', @_) }          sub _INFO3_ { return COLOR('info_3', @_, 0) }
+sub INFO4 { return COLOR('info_4', @_) }          sub _INFO4_ { return COLOR('info_4', @_, 0) }
+sub USER { return COLOR('user', @_) }             sub _USER_ { return COLOR('user', @_, 0) }
+sub SHELL { return COLOR('shell', @_) }           sub _SHELL_ { return COLOR('shell', @_, 0) }
+sub DEBUG { return COLOR('debug', @_) }           sub _DEBUG_ { return COLOR('debug', @_, 0) }
 
 
 #-------------------------------------------------------------------------------
@@ -344,8 +347,7 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 	my $cwd = Cwd::getcwd() ;
 	$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
 
-	my $target_path = $pbs_config->{TARGET_PATH} ;
-	$file =~ s/\Q$target_path/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g unless $no_target_path ;
+	$file =~ s/$pbs_config->{TARGET_PATH}/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g unless $no_target_path ;
 
 	$file =~ s/$_/PBS_LIB\//g for (@{$pbs_config->{LIB_PATH}}) ;
 	}

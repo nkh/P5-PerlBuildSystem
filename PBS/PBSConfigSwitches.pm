@@ -438,16 +438,8 @@ EOT
 		'Dependencies Linking from other Pbsfile stops the build if any local rule can match.',
 		'',
 
-	'nsi|no_subpbs_info'              => \$pbs_config->{NO_SUBPBS_INFO},
-		'Dependency information will be displayed on the same line for all depend.',
-		'',
-		
-	'ds|display_subpbs_start'         => \$pbs_config->{DISPLAY_DEPENDENCY_INFO},
-		'Display a message when depending a node in a subpbs.',
-		'',
-		
-	'dsi|display_subpbs_start_info'                => \$pbs_config->{SUBPBS_FILE_INFO},
-		'PBS displays the sub pbs file name.',
+	'dsi|display_subpbs_info'         => \$pbs_config->{DISPLAY_SUBPBS_INFO},
+		'Display extra information for nodes matching a subpbs rule.',
 		'',
 		
 	'allow_virtual_to_match_directory'    => \$pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY},
@@ -790,7 +782,7 @@ When PBS searches for a node in the source directories, it stops at the first fo
 if you have multiple source directories, you might want to see the files 'PBS' didn't choose.
 The first one will still be choosen.
 
-  $>perl pbs.pl -o -sd ./d1 -sd ./d2 -sd . -dsi -daa -c all
+  $>perl pbs.pl -o -sd ./d1 -sd ./d2 -sd . -daa -c all
   ...
 
   Trying ./a.c @  /home/nadim/Dev/PerlModules/PerlBuildSystem-0.05/d1/a.c: Relocated. s: 0 t: 15-2-2003 20:54:57
@@ -891,6 +883,10 @@ EOT
 		
 	'ddmr|display_dependency_matching_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
 		'Display the rule which matched the node.',
+		'',
+		
+	'ddfp|display_dependency_full_pbsfile'   => \$pbs_config->{DISPLAY_DEPENDENCIES_FULL_PBSFILE},
+		'in conjonction with --display_dependency_matching_rule, display the fullpbsfile path rather than relative to target.',
 		'',
 		
 	'ddir|display_dependency_insertion_rule' => \$pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE},

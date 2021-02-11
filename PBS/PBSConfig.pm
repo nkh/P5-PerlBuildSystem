@@ -187,15 +187,15 @@ $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROC
 # check the options
 if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	$pbs_config->{NO_SUBPBS_INFO}++ ;
-	delete $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+	undef $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
 	}
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
 
 if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
 	{
-	delete $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 	}
 	
 if(defined $pbs_config->{DISPLAY_PROGRESS_BAR})
@@ -250,11 +250,6 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	$pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME}++ ;
 	}
 
-if($pbs_config->{NO_SUBPBS_INFO} || defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
-	{
-	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
-	}
-
 if($pbs_config->{TIME_BUILDERS})
 	{
 	$pbs_config->{DISPLAY_TOTAL_BUILD_TIME}++ ;
@@ -285,7 +280,7 @@ if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	}
 else
 	{
-	push @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}}, '.*' ;
+	push @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}}, '.' ;
 	}
 
 $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} = undef if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}) ;
