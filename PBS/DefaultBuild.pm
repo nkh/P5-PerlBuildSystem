@@ -78,8 +78,6 @@ $target_string .= $em->($_) for (@$targets) ;
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
-PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
-
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: nodes: $start_nodes [$pbs_runs/$PBS::Output::indentation_depth]", 0)) ;

@@ -1,0 +1,22 @@
+Config a=>111, B =>[1,2] ;
+SourcesMatch qr/source$/ ;
+
+rule 'all', ['all' => 'source::SRC'],
+	<<EOC ;
+echo "
+
+%FILE_TO_BUILD
+
+more lines
+
+%a
+%B
+
+%SRC
+
+bla
+
+" > %FILE_TO_BUILD
+EOC
+
+

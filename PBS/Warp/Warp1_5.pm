@@ -79,7 +79,7 @@ if(-e $warp_file)
 	
 	if(! defined $version || $version != $VERSION)
 		{
-		PrintWarning2("Warp: version mismatch.\n") ;
+		PrintWarning("Warp: version mismatch.\n") ;
 		$run_in_warp_mode = 0 ;
 		}
 
@@ -185,15 +185,15 @@ if($run_in_warp_mode)
 			sprintf
 				(
 				"Warp: $info, load time: %0.2f s., check time: %0.2f s.\n",
-				$warp_load_time, $warp_verification_time) ;
+				$warp_load_time, $warp_verification_time
+				) ;
 		}
 
 	if($number_of_removed_nodes)
 		{
 		unless($pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS})
 			{
-			$pbs_config->{NO_LINK_INFO} = 1 ;
-			$pbs_config->{NO_LOCAL_MATCHING_RULES_INFO} = 1 ;
+			$pbs_config->{NO_WARP_NODE_LINK_INFO} = 1 ;
 			}
 			
 		# we can't  generate a warp file while warping.
@@ -415,8 +415,7 @@ for my $file (sort {($warp_dependents->{$b}{LEVEL} // 0)  <=> ($warp_dependents-
 
 	if ($pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_triggered)
 		{
-		PrintInfo "Warp: pruning\n" ;
-		
+		PrintInfo  "Warp: pruning\n" ;
 		PrintInfo2 $PBS::Output::indentation . "$_\n" for sort @nodes_triggered ;
 		}
 	}
@@ -583,7 +582,7 @@ for my $node (@$nodes_to_check)
 		{
 		if ($remove_this_node)
 			{
-			PrintInfo "\e[KWarp: " . WARNING('Removing') . INFO3(" '$node'") . WARNING(" [" . join(' ,', @reasons) . "]\n") ;
+			PrintInfo "\e[KWarp: removing: " . INFO3("'$node'") . INFO2(" [" . join(' ,', @reasons) . "]\n") ;
 			}
 		else
 			{
@@ -778,13 +777,12 @@ for my $node_name (keys %$inserted_nodes)
 		$new_nodes++ ;
 		$nodes{$node_name}{__VIRTUAL} = 1 if(exists $node->{__VIRTUAL}) ;
 			
+		my $node_is_source = NodeIsSource($node) ;
+		$nodes{$node_name}{__IS_SOURCE} = $node_is_source ;
+
 		if(exists $node->{__LOAD_PACKAGE})
 			{
-			if(NodeIsSource($node))
-				{
-				# remember which node is terminal for later optimization
-				$nodes{$node_name}{__TERMINAL} = 1 ;
-				}
+			$nodes{$node_name}{__TERMINAL} = 1 if $node_is_source
 			}
 		elsif(exists $node->{__TERMINAL})
 			{

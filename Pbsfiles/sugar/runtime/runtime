@@ -2,6 +2,10 @@ Rule 'runtime', ['*/runtime' => 'depended_somewhere_else', 'local'] ;
 
 SourcesMatch qr/a$/, qr/b$/ ;
 
-Rule 'depended_somewhere_else', ['depended_somewhere_else' => qw (a b)] ;
-Rule 'local', ['local' => qw (a b), 'compiler_1/compiler_1.test'] ;
+Rule 'depended_somewhere_else', ['depended_somewhere_else' => qw (a b depended)] ;
+Rule 'local', ['local' => qw (a b no_dependencies), 'compiler_1/compiler_1.test'] ;
+
+Rule 'no dependencies', ['no_dependencies'];
+
+Rule 'depended', ['depended' => 'X' ] ;
 

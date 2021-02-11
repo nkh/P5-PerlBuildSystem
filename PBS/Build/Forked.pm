@@ -47,7 +47,7 @@ my ($pbs_config, $build_sequence, $inserted_nodes)  = @_ ;
 $pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
 undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
-my ($build_queue, $number_of_terminal_nodes, $level_statistics, $removed_nodes) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
+my ($build_queue, $number_of_terminal_nodes, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
 my $distributor        = PBS::Distributor::CreateDistributor($pbs_config, $build_sequence) ;
 my $number_of_builders = GetNumberOfBuilders($number_of_terminal_nodes, $pbs_config, $distributor) ;
@@ -57,7 +57,8 @@ my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
 my $number_of_nodes_to_build = scalar(grep {$_->{__NAME} !~ /^__/} @$build_sequence) ; # remove PBS root
-$number_of_nodes_to_build -= $removed_nodes ;
+
+#$number_of_nodes_to_build -= $removed_nodes ;
 
 my $node_build_index = 0 ;
 
@@ -204,7 +205,8 @@ if ($number_of_failed_builders)
  
 	for my $failed_node (@failed_nodes)
 		{
-		PrintError "Build: failed, " . INFO3("node: '$failed_node->{__NAME}',", 0) . INFO2(" file: '$failed_node->{__BUILD_NAME}'\n", 0) ;
+		PrintError "Build: failed: " . INFO3("'$failed_node->{__NAME}'\n", 0) ;
+				 #. INFO2(", '" . GetRunRelativePath($pbs_config, $failed_node->{__BUILD_NAME}) . "'\n", 0) ;
 		}
 	}
 
@@ -246,7 +248,7 @@ sub EnqueuTerminalNodes
 my ($build_sequence, $pbs_config) = @_ ;
 
 my ($build_queue, $number_of_terminal_nodes, @level_statistics) = (List::PriorityQueue->new, 0) ;
-my (%removed_nodes, @enqueued_nodes) ;
+my (%already_built_nodes, @enqueued_nodes) ;
 
 for my $node (@$build_sequence)
 	{
@@ -259,9 +261,10 @@ for my $node (@$build_sequence)
 		
 		if(defined $node->{__CHILDREN_TO_BUILD} && exists $node->{$child}{__TRIGGERED} && defined $node->{$child}{__BUILD_DONE})
 			{
-			$removed_nodes{$node->{$child}{__NAME}}++ ;
+			$already_built_nodes{$child}++ ;
 			$node->{__CHILDREN_TO_BUILD}-- ;
-			PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child' \n" ;
+
+			PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child'\n" ;
 			}
 		}
 
@@ -285,13 +288,12 @@ for my $node (@$build_sequence)
 		}
 	}
 	
-if(defined $pbs_config->{DISPLAY_JOBS_INFO} && scalar(keys %removed_nodes))
-	{
-	PrintInfo2 "Build: removing node: '$_' ($removed_nodes{$_})\n" for sort keys %removed_nodes ;
-	}
-			
-	
-return($build_queue, $number_of_terminal_nodes, \@level_statistics, scalar(keys %removed_nodes) ) ;
+	if ($pbs_config->{DISPLAY_JOBS_INFO})
+		{
+		PrintInfo2 "Build: already built node: '$_' ($already_built_nodes{$_})\n" for (sort keys %already_built_nodes) ;
+		}
+
+return($build_queue, $number_of_terminal_nodes, \@level_statistics) ;
 }
 
 #----------------------------------------------------------------------------------------------------------------------
@@ -346,8 +348,12 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 				
 	unless(defined $builder_channel)
 		{
-		PrintError "Build: Couldn't start build process #$_!\n" ;
+		PrintError "Build: Couldn't start build process #$builder_index\n" ;
 		die "\n" ;
+		}
+	else
+		{
+		PrintWarning "Build: started build process #$builder_index\n" if defined $pbs_config->{DISPLAY_JOBS_RUNNING} ;
 		}
 	
 	print $builder_channel "GET_PROCESS_ID" . "__PBS_FORKED_BUILDER__" . "\n";

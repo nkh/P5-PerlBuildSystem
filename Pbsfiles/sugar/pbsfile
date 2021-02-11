@@ -6,9 +6,11 @@ Config
 
 	MODULES => 'compiler_1 compiler_2' ;
 
-Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests', 'depended_somewhere_else'] => BuildOk("Done 'oct'") ;
+Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'tests', 'depended_somewhere_else', 'depended'] => BuildOk("Done 'oct'") ;
 MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
 
+SourcesMatch qr/X$/ ;
+Rule 'depended', ['depended' => 'X' ] ;
 
 Module '*/compiler_1' => 'compiler/compiler' ;
 AddSubpbsRule '*/runtime' => 'runtime/runtime' ;

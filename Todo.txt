@@ -1,7 +1,8 @@
 write the generate file in cmake in pbs
 	all the examples, including generation of subpbs and super build
 
-	can evaluate shell command be used as a templating function
+	#can evaluate shell command be used as a templating function
+		barely but it now renders references via DTD
 
 	comment that there is no use to re-generate anything
 

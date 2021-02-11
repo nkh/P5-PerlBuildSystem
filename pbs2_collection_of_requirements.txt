@@ -1,4 +1,26 @@
 
+Do we need 'Rule'
+
+	Match 'all' => qr/all/, Match(something else) # more than 2 arguments act like Rule
+		reh,
+		reh ;
+
+	rule 'all',
+		Match qr/all',
+		Match(something else),
+		reh,
+		reh ;
+		
+
+	rule 'all' => qr/all/, Match(something else)
+		reh,
+		reh ;
+
+	rule 'all' => Match => qr/all', Match(something else, return tupple), # rule finds tuples and runs REH
+		reh,
+		reh ;
+		
+
 multiple matching pbsfiles rules
 	we want to be able to match multiple times a node that is to be depended in a obsfile
 		for example to add switches to the subpbs run

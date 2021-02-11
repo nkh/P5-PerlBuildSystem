@@ -702,6 +702,7 @@ if($type eq 'Pbsfile')
 	my $available = PBS::Output::GetScreenWidth() ;
 	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'left' });
 
+	PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 	PrintInfo3("PBS: loading '" . $em->($file) ."'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)

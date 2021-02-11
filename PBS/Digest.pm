@@ -793,24 +793,34 @@ sub NodeIsGenerated
 {
 my($node) = @_ ;
 
-PBS::Digest::IsDigestToBeGenerated
-	(
-	exists $node->{__MATCHING_RULES} && @{$node->{__MATCHING_RULES}} > 0
-		? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
-		: $node->{__LOAD_PACKAGE},
+if(exists $node->{__LOAD_PACKAGE})
+	{
+	PBS::Digest::IsDigestToBeGenerated
+		(
+		exists $node->{__MATCHING_RULES} && @{$node->{__MATCHING_RULES}} > 0 
+			? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+			: $node->{__LOAD_PACKAGE},
 
-	$node
-	) ; 
+		$node
+		) ; 
+	}
+else
+	{
+	# warp node
+	$node->{__NODE_IS_SOURCE} ;
+	}
 }
 
 sub DependencyIsSource
 {
 my($dependent, $node_name, $inserted_nodes) = @_ ;
+#PrintDebug DumpTree [$dependent, $inserted_nodes->{$node_name}], $node_name, MAX_DEPTH => 4 ;
 
 my $is_source ;
 if (exists $inserted_nodes->{$node_name})
 	{
-	my $package = @{$inserted_nodes->{$node_name}{__MATCHING_RULES}} > 0
+	my $package = exists $inserted_nodes->{$node_name}{__MATCHING_RULES} 
+			&& @{$inserted_nodes->{$node_name}{__MATCHING_RULES}} > 0
 				? $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: exists $dependent->{__MATCHING_RULES}
 					? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
@@ -841,6 +851,8 @@ $is_source
 sub IsDigestToBeGenerated
 {
 my ($package, $node) = @_ ;
+use Carp ;
+PrintDebug confess() unless defined $package ;
 
 my $node_name  = $node->{__NAME} ;
 my $pbs_config = $node->{__PBS_CONFIG} ;

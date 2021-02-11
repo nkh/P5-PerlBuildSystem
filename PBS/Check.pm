@@ -132,26 +132,34 @@ if (NodeIsGenerated($tree))
 		$depended_at .= $rule->{LINE} ;
 		}
 
-	PrintWarning "Check: '$name' inserted and depended in different pbsfiles\n"
-			. INFO2("${indent}inserted: $inserted_at\n", 0)
-			. INFO2("${indent}depended: $depended_at\n", 0)
+	PrintInfo "Check: " . INFO3("'$name'", 0) , WARNING(" inserted and depended in different pbsfiles", 0)
+			. INFO2(", inserted: $inserted_at", 0)
+			. INFO2(", depended: $depended_at", 0)
+			. "\n"
 		if $depend_in_different_package && $pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} ;
 
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		PrintWarning "Check: '$name' no dependencies"
-			. ($matching_rules ? ", rules: $matching_rules\n" : ", no matching rules\n")
-			. INFO2("${indent}inserted: $inserted_at\n", 0)
+		PrintInfo "Check: "
+			. INFO3("'$name'", 0)
+			. WARNING
+				(
+				" no dependencies"
+				. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
+				, 0
+				)
+			. INFO2(", inserted: $inserted_at", 0)
 
 			# display different depend package if not already displayed
 			. ($depend_in_different_package && !$pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} 
-				? INFO2("${indent}depended: $depended_at\n", 0) 
+				? INFO2(", depended: $depended_at", 0) 
 				: '')
+			. "\n"
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{
-		PrintWarning "Check: $name', no matching rules\n". INFO2("\tinserted: $inserted_at\n", 0) ;
+		PrintInfo "Check: " . INFO3("'$name'", 0) . WARNING(" no matching rules", 0). INFO2(", inserted: $inserted_at\n", 0) ;
 		}
 	}
 
@@ -181,7 +189,7 @@ $tree->{__BUILD_NAME} = $full_name ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
 	{
-	PrintInfo "node: " . INFO3($name) 
+	PrintInfo "Check: node: " . INFO3($name) 
 			. INFO2($is_alternative_source ? ' -> [R]' : '')
 			. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
 			. "\n" ;

@@ -1375,56 +1375,91 @@ sub LinkNode
 {
 my ($pbs_config, $dependency_name, $tree, $inserted_nodes, $Pbsfile, $config, $dependency_rules, $rule_index) = @_ ;
 
-# user defined plugin which can fail the graph generation
 RunPluginSubs($pbs_config, 'CheckLinkedNode', @_) ;
 
-my $indent = $PBS::Output::indentation ;
-
-# the dependency already exists within the graph, link to it
+# link node 
 $tree->{$dependency_name} = $inserted_nodes->{$dependency_name} ;
 $tree->{$dependency_name}{__LINKED}++ ;
 
-my $display_linked_node_info = 0 ;
-$display_linked_node_info++ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO})) ;
+my $dependency = $inserted_nodes->{$dependency_name} ;
 
-my $rule_name =  $dependency_rules->[$rule_index]{NAME} ;
-my $rule_info =  $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+return if $pbs_config->{NO_WARP_NODE_LINK_INFO} && exists $dependency->{__WARP_NODE} ;
 
-my ($dependency, @link_type) = ( $inserted_nodes->{$dependency_name} ) ;
+my $dependency_is_source = DependencyIsSource($tree, $dependency_name, $inserted_nodes) ;
 
-my $local_node = $dependency->{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile ;
-return if $pbs_config->{NO_LOCAL_LINK_INFO} && $local_node ;
+my $display_linked_node_info = $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && (! $pbs_config->{NO_LINK_INFO}) ;
+my $indent = $PBS::Output::indentation ;
 
-# display link information depending on the type of node
-# 	note that warp loses the __LOAD_PACKAGE information, but running in warp
-#	removed the warnings unless --display_warp_generated_warnings is used, we still
-#	are missing __LOAD_PACKAGE information and we just approximate it with the current node's __LOAD_PACKAGE 
-if(DependencyIsSource($tree, $dependency->{__NAME}, $inserted_nodes))
+my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
+my $rule_info = $rule_name . $dependency_rules->[$rule_index]{ORIGIN} ;
+
+my ($local_node, $error_linking, $local_rule_info) = (0, 0, '') ;
+
+if($dependency->{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile)
 	{
-	push @link_type, 'source' ;
-
-	push @link_type, 'warning: depended' if exists $dependency->{__DEPENDED} ;
-	push @link_type, 'warning: has dependencies' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	$local_node++ ;
+	return if $pbs_config->{NO_LOCAL_LINK_INFO} ;
 	}
 else
 	{
+	$error_linking++ if $pbs_config->{NO_EXTERNAL_LINK} ;
+	
+	if (exists $dependency->{__DEPENDED} && ! $pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
+		{
+		for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
+			{
+			my ($dependency_result) =
+				 $dependency_rules->[$rule_index]{DEPENDER}->
+					(
+					$dependency_name, $config, $dependency, $inserted_nodes,
+					 $dependency_rules->[$rule_index]
+					) ;
+
+			if($dependency_result->[0])
+				{
+				$local_rule_info .= USER "${indent}${indent}ignoring local rules:\n" if $local_rule_info eq '' ;
+
+				$local_rule_info .= USER "${indent}${indent}${indent}$rule_index:"
+							. GetRunRelativePath
+								(
+								$pbs_config,
+								$dependency_rules->[$rule_index]{NAME} . ':'
+								. $dependency_rules->[$rule_index]{FILE} . ':'
+								. $dependency_rules->[$rule_index]{LINE}
+								)
+							. "\n" ;
+
+				$display_linked_node_info++ ;
+				} 
+			}
+		}
+	}
+
+my ($linked_node_info, @link_type) = (INFO("${indent}linking node ")) ;
+
+push @link_type, $local_node ? 'local node' : 'different pbsfile' ;
+push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
+
+if($dependency_is_source)
+	{
+	$linked_node_info .= WARNING "'$dependency_name'", 0 ;
+
+	push @link_type, 'source' ;
+
+	push @link_type, 'depended' if exists $dependency->{__DEPENDED} ;
+	push @link_type, 'has dependencies' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	}
+else
+	{
+	$linked_node_info .= INFO3 "'$dependency_name'", 0  ;
+
 	push @link_type, 'not depended' unless exists $dependency->{__DEPENDED} ;
 	push @link_type, 'no dependencies' unless scalar ( grep { ! /^__/ } keys %$dependency ) ;
 	}
 
-push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
-push @link_type, $local_node ? 'local node' : 'different pbsfile' ;
+$linked_node_info .= INFO2 ' [' . join(', ', @link_type) . ']', 0 ;
 
-my $link_type = @link_type ? ' [' . join(', ', @link_type) . ']' : '' ;
-
-my $linked_node_info = INFO("${indent}linking node ")
-			. (DependencyIsSource($tree, $dependency_name, $inserted_nodes)
-				? WARNING("'$dependency_name'", 0)
-				: INFO3("'$dependency_name'", 0)) ;
-
-$linked_node_info .= INFO2 $link_type, 0 ;
-
-if ($pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE})
+if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE})
 	{
 	if ($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 		{
@@ -1483,42 +1518,11 @@ if ($pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENC
 	}
 
 $linked_node_info .= "\n" ;
-	
-if($dependency->{__INSERTED_AT}{INSERTION_FILE} ne $Pbsfile)
-	{
-	die ERROR("Error: --no_external_link switch specified, stop.\n") if defined $pbs_config->{DEBUG_NO_EXTERNAL_LINK} ;
-		
-	unless($pbs_config->{NO_LOCAL_MATCHING_RULES_INFO})
-		{
-		my @local_rules_matching ;
-		
-		for(my $matching_rule_index = 0 ; $matching_rule_index < @$dependency_rules ; $matching_rule_index++)
-			{
-			my ($dependency_result) = $dependency_rules->[$matching_rule_index]{DEPENDER}->($dependency_name, $config, $dependency, $inserted_nodes, $dependency_rules->[$matching_rule_index]) ;
-			push @local_rules_matching, $matching_rule_index if($dependency_result->[0]) ;
-			}
-		
-		if(exists $dependency->{__DEPENDED} && @local_rules_matching)
-			{
-			my @local_rules_matching_info ;
-			
-			for my $matching_rule_index (@local_rules_matching)
-				{
-				push @local_rules_matching_info, 
-					"$matching_rule_index:"
-					. $dependency_rules->[$matching_rule_index]{NAME}
-					. $dependency_rules->[$matching_rule_index]{ORIGIN} ;
-				}
-			
-			$linked_node_info .= USER( "${indent}Ignoring local rules:\n") ;
-			$linked_node_info .= USER( "${indent}${indent}$_\n") for (@local_rules_matching_info) ;
 
-			$display_linked_node_info++ ;
-			}
-		}
-	}
+PrintNoColor $linked_node_info . $local_rule_info if $display_linked_node_info || $error_linking ;
 
-PrintNoColor $linked_node_info if $display_linked_node_info ;
+PrintError "Depend: error linking to non local node\n" if $error_linking ;
+die "\n" if $error_linking ;
 }
 
 #-------------------------------------------------------------------------------
