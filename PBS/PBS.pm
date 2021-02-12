@@ -25,16 +25,14 @@ use PBS::PBSConfig ;
 use PBS::Output ;
 use PBS::DefaultBuild ;
 use PBS::Config ;
-use PBS::Rules ;
-use PBS::Depend ;
-use PBS::Build ;
-use PBS::Shell ;
-use PBS::Output ;
 use PBS::Constants ;
-use PBS::Digest;
 
 use Digest::MD5 qw(md5_hex) ;
 use String::Truncate ;
+use File::Slurp ;
+use File::Basename ;
+use File::Path ;
+use List::Util qw(any) ;
 
 #-------------------------------------------------------------------------------
 
@@ -61,50 +59,95 @@ sub GetPbsRuns
 return($pbs_runs) ;
 }
 
+my ($stdout, $stderr) ; # before any call to DefaultBuild
+my @output_stack ; # display subpbs after ourself
+
 sub Pbs
+{
+my (undef, undef, undef, undef, $pbs_config) = @_ ;
+
+if(!$pbs_config->{DEPEND_LOG})
+	{
+	_Pbs(@_) ;
+	}
+else
+	{
+	$stdout = fileno(STDOUT) unless defined $stdout;
+	$stderr = fileno(STDERR) unless defined $stderr;
+
+	my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
+
+	my $package = CanonizePackageName($pbs_config->{PACKAGE}) ;
+	my $redirection_file = $pbs_config->{BUILD_DIRECTORY} . "/$targets->[0]" ; 
+	$redirection_file =~ s/\/\.\//\//g ;
+
+	my ($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
+
+	mkpath($path) unless(-e $path) ;
+
+	$redirection_file = $path . '/.' . $basename . $ext . ".$package.pbs_depend_log" ;
+
+	open my $OLDOUT, ">&STDOUT" ;
+	open STDOUT,  "|-", " tee $redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
+	STDOUT->autoflush(1) ;
+
+	open my $OLDERR, ">&STDERR" ;
+	open STDERR, '>>&STDOUT' ;
+
+	print $OLDOUT '' ;
+	print $OLDERR '' ;
+
+	my @result ;
+
+	eval { @result = _Pbs(@_) } ;
+
+	open STDERR, '>&' . fileno($OLDERR) ;
+	open STDOUT, '>&' . fileno($OLDOUT) ;
+
+	if($stdout == fileno(STDOUT))
+		{
+		#print STDERR read_file($redirection_file) ;
+		#print STDERR read_file($_) for @output_stack ;
+		}
+	else
+		{
+		#unshift @output_stack, $redirection_file ;
+		}
+		
+	die $@ if $@ ;
+	return @result ;
+	}
+}
+
+sub _Pbs
 {
 my $t0 = [gettimeofday];
 $PBS::Output::indentation_depth++ ;
 $pbs_runs++ ;
 
-my $pbsfile_chain        = shift // [] ;
-my $pbsfile_rule_name    = shift ;
-my $Pbsfile              = shift ;
-my $parent_package       = shift ;
-my $pbs_config           = shift ;
-my $parent_config        = shift ;
+my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
+
+die unless $dependency_tree_name ;
+$pbsfile_chain      //= [] ;
+
 my $package              = CanonizePackageName($pbs_config->{PACKAGE}) ;
 my $build_directory      = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories   = $pbs_config->{SOURCE_DIRECTORIES} ;
-my $targets              = shift ;
 my $target_names         = join ', ', @$targets ;
-my $inserted_nodes       = shift ;
-my $dependency_tree_name = shift || die ;
-my $depend_and_build     = shift ;
-
 
 my $original_ENV_size = scalar(keys %ENV) ;
 
-for (sort keys %ENV)
+for my $env (sort keys %ENV)
 	{
-	my $keep ;
-
-	for my $keep_regex ( @{$pbs_config->{KEEP_ENVIRONMENT}})
+	my $keep = any { $env =~ $_ } @{$pbs_config->{KEEP_ENVIRONMENT}} ;
+	if($keep)
 		{
-		if (/$keep_regex/)
-			{
-			$keep = $keep_regex ; last ;
-			}
-		}
-
-	if(defined $keep)
-		{
-		PrintInfo3 "ENV: keeping  '$_' => " . INFO2("'$ENV{$_}'\n") if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		PrintInfo3 "ENV: keeping  '$env' => " . INFO2("'$ENV{$env}'\n") if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
 		}
 	else
 		{ 
-		PrintWarning "ENV: removing '$_' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $pbs_runs == 1 ;
-		delete $ENV{$_} ;
+		PrintWarning "ENV: removing '$env' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $pbs_runs == 1 ;
+		delete $ENV{$env} ;
 		}
 	}
 
@@ -283,37 +326,47 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		my $pbsfile_digest = md5_hex($pbs_config->{PBSFILE_CONTENT}) ;
 		$add_pbsfile_digest = "PBS::Digest::AddVariableDependencies(PBSFILE => '$pbsfile_digest') ;\n"
 		}
-		
-	LoadFileInPackage
-		(
-		'Pbsfile',
-		$Pbsfile,
-		$load_package,
-		$pbs_config,
-		"use strict ;\n"
-		  . "use warnings ;\n"
-		  . "use PBS::Constants ;\n"
-		  . "use PBS::Shell ;\n"
-		  . "use PBS::Output ;\n"
-		  . "use PBS::Rules ;\n"
-		  . "use PBS::Triggers ;\n"
-		  . "use PBS::PostBuild ;\n"
-		  . "use PBS::PBSConfig ;\n"
-		  . "use PBS::Config ;\n"
-		  . "use PBS::Check ;\n"
-		  . "use PBS::PBS ;\n"
-		  . "use PBS::Digest;\n"
-		  . "use PBS::Rules::Creator;\n"
-		  . "use PBS::Plugin;\n"
 	
-		  # todo: add pbs distribution to the dependencies
-		  # my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
-		  # "PBS::Digest::AddFileDependencies('/home/nadim/perl5/lib/perl5/PBS/Wizard.pm', 'pbs_wizard') ;\n"
+	eval 
+		{
+		LoadFileInPackage
+			(
+			'Pbsfile',
+			$Pbsfile,
+			$load_package,
+			$pbs_config,
+			"use strict ;\n"
+			  . "use warnings ;\n"
+			  . "use PBS::Constants ;\n"
+			  . "use PBS::Shell ;\n"
+			  . "use PBS::Output ;\n"
+			  . "use PBS::Rules ;\n"
+			  . "use PBS::Rules::Scope ;\n"
+			  . "use PBS::Triggers ;\n"
+			  . "use PBS::PostBuild ;\n"
+			  . "use PBS::PBSConfig ;\n"
+			  . "use PBS::Config ;\n"
+			  . "use PBS::Check ;\n"
+			  . "use PBS::PBS ;\n"
+			  . "use PBS::Digest;\n"
+			  . "use PBS::Rules::Creator;\n"
+			  . "use PBS::Plugin;\n"
+		
+			  # todo: add pbs distribution to the dependencies
+			  # my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
+			  # "PBS::Digest::AddFileDependencies('/home/nadim/perl5/lib/perl5/PBS/Wizard.pm', 'pbs_wizard') ;\n"
 
-		  . $add_pbsfile_digest,
-		  
-		"\n# load OK\n1 ;\n",
-		) ;
+			  . $add_pbsfile_digest,
+			  
+			"\n# load OK\n1 ;\n",
+			) ;
+		} ;
+
+	if($@)
+		{
+		die _ERROR_("\nPBS: error in pbsfile.\n") . "\n"  ;
+		}
+			
 		
 	PBS::Rules::RegisterRule
 		(
@@ -591,7 +644,7 @@ for my $source_name (@{[@_]})
 
 		if($@)
 			{
-			die ERROR("PbsUse error @ $file_name:$line:\n\n$@\n") . "\n"  ;
+			die ERROR("PBS: pbsUse error @ $file_name:$line:\n\n$@\n") . "\n"  ;
 			}
 			
 		$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
@@ -599,7 +652,7 @@ for my $source_name (@{[@_]})
 	
 	$pbs_use_level-- ;
 	
-	my $pbsuse_time = tv_interval ($t0, [gettimeofday]) ;
+	my $pbsuse_time = tv_interval($t0, [gettimeofday]) ;
 	
 	if(defined $pbs_config->{DISPLAY_PBSUSE_TIME})
 		{
@@ -657,13 +710,15 @@ my $post_code  = shift || '' ;
 
 my $file_body = '' ; 
 
+my $t0 = [gettimeofday];
+
 if($type eq 'Pbsfile')
 	{
 	my $available = PBS::Output::GetScreenWidth() ;
-	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'left' });
+	my $em = String::Truncate::elide_with_defaults({ length => $available - 12, truncate => 'left' });
 
 	PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
-	PrintInfo3("PBS: loading '" . $em->($file) ."'.\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	PrintInfo3("PBS: loading '" . $em->($file) . "'\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{
@@ -710,9 +765,12 @@ PrintDebug $source if defined ($pbs_config->{DISPLAY_PBSFILE_SOURCE}) ;
 
 my $result = eval $source ;
 
+PrintInfo2 sprintf("PBS: load time: %0.4f.s\n", tv_interval ($t0, [gettimeofday]))
+	if $pbs_config->{DISPLAY_PBSFILE_LOAD_TIME} && $type eq 'Pbsfile' ;
+
 if($@)
 	{
-	PrintError "\nException:                    \n\tFile: '$file'\n\tPackage: '$package'\n\tException: $@" ;
+	PrintError "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file) . "\n\n$@" ;
 	die "\n";
 	}
 	
@@ -721,7 +779,7 @@ $type .= ': ' unless $type eq '' ;
 if((!defined $result) || ($result != 1))
 	{
 	$result ||= 'undef' ;
-	die "PBS: Error: $type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;
+	die "PBS: error: $type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;
 	}
 }
 

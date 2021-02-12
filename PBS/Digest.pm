@@ -797,7 +797,12 @@ if(exists $node->{__LOAD_PACKAGE})
 	{
 	PBS::Digest::IsDigestToBeGenerated
 		(
-		exists $node->{__MATCHING_RULES} && @{$node->{__MATCHING_RULES}} > 0 
+		exists $node->{__MATCHING_RULES}
+		&& defined $node->{__MATCHING_RULES}[0]
+		&& exists $node->{__MATCHING_RULES}[0]{RULE}
+		&& exists $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+		&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+		&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 			? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 			: $node->{__LOAD_PACKAGE},
 
@@ -814,15 +819,29 @@ else
 sub DependencyIsSource
 {
 my($dependent, $node_name, $inserted_nodes) = @_ ;
-#PrintDebug DumpTree [$dependent, $inserted_nodes->{$node_name}], $node_name, MAX_DEPTH => 4 ;
+#PrintDebug DumpTree [$dependent, $inserted_nodes->{$node_name}], $node_name, MAX_DEPTH => 7 ;
 
 my $is_source ;
 if (exists $inserted_nodes->{$node_name})
 	{
-	my $package = exists $inserted_nodes->{$node_name}{__MATCHING_RULES} 
-			&& @{$inserted_nodes->{$node_name}{__MATCHING_RULES}} > 0
+	my $package = exists $inserted_nodes->{$node_name}
+			&& exists $inserted_nodes->{$node_name}{__MATCHING_RULES}
+			&& @{$inserted_nodes->{$node_name}{__MATCHING_RULES}}
+			&& defined $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]
+			&& exists $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}
+			&& exists $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+			&& defined $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+			&& exists $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+			&& defined $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				? $inserted_nodes->{$node_name}{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: exists $dependent->{__MATCHING_RULES}
+					&& @{$dependent->{__MATCHING_RULES}}
+					&& defined $dependent->{__MATCHING_RULES}[0]
+					&& exists $dependent->{__MATCHING_RULES}[0]{RULE}
+					&& exists $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+					&& defined $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+					&& exists $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+					&& defined $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 					? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 					: $dependent->{__LOAD_PACKAGE} ;
 
@@ -834,7 +853,12 @@ if (exists $inserted_nodes->{$node_name})
 	}
 else
 	{
-	my $package =  exists $dependent->{__MATCHING_RULES}
+	my $package = exists $dependent->{__MATCHING_RULES}
+			&& defined $dependent->{__MATCHING_RULES}[0]
+			&& exists $dependent->{__MATCHING_RULES}[0]{RULE}
+			&& exists $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+			&& defined $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+			&& defined $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: $dependent->{__LOAD_PACKAGE} ;
 

@@ -27,12 +27,12 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
-		_ERROR_ _WARNING_ _WARNING2_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _USER_ _SHELL_ _DEBUG_
+		ERROR WARNING WARNING2 WARNING3 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
+		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_
 
 		COLOR PrintColor PrintNoColor PrintVerbatim
 
-		PrintError PrintWarning PrintWarning2 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintUser PrintShell PrintDebug
+		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -135,10 +135,12 @@ return $color. $string . $reset ;
 sub ERROR { return COLOR('error', @_) }           sub _ERROR_ { return COLOR('error', @_, 0) }
 sub WARNING  { return COLOR('warning', @_) }      sub _WARNING_  { return COLOR('warning', @_, 0) }
 sub WARNING2 { return COLOR('warning_2', @_) }    sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
+sub WARNING3 { return COLOR('warning_3', @_) }    sub _WARNING3_ { return COLOR('warning_3', @_, 0) }
 sub INFO { return COLOR('info', @_) }             sub _INFO_ { return COLOR('info', @_, 0) }
 sub INFO2 { return COLOR('info_2', @_) }          sub _INFO2_ { return COLOR('info_2', @_, 0) }
 sub INFO3 { return COLOR('info_3', @_) }          sub _INFO3_ { return COLOR('info_3', @_, 0) }
 sub INFO4 { return COLOR('info_4', @_) }          sub _INFO4_ { return COLOR('info_4', @_, 0) }
+sub INFO5 { return COLOR('info_5', @_) }          sub _INFO5_ { return COLOR('info_5', @_, 0) }
 sub USER { return COLOR('user', @_) }             sub _USER_ { return COLOR('user', @_, 0) }
 sub SHELL { return COLOR('shell', @_) }           sub _SHELL_ { return COLOR('shell', @_, 0) }
 sub DEBUG { return COLOR('debug', @_) }           sub _DEBUG_ { return COLOR('debug', @_, 0) }
@@ -151,9 +153,9 @@ sub _print
 #use Carp qw(cluck longmess shortmess);
 #cluck "This is how we got here!"; 
 
-my ($glob, $color_and_depth, $data, $indent, $no_header) = @_ ;
+my ($glob, $color_and_depth, $data, $indent) = @_ ;
 
-return if $data eq q{} ;
+return unless defined $data && $data ne q{} ;
 
 $data =~ s/^(\t+)/$indentation x length($1)/gsme if $indent ;
 
@@ -171,26 +173,28 @@ my $lines =  join
 print $glob "$output_info_label$lines" unless $lines eq q{} ;
 }
 
-sub PrintStdOut {_print(\*STDOUT, \&RESET, @_);}
-sub PrintStdErr {_print(\*STDERR, \&RESET, @_);}
+sub PrintStdOut {_print(\*STDOUT, \&RESET, @_)}
+sub PrintStdErr {_print(\*STDERR, \&RESET, @_)}
 
-sub PrintStdOutColor {_print(\*STDOUT, @_);} # pass a color handler as first argument
-sub PrintStdErrColor {_print(\*STDERR, @_);} # pass a color handler as first argument
+sub PrintStdOutColor {_print(\*STDOUT, @_)} # pass a color handler as first argument
+sub PrintStdErrColor {_print(\*STDERR, @_)} # pass a color handler as first argument
 
-sub PrintNoColor {_print(\*STDERR, \&RESET, @_);}
+sub PrintNoColor {_print(\*STDERR, \&RESET, @_)}
 sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
-sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_);}
+sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 
-sub PrintError {_print(\*STDERR, \&ERROR, @_);}
-sub PrintWarning {_print(\*STDERR, \&WARNING, @_) ;}
-sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_) ;}
-sub PrintInfo{_print(\*STDERR, \&INFO, @_ );}
-sub PrintInfo2{_print(\*STDERR, \&INFO2, @_) ;}
-sub PrintInfo3{_print(\*STDERR, \&INFO3, @_) ;}
-sub PrintInfo4{_print(\*STDERR, \&INFO4, @_) ;}
-sub PrintUser{_print(\*STDERR, \&USER, @_) ;}
-sub PrintShell {_print(\*STDERR, \&SHELL, @_) ;}
-sub PrintDebug{_print(\*STDERR, \&DEBUG, @_) ;}
+sub PrintError {_print(\*STDERR, \&ERROR, @_)}
+sub PrintWarning {_print(\*STDERR, \&WARNING, @_)}
+sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_)}
+sub PrintWarning3{_print(\*STDERR, \&WARNING3, @_)}
+sub PrintInfo{_print(\*STDERR, \&INFO, @_ )}
+sub PrintInfo2{_print(\*STDERR, \&INFO2, @_)}
+sub PrintInfo3{_print(\*STDERR, \&INFO3, @_)}
+sub PrintInfo4{_print(\*STDERR, \&INFO4, @_)}
+sub PrintInfo5{_print(\*STDERR, \&INFO5, @_)}
+sub PrintUser{_print(\*STDERR, \&USER, @_)}
+sub PrintShell {_print(\*STDERR, \&SHELL, @_)}
+sub PrintDebug{_print(\*STDERR, \&DEBUG, @_)}
 
 #-------------------------------------------------------------------------------
 

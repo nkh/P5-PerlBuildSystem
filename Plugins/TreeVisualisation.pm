@@ -31,6 +31,8 @@ And add the following functionality:
 =cut
 
 use PBS::PBSConfigSwitches ;
+use PBS::Output ;
+use PBS::Digest ;
 use PBS::Information ;
 use Data::TreeDumper ;
 use Data::TreeDumper::Utils ;
@@ -153,6 +155,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					
 					$tag = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
 					$tag = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
+					$tag = (NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_)) . GetColor('info_2')  ;
 					
 					$_ = [$_, $tag] if defined $tag ;
 					}

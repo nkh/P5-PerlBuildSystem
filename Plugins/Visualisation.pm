@@ -30,6 +30,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use Data::TreeDumper ;
 use File::Slurp ;
 
+use PBS::Digest ;
 use PBS::PBSConfigSwitches ;
 use PBS::Information ;
 use PBS::Build::ForkedNodeBuilder ; # for log file name

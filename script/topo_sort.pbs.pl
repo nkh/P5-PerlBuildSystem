@@ -1,31 +1,36 @@
-=for test topo sort
+use Time::HiRes qw(tv_interval gettimeofday) ;
+
 my $t0_topo = [gettimeofday];
 
-do 
+
+my %ba;
+
+sub add_deps
+{
+my ($node, @deps) = @_ ;
+
+for my $dep (@deps)
 	{
-	my %ba;
+	$ba{$node}{$dep} = 1 ;
+	$ba{$dep} ||= {};
+	}
+}
 
-	for my $node (keys %$inserted_nodes)
-		{
-		next unless $inserted_nodes->{$node}{__TRIGGERED} ;
+add_deps qw(A  a aa aaa aa aa aa) ;
+add_deps qw(B  b bb bbb b bb bbbbbb) ;
+add_deps qw(B a) ;
+add_deps qw(b aaa) ;
+add_deps qw(bb aaa) ;
+add_deps qw(aaa bbb) ;
 
-		for my $dep ( grep {0 != index($_, '__')} keys %{$inserted_nodes->{$node}} )
-			{
-			$ba{$node}{$dep} = 1 ;
-			$ba{$dep} ||= {};
-			}
-		}
+while ( my @afters = sort grep { ! %{ $ba{$_} } } keys %ba )
+	{
+	print join("\n",@afters) . "\n";
+	delete @ba{@afters};
+	delete @{$_}{@afters} for values %ba;
+	}
 
-	while ( my @afters = sort grep { ! %{ $ba{$_} } } keys %ba )
-		{
-		print join("\n",@afters) . "\n";
-		delete @ba{@afters};
-		delete @{$_}{@afters} for values %ba;
-		}
+print %ba ? "Cycle found! ". join( ' ', sort keys %ba ). "\n" : "" ;
 
-	print !!%ba ? "Cycle found! ". join( ' ', sort keys %ba ). "\n" : "";
-	} ;
-
-PrintInfo(sprintf("Check: topo sort time: %0.2f s.\n", tv_interval ($t0_topo, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
-=cut
+print sprintf("topo sort time: %0.6f s.\n", tv_interval ($t0_topo, [gettimeofday])) ;
 

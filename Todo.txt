@@ -1,13 +1,50 @@
+inserted at PBS::Subpbs:
 
-match once rules
+perl parse bug
+	my @list = map { "-$_" => "--" . $_ } @{ $completion_list } ;
+
+depend log per subpbs
+	#redirect stdout/err to log in defaultBuild
+
+	no direct output
+
+	log contains sub logs
+	
+
+error not in $@ ? use warnings?
+
+	Bareword found where operator expected at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
+
+	sdlkmd"
+		(Missing operator before sdlkmd?)
+
+	    PBS: error loading file: '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped'
+
+	    Global symbol "$x" requires explicit package name (did you forget to declare "my $x"?) at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 1.
+	    syntax error at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
+
+	    sdlkmd sdakd "
+
+
+#time spend depending one pbs file without subpbs
+	default build 132
+
+#scoped rules
+	need fast topo sort than a full blown build system
+		=> doesn't need any sorting at ll
+#rules ordering
+	#need fast topo sort than a full blown build system
+
+#tree graph shows source
+
+#tnos
+	better implementation
+	--vas
+
+#match once rules
 	then don̈́'t run again, scoped to one, we want them run first
 
 	-option to globally override and warn if match multiple times
-
-
-rule objects is never used in subpbs
-	but it could but it should be added when running the subpbs as top, IE TARGET_PATH eq ''
-
 
 
 write the generate file in cmake in pbs
@@ -32,9 +69,10 @@ Single rule builder doesn't work in -j
 
 i:h isfname , ^wF, gF
 
---nh, display compact dependency information
+#--nh, display compact dependency information
 	uses \K
 	anything the prints while in -nh gets on the wrong line
+	=> -nhc
 
 can a node be tagged as source in another repo
 	case 1
@@ -89,7 +127,7 @@ broken in vi with color
 warp 1.8 pbs chain merge
 	linking during non warp depend must also update the pbsfile chain 
 
-ddr
+#ddr
 	rule matching PBS_WARP_TREE is not shown
 
 use tmux to keep session open when an error happens

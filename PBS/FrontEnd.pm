@@ -33,6 +33,12 @@ use PBS::Warp ;
 
 sub Pbs
 {
+if($ARGV[0] eq '--get_bash_completion')
+	{
+	PBS::PBSConfigSwitches::GetCompletion() ;
+	return(1) ;
+	}
+
 my $t0 = [gettimeofday];
 
 my (%pbs_arguments) = @_ ;

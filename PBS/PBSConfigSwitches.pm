@@ -172,6 +172,10 @@ my @flags_and_help =
 		'create a bash completion script and exits.',
 		'',
 
+	'get_bash_completion'   => \$pbs_config->{GET_BASH_COMPLETION},
+		'return completion list.',
+		'',
+
 	'pp|pbsfile_pod'                    => \$pbs_config->{DISPLAY_PBSFILE_POD},
 		"Displays a user defined help. See 'Online help' in pbs.pod",
 		<<'EOH',
@@ -434,6 +438,10 @@ EOT
 		'PBS won\'t display the steps it is at. (Depend, Check, Build).',
 		'',
 
+	'nhc|no_header_counter'           => \$pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER},
+		'Hide depend counter',
+		'',
+
 	'no_external_link'                => \$pbs_config->{NO_EXTERNAL_LINK},
 		'Dependencies Linking from other Pbsfile stops the build if any local rule can match.',
 		'',
@@ -646,7 +654,11 @@ EOT
 		'',
 		
 	'dpl|display_pbsfile_loading'     => \$pbs_config->{DISPLAY_PBSFILE_LOADING},
-		'Display which pbsfile is loaded as well as its runtime package.',
+		'Display which pbsfile is loaded.',
+		'',
+		
+	'dplt|display_pbsfile_load_time'  => \$pbs_config->{DISPLAY_PBSFILE_LOAD_TIME},
+		'Display the time to load and evaluate a pbsfile.',
 		'',
 		
 	'dspd|display_sub_pbs_definition' => \$pbs_config->{DISPLAY_SUB_PBS_DEFINITION},
@@ -659,6 +671,10 @@ EOT
 		
 	'display_nodes_per_pbsfile'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE},
 		'Display how many nodes where added by each pbsfile run.',
+		'',
+		
+	'depend_log' => \$pbs_config->{DEPEND_LOG},
+		'Created a log for each subpbs.',
 		'',
 		
 	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},
@@ -683,6 +699,18 @@ EOT
 		
 	'display_rule_ordering'          => \$pbs_config->{DISPLAY_RULES_ORDERING},
 		'Display the pbsfile used to order rules and the rules order.',
+		'',
+		
+	'rro|rule_run_once'          => \$pbs_config->{RULE_RUN_ONCE},
+		'Rules run only once except if they are tagged as MULTI',
+		'',
+		
+	'rns|rule_no_scope'          => \$pbs_config->{RULE_NO_SCOPE},
+		'Disable rule scope.',
+		'',
+		
+	'display_rule_scope'          => \$pbs_config->{DISPLAY_RULE_SCOPE},
+		'display scope parsing and generation',
 		'',
 		
 	'maximum_rule_recursion'          => \$pbs_config->{MAXIMUM_RULE_RECURSION},
@@ -845,6 +873,10 @@ EOT
 		'(DF) Display the dependencies for each file processed.',
 		'',
 		
+	'display_dependency_pbsfile'         => \$pbs_config->{DISPLAY_DEPENDENCY_PBSFILE},
+		'Displays the pbsfile, automatic if -display_dependencies or --display_dependencies_long is set',
+		'',
+		
 	'ddl|display_dependencies_long'         => \$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG},
 		'(DF) Display one dependency perl line.',
 		'',
@@ -977,6 +1009,10 @@ EOT
 		
 	'tno|tree_name_only'               => \$pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY},
 		'(DF) Display the name of the nodes only.',
+		'',
+		
+	'vas|visualize_after_subpbs'       => \$pbs_config->{DEBUG_VISUALIZE_AFTER_SUPBS},
+		'(DF) visualization plugins run after every subpbs.',
 		'',
 		
 	'tda|tree_depended_at'               => \$pbs_config->{DEBUG_DISPLAY_TREE_DEPENDED_AT},
@@ -1557,6 +1593,36 @@ my $cwd = Cwd::getcwd() ;
 
 PrintInfo                                "# Bash completion script 'pbs_perl_completion' generated, add the completion to Bash with:\n" ;
 PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_completion' pbs\n" ;
+}
+
+sub GetCompletion
+{
+shift @ARGV ;
+my ($command_name, $word_to_complete, $previous_arguments) = @ARGV ;
+
+if($word_to_complete !~ /^\s?$/)
+	{
+	my @flags_and_help = GetSwitches() ;
+
+	my @switches ;
+	for (my $i = 0 ; $i < @flags_and_help; $i += 4)
+		{
+		my ($switch, $help_text, $long_help_text) = ($flags_and_help[$i], $flags_and_help[$i + 2], $flags_and_help[$i + 3]) ;
+		push @switches, $switch ;
+		}
+
+
+	use Tree::Trie ;
+
+	my ($trie) = new Tree::Trie ;
+	my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
+
+
+	my @list = map { ("-" . $_) , ("--" . $_) } @{ $completion_list } ;
+	$trie->add(@list) ;
+
+	print join("\n", $trie->lookup($word_to_complete)) ;
+	}
 }
 
 #-------------------------------------------------------------------------------

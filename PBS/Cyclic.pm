@@ -33,7 +33,13 @@ shift @$traversal ;
 
 for my $node (@$traversal)
 	{
-	$cycles .= "$indent'$node->{__NAME}' inserted at '$node->{__INSERTED_AT}{INSERTION_RULE_FILE}':$node->{__INSERTED_AT}{INSERTION_RULE_LINE}\n" ;
+	$cycles .= GetRunRelativePath
+			(
+			$pbs_config,
+			 "$indent'$node->{__NAME}' "
+			. "inserted at '$node->{__INSERTED_AT}{INSERTION_RULE_FILE}':$node->{__INSERTED_AT}{INSERTION_RULE_LINE}\n"
+			) ;
+
 	$indent .= "\t" ;
 	}
 

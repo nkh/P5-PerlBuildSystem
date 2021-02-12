@@ -166,7 +166,9 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 				$target_path =~ s[/$][] ;
 				
 				$dependent_regex_definition=~ s/\%TARGET_PATH/$target_path/ ;
-				
+			
+use Carp qw(cluck) ;
+#print STDERR cluck ;
 				if($display_regex && $dependent_to_check !~ /^__/)
 					{
 					PrintInfo2("${PBS::Output::indentation}$dependent_regex_definition $name:$file_name:$line\n") ;

@@ -1,9 +1,6 @@
 
 package PBS::Rules ;
 
-use PBS::Debug ;
-use PBS::Stack ;
-
 use 5.006 ;
 
 use strict ;
@@ -20,16 +17,18 @@ our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubp
 our $VERSION = '0.09' ;
 
 use File::Basename ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Rules::Dependers ;
 use PBS::Rules::Builders ;
 
-use PBS::Shell ;
 use PBS::PBSConfig ;
 use PBS::Output ;
 use PBS::Constants ;
 use PBS::Plugin ;
-use PBS::Rules::Creator ;
+
+use PBS::Rules::Scope ;
+use PBS::Stack ;
 
 #-------------------------------------------------------------------------------
 
@@ -108,7 +107,7 @@ for my $rules_namespace (@rules_namespaces)
 
 my %rule_lookup ;
 
-my ($rules_to_sort, $rule_to_sort_index, $sort_rules) = ({}, 0, 0) ;
+my ($rules_to_sort, $rule_to_sort_index, $sort_rules, @rule_invalid_name) = ({}, 0, 0) ;
 for my $rule (@dependency_rules)
 	{
 	$rule_lookup{$rule->{NAME}} = $rule ;
@@ -121,39 +120,57 @@ for my $rule (@dependency_rules)
 		}
 
 	my $matches_order = 0 ;
-	for my $rule_type (@{$rule->{TYPE}})
+	for my $rule_type (@{$rule->{TYPE}}, map { "match_after $_" } PBS::Rules::Scope::GetRuleBefore($rule->{PACKAGE}, $rule->{NAME}))
 		{
-		if 
-			(
-			   $rule_type eq FIRST
-			|| $rule_type eq LAST
-			|| $rule_type =~ /^\s*before\s(.*)/i
-			|| $rule_type =~ /^\s*first_plus\s(.*)/i
-			|| $rule_type =~ /^\s*after\s(.*)/i
-			|| $rule_type =~ /^\s*last_minus\s(.*)/i
-			)
+		my $order_regex = join '|', qw(indexed before first_plus after match_after last_minus) ;
+	
+		if ( $rule_type eq FIRST || $rule_type eq LAST || $rule_type =~ /^\s*$order_regex\s+.*/i)
 			{
 			add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, $rule->{LINE}, split(/\s/, $rule_type)) ;
 			$matches_order++;
-			}
 
+			push @{$rule->{BEFORE}}, split(/\s/, $1) if ($rule_type =~ /^\s*match_after\s+(.*)/i)
+			}
+		elsif( $rule_type eq MULTI )
+			{
+			$rule->{MULTI}++ ;
+			}
 		}
 
 	# rule with no order
 	add_rule_to_order($rules_to_sort, \$rule_to_sort_index, $rule->{NAME}, $rule->{LINE} // '?') unless $matches_order ;
 	$sort_rules += $matches_order ;
+
+	push @rule_invalid_name, $rule if $rule->{NAME} !~ /^[0-9a-zA-Z_]+$/ ;
 	}
 
 if($sort_rules)
 	{
-	PrintInfo "PBS: ordering rules for '$pbsfile'.\n" if $pbs_config->{DISPLAY_RULES_TO_ORDER} || $pbs_config->{DISPLAY_RULES_ORDER} ;
+	my $short_pbsfile = GetRunRelativePath($pbs_config, $pbsfile) ;
 
-	my ($order_pbsfile, $target) = order_rules($rules_to_sort, $rule_to_sort_index, $pbs_config) ;
+	if(@rule_invalid_name)
+		{
+		PrintError "Rule: error ordering for '$short_pbsfile', found rule names not matching /[0-9a-zA-Z_]+/:\n" ;
+
+		PbsDisplayErrorWithContext($pbs_config, $pbsfile, $_->{LINE}) for @rule_invalid_name ;
+		die "\n" ;
+		}
+
+	my $t0_order = [gettimeofday] ;
+
+	my ($order_pbsfile, $target, $topo_rules) = order_rules($rules_to_sort, $rule_to_sort_index, $pbs_config) ;
+	my $generation_time = tv_interval ($t0_order, [gettimeofday]) ;
+
+	my ($build_success, @rules_order) = topo_sort($topo_rules) ;
 
 	my $t = $PBS::Output::indentation;
 	my $virtual_pbsfile_name = "$t${t}virtual pbsfile: 'rule_ordering'\n$t$t${t} rules from '$pbs_config->{PBSFILE}'\n" ;
 
-	my ($build_success, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
+	unless($build_success)
+		{
+		my ($build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
+
+		($build_success, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
 		PBS::FrontEnd::Pbs
 			(
 			COMMAND_LINE_ARGUMENTS => [ $target , '--no_pbs_response_file', '--no_default_path_warning' ],
@@ -165,17 +182,27 @@ if($sort_rules)
 				WARP => 0,
 				DEPEND_AND_CHECK => 1,
 				QUIET => 1,
-				DISPLAY_NO_STEP_HEADER => 1,
+				#DISPLAY_NO_STEP_HEADER => 1,
 				NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES => 1,
 				},
 
 			PBSFILE_CONTENT => $order_pbsfile,
 			) ;
 
-	die ERROR("PBS: error ordering rules for '$pbsfile'.") . "\n" unless $build_success ;
+		@rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence
+			if $build_success ;
+		}
+	else
+		{
+		$build_success++ ;
+		}
 
-	my @rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
-	PrintInfo3 DumpTree \@rules_order, "Rules: ordered rules for '$pbs_config->{PBSFILE}'", DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDER} ;
+	die ERROR("Rule: error ordering for '$short_pbsfile'.") . "\n" unless $build_success ;
+
+	PrintInfo(sprintf("Rule: '$short_pbsfile' ordering time: %0.4f, generation: %0.4f\n", tv_interval ($t0_order, [gettimeofday]), $generation_time))
+		 if $pbs_config->{DISPLAY_RULES_TO_ORDER} ;
+
+	PrintInfo3 DumpTree \@rules_order, "Rules: ordered for '$short_pbsfile'", DISPLAY_ADDRESS => 0 if $pbs_config->{DISPLAY_RULES_ORDER} ;
 
 	# re-order rules
 	@dependency_rules = map{ $rule_lookup{$_} } grep { ! /^__/ } @rules_order ;
@@ -482,6 +509,7 @@ PrintInfo3 DumpTree \%dependents, "dependents:", DISPLAY_ADDRESS => 0 if $show_r
 
 PrintInfo3 "pbsfile, rules: $added_rule\n$pbsfile\n" if $show_rules ;
 
+my @topo_rules ;
 my $merged_pbsfile = '' ;
 for (sort keys %one_rule)
 	{
@@ -492,13 +520,14 @@ for (sort keys %one_rule)
 	my $lines = keys %lines > 1 ? "lines: " : "line: " ;
 	$lines .= join(', ',  sort keys %lines) ;
 
+	push @topo_rules, [$_ , @dependencies] ;
 	$merged_pbsfile .= "rule $added_rule, ['$_' => " . join(', ', map { "'$_'" } @dependencies). "] ; # $lines\n" ;
 	$added_rule++ ;
 	}
 
 PrintInfo3 "merged pbsfile, rules: " . scalar(keys %one_rule) . "\n$merged_pbsfile\n" if $show_rules ;
 
-return $merged_pbsfile, $first_rule ; 
+return $merged_pbsfile, $first_rule, \@topo_rules ; 
 }
 
 sub add_rule_to_order
@@ -518,24 +547,46 @@ elsif (@_ == 5)
 	{
 	# first or last, we can check later if multiple are defined
 
-	die ERROR "Rule: wrong order '$order' at rule: @_\n" unless $order eq FIRST or $order eq LAST ;
+	unless ( $order eq FIRST or $order eq LAST)
+		{
+		PrintError DumpTree(\@_, "Rule: wrong order '$order' at rule:", MAX_DEPTH => 2) ;
+		die "\n" ;
+		}
+
 	$rules->{$order}{lines}{$rule_line}++ ;
 	push @{$rules->{$order}{rule}}, $rule ;
 	}
 elsif (@_ == 6)
 	{
-	# before or after
+	# before or after or match_after
 
-	die ERROR "Rule: wrong order '$order' at rule: @_\n" unless $order eq 'before' or $order eq 'after' or $order eq 'last_minus' or $order eq 'first_plus' ;
-
-	if ($order eq 'before' or $order eq 'after')
+	unless
+		(
+		   $order eq 'before'
+		or $order eq 'match_after'
+		or $order eq 'after'
+		or $order eq 'last_minus'
+		or $order eq 'first_plus'
+		)
 		{
+		PrintError DumpTree(\@_, "Rule: wrong order '$order' at rule:", MAX_DEPTH => 2) ;
+		die "\n" ;
+		}
+
+	if ($order eq 'before' or $order eq 'after' or $order eq 'match_after')
+		{
+		$order = 'after' if $order eq 'match_after' ; # handle them equally
+
 		$rules->{$order}{$rule}{lines}{$rule_line}++ ;
 		push @{$rules->{$order}{$rule}{rules}}, @rest ;
 		}
 	else
 		{
-		die ERROR "Rule: only one index allowed at rule: @_\n" if @rest > 1 ;
+		if(@rest > 1)
+			{
+			PrintError(DumpTree(\@_, "Rule: only one index allowed at rule:", MAX_DEPTH => 2)) ;
+			die "\n" ;
+			}
 
 		$rules->{$order}{lines}{$rest[0]}{$rule_line}++ ;
 		push @{$rules->{$order}{rules}{$rest[0]}}, $rule ;
@@ -545,6 +596,36 @@ else
 	{
 	die ERROR DumpTree \@_, "Rule: wrong number of arguments to rule order function" ;
 	}
+}
+
+sub topo_sort
+{
+my ($rules) = @_ ;
+
+my %ba;
+
+for my $rule (@{$rules})
+	{
+	my ($node, @deps) = @{$rule} ;
+
+	for my $dep (@deps)
+		{
+		$ba{$node}{$dep}++ ;
+		$ba{$dep} ||= {};
+		}
+	}
+
+my @ordered ;
+
+while ( my @afters = sort grep { ! %{ $ba{$_} } } keys %ba )
+	{
+	push @ordered, @afters;
+
+	delete @ba{@afters};
+	delete @{$_}{@afters} for values %ba;
+	}
+
+return !scalar(%ba), @ordered
 }
 
 #-------------------------------------------------------------------------------
@@ -563,7 +644,6 @@ $file_name =~ s/'$// ;
 my $class = 'User' ;
 
 my @rule_definition = @_ ;
-
 my $pbs_config = GetPbsConfig($package) ;
 RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
 
@@ -585,7 +665,7 @@ else
 	else
 		{
 		Carp::carp ERROR("Invalid rule at '$file_name:$line'. Expecting a name string, or an array ref containing types, as first argument.") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
+		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
 		die ;
 		}
 	}
@@ -780,16 +860,12 @@ my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definitio
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
 # this test is mainly to catch the error when the user forgot to write the rule name.
-my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST UNTYPED VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
+my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
 for my $rule_type (@$rule_types)
 	{
-	next if $rule_type =~ /^\s*indexed\s/i ;
-	next if $rule_type =~ /^\s*before\s/i ;
-	next if $rule_type =~ /^\s*first_plus\s/i ;
-	next if $rule_type =~ /^\s*after\s/i ;
-	next if $rule_type =~ /^\s*last_minus\s/i ;
+	my $order_regex = join '|', qw(indexed before first_plus after match_after last_minus) ;
 
-	unless(exists $valid_types{$rule_type})
+	unless (exists $valid_types{$rule_type} || $rule_type =~ /^\s*$order_regex\s/i)
 		{
 		PrintError "Rule: invalid type '$rule_type' at rule '$name' at '$file_name:$line'\n" ;
 		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;

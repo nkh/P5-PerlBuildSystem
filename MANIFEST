@@ -67,6 +67,7 @@ PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
 PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
+PBS/Rules/Scope.pm
 PBS/PostBuild.pm
 PBS/Shell.pm
 PBS/Shell/SSH.pm

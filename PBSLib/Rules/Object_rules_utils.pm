@@ -82,7 +82,6 @@ my
         $rule_definition,      # for introspection
         ) = @_ ;
 
-
 my @dependencies = grep {! /^__/ } keys %$tree ;
 my $indentation = $PBS::Output::indentation ;
 

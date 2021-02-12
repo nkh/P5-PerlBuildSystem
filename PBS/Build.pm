@@ -257,9 +257,14 @@ my $file_tree = shift ;
 
 for my $rule (@{$file_tree->{__MATCHING_RULES}})
 	{
-	if (exists $rule->{RULE}{DEFINITION}{SHELL_COMMANDS_GENERATOR})
+	if 
+		(
+		exists $rule->{RULE}
+		&& exists $rule->{RULE}{DEFINITION}
+		&& exists $rule->{RULE}{DEFINITION}{SHELL_COMMANDS_GENERATOR}
+		)
 		{
-		return 1;
+		return 1 ;
 		}
 	}
 

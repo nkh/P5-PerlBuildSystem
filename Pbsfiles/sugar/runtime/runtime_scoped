@@ -1,0 +1,23 @@
+Scope <<EOS ;
+	runtime
+		local
+			match_after
+			no_dependencies
+
+		depended_somewhere_else
+			depended
+			depended2
+EOS
+
+SourcesMatch qr/a$/, qr/b$/ ;
+
+Rule runtime                 => [ '*/runtime' => 'depended_somewhere_else', 'local' ] ;
+Rule local                   => [ 'local' => qw (a b match_after no_dependencies sub_dependency), 'compiler_1/compiler_1.test' ] ;
+Rule match_after             => [ match_after => qw (a) ] ;
+Rule no_dependencies         => [ 'no_dependencies' ] ;
+Rule depended_somewhere_else => [ 'depended_somewhere_else' => qw (a b depended) ] ;
+Rule depended                => [ 'depended' => 'X' ] ;
+Rule depended2               => [ 'depended' => 'Y' ] ;
+
+Subpbs sub_dependency => 'sub_dependency' ;
+

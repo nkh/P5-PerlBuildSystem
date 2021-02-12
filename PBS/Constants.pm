@@ -41,6 +41,9 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		creator
 		immediate_build
 
+		MULTI
+		multi
+
 		FIRST
 		first
 
@@ -100,6 +103,9 @@ use constant CREATOR            => '__CREATOR' ;
 use constant creator            => '__CREATOR' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
+
+use constant MULTI              => '__MULTI' ;
+use constant multi              => '__MULTI' ;
 
 use constant FIRST              => '__FIRST' ;
 use constant first              => '__FIRST' ;

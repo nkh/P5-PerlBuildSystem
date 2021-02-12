@@ -65,9 +65,9 @@ if(exists $tree->{__CYCLIC_FLAG})
 	if(NodeIsGenerated($tree))
 		{
 		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@traversal) ; 
-		PrintError "\e[KCheck: Cyclic dependencies detected:\n$cycles", 1 ;
+		PrintError "\e[KCheck: cyclic dependencies detected:\n$cycles", 1 ;
 
-		die "Dependency cycle detected\n" ;
+		die "cyclic dependencies detected\n" ;
 		}
 	
 	if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
@@ -122,11 +122,10 @@ if (NodeIsGenerated($tree))
 
 	my $depended_at = '' ;
 
-	if($tree->{__DEPENDED})
+	if($matching_rules)
 		{
 		my $matching_rule = $tree->{__MATCHING_RULES}[0]{RULE} ;
 		my $rule = $matching_rule->{DEFINITIONS}[$matching_rule->{INDEX}] ;
-
 		$depended_at  = $rule->{NAME} . ':' ;
 		$depended_at .= GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' ;
 		$depended_at .= $rule->{LINE} ;
@@ -492,7 +491,7 @@ else
 		
 		unless($repository_name eq $build_directory_name)
 			{
-			PrintWarning("Forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
+			PrintWarning("PBS: forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
 			
 			# build a  localizer rule on the fly for this node
 			my $localizer =
