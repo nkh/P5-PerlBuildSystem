@@ -593,7 +593,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					my $dd = INFO3 "$indent'$short_node_name'${node_type}${forced_trigger}" ;
+					my $dd = _INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}" ;
 
 					$dd .= @dependency_names
 						? _INFO_
@@ -1125,7 +1125,7 @@ if(@has_matching_non_subpbs_rules)
 				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($dependency_result->[0]) ;
 				}
 				
-			PrintWarning("Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
+			PrintColor('ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
 			}
 	
 		if (! exists $tree->{$dependency}{__DEPENDED} && ! DependencyIsSource($tree, $dependency, $inserted_nodes) ) 
@@ -1162,7 +1162,7 @@ elsif(@sub_pbs)
 	if(@sub_pbs != 1)
 		{
 		PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
-		PrintError(DumpTree(\@sub_pbs, "Sub Pbs:")) ;
+		PrintError(DumpTree(\@sub_pbs, "subpbs definitions:")) ;
 		Carp::croak  ;
 		}
 
@@ -1221,13 +1221,19 @@ elsif(@sub_pbs)
 	my %inserted_nodes_snapshot ;
 	%inserted_nodes_snapshot = %$inserted_nodes if $node_is_trigger_inserted ;
 
+	my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
+				: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
+
+	$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
+
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
 	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
 		= PBS::PBS::Pbs
 			(
 			[@$pbsfile_chain, $sub_pbs_name],
-			"supbs_${Pbsfile}",
+			$inserted_at,
 			$sub_pbs_name,
 			$load_package,
 			$sub_pbs_config,
@@ -1468,7 +1474,7 @@ else
 
 			if($dependency_result->[0])
 				{
-				$local_rule_info .= WARNING "${indent}${indent}ignoring local rule" ;
+				$local_rule_info .= COLOR 'ignoring_local_rule', "${indent}${indent}ignoring local rule", 0, 1 ;
 
 				$local_rule_info .= _INFO2_ ", $rule_index:"
 							. GetRunRelativePath
@@ -1493,17 +1499,17 @@ my ($linked_node_info, @link_type) ;
 # • ■ ○ dkmdklf
 # ☘ ♾ ♿ ⚒ ⚓ ⚔ ⚕ ⚖ ⚗ ⚘ ⚙ ⚚ ⚛ ⚜ ☀ 
 
-push @link_type, $local_node ? 'ᴸᴼᶜᴬᴸ ᴺᴼᴰᴱ' : 'ᴰᴵᶠᶠᴱᴿᴱᴺᵀ ᴾᴮˢᶠᴵᴸᴱ' ;
+push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
 push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 
 if($dependency_is_source)
 	{
 	$linked_node_info = WARNING "${indent}'$dependency_name' " . _INFO_("ᴸᴵᴺᴷᴵᴺᴳ");
 
-	push @link_type, 'ˢᴼᵁᴿᶜᵉ' ;
+	push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
 
 	push @link_type, 'ᴰᴱᴾᴱᴺᴰᴱᴰ' if exists $dependency->{__DEPENDED} ;
-	push @link_type, 'ᴴᴬˢ ᴰᴱᴾᴱᴺᴰᴱᴺᶜᴵᴱˢ' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
+	push @link_type, _WARNING_('ᴴᴬˢ ᴰᴱᴾᴱᴺᴰᴱᴺᶜᴵᴱˢ') if scalar ( grep { ! /^__/ } keys %$dependency ) ;
 	}
 else
 	{

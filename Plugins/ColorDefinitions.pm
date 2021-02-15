@@ -19,6 +19,7 @@ return
 		warning   => '',
 		warning_2 => '',
 		warning_3 => '',
+		warning_4 => '',
 		info      => '',
 		info_2    => '',
 		info_3    => '',
@@ -52,6 +53,7 @@ return
 		warning   => color('yellow'),
 		warning_2 => color('bright_yellow'),
 		warning_3 => color('bright_yellow'),
+		warning_4 => color('bright_yellow'),
 
 		no_match  => color('red'),
 
@@ -77,6 +79,7 @@ return
 		warning   => color('rgb320'),
 		warning_2 => color('bright_yellow'),
 		warning_3 => color('rgb210'),
+		warning_4 => color('rgb310'),
 
 		no_match  => color('rgb200'),
 
@@ -87,6 +90,12 @@ return
 		box_2_2   => color('on_grey3'),
 
 		test_bg   => color('rgb220 on_rgb101'),
+		ignoring_local_rule  => color('rgb220 on_rgb101'),
+
+		ttcl_1    => color('rgb010'),
+		ttcl_2    => color('rgb012'),
+		ttcl_3    => color('grey8'),
+		ttcl_4    => color('rgb101'),
 
 		reset     => color('reset'),
 		},
@@ -105,6 +114,7 @@ return
 		warning   => color('rgb320'),
 		warning_2 => color('rgb440'),
 		warning_3 => color('rgb210'),
+		warning_4 => color('rgb310'),
 
 		no_match  => color('rgb200'),
 

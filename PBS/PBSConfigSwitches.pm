@@ -677,6 +677,10 @@ EOT
 		'Created a log for each subpbs.',
 		'',
 		
+	'depend_log_merged' => \$pbs_config->{DEPEND_LOG_MERGED},
+		'Merge children subpbs out put in log.',
+		'',
+		
 	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},
 		'Display an extra blank line araound a depend.',
 		'',

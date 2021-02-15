@@ -328,7 +328,8 @@ my @extra_options ;
 
 # colorize tree in blocks
 use Term::ANSIColor qw(:constants) ;
-my @colors = map { Term::ANSIColor::color($_) }	( 'green', 'yellow', 'cyan') ;
+my @colors = map { GetColor($_) } qw ( ttcl_1 ttcl_2 ttcl_3 ttcl_4 ) ;
+
 push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
 
 # terminal width

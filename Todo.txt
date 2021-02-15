@@ -1,14 +1,17 @@
-inserted at PBS::Subpbs:
+
+mechanism to add switches in specific pbsfile
+
+#inserted at PBS::Subpbs:
 
 perl parse bug
 	my @list = map { "-$_" => "--" . $_ } @{ $completion_list } ;
 
-depend log per subpbs
+#depend log per subpbs
 	#redirect stdout/err to log in defaultBuild
 
-	no direct output
+	#no direct output
 
-	log contains sub logs
+	#log contains sub logs
 	
 
 error not in $@ ? use warnings?

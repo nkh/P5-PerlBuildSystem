@@ -1,1 +1,1 @@
-#rule sub_dependency => ['sub_dependency'] ;
+rule sub_dependency => ['sub_dependency'] ;

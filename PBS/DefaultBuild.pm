@@ -170,7 +170,7 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 			. "calls: $calls, "
 			. "skipped: $skipped, " 
 			. "matches: $matches, "
-			. "match rate: " . sprintf("%0.02f", ($matches + $skipped) / $calls)
+			. "match rate: " . sprintf("%0.02f", ($matches + $skipped) / ($calls || 1))
 			. "\n" ;
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )

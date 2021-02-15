@@ -27,12 +27,12 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 WARNING3 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
-		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_
+		ERROR WARNING WARNING2 WARNING3 WARNING4 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
+		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _WARNING4_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_
 
 		COLOR PrintColor PrintNoColor PrintVerbatim
 
-		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
+		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -120,22 +120,34 @@ sub COLOR
 #use Carp ;
 #print Carp::longmess() ;
 
-my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-my $indent = defined $_[2] && $_[2] == 0 ? '' : ($PBS::Output::indentation x $depth) ;
+my ($color_name, $string, $indent, $no_indent_color) = @_ ;
 
-my $color = $cc{$cd}{$_[0]} // '' ;
+$string //= 'undef' ;
+$indent //= 1 ;
+$no_indent_color //= 0 ; 
+#print STDERR " ($color_name, $string, $indent, $no_indent_color) \n" ;
+
+my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+my $indentation = $indent ? ("$PBS::Output::indentation" x $depth) : '' ;
+
+my $color = $cc{$cd}{$color_name} // '' ;
 my $reset = $cc{$cd}{reset} // '' ;
 
-my $string = $indent . ($_[1] // 'undef') ;
-$string =~ s/\n(.)/$reset\n$color$indent$1/g ;
+my $string_indent = $PBS::Output::indentation ne q{} && $string =~ s/^($PBS::Output::indentation)+// ? $1 : '' ; # works for first line only
 
-return $color. $string . $reset ;
+$indentation = $no_indent_color ? $indentation . $string_indent . $color : $color . $indentation . $string_indent ;
+my $indentation2 = $no_indent_color ? $indentation . $color : $color . $indentation ;
+
+$string =~ s/\n(.)/\n$indentation2$1/g ;
+
+return "$indentation" . $color . $string . $reset ;
 }
 
 sub ERROR { return COLOR('error', @_) }           sub _ERROR_ { return COLOR('error', @_, 0) }
 sub WARNING  { return COLOR('warning', @_) }      sub _WARNING_  { return COLOR('warning', @_, 0) }
 sub WARNING2 { return COLOR('warning_2', @_) }    sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
 sub WARNING3 { return COLOR('warning_3', @_) }    sub _WARNING3_ { return COLOR('warning_3', @_, 0) }
+sub WARNING4 { return COLOR('warning_4', @_) }    sub _WARNING4_ { return COLOR('warning_4', @_, 0) }
 sub INFO { return COLOR('info', @_) }             sub _INFO_ { return COLOR('info', @_, 0) }
 sub INFO2 { return COLOR('info_2', @_) }          sub _INFO2_ { return COLOR('info_2', @_, 0) }
 sub INFO3 { return COLOR('info_3', @_) }          sub _INFO3_ { return COLOR('info_3', @_, 0) }
@@ -145,6 +157,8 @@ sub USER { return COLOR('user', @_) }             sub _USER_ { return COLOR('use
 sub SHELL { return COLOR('shell', @_) }           sub _SHELL_ { return COLOR('shell', @_, 0) }
 sub DEBUG { return COLOR('debug', @_) }           sub _DEBUG_ { return COLOR('debug', @_, 0) }
 
+sub NO_COLOR{ return COLOR('reset', @_) }
+
 
 #-------------------------------------------------------------------------------
 
@@ -153,33 +167,36 @@ sub _print
 #use Carp qw(cluck longmess shortmess);
 #cluck "This is how we got here!"; 
 
-my ($glob, $color_and_depth, $data, $indent) = @_ ;
+my ($glob, $color_and_depth, $data, $indent, $color_indent) = @_ ;
 
-return unless defined $data && $data ne q{} ;
+return unless defined $data ;
 
-$data =~ s/^(\t+)/$indentation x length($1)/gsme if $indent ;
+$data =~ s/\t/$indentation/gm ;
 
 my $reset = $cc{$cd}{reset} // '' ;
 my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
+$ends_with_newline //= '' ;
 
 my $lines =  join
 			(
 			"\n$output_info_label",
-			map { $_ ne "\e[K\e[K" ? $color_and_depth->($_) : q{} }
+			map { $_ ne "\e[K\e[K" ? $color_and_depth->($_, $indent, $color_indent) : q{} }
 				split /\n(?:\Q$reset\E)?/, $data
 			)
-		. ($ends_with_newline ? $ends_with_newline : '') ;
+		. $ends_with_newline ;
 
-print $glob "$output_info_label$lines" unless $lines eq q{} ;
+#my $lines = "$output_info_label" . $color_and_depth->($data, $indent, $color_indent) . $ends_with_newline ;
+
+print $glob "$output_info_label$lines" ;
 }
 
-sub PrintStdOut {_print(\*STDOUT, \&RESET, @_)}
-sub PrintStdErr {_print(\*STDERR, \&RESET, @_)}
+sub PrintStdOut {_print(\*STDOUT, \&NO_COLOR, @_)}
+sub PrintStdErr {_print(\*STDERR, \&NO_COLOR, @_)}
 
 sub PrintStdOutColor {_print(\*STDOUT, @_)} # pass a color handler as first argument
 sub PrintStdErrColor {_print(\*STDERR, @_)} # pass a color handler as first argument
 
-sub PrintNoColor {_print(\*STDERR, \&RESET, @_)}
+sub PrintNoColor {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
 sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 
@@ -187,6 +204,7 @@ sub PrintError {_print(\*STDERR, \&ERROR, @_)}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_)}
 sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_)}
 sub PrintWarning3{_print(\*STDERR, \&WARNING3, @_)}
+sub PrintWarning4{_print(\*STDERR, \&WARNING4, @_)}
 sub PrintInfo{_print(\*STDERR, \&INFO, @_ )}
 sub PrintInfo2{_print(\*STDERR, \&INFO2, @_)}
 sub PrintInfo3{_print(\*STDERR, \&INFO3, @_)}

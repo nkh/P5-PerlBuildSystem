@@ -2,7 +2,7 @@ my @tests = qw< x.t a.t > ;
 
 SourcesMatch qr/\.java$/, @tests ;
 
-PrintColor 'test_bg', "Info: Compiler lib, --ddl set\n", 1, 0 if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ; # passed by parent in rule
+PrintColor('test_bg', "Info: Compiler lib, --ddl set\n", 1, 1)  if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ; # passed by parent in rule
 
 Rule 'compiler', [qr<.*/compiler[_0-9]*$> => './runtime', '$name.test', '$name.jar'] ;
 Rule 'test',     ['*/*.test' => '*.jar', @tests] ;

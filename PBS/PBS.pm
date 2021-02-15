@@ -88,6 +88,9 @@ else
 	$redirection_file = $path . '/.' . $basename . $ext . ".$package.pbs_depend_log" ;
 
 	open my $OLDOUT, ">&STDOUT" ;
+
+	local *STDOUT unless $pbs_config->{DEPEND_LOG_MERGED} ;
+
 	open STDOUT,  "|-", " tee $redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
 	STDOUT->autoflush(1) ;
 
@@ -104,15 +107,15 @@ else
 	open STDERR, '>&' . fileno($OLDERR) ;
 	open STDOUT, '>&' . fileno($OLDOUT) ;
 
-	if($stdout == fileno(STDOUT))
-		{
+	#if($stdout == fileno(STDOUT))
+	#	{
 		#print STDERR read_file($redirection_file) ;
 		#print STDERR read_file($_) for @output_stack ;
-		}
-	else
-		{
+	#	}
+	#else
+	#	{
 		#unshift @output_stack, $redirection_file ;
-		}
+	#	}
 		
 	die $@ if $@ ;
 	return @result ;
@@ -375,7 +378,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		$load_package,
 		'BuiltIn',
 		[VIRTUAL, '__INTERNAL'],
-		'PBS',
+		'',
 		sub
 			{
 			my $dependent = shift ;
