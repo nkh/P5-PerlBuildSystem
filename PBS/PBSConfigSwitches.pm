@@ -125,6 +125,7 @@ $pbs_config->{JOBS_DIE_ON_ERROR} = 0 ;
 $pbs_config->{GENERATE_TREE_GRAPH_GROUP_MODE} = GRAPH_GROUP_NONE ;
 $pbs_config->{GENERATE_TREE_GRAPH_SPACING} = 1 ;
 
+$pbs_config->{PBS_QR_OPTIONS} ||= [] ;
 $pbs_config->{RULE_NAMESPACES} ||= [] ;
 $pbs_config->{CONFIG_NAMESPACES} ||= [] ;
 $pbs_config->{SOURCE_DIRECTORIES} ||= [] ;
@@ -174,6 +175,18 @@ my @flags_and_help =
 
 	'get_bash_completion'   => \$pbs_config->{GET_BASH_COMPLETION},
 		'return completion list.',
+		'',
+
+	'pbs_options=s'   => \$pbs_config->{PBS_OPTIONS},
+		'start list subpbs options, argumet is a regex matching the target.',
+		'',
+
+	'pbs_options_local=s'   => \$pbs_config->{PBS_OPTIONS_LOCAL},
+		'as pbs_options but only applied at the local subpbs level.',
+		'',
+
+	'pbs_options_end'   => \my $not_used,
+		'ends the list of options for specific subpbs.',
 		'',
 
 	'pp|pbsfile_pod'                    => \$pbs_config->{DISPLAY_PBSFILE_POD},

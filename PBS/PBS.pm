@@ -131,12 +131,45 @@ $pbs_runs++ ;
 my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
 
 die unless $dependency_tree_name ;
-$pbsfile_chain      //= [] ;
+$pbsfile_chain //= [] ;
 
-my $package              = CanonizePackageName($pbs_config->{PACKAGE}) ;
-my $build_directory      = $pbs_config->{BUILD_DIRECTORY} ;
-my $source_directories   = $pbs_config->{SOURCE_DIRECTORIES} ;
-my $target_names         = join ', ', @$targets ;
+#remove local changes from previous level
+$pbs_config = $pbs_config->{GLOBAL_PBS_CONFIG} if exists $pbs_config->{GLOBAL_PBS_CONFIG} ;
+delete $pbs_config->{GLOBAL_PBS_CONFIG} ;
+
+# target specific options
+my (%pbs_options_local, %pbs_options_global) ;
+for my $pbs_option (@{$pbs_config->{PBS_QR_OPTIONS}})
+	{
+	for my $target (@{$targets})
+		{
+		if ($target =~ $pbs_option->{QR})
+			{
+			if($pbs_option->{LOCAL})
+				{
+				%pbs_options_local = ( %pbs_options_local, %{$pbs_option->{OPTIONS}} ) ;
+				}
+			else
+				{
+				%pbs_options_global = ( %pbs_options_global, %{$pbs_option->{OPTIONS}} ) ;
+				}
+			}
+		}
+	}
+
+$pbs_config = { %$pbs_config, %pbs_options_global } if %pbs_options_global ;
+
+if(%pbs_options_local)
+	{
+	$pbs_config->{GLOBAL_PBS_CONFIG} = $pbs_config ;
+	$pbs_config = { %$pbs_config, %pbs_options_local }
+	}
+# << target specific options
+
+my $package            = CanonizePackageName($pbs_config->{PACKAGE}) ;
+my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
+my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
+my $target_names       = join ', ', @$targets ;
 
 my $original_ENV_size = scalar(keys %ENV) ;
 

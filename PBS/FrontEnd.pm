@@ -31,6 +31,105 @@ use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
 
+sub ParseSubpbsOptions
+{
+# extract pbs_options from the command line, parse them
+
+my ($command_line_arguments) = @_ ;
+
+my @unchecked_subpbs_options ;
+my @new_argv ;
+my @options ;
+my $in_options = 0;
+my $options_qr ;
+my $local_option = 1 ;
+
+for my $arg (@$command_line_arguments)
+	{
+	if ($arg =~ /^--?pbs_options_end$/)
+		{
+		push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option} if $in_options > 2 ;
+		@options = () ;
+		$in_options = 0 ;
+		}
+	elsif ($arg =~ /^--?pbs_options(_local)?$/)
+		{
+		push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option} if $in_options > 2 ;
+
+		@options = () ;
+		$in_options = 1 ;
+		$local_option = defined $1 ;
+		}
+	elsif ($in_options)
+		{
+		$options_qr = $arg if $in_options == 1 ;
+		push @options, $arg if $in_options > 1;
+
+		$in_options++
+		}
+	else
+		{
+		push @new_argv, $arg ;
+		}
+	}
+
+push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option } if $in_options > 2 ;
+
+#PrintDebug DumpTree [\@ARGV, \@new_argv, \@unchecked_subpbs_options] ; 
+
+my @subpbs_options ;
+my $counter = 0 ;
+my $package = "SUBPBS_$counter" ;
+
+my ($subpbs_switch_parse_ok, $subpbs_parse_message) = (1, '') ;
+
+for my $subpbs_option (@unchecked_subpbs_options)
+	{
+	$counter++ ;
+
+	PBS::PBSConfig::RegisterPbsConfig($package, {}) ;
+	my $pbs_config = GetPbsConfig($package) ;
+
+	$pbs_config->{PBSFILE} = $package ;
+
+	my $pbs_config_no_options = {%$pbs_config} ;
+	my ($switch_parse_ok_no_options, $parse_message_no_options) = PBS::PBSConfig::ParseSwitches($pbs_config_no_options, \@new_argv) ;
+	PBS::PBSConfig::CheckPbsConfig($pbs_config_no_options) ;
+
+	unless ($switch_parse_ok_no_options)
+		{
+		$subpbs_switch_parse_ok = 0 ;
+		$subpbs_parse_message = $parse_message_no_options ;
+		last ;
+		}
+
+	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches($pbs_config, [@new_argv, @{$subpbs_option->{OPTIONS}}]) ;
+	PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
+
+	unless ($switch_parse_ok)
+		{
+		$subpbs_switch_parse_ok = 0 ;
+		$subpbs_parse_message = $parse_message ;
+		last ;
+		}
+
+	delete $pbs_config->{NO_BUILD} ;
+	delete $pbs_config->{DO_BUILD} ;
+	delete $pbs_config->{TARGETS} ;
+
+	# keep added or modified options
+	use Data::Compare;
+	for my $config_key (sort keys %$pbs_config)
+		{
+		delete $pbs_config->{$config_key} if Compare($pbs_config->{$config_key}, $pbs_config_no_options->{$config_key}) ;
+		}
+
+	push @subpbs_options, {QR => $subpbs_option->{QR}, OPTIONS => $pbs_config, LOCAL => $subpbs_option->{LOCAL}} ;
+	}
+
+$subpbs_switch_parse_ok, $subpbs_parse_message, \@new_argv, \@subpbs_options ;
+}
+
 sub Pbs
 {
 if($ARGV[0] eq '--get_bash_completion')
@@ -43,11 +142,16 @@ my $t0 = [gettimeofday];
 
 my (%pbs_arguments) = @_ ;
 
+my ($switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $command_line_arguments,  $subpbs_options) = ParseSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+
 PBS::PBSConfig::RegisterPbsConfig('PBS', {}) ;
 my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
-my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $command_line_arguments) ;
+
+$pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
+
 for ( @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($_) }
   
 my ($targets) = $pbs_config->{TARGETS} ;
@@ -137,14 +241,12 @@ if($display_user_help || $extract_pod_from_pbsfile)
 my ($pbs_config_ok, $pbs_config_message) = PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
 return(0, $pbs_config_message) unless $pbs_config_ok ;
 
-unless($switch_parse_ok)
+unless($switch_parse_ok && $switch_parse_ok_subpbs_options)
 	{
 	# deferred to get a chance to display PBS help
-	return(0, $parse_message) ;
+	return(0, $parse_message . ' ' . $parse_message_subpbs_options);
 	}
 	
-PrintInfo2 $parse_message ;
-
 for my $target (@$targets)
 	{
 	if($target =~ /^\@/ || $target =~ /\@$/ || $target =~ /\@/ > 1)

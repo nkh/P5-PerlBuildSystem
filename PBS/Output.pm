@@ -128,19 +128,19 @@ $no_indent_color //= 0 ;
 #print STDERR " ($color_name, $string, $indent, $no_indent_color) \n" ;
 
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-my $indentation = $indent ? ("$PBS::Output::indentation" x $depth) : '' ;
+my $indentation = $indent ? ($PBS::Output::indentation x $depth) : '' ;
 
 my $color = $cc{$cd}{$color_name} // '' ;
 my $reset = $cc{$cd}{reset} // '' ;
 
-my $string_indent = $PBS::Output::indentation ne q{} && $string =~ s/^($PBS::Output::indentation)+// ? $1 : '' ; # works for first line only
+my $string_indent = $PBS::Output::indentation ne q{} && $string =~ s/^($PBS::Output::indentation+)// ? $1 : '' ; # works for first line only
 
 $indentation = $no_indent_color ? $indentation . $string_indent . $color : $color . $indentation . $string_indent ;
 my $indentation2 = $no_indent_color ? $indentation . $color : $color . $indentation ;
 
 $string =~ s/\n(.)/\n$indentation2$1/g ;
 
-return "$indentation" . $color . $string . $reset ;
+return $indentation . $color . $string . $reset ;
 }
 
 sub ERROR { return COLOR('error', @_) }           sub _ERROR_ { return COLOR('error', @_, 0) }

@@ -1,6 +1,25 @@
 
-mechanism to add switches in specific pbsfile
+#mechanism to add switches in specific pbsfile
+	pbs .... -pbs_switch 'separator root_node_qr separator command line switches
+		'|| -dd' 
+		"|| -x 'fkmlmkvflmkv'" 
+		"|| -dd 'some space'" 
 
+	pbs .... -pbs_options 'qr' -option -option 'some space' #no more options
+	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end -normal_option ....
+	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end 'qr' -option ....
+
+	applied before a subpbs we add the switches to the subpbs
+
+	applied at the node level it applies anywhere the node is depended
+		if the node is a subpbs the options will be applied when the node is inserted and when the node is depended
+
+restart debuggin before current node, current pbs run
+debugger changes pbs option
+	for the rest of pbs
+	under the branch
+	for the node only
+	
 #inserted at PBS::Subpbs:
 
 perl parse bug
