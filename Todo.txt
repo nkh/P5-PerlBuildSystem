@@ -1,19 +1,4 @@
 
-#depend log with --ddr --ddl ...  even if the display doesn't use those options
-	#depend twice
-		depend
-			_depend_log
-				copy of everything so it changes nothing
-				redirect output to file different from --depend_digest
-
-				which options to use are user defined
-
-			_depend
-		=> very slow
-
-	use fork
-
-depend_full_log_options
 
 write the generate file in cmake in pb
 	all the examples, including generation of subpbs and super build
@@ -469,6 +454,24 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
 
+#depend log with --ddr --ddl ...  even if the display doesn't use those options
+	#depend twice
+		depend
+			_depend_log
+				copy of everything so it changes nothing
+				redirect output to file different from --depend_digest
+
+				which options to use are user defined
+
+			_depend
+		=> very slow
+
+	use fork
+
+#depend_full_log_options
+	warn if errors
+
+#--get_options_list
 #mechanism to add switches in specific pbsfile
 	pbs .... -pbs_switch 'separator root_node_qr separator command line switches
 		'|| -dd' 

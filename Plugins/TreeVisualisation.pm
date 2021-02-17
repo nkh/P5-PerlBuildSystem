@@ -364,17 +364,17 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		}
 	if(@trees == 1)
 		{
-		PrintInfo DumpTree($dependency_tree, "Dependent: graph", FILTER => $FilterDump, INDENTATION => "Depend:\t". $PBS::Output::indentation,
-@extra_options) ;
+		my ($node_name) = grep {!/^__/} keys %$dependency_tree ;
+
 		PrintInfo "Depend:\n" 
 				. DumpTree
 					(
-					$dependency_tree,
-					"dependency graph",
+					$dependency_tree->{$node_name},
+					_INFO3_($node_name),
 					FILTER => $FilterDump,
-					INDENTATION => "Depend:\t". $PBS::Output::indentation,
+					INDENTATION => ($PBS::Output::indentation x 2),
 					@extra_options
-					) ;
+					)
 		}
 	else
 		{
@@ -386,20 +386,22 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 					\%trees,
 					"dependency graphs",
 					FILTER => $FilterDump,
-					INDENTATION => "Depend:\t". $PBS::Output::indentation,
+					INDENTATION => ($PBS::Output::indentation x 2),
 					@extra_options
 					) ;
 		}
 	}
 else
 	{
+	my ($node_name) = grep {!/^__/} keys %$dependency_tree ;
+
 	PrintInfo "Depend:\n" 
 			. DumpTree
 				(
-				$dependency_tree,
-				"dependency graph",
+				$dependency_tree->{$node_name},
+				_INFO3_($node_name),
 				FILTER => $FilterDump,
-				INDENTATION => "Depend:\t". $PBS::Output::indentation,
+				INDENTATION => ($PBS::Output::indentation x 2),
 				@extra_options
 				)
 		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;

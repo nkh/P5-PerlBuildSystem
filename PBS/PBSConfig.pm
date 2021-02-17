@@ -122,6 +122,12 @@ local @ARGV = @$switches_to_parse ;
 my $contains_switch ;
 my @targets ;
 
+local $SIG{__WARN__} 
+	= sub 
+		{
+		PrintWarning $_[0] unless $ignore_error ;
+		} ;
+			
 do
 	{
 	while(@ARGV && $ARGV[0] !~ /^-/)
@@ -131,12 +137,6 @@ do
 		
 	$contains_switch = @ARGV ;
 	
-	local $SIG{__WARN__} 
-		= sub 
-			{
-			PrintWarning $_[0] unless $ignore_error ;
-			} ;
-			
 	unless(GetOptions(@flags))
 		{
 		return(0, "PBS: Try perl pbs.pl -h.\n", $pbs_config, @ARGV) unless $ignore_error;

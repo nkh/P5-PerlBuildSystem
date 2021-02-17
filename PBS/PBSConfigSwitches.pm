@@ -177,6 +177,10 @@ my @flags_and_help =
 		'return completion list.',
 		'',
 
+	'get_options_list'   => \$pbs_config->{GET_OPTIONS_LIST},
+		'return completion list on stdout.',
+		'',
+
 	'pbs_options=s'   => \$pbs_config->{PBS_OPTIONS},
 		'start list subpbs options, argumet is a regex matching the target.',
 		'',
@@ -690,19 +694,19 @@ EOT
 		'Display how many nodes where added by each pbsfile run.',
 		'',
 		
-	'depend_log' => \$pbs_config->{DEPEND_LOG},
+	'dl|depend_log' => \$pbs_config->{DEPEND_LOG},
 		'Created a log for each subpbs.',
 		'',
 		
-	'depend_log_merged' => \$pbs_config->{DEPEND_LOG_MERGED},
+	'dlm|depend_log_merged' => \$pbs_config->{DEPEND_LOG_MERGED},
 		'Merge children subpbs out put in log.',
 		'',
 		
-	'depend_full_log' => \$pbs_config->{DEPEND_FULL_LOG},
+	'dfl|depend_full_log' => \$pbs_config->{DEPEND_FULL_LOG},
 		'Created a log for each subpbs with extra display options set. Logs are not merged',
 		'',
 		
-	'depend_full_log_options' => \$pbs_config->{DEPEND_FULL_LOG_OPTIONS},
+	'dflo|depend_full_log_options=s' => \$pbs_config->{DEPEND_FULL_LOG_OPTIONS},
 		'Set extra display options for full log.',
 		'',
 		
@@ -1600,14 +1604,8 @@ if (-e $file_name)
 		}
 	}
 
-my @flags_and_help = GetSwitches() ;
-
-my @switches ;
-for (my $i = 0 ; $i < @flags_and_help; $i += 4)
-	{
-	my ($switch, $help_text, $long_help_text) = ($flags_and_help[$i], $flags_and_help[$i + 2], $flags_and_help[$i + 3]) ;
-	push @switches, $switch ;
-	}
+my (@flags_and_help, @slice, @switches) = GetSwitches() ;
+push @switches, $slice[0] while (@slice = splice @flags_and_help, 0, 4 ) ; 
 
 my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
 
@@ -1620,7 +1618,7 @@ chmod 0755, $completion_file ;
 use Cwd ;
 my $cwd = Cwd::getcwd() ;
 
-PrintInfo                                "# Bash completion script 'pbs_perl_completion' generated, add the completion to Bash with:\n" ;
+PrintInfo                                "# Bash completion script '$file_name' generated, add the completion to Bash with:\n" ;
 PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_completion' pbs\n" ;
 }
 
@@ -1631,27 +1629,24 @@ my ($command_name, $word_to_complete, $previous_arguments) = @ARGV ;
 
 if($word_to_complete !~ /^\s?$/)
 	{
-	my @flags_and_help = GetSwitches() ;
-
-	my @switches ;
-	for (my $i = 0 ; $i < @flags_and_help; $i += 4)
-		{
-		my ($switch, $help_text, $long_help_text) = ($flags_and_help[$i], $flags_and_help[$i + 2], $flags_and_help[$i + 3]) ;
-		push @switches, $switch ;
-		}
-
+	my (@flags_and_help, @slice, @switches) = GetSwitches() ;
+	push @switches, $slice[0] while (@slice = splice @flags_and_help, 0, 4 ) ; 
 
 	use Tree::Trie ;
+	my $trie = new Tree::Trie ;
 
-	my ($trie) = new Tree::Trie ;
-	my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
+	$trie->add( map { ("-" . $_) , ("--" . $_) } @{ Term::Bash::Completion::Generator::de_getop_ify_list(\@switches)}) ;
 
-
-	my @list = map { ("-" . $_) , ("--" . $_) } @{ $completion_list } ;
-	$trie->add(@list) ;
-
-	print join("\n", $trie->lookup($word_to_complete)) ;
+	print join("\n", $trie->lookup($word_to_complete)) . "\n" ;
 	}
+}
+
+sub GetOptionsList
+{
+my (@flags_and_help, @slice, @switches) = GetSwitches() ;
+push @switches, $slice[0] while (@slice = splice @flags_and_help, 0, 4 ) ; 
+
+print join( "\n", map { ("-" . $_) } @{ Term::Bash::Completion::Generator::de_getop_ify_list(\@switches)} ) . "\n" ;
 }
 
 #-------------------------------------------------------------------------------

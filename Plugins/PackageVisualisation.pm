@@ -32,29 +32,63 @@ my ($pbs_config, $package_alias, $config_snapshot, $config, $source_directories,
 
 if(defined $pbs_config->{DISPLAY_SOURCE_DIRECTORIES})
 	{
-	PrintInfo(DumpTree($source_directories, "Depend: source directories:")) ;
+	PrintInfo "Depend: source directories:\n"
+			. DumpTree
+				(
+				$source_directories,
+				'',
+				DISPLAY_ADDRESS => 0,
+				INDENTATION => ($PBS::Output::indentation x 2),
+				) ;
 	}
+
 if($pbs_config->{DISPLAY_CONFIGURATION})
 		{
-		PrintInfo(DumpTree($config, "Depend: config for package '$package_alias' before rules are run:", DISPLAY_ADDRESS => 0));
+		PrintInfo "Config: package '$package_alias':\n"
+				. DumpTree
+					(
+					$config,
+					'',
+					DISPLAY_ADDRESS => 0,
+					INDENTATION => ($PBS::Output::indentation x 2),
+					) ;
 		}
 		
 if($pbs_config->{DISPLAY_CONFIGURATION_NAMESPACES})
 		{
-		PrintInfo(DumpTree($config_snapshot, "Depend: config namespaces for '$package_alias':", DISPLAY_ADDRESS => 0)) ;
+		PrintInfo "Depend: config namespaces for '$package_alias':\n"
+				. DumpTree
+					(
+					$config_snapshot,
+					'',
+					DISPLAY_ADDRESS => 0,
+					INDENTATION => ($PBS::Output::indentation x 2),
+					) ;
 		}
 		
 if(defined $pbs_config->{DISPLAY_USED_RULES}) #only the rules configured in
 	{
-	my $title =  "Depend: dependency rules for package '$package_alias':" ;
-
 	if(defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY})
 		{
-		PrintInfo(DumpTree([map{"'$_->{NAME}'$_->{ORIGIN}"} @{$dependency_rules}], $title, DISPLAY_ADDRESS => 0)) ;
+		PrintInfo "Rules: package '$package_alias':\n"
+				. DumpTree
+					(
+					[map{"'$_->{NAME}'$_->{ORIGIN}"} @{$dependency_rules}],
+					'',
+					DISPLAY_ADDRESS => 0,
+					INDENTATION => ($PBS::Output::indentation x 2),
+					) ;
 		}
 	else
 		{
-		PrintInfo(DumpTree($dependency_rules, $title, DISPLAY_ADDRESS => 0)) ;
+		PrintInfo "Rules: package '$package_alias':\n"
+				. DumpTree
+					(
+					$dependency_rules,
+					'',
+					DISPLAY_ADDRESS => 0,
+					INDENTATION => ($PBS::Output::indentation x 2),
+					) ;
 		}
 	}
 }

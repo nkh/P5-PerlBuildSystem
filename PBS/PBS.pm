@@ -739,7 +739,7 @@ if($type eq 'Pbsfile')
 	my $em = String::Truncate::elide_with_defaults({ length => $available - 12, truncate => 'left' });
 
 	PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
-	PrintInfo3("PBS: loading '" . $em->($file) . "'\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	PrintInfo2("PBS: loading '" . $em->($file) . "'\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
 	
 	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
 		{

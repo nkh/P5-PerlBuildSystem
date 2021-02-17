@@ -164,23 +164,27 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		$skipped += $rule->{STATS}{SKIPPED} // 0 ; 
 		}
 
-	$rule_name_max_length += 2 ; # for quotes
-
 	PrintInfo "Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
 			. "rules: $number_of_rules, "
 			. "calls: $calls, "
 			. "skipped: $skipped, " 
 			. "matches: $matches, "
 			. "match rate: " . sprintf("%0.02f", ($matches + $skipped) / ($calls || 1))
-			. "\n" ;
+			. "\n\n";
+
+	$rule_name_max_length++ ; # we add ':' to the name
+
+	PrintInfo("\t\t" . (' ' x ${rule_name_max_length}) . " called  skipped  matched\n\n") ;
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
-		my $name = sprintf "%${rule_name_max_length}s", "'$rule->{NAME}'" ;
-		PrintInfo "\trule: $name"
-			. ", called: " . ($rule->{STATS}{CALLS} // 0) 
-			. ", skipped: " . ($rule->{STATS}{SKIPPED} // 0) 
-			. ", matched: " . scalar(@{$rule->{STATS}{MATCHED} // []}) . "\n" 
+		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d  %7d ",
+				"$rule->{NAME}:",
+				($rule->{STATS}{CALLS} // 0),
+				($rule->{STATS}{SKIPPED} // 0),
+				scalar(@{$rule->{STATS}{MATCHED} // []}) ;
+
+		PrintInfo "\t\t$stat\n" ;
 		}
 	}
 
