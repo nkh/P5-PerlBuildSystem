@@ -1,3 +1,83 @@
+rule inheritance
+	parent can pass rules or not
+		all of them or noting
+
+	?children can accept rules if they come from a known place
+	?children decide what to do with rules 
+
+	Pbs use can be decorated with the name of rules it registers
+		if the rules are present the file is not loaded
+
+	pbsfiles do more than register rules
+		they add config, but those are usually inherited
+		they do computation, create lists, ..., create functions that create rules
+
+	responsibility is left to user
+
+	the pbsfiles must still be loaded, so what the pbsfile does for extra is still done
+		we gain time by not loading specific files that contain rules
+
+	pbsfile can declare that it needs some rules and we fail if they are not inherited from the parent
+
+	prent can decide which supbs gets what rules
+		with 2 rules in pbs2
+			one to add the subpbs
+			one to manipulate the supbs/node
+
+		in pbs1 it needs to be directly in the subpbs declaration
+			less practical but it can be wrapped in a utility function
+
+		subpbs ..., INHERITS_RULES => []
+			rules must exist of the subpbs fails
+
+		pbsuse could return a list of added rules
+			that let's the user verify rules are there
+
+	subpbs can check if a rule is available
+		but we don't want to give access to rules
+		
+		they can do it via an API
+			extended PbsUse 
+
+			a query function
+		
+				HasRule 'name or die ; a pbsfile that doesn't know how to add rules but needs them or dies
+					pbsuse 'need_rules', 1, 'name' # does the same
+
+				HasRule 'name' or HasRule 'name2' or die ;
+						name and name2 can match the same node
+
+				HasRule 'name' and HasRule 'name2' or die ;
+					pbsuse 'need_rules', 1, 'name', 'name2' # does the same
+			
+			pbsuse
+
+				PbsUse from # loads and ok if already defined in the same file (md5)
+					remember what rules where loaded from file and don't load if they are
+					all present
+
+					that information can be inherited from parent, hidden to the user
+						list of what what pbsused, where
+
+				PbsUse from, no_redefines # loads and croaks if already defined even same file
+
+				PbsUse from, accept_existing_rule  # loads and croaks if rules exists and defined somewhere else
+
+				PbsUse from, accept_existing_rule_from_wherever  # loads and is happy
+					which one is kept?
+
+				PbsUse from, accept_existing_rule, qw('name', ...) # don't load if rules exist otherwise load
+
+				PbsUse from, override, qw('name', ...) # don't load if rules exist otherwise load, override rules
+
+				PbsUse from, override_local, qw('name', ...) # don't load if rules exist otherwise load, override rules in this subpbs
+
+	pbsuse adds the library to the nodes depended in the pbs run
+		we can keep the rule origin and add the library even if it matches a node TADA no more global library dependence, it's by node
+		if the rules are inherited, and we still use package dependency, they need to be added to the package
+
+
+
 
 Do we need 'Rule'
 

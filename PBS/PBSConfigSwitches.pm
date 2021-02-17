@@ -754,6 +754,10 @@ EOT
 		'Set the level at which pbs starts warning aabout rule recursion',
 		'',
 		
+	'dnmr|display_non_matching_rules' => \$pbs_config->{DISPLAY_NON_MATCHING_RULES},
+		'Display the rules used during the dependency pass.',
+		'',
+		
 	'dur|display_used_rules'          => \$pbs_config->{DISPLAY_USED_RULES},
 		'Display the rules used during the dependency pass.',
 		'',

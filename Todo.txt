@@ -1,3 +1,47 @@
+pbsuse caching
+	before a pbsuse is run it verifies that it's rules are not already present
+		the rules contain the md5 of the file to load
+
+	the user can force loading
+		the library does more than adding rules
+			do not register rules but do the rest, possible
+			fail if any rule is re registred
+				we don't want to inherit those rules from parent load
+
+
+	pbsuse X
+		X => rule1 rule2 rule3, md5
+		rule1 => X
+		rule2 => X
+		rule3 => X
+		
+		
+	subpbs -> pass all loaded rules by default if default behavior is to not reload a library if it has already be loaded and is the same
+
+	if a library does different things at different times, it can tag itself and we know have to not inherit it
+
+		library does different things depending on configuration
+
+			config debug => 1; load lib -> it adds debug specific rules
+
+			config debug => 0; load lib -> no rule is added
+
+		if only config can modify behavior (could be whatever this is code that does what it wants) we can
+			monitor config usage and tag the library automatically
+
+		rule can be tagged VOLATILE
+		any VOLATILE rule makes the library volatile
+		volatile libraries are always reloaded
+		
+
+monitor rule usage and report those that don't match, add option
+	if rules are inherited we'll need to know it has matched in the current package
+		just add the package in the stats, at the end of a graph build we can extract the info about
+		where a rule has matched or not
+			maybe generate some yaml that can be post processed
+
+
+monitor config usage and report not used config, add option
 
 
 write the generate file in cmake in pb

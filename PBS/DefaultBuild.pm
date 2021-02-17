@@ -121,6 +121,16 @@ my $local_time =
 my $added_nodes_in_run = PBS::Depend::GetNodesPerPbsRun()->{$load_package} - 1 ; # don't count internal PBS node
 $added_nodes_in_run -= 1 unless 0 == $PBS::Output::indentation_depth; # subpbses target is already counted in the parents count
 
+if ($pbs_config->{DISPLAY_DEPEND_END})
+	{
+	my $end_nodes = scalar(keys %$inserted_nodes) ;
+	my $added_nodes = $end_nodes - $start_nodes ;
+
+	PrintInfo "Depend: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
+			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
+
+	}
+
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	{
 	my $time = sprintf("%0.4f s.", tv_interval ($t0_depend, [gettimeofday])) ;
@@ -134,16 +144,6 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	PrintInfo2 sprintf($template, $em->(GetRunRelativePath($pbs_config, $Pbsfile, 1))) ;
 	}
 	
-if ($pbs_config->{DISPLAY_DEPEND_END})
-	{
-	my $end_nodes = scalar(keys %$inserted_nodes) ;
-	my $added_nodes = $end_nodes - $start_nodes ;
-
-	PrintInfo "Depend: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
-			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
-
-	}
-
 if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 	{
 	PrintWarning "Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
@@ -178,15 +178,41 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
-		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d  %7d ",
-				"$rule->{NAME}:",
-				($rule->{STATS}{CALLS} // 0),
-				($rule->{STATS}{SKIPPED} // 0),
-				scalar(@{$rule->{STATS}{MATCHED} // []}) ;
+		my $matched = scalar(@{$rule->{STATS}{MATCHED} // []}) ;
+		$matched = $matched ? sprintf("%7d", $matched) : _ERROR_(sprintf("%7s", 0)) ;
+			
+
+		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d  %s ",
+					"$rule->{NAME}:",
+					($rule->{STATS}{CALLS} // 0),
+					($rule->{STATS}{SKIPPED} // 0),
+					$matched ;
 
 		PrintInfo "\t\t$stat\n" ;
 		}
 	}
+elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
+	{
+	for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
+		{
+		my $rule = $dependency_rules->[$rule_index] ;
+
+		unless($rule->{MATCHED})
+			{
+			my $rule_info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
+
+			PrintInfo2
+				(
+				"Depend: rule '$rule_info' didn't match"
+				. ", calls : $rule->{STATS}{CALLS}"
+				. ", skipped: " . ($rule->{STATS}{SKIPPED} // 0)
+				. " @ $target_string"
+				. "\n"
+				) ;
+			}
+		}
+	}
+
 
 PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 

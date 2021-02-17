@@ -254,9 +254,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	my $file = defined $pbs_config->{PBSFILE_CONTENT} ? 'virtual' : $rule->{FILE} ;
 	my $rule_info = GetRunRelativePath($pbs_config, $rule_name . _INFO2_(" @ $file:$rule_line")) ;
 
-   
-	$rule->{STATS}{CALLED}++ ;
-
 	my $depender  = $rule->{DEPENDER} ;
 	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $rule) ;
 
