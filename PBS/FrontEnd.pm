@@ -186,7 +186,7 @@ else
 
 	Pbs
 		(
-		COMMAND_LINE_ARGUMENTS => [ '--depend_log' , grep { ! /^--?depend_full_log/ } @{$command_line_arguments} ],
+		COMMAND_LINE_ARGUMENTS => [ '--depend_log', '--no_indentation', grep { ! /^--?depend_full_log/ } @{$command_line_arguments} ],
 		PBS_CONFIG => $pbs_config_extra_options
 		) ;
 	} ;

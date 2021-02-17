@@ -538,7 +538,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $short_node_name = $node_name ;
 				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
 
-				my $node_matches = $rules_matching > 1 ? ", node matched $rules_matching rules" : '' ;
+				my $node_matches = $rules_matching > 1 ? _INFO2_(" ($rules_matching*)") : '' ;
 
 				my $node_insertion_rule = $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE}
 								? _INFO2_(
@@ -557,7 +557,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				$node_insertion_rule = '' if $node_insertion_rule =~ /PBS:Subpbs/ ;
 
 				my $node_matching_rule = $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
-								? _INFO2_(" $rule_index:$rule_info$rule_type$node_matches")
+								? _INFO2_(" $rule_index:$rule_info$rule_type")
 								: '' ;
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
@@ -565,7 +565,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					PrintInfo3
 						(
 						$em->("$indent'$short_node_name'${node_type}${forced_trigger}")
-						. "$node_matching_rule$node_insertion_rule\n"
+						. "$node_matches$node_matching_rule$node_insertion_rule\n"
 						) ;
 
 					if(@dependency_names)

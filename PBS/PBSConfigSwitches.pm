@@ -294,6 +294,10 @@ EOT
 		'set the text used to indent the output. This is repeated "subpbs level" times.',
 		'',
 
+	'no_indentation'            => \$PBS::Output::no_indentation,
+		'',
+		'',
+
 	'p|pbsfile=s'                     => \$pbs_config->{PBSFILE},
 		'Pbsfile use to defines the build.',
 		'',

@@ -63,6 +63,7 @@ $output_info_label = $_[1] ;
 our $indentation = '    ' ;
 our $indentation_depth = 0 ;
 our $display_error_context  = 0 ;
+our $no_indentation = 0 ;
 
 my $cd = 256 ; # color_depth
 my %cc ;
@@ -128,7 +129,7 @@ $no_indent_color //= 0 ;
 #print STDERR " ($color_name, $string, $indent, $no_indent_color) \n" ;
 
 my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
-my $indentation = $indent ? ($PBS::Output::indentation x $depth) : '' ;
+my $indentation = $indent && ! $PBS::Output::no_indentation ? ($PBS::Output::indentation x $depth) : '' ;
 
 my $color = $cc{$cd}{$color_name} // '' ;
 my $reset = $cc{$cd}{reset} // '' ;
