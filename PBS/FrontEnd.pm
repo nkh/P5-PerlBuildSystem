@@ -31,6 +31,23 @@ use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
 
+sub ParseDependFullLogOptions
+{
+my ($command_line_arguments) = @_ ;
+
+my ($switch_parse_ok, $parse_message, @new_argv, @options) = (1, '') ;
+my $pbs_config = {} ;
+
+$pbs_config->{$_}++
+	for( qw(
+		DISPLAY_DEPENDENCY_TIME 
+		)) ;
+
+push @options, $pbs_config ;
+
+$switch_parse_ok, $parse_message, $command_line_arguments, \@options ;
+}
+
 sub ParseSubpbsOptions
 {
 # extract pbs_options from the command line, parse them
@@ -130,6 +147,51 @@ for my $subpbs_option (@unchecked_subpbs_options)
 $subpbs_switch_parse_ok, $subpbs_parse_message, \@new_argv, \@subpbs_options ;
 }
 
+sub GenerateDependFullLog
+{
+my ($command_line_arguments) = @_ ;
+
+my $pid = fork() ;
+if($pid)
+	{
+	
+	}
+else
+	{
+	# new process
+	unless(defined $pid)
+		{
+		# couldn't fork
+		return ;
+		}
+		
+	my $pbs_config_extra_options = {} ;
+
+	open STDOUT,  ">/dev/null"  or die "Can't redirect STDOUT to dev/null: $!" ;
+	STDOUT->autoflush(1) ;
+
+	open STDERR, '>>&STDOUT' or die "Can't redirect STDERR: $!";
+
+	$pbs_config_extra_options->{$_}++
+		for( qw(
+			DEBUG_DISPLAY_DEPENDENCIES 
+			DEBUG_DISPLAY_DEPENDENCIES_LONG 
+			DISPLAY_DEPENDENCY_MATCHING_RULE 
+			DISPLAY_DEPENDENCY_INSERTION_RULE 
+			DISPLAY_LINK_MATCHING_RULE 
+			DISPLAY_LINK_MATCHING_RULE 
+			)) ;
+	
+			#DISPLAY_DEPENDENCY_TIME 
+
+	Pbs
+		(
+		COMMAND_LINE_ARGUMENTS => [ '--depend_log' , grep { ! /^--?depend_full_log/ } @{$command_line_arguments} ],
+		PBS_CONFIG => $pbs_config_extra_options
+		) ;
+	} ;
+}
+
 sub Pbs
 {
 if($ARGV[0] eq '--get_bash_completion')
@@ -142,15 +204,26 @@ my $t0 = [gettimeofday];
 
 my (%pbs_arguments) = @_ ;
 
-my ($switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $command_line_arguments,  $subpbs_options) = ParseSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+my 
+	(
+	$switch_parse_ok_subpbs_options, $parse_message_subpbs_options,
+	$command_line_arguments,  $subpbs_options
+	) = ParseSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+
+my 
+	(
+	$switch_parse_ok_depend_full_log_options, $parse_message_depend_full_log_options,
+	$command_line_arguments2,  $depend_full_log_options
+	) = ParseDependFullLogOptions($command_line_arguments) ;
 
 PBS::PBSConfig::RegisterPbsConfig('PBS', {}) ;
 my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
-my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $command_line_arguments) ;
+my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $command_line_arguments2) ;
 
 $pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
+$pbs_config->{DEPEND_FULL_LOG_OPTIONS} = $depend_full_log_options ;
 
 for ( @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($_) }
   
@@ -260,6 +333,8 @@ for my $target (@$targets)
 		}
 	}
 	
+GenerateDependFullLog($pbs_arguments{COMMAND_LINE_ARGUMENTS}) if $pbs_config->{DEPEND_FULL_LOG} ;
+
 $targets =
 	[
 	map

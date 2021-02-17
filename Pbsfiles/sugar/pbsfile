@@ -8,7 +8,7 @@ Config
 
 	MODULES => 'compiler_1' ;
 
-Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'compiler_2', 'tests', 'depended_somewhere_else', 'depended'] => BuildOk("Done 'oct'") ;
+Rule 'all', ['all' => get_modules(qw(MODULES)), 'runtime', 'compiler_2/compiler_2', 'tests', 'depended_somewhere_else', 'depended'] => BuildOk("Done 'oct'") ;
 MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
 
 SourcesMatch qr/X$/ ;

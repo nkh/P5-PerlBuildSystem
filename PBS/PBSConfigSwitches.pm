@@ -694,6 +694,14 @@ EOT
 		'Merge children subpbs out put in log.',
 		'',
 		
+	'depend_full_log' => \$pbs_config->{DEPEND_FULL_LOG},
+		'Created a log for each subpbs with extra display options set. Logs are not merged',
+		'',
+		
+	'depend_full_log_options' => \$pbs_config->{DEPEND_FULL_LOG_OPTIONS},
+		'Set extra display options for full log.',
+		'',
+		
 	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},
 		'Display an extra blank line araound a depend.',
 		'',

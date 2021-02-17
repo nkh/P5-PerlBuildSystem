@@ -20,9 +20,52 @@ Do we need 'Rule'
 		reh,
 		reh ;
 		
+build distribution
+	the remote node don't need to have the whole graph, they can build sub graphs
+		same environment/tools
+		same code base
+
+		give a target, a config, and a pbsfile
+
+		even better if there are no links
+
+	
+	linking nodes can also use the env/codebase + target + config + pbsfile
+		if two sub graphs have common nodes (which would be linked if they were in the same process)
+			if the above is equal the graphs are compatible
+
+	linking nodes rather than computing their sub graph (and making sure they are equal in all dependeing processes)
+	is to minimize the time spend building their sub graphs.
+		building sub graphs is not, in most cases, is not too time consuming, that needs to be compared
+		with the complexity added to synchronize the processes graphs
+
+		another advantage of local "common node" sub graph is that it can be checked locally if the process is remote
+
+		different processes may have different intermediary nodes and create different build sequences
+			the build can be optimized by comparing the build sequences and the remote process build sequence
+			changed 
+
+			building different nodes on different machines means those nodes need to synchronized
+				a post build command that's injected
+				a new intermediary node
+
+				the receiving machine must also wait for the specific node
+					a binary repo could queue requests
+
+				when a process waits for a node, a new ode builder is created to continue building, when the 
+				node is received, the process dies and is removes from the builders list
+
+			building all the nodes on the remote process has the advantage of updating the generated artefacts and 
+			they will be available in next build
+
+				we can:
+					synchronize the build nodes around after the build
+					let the remote process build the entire graph (its graph)
+					let check verify where the is available
+						the binary cache could have a link rather than the artefact
 
 multiple matching pbsfiles rules
-	we want to be able to match multiple times a node that is to be depended in a obsfile
+	we want to be able to match multiple times a node that is to be depended in a pbsfile
 		for example to add switches to the subpbs run
 			particularely via rule injection
 
@@ -30,7 +73,6 @@ multiple matching pbsfiles rules
 		what if we want to depend in another pbsfile too?
 
 		why can't a pbsfile node have a builder somewhere else?
-	
 
 sugar wrapping pbs calls
 	when a complex set of operation is needed, it's easy to create new function that call the pbs API

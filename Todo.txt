@@ -1,39 +1,25 @@
 
-#mechanism to add switches in specific pbsfile
-	pbs .... -pbs_switch 'separator root_node_qr separator command line switches
-		'|| -dd' 
-		"|| -x 'fkmlmkvflmkv'" 
-		"|| -dd 'some space'" 
+depend log with --ddr --ddl ...  even if the display doesn't use those options
+	depend twice
+		depend
+			_depend_log
+				copy of everything so it changes nothing
+				redirect output to file different from --depend_digest
 
-	pbs .... -pbs_options 'qr' -option -option 'some space' #no more options
-	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end -normal_option ....
-	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end 'qr' -option ....
+				which options to use are user defined
 
-	applied before a subpbs we add the switches to the subpbs
+			_depend
 
-	applied at the node level it applies anywhere the node is depended
-		if the node is a subpbs the options will be applied when the node is inserted and when the node is depended
 
-restart debuggin before current node, current pbs run
-debugger changes pbs option
-	for the rest of pbs
-	under the branch
-	for the node only
-	
-#inserted at PBS::Subpbs:
+write the generate file in cmake in pb
+	all the examples, including generation of subpbs and super build
 
-perl parse bug
-	my @list = map { "-$_" => "--" . $_ } @{ $completion_list } ;
+	#can evaluate shell command be used as a templating function
+		barely but it now renders references via DTD
 
-#depend log per subpbs
-	#redirect stdout/err to log in defaultBuild
+	comment that there is no use to re-generate anything
 
-	#no direct output
-
-	#log contains sub logs
-	
-
-error not in $@ ? use warnings?
+error not in $@ ? s it due to "use warnings?"
 
 	Bareword found where operator expected at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
 
@@ -47,42 +33,6 @@ error not in $@ ? use warnings?
 
 	    sdlkmd sdakd "
 
-
-#time spend depending one pbs file without subpbs
-	default build 132
-
-#scoped rules
-	need fast topo sort than a full blown build system
-		=> doesn't need any sorting at ll
-#rules ordering
-	#need fast topo sort than a full blown build system
-
-#tree graph shows source
-
-#tnos
-	better implementation
-	--vas
-
-#match once rules
-	then don̈́'t run again, scoped to one, we want them run first
-
-	-option to globally override and warn if match multiple times
-
-
-write the generate file in cmake in pbs
-	all the examples, including generation of subpbs and super build
-
-	#can evaluate shell command be used as a templating function
-		barely but it now renders references via DTD
-
-	comment that there is no use to re-generate anything
-
-#Do we need to have TARGET path set?
-	it has it's uses specially when showing dependencies with -dd
-
-pbs completion via pbs to be always up to date
-	? too slow
-	
 put new Pbsfiles/... in MANIFEST
 
 move rule_order tests to t/
@@ -90,11 +40,6 @@ move rule_order tests to t/
 Single rule builder doesn't work in -j
 
 i:h isfname , ^wF, gF
-
-#--nh, display compact dependency information
-	uses \K
-	anything the prints while in -nh gets on the wrong line
-	=> -nhc
 
 can a node be tagged as source in another repo
 	case 1
@@ -519,6 +464,63 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#mechanism to add switches in specific pbsfile
+	pbs .... -pbs_switch 'separator root_node_qr separator command line switches
+		'|| -dd' 
+		"|| -x 'fkmlmkvflmkv'" 
+		"|| -dd 'some space'" 
+
+	pbs .... -pbs_options 'qr' -option -option 'some space' #no more options
+	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end -normal_option ....
+	pbs .... -pbs_options 'qr' -option -option 'some space' -pbs_options_end 'qr' -option ....
+
+	applied before a subpbs we add the switches to the subpbs
+
+	applied at the node level it applies anywhere the node is depended
+		if the node is a subpbs the options will be applied when the node is inserted and when the node is depended
+
+#inserted at PBS::Subpbs:
+
+#depend log per subpbs
+	#redirect stdout/err to log in defaultBuild
+
+	#no direct output
+
+	#log contains sub logs
+	
+
+#time spend depending one pbs file without subpbs
+	default build 132
+
+#scoped rules
+	need fast topo sort than a full blown build system
+		=> doesn't need any sorting at ll
+#rules ordering
+	#need fast topo sort than a full blown build system
+
+#tree graph shows source
+
+#tnos
+	better implementation
+	--vas
+
+#match once rules
+	then don̈́'t run again, scoped to one, we want them run first
+
+	-option to globally override and warn if match multiple times
+
+
+#Do we need to have TARGET path set?
+	it has it's uses specially when showing dependencies with -dd
+
+#pbs completion via pbs to be always up to date
+	? too slow
+	
+#--nh, display compact dependency information
+	uses \K
+	anything the prints while in -nh gets on the wrong line
+	=> -nhc
 
 #pbs completion script to two streams or give root name for files
 

@@ -192,10 +192,6 @@ if($sort_rules)
 		@rules_order = map { $_->{__NAME} =~ m/\.\/(.*)/ ; $1 } grep { $_->{__NAME} !~ /^__/ } @$build_sequence
 			if $build_success ;
 		}
-	else
-		{
-		$build_success++ ;
-		}
 
 	die ERROR("Rule: error ordering for '$short_pbsfile'.") . "\n" unless $build_success ;
 

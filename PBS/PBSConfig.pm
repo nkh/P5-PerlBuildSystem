@@ -193,6 +193,11 @@ if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
 
+if(defined $pbs_config->{DEPEND_FULL_LOG})
+	{
+	undef $pbs_config->{DEPEND_LOG} ;
+	}
+
 if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
 	{
 	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;

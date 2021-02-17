@@ -59,9 +59,6 @@ sub GetPbsRuns
 return($pbs_runs) ;
 }
 
-my ($stdout, $stderr) ; # before any call to DefaultBuild
-my @output_stack ; # display subpbs after ourself
-
 sub Pbs
 {
 my (undef, undef, undef, undef, $pbs_config) = @_ ;
@@ -72,9 +69,6 @@ if(!$pbs_config->{DEPEND_LOG})
 	}
 else
 	{
-	$stdout = fileno(STDOUT) unless defined $stdout;
-	$stderr = fileno(STDERR) unless defined $stderr;
-
 	my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
 
 	my $package = CanonizePackageName($pbs_config->{PACKAGE}) ;
@@ -97,26 +91,13 @@ else
 	open my $OLDERR, ">&STDERR" ;
 	open STDERR, '>>&STDOUT' ;
 
-	print $OLDOUT '' ;
-	print $OLDERR '' ;
-
 	my @result ;
 
 	eval { @result = _Pbs(@_) } ;
 
-	open STDERR, '>&' . fileno($OLDERR) ;
-	open STDOUT, '>&' . fileno($OLDOUT) ;
+	open STDERR, '>&' . fileno($OLDERR) or die "Can't restore STDERR: $!";
+	open STDOUT, '>&' . fileno($OLDOUT) or die "Can't restore STDOUT: $!";
 
-	#if($stdout == fileno(STDOUT))
-	#	{
-		#print STDERR read_file($redirection_file) ;
-		#print STDERR read_file($_) for @output_stack ;
-	#	}
-	#else
-	#	{
-		#unshift @output_stack, $redirection_file ;
-	#	}
-		
 	die $@ if $@ ;
 	return @result ;
 	}
@@ -128,7 +109,11 @@ my $t0 = [gettimeofday];
 $PBS::Output::indentation_depth++ ;
 $pbs_runs++ ;
 
-my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
+my 	
+	(
+	$pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config,
+	$parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build,
+	) = @_ ;
 
 die unless $dependency_tree_name ;
 $pbsfile_chain //= [] ;

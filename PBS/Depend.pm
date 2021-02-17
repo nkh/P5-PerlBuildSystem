@@ -891,6 +891,7 @@ for my $triggered_node_data (@triggered_nodes)
 		$config,
 		$inserted_nodes,
 		$dependency_rules,
+		$parent_matching_rules,
 		) ;
 	}
 # handle node triggers finished
@@ -1137,7 +1138,7 @@ if(@has_matching_non_subpbs_rules)
 			my @sub_dependency_rules = $pbs_config->{RULE_RUN_ONCE}
 							? grep { $_->{MULTI} || ! exists $_->{MATCHED} } @$dependency_rules
 							: () ;
-
+			
 			my $local_time = 
 				CreateDependencyTree
 				(

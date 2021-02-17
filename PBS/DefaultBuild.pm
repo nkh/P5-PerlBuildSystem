@@ -115,6 +115,7 @@ my $local_time =
 		$config,
 		$inserted_nodes,
 		$dependency_rules,
+		{},
 		) ;
 
 my $added_nodes_in_run = PBS::Depend::GetNodesPerPbsRun()->{$load_package} - 1 ; # don't count internal PBS node
