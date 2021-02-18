@@ -158,8 +158,6 @@ return if(exists $tree->{__DEPENDED}) ;
 
 my ($t0_rules, $rule_time) = ([gettimeofday], 0) ;
 
-$nodes_per_pbs_run{$load_package}++ ;
-
 my (@node_matching_rules, @node_dependencies) ;
 my $indent = $PBS::Output::indentation ;
 my $node_name = $tree->{__NAME} ;
@@ -897,6 +895,7 @@ for my $dependency (@dependencies)
 	{
 	my $dependency_name = $dependency->{NAME} ;
 	my $rule_index      = $dependency->{RULE_INDEX} ;
+	my $rule            = $dependency_rules->[$rule_index] ;
 	
 	$has_dependencies++ ;
 	
@@ -915,9 +914,9 @@ for my $dependency (@dependencies)
 	else
 		{
 		# a new node is born
-		my $rule_name = $dependency_rules->[$rule_index]{NAME} ;
-		my $rule_file = $dependency_rules->[$rule_index]{FILE} ;
-		my $rule_line = $dependency_rules->[$rule_index]{LINE} ;
+		my $rule_name = $rule->{NAME} ;
+		my $rule_file = $rule->{FILE} ;
+		my $rule_line = $rule->{LINE} ;
 		my $rule_info = $rule_name . ':' . $rule_file . ':' . $rule_line ;
 
 		my $time = Time::HiRes::time() ;
@@ -941,33 +940,32 @@ for my $dependency (@dependencies)
 			$DB::single = 1 if(PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1)) ;
 			}
 		
-		$tree->{$dependency_name}                     = {} ;
-		$tree->{$dependency_name}{__MATCHING_RULES}   = [] ;
-		$tree->{$dependency_name}{__CONFIG}           = $config ;
-		$tree->{$dependency_name}{__NAME}             = $dependency_name ;
-		$tree->{$dependency_name}{__USER_ATTRIBUTE}   = $dependency->{USER_ATTRIBUTE} if exists $dependency->{USER_ATTRIBUTE} ;
+		my $dependency = $inserted_nodes->{$dependency_name} = $tree->{$dependency_name} = {} ;
+
+		$dependency->{__MATCHING_RULES}  = [] ;
+		$dependency->{__CONFIG}          = $config ;
+		$dependency->{__NAME}            = $dependency_name ;
+		$dependency->{__USER_ATTRIBUTE}  = $dependency->{USER_ATTRIBUTE} if exists $dependency->{USER_ATTRIBUTE} ;
 		
-		$tree->{$dependency_name}{__PACKAGE}          = $package_alias ;
-		$tree->{$dependency_name}{__LOAD_PACKAGE}     = $load_package ;
-		$tree->{$dependency_name}{__PBS_CONFIG}       = $pbs_config ;
+		$dependency->{__PACKAGE}         = $package_alias ;
+		$dependency->{__LOAD_PACKAGE}    = $load_package ;
+		$dependency->{__PBS_CONFIG}      = $pbs_config ;
 		
-		$tree->{$dependency_name}{__INSERTED_AT}      = {
-								PBSFILE_CHAIN              => $pbsfile_chain,
-								INSERTION_FILE             => $Pbsfile,
-								INSERTION_PACKAGE          => $package_alias,
-								INSERTION_LOAD_PACKAGE     => $load_package,
-								INSERTION_RULE_DEFINITION  => $dependency_rules->[$rule_index],
-								INSERTION_RULE             => $rule_info,
-								INSERTION_RULE_NAME        => $rule_name,
-								INSERTION_RULE_FILE        => $rule_file,
-								INSERTION_RULE_LINE        => $rule_line,
-								INSERTION_TIME             => $time,
-								INSERTING_NODE             => $tree->{__NAME},
-								} ;
+		$dependency->{__INSERTED_AT} = {
+						PBSFILE_CHAIN              => $pbsfile_chain,
+						INSERTION_FILE             => $Pbsfile,
+						INSERTION_PACKAGE          => $package_alias,
+						INSERTION_LOAD_PACKAGE     => $load_package,
+						INSERTION_RULE_DEFINITION  => $dependency_rules->[$rule_index],
+						INSERTION_RULE             => $rule_info,
+						INSERTION_RULE_NAME        => $rule_name,
+						INSERTION_RULE_FILE        => $rule_file,
+						INSERTION_RULE_LINE        => $rule_line,
+						INSERTION_TIME             => $time,
+						INSERTING_NODE             => $tree->{__NAME},
+						} ;
 								
-		$inserted_nodes->{$dependency_name} = $tree->{$dependency_name} ;
-			
-		$nodes_per_pbs_run{$load_package}++ if DependencyIsSource($tree, $dependency_name, $inserted_nodes) ; 
+		push @{$nodes_per_pbs_run{$load_package}}, "$dependency_name, rule: $rule_name" ; 
 
 		#DEBUG
 		$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1) ;
@@ -1242,6 +1240,8 @@ elsif(@sub_pbs)
 			$sub_pbs_config->{PBS_COMMAND},
 			) ;
 		
+	shift @{$nodes_per_pbs_run{$sub_pbs_load_package}} ; # node existed before subpbs
+
 	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
 	if ($node_is_trigger_inserted)
 		{
@@ -1502,7 +1502,7 @@ push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED}
 
 if($dependency_is_source)
 	{
-	$linked_node_info = WARNING "${indent}'$dependency_name' " . _INFO_("ᴸᴵᴺᴷᴵᴺᴳ");
+	$linked_node_info = WARNING "${indent}'$dependency_name' " . _INFO2_("ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
 
@@ -1511,7 +1511,7 @@ if($dependency_is_source)
 	}
 else
 	{
-	$linked_node_info = INFO3 "${indent}'$dependency_name' " . _INFO_("ᴸᴵᴺᴷᴵᴺᴳ");
+	$linked_node_info = INFO3 "${indent}'$dependency_name' " . _INFO2_("ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, exists $dependency->{__DEPENDED}
 				? scalar ( grep { ! /^__/ } keys %$dependency )
@@ -1520,7 +1520,7 @@ else
 				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info_2') ;
 	}
 
-$linked_node_info .= _INFO2_ ' ⁽' . join('· ', @link_type) . '⁾' ;
+$linked_node_info .= _INFO2_ ' ⁻ ' . join(' ⁻ ', @link_type) ;
 
 if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE})
 	{

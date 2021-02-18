@@ -34,6 +34,8 @@ pbsuse caching
 		volatile libraries are always reloaded
 		
 
+#monitor rule usage and report those that don't match, add option
+
 monitor rule usage and report those that don't match, add option
 	if rules are inherited we'll need to know it has matched in the current package
 		just add the package in the stats, at the end of a graph build we can extract the info about

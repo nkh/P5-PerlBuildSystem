@@ -419,11 +419,33 @@ if(@$targets)
 	# move all stat into the nodes as they are build in different process
 	# the stat displaying would need to traverse the tree, after synchronizing from the build processes
 
-	if($pbs_config->{DISPLAY_NODES_PER_PBSFILE})
+	if($pbs_config->{DISPLAY_NODES_PER_PBSFILE} ||$pbs_config->{DISPLAY_NODES_PER_PBSFILE_NAMES})
 		{
 		my $nodes_per_pbsfile = PBS::Depend::GetNodesPerPbsRun() ;
-		my $keys = keys %{$nodes_per_pbsfile} ;
-		PrintInfo DumpTree $nodes_per_pbsfile, 'PBS: nodes per pbsfile run:', DISPLAY_ADDRESS => 0 if $keys ;
+		if($pbs_config->{DISPLAY_NODES_PER_PBSFILE_NAMES})
+			{
+			PrintInfo "PBS: nodes added per pbsfile run:\n"
+					 . DumpTree
+						(
+						$nodes_per_pbsfile, '',
+						DISPLAY_ADDRESS => 0,
+						INDENTATION => $PBS::Output::indentation x 2,
+						ELEMENT => 'node',
+						) ;
+			}
+		else
+			{
+			PrintInfo "PBS: nodes added per pbsfile run:\n"
+					 . DumpTree
+						(
+						$nodes_per_pbsfile, '',
+						DISPLAY_ADDRESS => 0,
+						INDENTATION => $PBS::Output::indentation x 2,
+						ELEMENT => 'node',
+						DISPLAY_NUMBER_OF_ELEMENTS_OVER_MAX_DEPTH => 1,
+						MAX_DEPTH => 1
+						) ;
+			}
 		}
 
 	if($pbs_config->{DISPLAY_MD5_STATISTICS})

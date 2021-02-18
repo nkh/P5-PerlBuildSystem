@@ -694,6 +694,10 @@ EOT
 		'Display how many nodes where added by each pbsfile run.',
 		'',
 		
+	'display_nodes_per_pbsfile_names'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE_NAMES},
+		'Display which nodes where added by each pbsfile run.',
+		'',
+		
 	'dl|depend_log' => \$pbs_config->{DEPEND_LOG},
 		'Created a log for each subpbs.',
 		'',
