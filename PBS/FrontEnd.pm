@@ -247,6 +247,7 @@ my (%pbs_arguments) = @_ ;
 
 if($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] eq '--get_bash_completion')
 	{
+	ParseSwitchesAndLoadPlugins({}, []) ; #load plugins
 	PBS::PBSConfigSwitches::GetCompletion() ;
 	return(1) ;
 	}

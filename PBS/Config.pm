@@ -1026,9 +1026,7 @@ while($entry =~ /\%([_a-zA-Z0-9]+)/g)
 		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 	push @{$config_access{$package}{$element}}, "$origin, EvalConfig" ;
-
 	}
-	
 
 $entry =~ s/\%([_a-zA-Z0-9]+)/
 	if(exists $config->{$1} && defined $config->{$1})
