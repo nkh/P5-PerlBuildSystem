@@ -59,8 +59,17 @@ my(@trigger_definition) = @_ ;
 my $trigger_definition = \@trigger_definition ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
 
-my ($name, $triggered_and_triggering) = RunUniquePluginSub($pbs_config, 'AddTrigger', $file_name, $line, $trigger_definition) ;
+
+my ($name, $triggered_and_triggering) = RunUniquePluginSub($pbs_config, 'AddTrigger', $package, $config, $file_name, $line, $trigger_definition) ;
 
 # the trigger definition is either
 #1/ the name of the triggered tree followed by simplified dependency regexes

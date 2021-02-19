@@ -203,10 +203,13 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 
 			PrintInfo2
 				(
-				"Depend: rule '$rule_info' didn't match"
-				. ", calls : $rule->{STATS}{CALLS}"
-				. ", skipped: " . ($rule->{STATS}{SKIPPED} // 0)
-				. " @ $target_string"
+				"Depend: '$rule_info' @ $target_string"
+			 	. _WARNING3_
+					(
+					" rule didn't match"
+					. ", calls : $rule->{STATS}{CALLS}"
+					. ", skipped: " . ($rule->{STATS}{SKIPPED} // 0)
+					)
 				. "\n"
 				) ;
 			}

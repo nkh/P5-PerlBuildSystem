@@ -28,27 +28,18 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		
 		TRIGGER_INSERTED
 		
-		UNTYPED
-		VIRTUAL
-		V
+		UNTYPED untyped
+		NOT_ACTIVE not_active NA
+		VIRTUAL V virtual
+		FORCED forced
+		CREATOR creator
+		IMMEDIATE_BUILD immediate_build
+
 		LOCAL
-		FORCED
-		CREATOR
-		IMMEDIATE_BUILD
-		untyped
-		virtual
-		forced
-		creator
-		immediate_build
 
-		MULTI
-		multi
-
-		FIRST
-		first
-
-		LAST
-		last
+		MULTI multi
+		FIRST first
+		LAST last
 		
 		BUILD_SUCCESS
 		BUILD_FAILED
@@ -93,6 +84,9 @@ use constant TRIGGER_INSERTED   => '__TRIGGER_INSERTED' ;
 # rule types --------------------------------------------------------
 use constant UNTYPED            => '__UNTYPED' ;
 use constant untyped            => '__UNTYPED' ;
+use constant NOT_ACTIVE         => '__NOT_ACTIVE' ;
+use constant not_active         => '__NOT_ACTIVE' ;
+use constant NA                 => '__NOT_ACTIVE' ;
 use constant VIRTUAL            => '__VIRTUAL' ;
 use constant V                  => '__VIRTUAL' ;
 use constant virtual            => '__VIRTUAL' ;

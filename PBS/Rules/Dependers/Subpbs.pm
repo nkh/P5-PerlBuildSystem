@@ -29,7 +29,7 @@ use PBS::Rules ;
 
 sub GenerateSubpbsDepender
 {
-my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_sub) = @_ ;
+my ($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_sub) = @_ ;
 
 # sub pbs definition
 for my $key (keys %$depender_definition)

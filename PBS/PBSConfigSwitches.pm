@@ -874,6 +874,10 @@ EOT
 		'(DF) Display which rules are registred. and which rule packages are queried.',
 		'',
 		
+	'dir|display_inactive_rules'      => \$pbs_config->{DISPLAY_INACTIVE_RULES},
+		'Display rules present i the åbsfile but tagged as NON_ACTIVE.',
+		'',
+		
 	'drd|display_rule_definition'     => \$pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION},
 		'(DF) Display the definition of each registrated rule.',
 		'',

@@ -13,8 +13,7 @@ the ./ in the dependency definition forces it to be from the pbs root.
 
 use Data::TreeDumper ;
 use PBS::Constants ;
-
-my $display_simplified_rule_transformation ;
+use PBS::Config ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
@@ -28,9 +27,11 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 
 sub AddTrigger
 {
-my ($pbs_config, $file_name, $line, $trigger_definition) = @_ ;
+my ($pbs_config, $package, $config, $file_name, $line, $trigger_definition) = @_ ;
 
-PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddTrigger") if $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
+my $display_rule_transformation = $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
+
+PrintDebug DumpTree($trigger_definition, "Plugin: SimplifyRule::AddTrigger") if $display_rule_transformation ;
 
 my $name = shift @$trigger_definition ;
 my $triggered_and_triggering = shift @$trigger_definition ;
@@ -48,7 +49,7 @@ if('ARRAY' eq ref $triggered_and_triggering)
 			$trigger_path_regex,
 			$trigger_prefix_regex,
 			$trigger_regex,
-			) = BuildDependentRegex($trigger) ;
+			) = BuildDependentRegex($pbs_config, $package, $config, $file_name, $line, $trigger) ;
 			
 		unless($build_ok)
 			{
@@ -60,10 +61,8 @@ if('ARRAY' eq ref $triggered_and_triggering)
 		my $original = $trigger ;
 		$trigger = qr/^$trigger_path_regex$trigger_prefix_regex$trigger_regex$/ ;
 		
-		if($display_simplified_rule_transformation)
-			{
-			PrintDebug "Plugin: SimplifyRule::AddTriger, Replacing '$original' with '$trigger' in trigger rule '$name' at '$file_name,$line'\n" ;
-			}
+		PrintDebug "Plugin: SimplifyRule::AddTriger, Replacing '$original' with '$trigger' in trigger rule '$name' at '$file_name,$line'\n"
+			if $display_rule_transformation ;
 		}
 	}
 
@@ -78,8 +77,10 @@ sub AddSubpbsRule
 # or ($node_regex, $Pbsfile), $name and $pbs_package will be generate
 # less than 2 arguments or 3 arguments is considered an error
 
-my ($pbs_config, $file_name, $line, $rule_definition) = @_ ;
+my ($pbs_config, $package, $config, $file_name, $line, $rule_definition) = @_ ;
 my ($name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data);
+
+my $display_rule_transformation = $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
 
 if(@$rule_definition < 2 || @$rule_definition == 3)
 	{
@@ -99,24 +100,22 @@ else
 
 unless('Regexp' eq ref $node_regex)
 	{
-	PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddSubpsRule") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddSubpsRule") if $display_rule_transformation ;
 	my 
 		(
 		$build_ok, $build_message,
 		$dependent_path_regex,
 		$dependent_prefix_regex,
 		$dependent_regex,
-		) =  BuildDependentRegex($node_regex) ;
+		) =  BuildDependentRegex($pbs_config, $package, $config, $file_name, $line, $node_regex) ;
 		
 	if($build_ok)
 		{
 		my $original = $node_regex ;
 		$node_regex = qr/$dependent_path_regex$dependent_prefix_regex$dependent_regex/ ;	
 		
-		if($display_simplified_rule_transformation)
-			{
-			PrintDebug "Plugin: SimplifyRule::AddSubpbsRule, Replacing '$original' with '$node_regex' in subpbs rule '$name' at '$file_name,$line'\n" ;
-			}
+		PrintDebug "Plugin: SimplifyRule::AddSubpbsRule, Replacing '$original' with '$node_regex' in subpbs rule '$name' at '$file_name,$line'\n"
+			if $display_rule_transformation ;
 		
 		}
 	else
@@ -139,9 +138,11 @@ sub AddRule
 
 # NOTE: A reference to the original rule is passed and directly manipulated
 
-my ($pbs_config, $file_name, $line, $rule_definition) =  @_ ;
+my ($pbs_config, $package, $config, $file_name, $line, $rule_definition) =  @_ ;
 
-PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddRule, input:") if $display_simplified_rule_transformation ;
+my $display_rule_transformation = $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
+
+PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule, input:") if $display_rule_transformation ;
 
 my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @$rule_definition) ;
 
@@ -149,19 +150,19 @@ PrintDebug DumpTree
 	(
 	{ TYPES => $types, NAME => $name, CREATOR => $creator, DEPENDENT => $dependent, DEPENDENCIES => $dependencies, BUILDER => $builder, NODE_SUBS => $node_subs },
 	"Plugin: SimplifyRule::AddRule ParseRule:"
-	) if $display_simplified_rule_transformation ;
+	) if $display_rule_transformation ;
 
 if(defined $dependent && 'Regexp' eq ref $dependent)
 	{
 	# compute new arguments to Addrule
-	$dependencies = TransformToPurePerlDependencies($dependencies) ;
+	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$dependent, @$dependencies];
 	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 1, output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 1, output:") if $display_rule_transformation ;
 	}
 if(defined $dependent && '' eq ref $dependent)
 	{
@@ -172,7 +173,7 @@ if(defined $dependent && '' eq ref $dependent)
 		$dependent_path_regex,
 		$dependent_prefix_regex,
 		$dependent_regex,
-		) =  BuildDependentRegex($dependent) ;
+		) =  BuildDependentRegex($pbs_config, $package, $config, $file_name, $line, $dependent) ;
 		
 	unless($dependency_regex_ok)
 		{
@@ -184,28 +185,28 @@ if(defined $dependent && '' eq ref $dependent)
 	my $sub_dependent_regex = qr/^$dependent_path_regex($dependent_prefix_regex)$dependent_regex$/ ;
 	
 	PrintDebug "Plugin: SimplifyRule::AddRule, Replacing '$dependent' with '$sub_dependent_regex' in rule '$name' at '$file_name,$line'\n"
-		if($display_simplified_rule_transformation) ;
+		if $display_rule_transformation ;
 	
-	$dependencies = TransformToPurePerlDependencies($dependencies) ;
+	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$sub_dependent_regex, @$dependencies];
 	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 2, output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 2, output:") if $display_rule_transformation ;
 
 	}
 elsif (defined $dependent && 'CODE' eq ref $dependent)
 	{
-	$dependencies = TransformToPurePerlDependencies($dependencies) ;
+	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$dependent, @$dependencies];
 	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
-	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch 3, output:") if $display_simplified_rule_transformation ;
+	PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch 3, output:") if $display_rule_transformation ;
 	}
 elsif (defined $dependent && 'HASH' eq ref $dependent)
 	{
@@ -219,14 +220,14 @@ elsif (defined $dependent && 'HASH' eq ref $dependent)
 			$dependent_path_regex,
 			$dependent_prefix_regex,
 			$dependent_regex,
-			) =  BuildDependentRegex($dependent->{NODE_REGEX}) ;
+			) =  BuildDependentRegex($pbs_config, $package, $config, $file_name, $line, $dependent->{NODE_REGEX}) ;
 			
 		if($build_ok)
 			{
 			my $original = $dependent->{NODE_REGEX} ;
 			$dependent->{NODE_REGEX} = qr/$dependent_path_regex$dependent_prefix_regex$dependent_regex/ ;	
 			
-			if($display_simplified_rule_transformation)
+			if($display_rule_transformation)
 				{
 				PrintDebug "Plugin: SimplifyRule::AddRule, Replacing '$original' with '$dependent->{NODE_REGEX}' in subpbs rule '$name' at '$file_name,$line'\n" ;
 				PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule branch: 4, output:") ;
@@ -249,7 +250,7 @@ sub ParseRule
 {
 my ($file_name, $line, @rule_definition) = @_ ;
 
-my ($rule_type, $name, $creator, $dependent, $dependencies) = (0);
+my ($rule_type, $name, $creator, $dependent, $dependencies) ;
 
 my $first_argument = shift @rule_definition ;
 
@@ -326,13 +327,23 @@ sub BuildDependentRegex
 {
 # Given a simplified dependent definition, this sub creates a perl regex
 
-my $dependent_regex_definition = shift ;
+my ($pbs_config, $package, $config, $file_name, $line, $dependent_regex_definition) = @_ ;
 my $error_message   = '' ;
 
 if((! defined $dependent_regex_definition) || $dependent_regex_definition eq '')
 	{
 	return(0, 'Empty Regex definition') ;
 	}
+
+$dependent_regex_definition = 
+	PBS::Config::EvalConfig
+		(
+		$dependent_regex_definition,
+		$config,
+		"SimplifyRuleRule dependent regex @ " . GetRunRelativePath($pbs_config, $file_name) . ":$line",
+		$package,
+		$pbs_config
+		) ;
 
 my ($dependent_name, $dependent_path, $dependent_ext) = File::Basename::fileparse($dependent_regex_definition,('\..*')) ;
 $dependent_path =~ s|\\|/|g;
@@ -389,13 +400,22 @@ return
 
 sub TransformToPurePerlDependencies
 {
-my ($dependencies) = @_ ;
+my ($pbs_config, $package, $config, $file_name, $line, $dependencies) = @_ ;
 
 for my $dependency (@$dependencies)
 	{
 	if(defined $dependency && '' eq ref $dependency)
 		{
 		my $original_dependency = $dependency ;
+
+		$dependency = PBS::Config::EvalConfig
+				(
+				$dependency,
+				$config,
+				"SimplifyRuleRule dependency regex @ " . GetRunRelativePath($pbs_config, $file_name) . ":$line",
+				$package,
+				$pbs_config
+				) ;
 
 		$dependency =~ s/\*/\[basename\]/gi ;
 		$dependency =~ s/\[name\]/\$name/gi ;
@@ -412,10 +432,8 @@ for my $dependency (@$dependencies)
 			$dependency = "\$path/$dependency" ;
 			}
 			
-		if($display_simplified_rule_transformation)
-			{
-			PrintDebug "Plugin: SimplifyRule::TransformToPurePerlDependencies, Replacing '$original_dependency' with '$dependency'\n" ;
-			}
+		PrintDebug "Plugin: SimplifyRule::TransformToPurePerlDependencies, Replacing '$original_dependency' with '$dependency'\n"
+			if $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
 		}
 	}
 

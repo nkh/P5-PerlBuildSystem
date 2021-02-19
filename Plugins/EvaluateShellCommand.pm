@@ -76,7 +76,7 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 	my $replacement = '';
 	for my $repository_path (@repository_paths)
 		{
-		PrintInfo2 "Eval: PBS_REPOSITORIES => $repository_path @ '" . __FILE__ . "'\n"
+		PrintInfo2 "Config: PBS_REPOSITORIES => $repository_path @ '" . __FILE__ . "'\n"
 			if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 			
 		$replacement .= "$prefix$repository_path ";
@@ -158,7 +158,7 @@ for
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)
 		{
-		PrintInfo2 "Eval: $_->[0] => $_->[1] @ " . __FILE__ . "'\n"
+		PrintInfo2 "Config:: $_->[0] => $_->[1] @ " . __FILE__ . "'\n"
 			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
@@ -209,7 +209,7 @@ for(@attributes)
 
 	if($$shell_command_ref =~ m/\%$attribute/)
 		{
-		PrintInfo2 "Eval: $attribute => $value @ " . __FILE__ . "'\n"
+		PrintInfo2 "Config: $attribute => $value @ " . __FILE__ . "'\n"
 			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		$$shell_command_ref =~ s/\%$attribute/$value/g ;

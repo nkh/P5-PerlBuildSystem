@@ -401,7 +401,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILDER})
 		   $builder            = $rule_used_to_build->{DEFINITION}{BUILDER} ;
 		
 		my $rule_tag = '' ;
-		unless(exists $rule_used_to_build->{DEFINITION}{SHELL_COMMANDS_GENERATOR})
+		unless(exists $rule_used_to_build->{DEFINITION}{COMMANDS_RUN_CODE})
 			{
 			$rule_tag = "[P]" ;
 			}

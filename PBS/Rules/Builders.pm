@@ -24,6 +24,7 @@ use PBS::Shell ;
 use PBS::PBSConfig ;
 use PBS::Output ;
 use PBS::Constants ;
+use PBS::Config ;
 use PBS::Rules ;
 use PBS::Plugin;
 
@@ -31,32 +32,13 @@ use PBS::Plugin;
 
 sub GenerateBuilder
 {
-my ($shell, $builder, $package, $name, $file_name, $line) = @_ ;
+my ($pbs_config, $config, $shell, $builder, $package, $name, $file_name, $line) = @_ ;
 
-my @builder_node_subs_and_type ;
-
-if(defined $builder)
-	{
-	for (ref $builder)
-		{
-		($_ eq '' || $_ eq 'ARRAY') and do
-			{
-			@builder_node_subs_and_type = GenerateBuilderFromStringOrArray(@_) ;
-			last ;
-			} ;
+ref $builder eq '' || ref $builder eq 'ARRAY' and return GenerateBuilderFromStringOrArray(@_) ;
+ref $builder eq 'CODE' and                        return GenerateBuilderFromSub(@_) ;
+! defined $builder and                            return () ;
 			
-		($_ eq 'CODE') and do
-			{
-			@builder_node_subs_and_type = GenerateBuilderFromSub(@_) ;
-			last ;
-			} ;
-			
-		die ERROR "Invalid Builder definition for '$name' at '$file_name:$line'\n" ;
-		}
-	}
-	
-	
-return(@builder_node_subs_and_type) ;
+die ERROR "Invalid Builder definition for '$name' at '$file_name:$line'\n" ;
 }
 
 #-------------------------------------------------------------------------------
@@ -65,9 +47,9 @@ sub GenerateBuilderFromStringOrArray
 {
 # generate sub that runs a shell command from the definition given in the Pbsfile
 
-my ($shell, $builder, $package, $name, $file_name, $line) = @_ ;
+my ($pbs_config, $config, $builder, $package, $name, $file_name, $line) = @_ ;
 
-$shell = new PBS::Shell() unless defined $shell ;
+my $shell = new PBS::Shell() ;
  
 my $shell_commands = ref $builder eq '' ? [$builder] : $builder ;
 
@@ -77,30 +59,20 @@ for (@$shell_commands)
 	{
 	if(ref $_ eq '')
 		{
+		PBS::Config::EvalConfig($_, $config, "AddRule @ " . GetRunRelativePath($pbs_config, $file_name) . ":$line", $package, $pbs_config, 1) ;
 		next ;
 		}
 		
 	if(ref $_ eq 'CODE')
 		{
-		$rule_type{SHELL_COMMANDS_GENERATOR}++ ;
+		$rule_type{COMMANDS_RUN_CODE}++ ;
 		next ;
 		}
 		
 	die ERROR "Rule: invalid command type for '$name' at '$file_name:$line', mut be string or code reference.\n" ;
 	}
 
-my $generated_builder = 
-	sub 
-	{
-	return
-		(
-		BuilderFromStringOrArray
-			(
-			$shell_commands, $shell, $package, $name, $file_name, $line
-			, @_
-			)
-		) ;
-	} ;
+my $generated_builder = sub { BuilderFromStringOrArray($shell_commands, $shell, $package, $name, $file_name, $line, @_) } ;
 
 return($generated_builder, [], \%rule_type) ;
 }
@@ -109,6 +81,7 @@ return($generated_builder, [], \%rule_type) ;
 
 sub ShellCommandGenerator
 {
+die "not used" ;
 my ($shell_commands, $name, $file_name, $line, $tree) = @_;
 
 my @evaluated_shell_commands ;
@@ -218,15 +191,11 @@ return(1 , "OK Building $file_to_build") ;
 
 sub GenerateBuilderFromSub
 {
-my ($shell, $builder, $package, $name, $file_name, $line) = @_ ;
+my ($pbs_config, $config, $builder, $package, $name, $file_name, $line) = @_ ;
 
-$shell = new PBS::Shell() unless defined $shell ;
+my $shell = new PBS::Shell() ;
  
-my $generated_builder = 
-	sub
-	{ 
-	return(BuilderFromSub($shell, $builder, $package, $name, $file_name, $line, @_)) ;
-	} ;
+my $generated_builder = sub { return(BuilderFromSub($shell, $builder, $package, $name, $file_name, $line, @_)) ; } ;
 
 my %rule_type ;
 

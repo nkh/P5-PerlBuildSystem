@@ -14,8 +14,8 @@ MyAddRule 'tests', ['tests' => get_tests('MODULES')] ;
 SourcesMatch qr/X$/ ;
 Rule 'depended', ['depended' => 'X' ] ;
 
-Module '*/compiler_1' => 'compiler/compiler' ;
-AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
+#Module '*/compiler_1' => 'compiler/compiler' ;
+#AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
 
 # set extra configuration to module
 #Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
@@ -23,7 +23,31 @@ Subpbs '*/compiler_2' => 'compiler/compiler' ;
 
 Rule 'all2', ['all' => 'immediate_build'] ;
 
-Rule [IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
+Config IB => 'immediate_build' ;
+Config IBE => '.some_extension' ;
+Rule [IMMEDIATE_BUILD], 'immediate_build', ['%IB' => 'dependency%IBD'] 
 	=> "echo %COMPILER > %TARGET" ;
 
+Rule [NA, IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
+	=> "echo %COMPILER > %TARGET" ;
+
+Rule [NA, IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
+	=> sub 
+		{
+		my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
+		
+		use PBS::Rules::Builders ;
+		
+		RunShellCommands
+			(
+			PBS::Rules::Builders::EvaluateShellCommandForNode
+				(
+				"echo %COMPILER %CC %CFLAGS %FILE_TO_BUILD > %TARGET",
+				"sub builder @" . __FILE__ . ':' . __LINE__,
+				$tree,
+				$dependencies,
+				$triggering_dependencies,
+				)
+			) ;
+		} ;
 

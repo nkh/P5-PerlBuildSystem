@@ -23,6 +23,7 @@ use PBS::Rules::Dependers ;
 use PBS::Rules::Builders ;
 
 use PBS::PBSConfig ;
+use PBS::Config ;
 use PBS::Output ;
 use PBS::Constants ;
 use PBS::Plugin ;
@@ -640,8 +641,18 @@ $file_name =~ s/'$// ;
 my $class = 'User' ;
 
 my @rule_definition = @_ ;
-my $pbs_config = GetPbsConfig($package) ;
-RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
+
+RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition ;
 my ($name, $rule_type) ;
@@ -670,11 +681,10 @@ my($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
+	$pbs_config, $config,
 	$file_name, $line,
 	$package, $class,
-	$rule_type,
-	$name,
-	$depender_definition, $builder_sub, $node_subs,
+	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -689,7 +699,15 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-my $pbs_config = GetPbsConfig($package) ;
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
 
 my $class = shift ;
 unless('' eq ref $class)
@@ -701,7 +719,7 @@ unless('' eq ref $class)
 
 my @rule_definition = @_ ;
 
-RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
+RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition;
 my ($name, $rule_type) ;
@@ -730,11 +748,10 @@ my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
+	$pbs_config, $config,
 	$file_name, $line,
 	$package, $class,
-	$rule_type,
-	$name,
-	$depender_definition, $builder_sub, $node_subs,
+	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -749,8 +766,18 @@ $file_name =~ s/'$// ;
 my $class = 'User' ;
 
 my @rule_definition = @_ ;
-my $pbs_config = GetPbsConfig($package) ;
-RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
+
+RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition ;
 
@@ -782,11 +809,10 @@ RemoveRule($package, $class, $name) ;
 
 RegisterRule
 	(
+	$pbs_config, $config,
 	$file_name, $line,
 	$package, $class,
-	$rule_type,
-	$name,
-	$depender_definition, $builder_sub, $node_subs,
+	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -801,8 +827,18 @@ $file_name =~ s/'$// ;
 my $class = shift ;
 
 my @rule_definition = @_ ;
-my $pbs_config = GetPbsConfig($package) ;
-RunUniquePluginSub($pbs_config, 'AddRule', $file_name, $line, \@rule_definition) ;
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
+
+RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
 my $first_argument = shift @rule_definition ;
 my ($name, $rule_type) ;
@@ -839,11 +875,10 @@ my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
 RemoveRule($package,$class, $name) ;
 RegisterRule
 	(
+	$pbs_config, $config,
 	$file_name, $line,
 	$package, $class,
-	$rule_type,
-	$name,
-	$depender_definition, $builder_sub, $node_subs,
+	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
 	) ;
 }
 
@@ -851,12 +886,24 @@ RegisterRule
 
 sub RegisterRule
 {
-my ($file_name, $line, $package, $class, $rule_types, $name, $depender_definition, $builder_definition, $node_subs) = @_ ;
+my 
+	(
+	$pbs_config, $config,
+	$file_name, $line,
+	$package, $class,
+	$rule_types, $name, $depender_definition, $builder_definition, $node_subs
+	) = @_ ;
 
-my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my %rule_type = map { $_ => 1 } @$rule_types ;
+
+if (exists $rule_type{__NOT_ACTIVE})
+	{
+	PrintWarning "Depend: rule '$name' is not active @ $file_name:$line\n" if $pbs_config->{DISPLAY_INACTIVE_RULES} ;
+	return ;
+	}
 
 # this test is mainly to catch the error when the user forgot to write the rule name.
-my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
+my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED NOT_ACTIVE VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
 for my $rule_type (@$rule_types)
 	{
 	my $order_regex = join '|', qw(indexed before first_plus after match_after last_minus) ;
@@ -871,7 +918,6 @@ for my $rule_type (@$rule_types)
 	
 if(exists $package_rules{$package}{$class})
 	{
-	#todo: replace loop below by hash lookup
 	for my $rule (@{$package_rules{$package}{$class}})
 		{
 		if($rule->{NAME} eq $name)
@@ -882,12 +928,6 @@ if(exists $package_rules{$package}{$class})
 			die ;
 			}
 		}
-	}
-
-my %rule_type ;
-for my $rule_type (@$rule_types)
-	{
-	$rule_type{$rule_type}++
 	}
 
 #>>>>>>>>>>>>>
@@ -926,10 +966,10 @@ if($rule_type{__CREATOR})
 	}
 #<<<<<<<<<<<<<<<<<<<<<<
 
-my ($builder_sub, $node_subs1, $builder_generated_types) = GenerateBuilder(undef, $builder_definition, $package, $name, $file_name, $line) ;
+my ($builder_sub, $node_subs1, $builder_generated_types) = GenerateBuilder($pbs_config, $config, $builder_definition, $package, $name, $file_name, $line) ;
 $builder_generated_types ||= {} ;
 
-my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
+my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
 $depender_generated_types  ||= [] ; 
 
 my $origin = ":$package:$class:$file_name:$line";
@@ -1138,13 +1178,22 @@ sub __AddSubpbsRule
 
 my ($package, $file_name, $line, $rule_definition) = @_ ;
 
-my $pbs_config = GetPbsConfig($package) ;
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $config = 
+	{
+	PBS::Config::ExtractConfig
+		(
+		PBS::Config::GetPackageConfig($package),
+		$pbs_config->{CONFIG_NAMESPACES},
+		)
+	} ;
 
 my ($rule_name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data) 
-	= RunUniquePluginSub($pbs_config, 'AddSubpbsRule', $file_name, $line, $rule_definition) ;
+	= RunUniquePluginSub($pbs_config, 'AddSubpbsRule', $package, $config, $file_name, $line, $rule_definition) ;
 
 RegisterRule
 	(
+	$pbs_config, $config,
 	$file_name, $line, $package,
 	'User',
 	[UNTYPED],

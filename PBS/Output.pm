@@ -121,7 +121,7 @@ sub COLOR
 #use Carp ;
 #print Carp::longmess() ;
 
-my ($color_name, $string, $indent, $no_indent_color) = @_ ;
+my ($color_name, $string, $indent, $no_indent_color, $continuation_color) = @_ ;
 
 $string //= 'undef' ;
 $indent //= 1 ;
@@ -132,7 +132,7 @@ my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
 my $indentation = $indent && ! $PBS::Output::no_indentation ? ($PBS::Output::indentation x $depth) : '' ;
 
 my $color = $cc{$cd}{$color_name} // '' ;
-my $reset = $cc{$cd}{reset} // '' ;
+my $reset = $continuation_color ? $cc{$cd}{$continuation_color} // '' : $cc{$cd}{reset} // '' ;
 
 my $string_indent = $PBS::Output::indentation ne q{} && $string =~ s/^($PBS::Output::indentation+)// ? $1 : '' ; # works for first line only
 

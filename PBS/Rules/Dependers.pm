@@ -30,7 +30,7 @@ use PBS::Rules::Dependers::Subpbs ;
 
 sub GenerateDepender
 {
-my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
+my ($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
 
 my @depender_node_subs_and_types ; # types is a special case to display info about dependers that are also creators
 
@@ -104,7 +104,7 @@ sub GenerateDependerFromArray
 # $dependent_matcher matches the dependent
 # $dependencies_evaluator is to ,ie, replace $name by the node name ... it  is only called if the above sub matches.
 
-my ($pbs_config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) = @_ ;
+my ($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) = @_ ;
 
 unless(@$depender_definition)
 	{

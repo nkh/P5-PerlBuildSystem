@@ -329,14 +329,16 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	#Command defines
 	PBS::Config::AddConfigEntry($load_package, 'COMMAND_LINE', '__PBS', 'Command line', %{$pbs_config->{COMMAND_LINE_DEFINITIONS}}) ;
 	
-	my $sub_config = PBS::Config::GetPackageConfig($load_package) ; 
+	my $sub_config = PBS::Config::GetPackageConfig($load_package) ; # config with all layer
 	
 	PBS::Config::AddConfigEntry($load_package, 'PBS_FORCED', '__PBS_FORCED', 'PBS', 'TARGET_PATH' => $pbs_config->{TARGET_PATH}) ;
 	
 	# merge parent config
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
 	
-	PrintInfo(DumpTree({PBS::Config::ExtractConfig($sub_config)}, "Config: before running '$Pbsfile' in  package '$package':"))
+	my $config = PBS::Config::ExtractConfig($sub_config) ;
+
+	PrintInfo(DumpTree({$config}, "Config: before running '$Pbsfile' in  package '$package':"))
 		 if $pbs_config->{DISPLAY_CONFIGURATION_START}  ;
 	
 	my $add_pbsfile_digest = '' ;
@@ -372,27 +374,19 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::Digest;\n"
 			  . "use PBS::Rules::Creator;\n"
 			  . "use PBS::Plugin;\n"
-		
-			  # todo: add pbs distribution to the dependencies
-			  # my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
-			  # "PBS::Digest::AddFileDependencies('/home/nadim/perl5/lib/perl5/PBS/Wizard.pm', 'pbs_wizard') ;\n"
-
 			  . $add_pbsfile_digest,
 			  
 			"\n# load OK\n1 ;\n",
 			) ;
 		} ;
 
-	if($@)
-		{
-		die _ERROR_("\nPBS: error in pbsfile.\n") . "\n"  ;
-		}
-			
-		
+	die _ERROR_("\nPBS: error in pbsfile.\n") . "\n" if $@ ;
+	
 	PBS::Rules::RegisterRule
 		(
-		$pbsfile_rule_name,
-		'',
+		$pbs_config,
+		$config,
+		$Pbsfile, 0,  #$line,
 		$load_package,
 		'BuiltIn',
 		[VIRTUAL, '__INTERNAL'],

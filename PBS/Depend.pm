@@ -1342,7 +1342,7 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 
 if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	{
-	PrintWarning3("Depend: [IMMEDIATE_BUILD] node: '$node_name'\n") ;
+	PrintWarning3("Depend: '$node_name' [IMMEDIATE_BUILD]\n") ;
 	my(@build_sequence, %trigged_files) ;
 	
 	my $nodes_checker ;
@@ -1372,17 +1372,17 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			
 		if($build_result == BUILD_SUCCESS)
 			{
-			#~ PrintInfo2("Depend: -- Immediate build of node '$node_name' Done --\n") ;
+			PrintWarning3 "Depend: '$node_name' [IMMEDIATE_BUILD] done.\n" ;
 			}
 		else
 			{
-			PrintError("Depend: [IMMEDIATE_BUILD] node: '$node_name' failed.\n") ;
-			die "Depend: IMMEDIATE_BUILD FAILED\n" ;
+			PrintError "Depend: '$node_name' [IMMEDIATE_BUILD] failed.\n" ;
+			die "\n" ;
 			}
 		}
 	else
 		{
-		PrintWarning("Depend: [IMMEDIATE_BUILD] node: '$node_name' skipped\n") ;
+		PrintWarning "Depend: '$node_name' [IMMEDIATE_BUILD] skipped\n" ;
 		}
 	}
 	

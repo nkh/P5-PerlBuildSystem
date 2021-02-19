@@ -114,16 +114,13 @@ my ($package, $file_name, $line) = caller() ;
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
-return
+__GetConfig
 	(
-	__GetConfig
-		(
-		$package, $file_name, $line,
-		wantarray,
-		\%user_config,
-		@_,
-		)
-	) ;
+	$package, $file_name, $line,
+	wantarray,
+	\%user_config,
+	@_,
+	)
 }
 
 #-------------------------------------------------------------------------------
@@ -135,7 +132,7 @@ my ($package, $file_name, $line) = caller() ;
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
-return keys %user_config ;
+keys %user_config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -241,16 +238,13 @@ unless(defined $from)
 
 my %user_config = ExtractConfig($configs{$package}, [$from], undef) ;
 
-return
+__GetConfigAsList
 	(
-	__GetConfigAsList
-		(
-		$package, $file_name, $line,
-		wantarray,
-		\%user_config,
-		@_,
-		)
-	) ;
+	$package, $file_name, $line,
+	wantarray,
+	\%user_config,
+	@_,
+	)
 }
 
 #-------------------------------------------------------------------------------
@@ -263,16 +257,13 @@ $file_name =~ s/^'// ; $file_name =~ s/'$// ;
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}, undef) ;
 
-return
+__GetConfigAsList
 	(
-	__GetConfigAsList
-		(
-		$package, $file_name, $line,
-		wantarray,
-		\%user_config,
-		@_,
-		)
-	) ;
+	$package, $file_name, $line,
+	wantarray,
+	\%user_config,
+	@_,
+	)
 }
 
 #-------------------------------------------------------------------------------
@@ -375,7 +366,7 @@ for my $type (@$config_types)
 		}
 	}
 
-return(%all_configs) ;
+%all_configs
 }
 
 #-------------------------------------------------------------------------------
@@ -397,16 +388,13 @@ elsif(@_ == 1)
 	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 	my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
-	return
+	__GetConfig
 		(
-		__GetConfig
-			(
-			$package, $file_name, $line,
-			wantarray,
-			\%user_config,
-			@_,
-			)
-		) ;
+		$package, $file_name, $line,
+		wantarray,
+		\%user_config,
+		@_,
+		)
 	}
 }
 
@@ -429,18 +417,18 @@ sub ConfigVariableEmpty
 {
 if(defined $_[1])
 	{
-	return ($_[1] eq '') ;
+	return $_[1] eq '' ;
 	}
 else
 	{
 	PrintWarning croak "Config: variable '$_[0]' is not defined!\n" ;
-	return(0) ;
+	return 0 ;
 	}
 }
 
 sub ConfigVariableNotDefinedOrEmpty
 {
-return ConfigVariableNotDefined(@_) || ConfigVariableEmpty(@_) ;
+ConfigVariableNotDefined(@_) || ConfigVariableEmpty(@_) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -961,7 +949,7 @@ EOH
 
 sub EvalConfig 
 {
-my ($entry, $config, $origin, $package, $pbs_config) = @_ ;
+my ($entry, $config, $origin, $package, $pbs_config, $no_warnings) = @_ ;
 
 return($entry) unless defined $entry ;
 return($entry) unless $entry =~ /%/ ;
@@ -980,18 +968,18 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning "Eval: $config->{$1} doesn't exist called @ $origin, @ '" . __FILE__ . "'\n" ;
+		PrintWarning "Config: $config->{$1} doesn't exist @ $origin\n" unless $no_warnings ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning" Eval: $config->{$1} isn't defined @ $origin, @ '" . __FILE__ . "'\n" ;
+		PrintWarning" Config: $config->{$1} isn't defined @ $origin\n" unless $no_warnings ;
 		$undefined_config++ ;
 		}
 
-	PrintInfo2 "Eval: $element => " . ($config->{$element} // 'undef') . " @ $origin, @ '" . __FILE__ . "'\n"
+	PrintInfo2 "Config: $element => " . ($config->{$element} // 'undef') . " @ $origin\n"
 		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 
@@ -1009,23 +997,23 @@ while($entry =~ /\%([_a-zA-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning "Eval: config '$element' doesn't exist @ $origin\n" ;
+		PrintWarning "Config: config '$element' doesn't exist @ $origin\n" unless $no_warnings ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning "Eval: config '$element' isn't defined @ $origin\n" ;
+		PrintWarning "Config: config '$element' isn't defined @ $origin\n" unless $no_warnings ;
 		$undefined_config++ ;
 		}
 
-	PrintInfo2 "Eval: '$element' => "
+	PrintInfo2 "Config: '$element' => "
 			. (exists $config->{$element} && defined $config->{$element} ? $config->{$element} : 'undef')
 			. " @ $origin\n"
 		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
-	push @{$config_access{$package}{$element}}, "$origin, EvalConfig" ;
+	push @{$config_access{$package}{$element}}, "$origin" ;
 	}
 
 $entry =~ s/\%([_a-zA-Z0-9]+)/

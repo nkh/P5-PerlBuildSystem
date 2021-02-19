@@ -261,7 +261,7 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 		(
 		exists $rule->{RULE}
 		&& exists $rule->{RULE}{DEFINITION}
-		&& exists $rule->{RULE}{DEFINITION}{SHELL_COMMANDS_GENERATOR}
+		&& exists $rule->{RULE}{DEFINITION}{COMMANDS_RUN_CODE}
 		)
 		{
 		return 1 ;
