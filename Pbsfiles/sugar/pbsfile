@@ -21,4 +21,9 @@ AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
 #Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
 Subpbs '*/compiler_2' => 'compiler/compiler' ;
 
+Rule 'all2', ['all' => 'immediate_build'] ;
+
+Rule [IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
+	=> "echo %COMPILER > %TARGET" ;
+
 

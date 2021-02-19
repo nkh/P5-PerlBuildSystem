@@ -100,8 +100,11 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		{
 		my $built_node = $builder->{NODE} ;
 
-		$level_statistics->[$built_node->{__LEVEL} - 1]{done}++ ;
-		
+		if($built_node->{__LEVEL} != 0) # hide PBS top node
+			{
+			$level_statistics->[$built_node->{__LEVEL} - 1 ]{nodes}++ ;
+			}
+
 		my ($build_result, $build_time, $node_error_output) =
 			 CollectNodeBuildResult($pbs_config, $built_node, $builders) ;
 		

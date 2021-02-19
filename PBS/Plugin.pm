@@ -214,6 +214,8 @@ sub RunUniquePluginSub
 
 my ($config, $plugin_sub_name, @plugin_arguments) = @_ ;
 
+unshift @plugin_arguments, $config ;
+
 my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;

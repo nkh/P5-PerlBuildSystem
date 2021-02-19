@@ -1342,7 +1342,7 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 
 if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	{
-	PrintInfo2("Depend: -- Immediate build of node $node_name --\n") ;
+	PrintWarning3("Depend: [IMMEDIATE_BUILD] node: '$node_name'\n") ;
 	my(@build_sequence, %trigged_files) ;
 	
 	my $nodes_checker ;
@@ -1361,7 +1361,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		
 	RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
 	
-	if($pbs_config->{DO_BUILD})
+	if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
 		{
 		my ($build_result, $build_message) = PBS::Build::BuildSequence
 							(
@@ -1376,13 +1376,13 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			}
 		else
 			{
-			PrintError("Depend: -- Immediate build of node '$node_name' Failed --\n") ;
+			PrintError("Depend: [IMMEDIATE_BUILD] node: '$node_name' failed.\n") ;
 			die "Depend: IMMEDIATE_BUILD FAILED\n" ;
 			}
 		}
 	else
 		{
-		PrintInfo2("Depend: -- Immediate build of node '$node_name' Skipped --\n") ;
+		PrintWarning("Depend: [IMMEDIATE_BUILD] node: '$node_name' skipped\n") ;
 		}
 	}
 	

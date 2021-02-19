@@ -18,7 +18,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(PbsUse Use) ;
+our @EXPORT = qw(PbsUse pbsuse Use) ;
 our $VERSION = '0.03' ;
 
 use PBS::PBSConfig ;
@@ -571,132 +571,119 @@ sub PbsUse
 {
 my ($package, $file_name, $line) = caller() ;
 
-for my $source_name (@{[@_]})
+my ($source_name, $global_package_dependency) = @_ ;
+$global_package_dependency //= 1 ;
+
+if (! defined $source_name || '' ne ref $source_name)
 	{
-	unless(defined $source_name)
-		{
-		PrintError "PbsUse must be given a name. Called @ $file_name:$line.\n"  ;
-		die "\n" ;
-		}
-		
-	if('' ne ref $source_name)
-		{
-		PrintError "PbsUse only accepts strings as input. Called @ $file_name:$line.\n"  ;
-		die "\n" ;
-		}
-		
-	my $t0 = [gettimeofday];
+	PrintError "PbsUse: Invalid call @ $file_name:$line.\n"  ;
+	die "\n" ;
+	}
 	
-	my $global_package_dependency = shift || 1 ; # if set, the used module becomes a dependency for all the package nodes
-	
-	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-	my $located_source_name ;
-	
-	$source_name .= '.pm' unless $source_name =~ /\.pm$/ ;
-	
+my $t0 = [gettimeofday];
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my $located_source_name ;
+
+$source_name .= '.pm' unless $source_name =~ /\.pm$/ ;
+
+if(file_name_is_absolute($source_name))
+	{
+	$located_source_name = $source_name ;
+	}
+elsif($source_name =~ m~^./~)
+	{
+	$located_source_name = $source_name ;
+	}
+else
+	{
 	unless(defined $pbs_config->{LIB_PATH})
 		{
 		PrintError("Can't search for '$source_name', PBS lib path is not defined (PBS_LIB_PATH)!\n") ;
 		die "\n" ;
 		}
-	
-	if(file_name_is_absolute($source_name))
-		{
-		$located_source_name = $source_name ;
-		}
-	elsif($source_name =~ m~^./~)
-		{
-		$located_source_name = $source_name ;
-		}
-	else
-		{
-		for my $lib_path (@{$pbs_config->{LIB_PATH}})
-			{
-			$lib_path .= '/' unless $lib_path =~ /\/$/ ;
-			
-			if(-e $lib_path . $source_name)
-				{
-				$located_source_name = $lib_path . $source_name ;
-				last ;
-				}
-			}
-		}
-	
-	unless(defined $located_source_name)
-		{
-		my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
-		
-		die  ERROR("Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.") . "\n" ;
-		}
-	
-	$pbs_use_level++ ; # indent the PbsUse output to make the hierachy more visible
-	my $indentation = '   ' x $pbs_use_level ;
-	
-	PrintInfo2("${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'\n") if(defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE}) ;
-	PrintInfo2("${indentation}PbsUse: '$source_name'\n") if(defined $pbs_config->{DISPLAY_PBSUSE}) ;
-	
-	
-	if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
-		{
-		my $load_information = join(':', $package, $file_name, $line) ;
-		my $previous_load_information = join(':', @{$files_loaded_via_PbsUse{$package}{$located_source_name}}) ;
-		PrintWarning(sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information.\n")) ;
-		}
-	else
-		{
-		my $add_as_package_dependency = '' ;
-		
-		if($global_package_dependency)
-			{
-			$add_as_package_dependency = "PBS::Digest::AddPbsLibDependencies('$located_source_name', '$source_name') ;\n" ;
-			}
-			
-		eval
-			{
-			LoadFileInPackage
-				(
-				'',
-				$located_source_name,
-				$package,
-				$pbs_config,
-				"use PBS::Constants ;\n" . $add_as_package_dependency,
-				) ;
-			} ;
 
-		if($@)
-			{
-			die ERROR("PBS: pbsUse error @ $file_name:$line:\n\n$@\n") . "\n"  ;
-			}
-			
-		$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
-		}
-	
-	$pbs_use_level-- ;
-	
-	my $pbsuse_time = tv_interval($t0, [gettimeofday]) ;
-	
-	if(defined $pbs_config->{DISPLAY_PBSUSE_TIME})
+	for my $lib_path (@{$pbs_config->{LIB_PATH}})
 		{
-		if(defined $pbs_config->{DISPLAY_PBSUSE_TIME_ALL})
+		$lib_path .= '/' unless $lib_path =~ /\/$/ ;
+		
+		if(-e $lib_path . $source_name)
 			{
-			PrintInfo(sprintf("${indentation}Time in PbsUse '$source_name': %0.2f s.\n", $pbsuse_time)) ;
-			}
-		else
-			{
-			if(-1 == $pbs_use_level)
-				{
-				PrintInfo(sprintf("${indentation}Time in PbsUse: %0.2f s.\n", $pbsuse_time)) ;
-				}
+			$located_source_name = $lib_path . $source_name ;
+			last ;
 			}
 		}
+	}
+
+unless(defined $located_source_name)
+	{
+	my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
 	
-	if(defined $pbs_config->{DISPLAY_PBSUSE_STATISTIC})
+	die ERROR("PbsUse: Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.") . "\n" ;
+	}
+
+$pbs_use_level++ ; # indent the PbsUse output to make the hierarchy more visible
+my $indentation = '   ' x $pbs_use_level ;
+
+PrintInfo2("${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'\n") if(defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE}) ;
+PrintInfo2("${indentation}PbsUse: '$source_name'\n") if(defined $pbs_config->{DISPLAY_PBSUSE}) ;
+
+if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
+	{
+	my $load_information = join(':', $package, $file_name, $line) ;
+	my $previous_load_information = join(':', @{$files_loaded_via_PbsUse{$package}{$located_source_name}}) ;
+	PrintWarning(sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information.\n")) ;
+	}
+else
+	{
+	my $add_as_package_dependency = '' ;
+	
+	$add_as_package_dependency = "PBS::Digest::AddPbsLibDependencies('$located_source_name', '$source_name') ;\n"
+		if $global_package_dependency ;
+		
+	eval
 		{
-		$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{LOADS}++ ;
-		$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{TOTAL_TIME} += $pbsuse_time ;
-		$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_LOADS}++ ;
-		$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_TIME}+= $pbsuse_time ;
+		LoadFileInPackage
+			(
+			'',
+			$located_source_name,
+			$package,
+			$pbs_config,
+			"use PBS::Constants ;\n" . $add_as_package_dependency,
+			) ;
+		} ;
+
+	die ERROR("PBS: pbsUse error @ $file_name:$line:\n\n$@\n") . "\n"
+		if $@ ;
+
+	$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
+	}
+
+$pbs_use_level-- ;
+
+my $pbsuse_time = tv_interval($t0, [gettimeofday]) ;
+
+if(defined $pbs_config->{DISPLAY_PBSUSE_TIME})
+	{
+	if(defined $pbs_config->{DISPLAY_PBSUSE_TIME_ALL})
+		{
+		PrintInfo(sprintf("${indentation}Time in PbsUse '$source_name': %0.2f s.\n", $pbsuse_time)) ;
 		}
+	else
+		{
+		if(-1 == $pbs_use_level)
+			{
+			PrintInfo(sprintf("${indentation}Time in PbsUse: %0.2f s.\n", $pbsuse_time)) ;
+			}
+		}
+	}
+
+if(defined $pbs_config->{DISPLAY_PBSUSE_STATISTIC})
+	{
+	$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{LOADS}++ ;
+	$files_loaded_via_PbsUse{__STATISTIC}{$located_source_name}{TOTAL_TIME} += $pbsuse_time ;
+	$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_LOADS}++ ;
+	$files_loaded_via_PbsUse{__STATISTIC}{TOTAL_TIME}+= $pbsuse_time ;
 	}
 }
 

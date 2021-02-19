@@ -39,36 +39,30 @@ use Data::TreeDumper::Utils ;
 
 #-------------------------------------------------------------------------------
 
-my $no_header_files_display ;
-my @display_filter_regexes ;
-my $tree_color_levels ;
-my $wrap_width ;
-my $tnto ;
-
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'tnto',
-	\$tnto,
+	'DISPLAY_ONLY_TRIGGERING_NODES',
 	"Display only triggering nodes.",
 	'',
 	
 	'tnonh',
-	\$no_header_files_display,
+	'NO_HEADER_FILES_DISPLAY',
 	"Do not display header files in the tree dump.",
 	'',
 	
 	'tnonr=s',
-	\@display_filter_regexes ,
+	'@DISPLAY_FILTER_REGEXES' ,
 	"Removes files matching the passed regex from the tree dump.",
 	'',
 
 	'tww=i',
-	\$wrap_width ,
+	'WRAP_WIDTH' ,
 	"Set the wrap width.",
 	'',
 
 	'ttcl',
-	\$tree_color_levels ,
+	'TREE_COLOR_LEVELS' ,
 	"Color the tree glyphs per level.",
 	'',
 	) ;
@@ -115,7 +109,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					}
 					
 				# handle --tnonh
-				if(/\.h$/ && $no_header_files_display)
+				if(/\.h$/ && $pbs_config->{NO_HEADER_FILES_DISPLAY})
 					{
 					next ;
 					}
@@ -129,7 +123,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					
 				# handle --tnonr
 				my $excluded ;
-				for my $regex (@display_filter_regexes)
+				for my $regex (@{$pbs_config->{DISPLAY_FILTER_REGEXES}})
 					{
 					if($_ =~ $regex)
 						{
@@ -141,7 +135,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				
 				
 				# handle --tnto
-				next if $tnto and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
+				next if $pbs_config->{DISPLAY_ONLY_TRIGGERING_NODES} and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
 				
 				push @keys_to_dump, $_ ;
 				}
@@ -217,7 +211,7 @@ else
 							}
 							
 						# handle --tnto
-						next if $tnto and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
+						next if $pbs_config->{DISPLAY_ONLY_TRIGGERING_NODES} and 'HASH' eq ref $tree->{$_} and ! exists $tree->{$_}{__TRIGGERED} ;
 						
 						# remove empty entries
 						for my $reference_type (ref $tree->{$_})
@@ -330,10 +324,10 @@ my @extra_options ;
 use Term::ANSIColor qw(:constants) ;
 my @colors = map { GetColor($_) } qw ( ttcl_1 ttcl_2 ttcl_3 ttcl_4 ) ;
 
-push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $tree_color_levels ;
+push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $pbs_config->{TREE_COLOR_LEVELS} ;
 
 # terminal width
-push @extra_options, 'WRAP_WIDTH' => $wrap_width if $wrap_width ;
+push @extra_options, 'WRAP_WIDTH' => $pbs_config->{WRAP_WIDTH} if $pbs_config->{WRAP_WIDTH} ;
 
 push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
 

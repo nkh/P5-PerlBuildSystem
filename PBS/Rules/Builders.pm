@@ -296,7 +296,7 @@ my($shell_command, $shell_command_info, $tree, $dependencies, $triggered_depende
 
 RunPluginSubs($tree->{__PBS_CONFIG}, 'EvaluateShellCommand', \$shell_command, $tree, $dependencies, $triggered_dependencies) ;
 
-$shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, "Shell command", $shell_command_info, $tree) ;
+$shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, $shell_command_info, $tree->{__LOAD_PACKAGE}, $tree->{__PBS_CONFIG}) ;
 
 return($shell_command) ;
 }

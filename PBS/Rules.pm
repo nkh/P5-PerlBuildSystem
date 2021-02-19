@@ -1010,7 +1010,7 @@ $rule_definition->{NODE_SUBS} = $node_subs if @$node_subs ;
 if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	{
 	my $class_info = "[$class" ;
-	$class_info .= ' CREATOR'     if $rule_type{__CREATOR};
+	$class_info .= ' CREATOR' if $rule_type{__CREATOR};
 	$class_info .= ']' ;
 		
 	if('HASH' eq ref $depender_definition)
@@ -1037,9 +1037,7 @@ sub RemoveRule
 {
 # if no name is given, all the rules in the package-class are removed.
 
-my $package = shift ;
-my $class   = shift ;
-my $name    = shift ;
+my ($package, $class, $name) = @_ ;
 
 if(defined $name)
 	{

@@ -19,7 +19,7 @@ my $display_simplified_rule_transformation ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'display_simplified_rule_transformation',
-	\$display_simplified_rule_transformation,
+	'DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION',
 	"Display debugging data about simplified rule transformation to pure perl rule.",
 	'',
 	) ;
@@ -28,9 +28,9 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 
 sub AddTrigger
 {
-my ($file_name, $line, $trigger_definition) = @_ ;
+my ($pbs_config, $file_name, $line, $trigger_definition) = @_ ;
 
-PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddTrigger") if $display_simplified_rule_transformation ;
+PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddTrigger") if $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION} ;
 
 my $name = shift @$trigger_definition ;
 my $triggered_and_triggering = shift @$trigger_definition ;
@@ -78,7 +78,7 @@ sub AddSubpbsRule
 # or ($node_regex, $Pbsfile), $name and $pbs_package will be generate
 # less than 2 arguments or 3 arguments is considered an error
 
-my ($file_name, $line, $rule_definition) = @_ ;
+my ($pbs_config, $file_name, $line, $rule_definition) = @_ ;
 my ($name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data);
 
 if(@$rule_definition < 2 || @$rule_definition == 3)
@@ -139,7 +139,7 @@ sub AddRule
 
 # NOTE: A reference to the original rule is passed and directly manipulated
 
-my ($file_name, $line, $rule_definition) =  @_ ;
+my ($pbs_config, $file_name, $line, $rule_definition) =  @_ ;
 
 PrintDebug DumpTree(\@_, "Plugin: SimplifyRule::AddRule, input:") if $display_simplified_rule_transformation ;
 

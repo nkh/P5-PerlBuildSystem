@@ -140,6 +140,15 @@ return keys %user_config ;
 
 #-------------------------------------------------------------------------------
 
+my %config_access ;
+
+sub GetConfigAccess
+{
+my ($package) = @_ ;
+
+$config_access{$package}
+}
+
 sub __GetConfig
 {
 my 
@@ -151,6 +160,19 @@ my
 	) = @_ ;
 	
 $file_name =~ s/^'// ; $file_name =~ s/'$// ;
+my $origin = "$file_name:$line" ;
+
+my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+
+if ($pbs_config->{DEBUG_TRACE_PBS_STACK})
+	{
+	my @traces = @{PBS::Stack::GetPbsStack($pbs_config, "GetConfig")} ;
+
+	if (@traces > 1)
+		{
+		$origin .= INFO2(", " . GetRunRelativePath($pbs_config, $_->{FILE}) . ":$_->{LINE}") for (@traces) ;
+		}
+	}
 
 my @user_config ;
 if(@config_variables == 0)
@@ -160,6 +182,8 @@ if(@config_variables == 0)
 		PrintWarning("Config: 'GetConfig' is returning the whole config but it was not called in list context at '$file_name:$line'\n") ;
 		}
 		
+	push @{$config_access{$package}{$_}}, $origin for keys %$user_config ;
+
 	return(%$user_config) ;
 	}
 	
@@ -170,6 +194,8 @@ if(@config_variables > 1 && (!$wantarray))
 
 for my $config_variable (@config_variables)
 	{
+	push @{$config_access{$package}{$config_variable}}, $origin ;
+
 	my $silent_not_exists = $config_variable =~ s/:SILENT_NOT_EXISTS$// ;
 	
 	if(exists $user_config->{$config_variable})
@@ -178,8 +204,6 @@ for my $config_variable (@config_variables)
 		}
 	else
 		{
-		my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-		
 		if($pbs_config->{NO_SILENT_OVERRIDE} || ! $silent_not_exists)
 			{
 			PrintWarning("Config: User config variable '$config_variable' doesn't exist at '$file_name:$line'; returning undef\n") ;
@@ -503,7 +527,7 @@ my $original_type      = shift ;
 my $original_class     = shift ;
 my $origin             = shift ;
 
-# @_ contains the configuration variable to merge  (name => value, name => value ...)
+# @_ now contains the configuration variable to merge  (name => value, name => value ...)
 
 # check if we have any command global flags
 my $global_flags ;
@@ -619,8 +643,9 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 				(
 				$value,
 				$config_to_merge_to_cache,
-				$key,
-				"Config at $origin",
+				"Merge config, origin: $origin",
+				$package,
+				$pbs_config,
 				) ;
 		}
 		
@@ -936,7 +961,7 @@ EOH
 
 sub EvalConfig 
 {
-my ($entry, $config, $key, $origin, $tree) = @_ ;
+my ($entry, $config, $origin, $package, $pbs_config) = @_ ;
 
 return($entry) unless defined $entry ;
 return($entry) unless $entry =~ /%/ ;
@@ -967,7 +992,7 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 		}
 
 	PrintInfo2 "Eval: $element => " . ($config->{$element} // 'undef') . " @ $origin, @ '" . __FILE__ . "'\n"
-		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
+		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 
 return($entry) if $undefined_config ;
@@ -998,14 +1023,17 @@ while($entry =~ /\%([_a-zA-Z0-9]+)/g)
 	PrintInfo2 "Eval: '$element' => "
 			. (exists $config->{$element} && defined $config->{$element} ? $config->{$element} : 'undef')
 			. " @ $origin\n"
-		if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE}
+		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE} ;
+
+	push @{$config_access{$package}{$element}}, "$origin, EvalConfig" ;
+
 	}
 	
 
 $entry =~ s/\%([_a-zA-Z0-9]+)/
 	if(exists $config->{$1} && defined $config->{$1})
 		{
-		my $v = $config->{$1};
+		my $v = $config->{$1} ;
 
 		if('' eq ref $v)
 			{

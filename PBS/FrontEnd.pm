@@ -32,9 +32,9 @@ use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
 
-sub ParseSubpbsOptions
+sub RemoveSubpbsOptions
 {
-# extract pbs_options from the command line, parse them
+# remove subppbs_options from the command line
 
 my ($command_line_arguments) = @_ ;
 
@@ -76,7 +76,16 @@ for my $arg (@$command_line_arguments)
 
 push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option } if $in_options > 2 ;
 
-#PrintDebug DumpTree [\@ARGV, \@new_argv, \@unchecked_subpbs_options] ; 
+\@unchecked_subpbs_options, \@new_argv
+}
+
+sub ParseSubpbsOptions
+{
+# extract pbs_options from the command line, parse them
+
+my ($unchecked_subpbs_options, $new_argv) = @_ ;
+
+#PrintDebug DumpTree [$new_argv, $unchecked_subpbs_options] ; 
 
 my @subpbs_options ;
 my $counter = 0 ;
@@ -84,7 +93,7 @@ my $package = "SUBPBS_$counter" ;
 
 my ($subpbs_switch_parse_ok, $subpbs_parse_message) = (1, '') ;
 
-for my $subpbs_option (@unchecked_subpbs_options)
+for my $subpbs_option (@$unchecked_subpbs_options)
 	{
 	$counter++ ;
 
@@ -94,7 +103,7 @@ for my $subpbs_option (@unchecked_subpbs_options)
 	$pbs_config->{PBSFILE} = $package ;
 
 	my $pbs_config_no_options = {%$pbs_config} ;
-	my ($switch_parse_ok_no_options, $parse_message_no_options) = PBS::PBSConfig::ParseSwitches($pbs_config_no_options, \@new_argv) ;
+	my ($switch_parse_ok_no_options, $parse_message_no_options) = PBS::PBSConfig::ParseSwitches($pbs_config_no_options, $new_argv) ;
 	PBS::PBSConfig::CheckPbsConfig($pbs_config_no_options) ;
 
 	unless ($switch_parse_ok_no_options)
@@ -104,7 +113,7 @@ for my $subpbs_option (@unchecked_subpbs_options)
 		last ;
 		}
 
-	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches($pbs_config, [@new_argv, @{$subpbs_option->{OPTIONS}}]) ;
+	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches($pbs_config, [@$new_argv, @{$subpbs_option->{OPTIONS}}]) ;
 	PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
 
 	unless ($switch_parse_ok)
@@ -128,7 +137,7 @@ for my $subpbs_option (@unchecked_subpbs_options)
 	push @subpbs_options, {QR => $subpbs_option->{QR}, OPTIONS => $pbs_config, LOCAL => $subpbs_option->{LOCAL}} ;
 	}
 
-$subpbs_switch_parse_ok, $subpbs_parse_message, \@new_argv, \@subpbs_options ;
+$subpbs_switch_parse_ok, $subpbs_parse_message,  \@subpbs_options ;
 }
 
 sub GenerateDependFullLog
@@ -242,17 +251,18 @@ if($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] eq '--get_bash_completion')
 	return(1) ;
 	}
 
-my 
-	(
-	$switch_parse_ok_subpbs_options, $parse_message_subpbs_options,
-	$command_line_arguments,  $subpbs_options
-	) = ParseSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
-
 PBS::PBSConfig::RegisterPbsConfig('PBS', {}) ;
 my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
+# two phase parsing of subpbs options to allow for plugin options loading
+my ($unchecked_subpbs_options, $command_line_arguments) = RemoveSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+
 my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $command_line_arguments) ;
+
+# two phase parsing of subpbs options to allow for plugin options loading
+my ( $switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $subpbs_options)
+	= ParseSubpbsOptions($unchecked_subpbs_options, $command_line_arguments) ;
 
 $pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
 

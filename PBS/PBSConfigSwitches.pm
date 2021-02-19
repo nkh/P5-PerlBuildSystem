@@ -48,7 +48,7 @@ while( my ($switch, $variable, $help1, $help2) = splice(@_, 0, 4))
 			{
 			$succes = 0 ;
 			$switch_is_unique = 0 ;
-			PrintWarning "        In Plugin '$file_name:$line', switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'. Ignoring.\n" ;
+			PrintWarning "In Plugin '$file_name:$line', switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'. Ignoring.\n" ;
 			}
 		else
 			{
@@ -58,8 +58,6 @@ while( my ($switch, $variable, $help1, $help2) = splice(@_, 0, 4))
 		
 	if($switch_is_unique)
 		{
-		#~ PrintInfo "        Registering switch '$switch' In Plugin '$file_name:$line'.\n" ;
-		
 		push @registred_flags_and_help, $switch, $variable, $help1, $help2 ;
 		}
 	}
@@ -447,6 +445,10 @@ EOT
 		'Cancel the build pass. Only the dependency and check passes are run.',
 		'',
 
+	'do_immediate_build'                     => \$pbs_config->{DO_IMMEDIATE_BUILD},
+		'do immediate build even if --no_build is set.',
+		'',
+
 	'nub|no_user_build'               => \$pbs_config->{NO_USER_BUILD},
 		'User defined Build() is ignored if present.',
 		'',
@@ -481,7 +483,7 @@ EOT
 	'nlli|no_local_link_info'                => \$pbs_config->{NO_LOCAL_LINK_INFO},
 		'PBS won\'t display linking to local nodes.',
 		'',
-	'no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
+	'nwmwzd|no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
 		'PBS won\'t warn if a node has no dependencies but a matching rule.',
 		'',
 		
@@ -688,6 +690,10 @@ EOT
 		
 	'dspc|display_sub_pbs_config' => \$pbs_config->{DISPLAY_SUB_PBS_CONFIG},
 		'Display sub pbs config.',
+		'',
+		
+	'dcu|display_config_usage' => \$pbs_config->{DISPLAY_CONFIG_USAGE},
+		'Display config variables not used.',
 		'',
 		
 	'display_nodes_per_pbsfile'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE},
@@ -1418,7 +1424,14 @@ while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
 	{
 	if('' eq ref $variable)
 		{
-		$variable = \$pbs_config->{$variable} ;
+		if($variable =~ s/^@//)
+			{
+			$variable = $pbs_config->{$variable} = [] ;
+			}
+		else
+			{
+			$variable = \$pbs_config->{$variable} ;
+			}
 		}
 		
 	push @registred_flags_and_help_pointing_to_pbs_config, $switch, $variable, $help1, $help2 ;

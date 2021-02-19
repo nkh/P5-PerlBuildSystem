@@ -128,7 +128,6 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 
 	PrintInfo "Depend: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
 			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
-
 	}
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
@@ -191,6 +190,7 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		PrintInfo "\t\t$stat\n" ;
 		}
 	}
+
 elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 	{
 	for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
@@ -211,6 +211,16 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 				) ;
 			}
 		}
+	}
+
+
+if($pbs_config->{DISPLAY_CONFIG_USAGE})
+	{
+	my $accessed = PBS::Config::GetConfigAccess($load_package) ;
+	my @not_accessed = sort grep { ! exists $accessed->{$_} && $_ ne 'TARGET_PATH'} keys %$config ;
+
+	PrintInfo DumpTree { Accessed => $accessed, 'Not accessed' => \@not_accessed},
+		 "Config: variable usage for '$targets->[0]':", DISPLAY_ADDRESS => 0 ;
 	}
 
 

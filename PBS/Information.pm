@@ -165,7 +165,12 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 						unless($pbs_config->{NO_NODE_INFO_LINKS})
 							{
 							my ($link) = /^([^:]*)/ ;
-							my $file_link = INFO2("node info: $inserted_nodes->{$link}{__BUILD_NAME}.pbs_log") ;
+
+							my $file = exists $inserted_nodes->{$link}{__BUILD_NAME}
+									? "$inserted_nodes->{$link}{__BUILD_NAME}.pbs_log"
+									: '' ;
+
+							my $file_link = INFO2("node info: $file") ;
 							
 							# set children node info links
 							$tree->{$_}{$file_link} = [] ;
@@ -376,7 +381,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 #----------------------
 if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
-	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Config:", INDENTATION => $tab, USE_ASCII => 1)) ;
+	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1)) ;
 
 	$log_node_info .= $config ;
 	$node_info .= $config if $pbs_config->{DISPLAY_NODE_CONFIG} ;

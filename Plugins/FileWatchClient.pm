@@ -35,30 +35,26 @@ use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 
-my $use_watch_server ;
-my $watch_server_verbose ;
-my $watch_server_double_check ;
-my $watch_server_double_check_stats_only ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'use_watch_server',
-	\$use_watch_server,
+	'USE_WATCH_SERVER',
 	'Uses file watch server to speed up file verification.',
 	'',
 	
 	'watch_server_verbose',
-	\$watch_server_verbose,
+	'WATCH_SERVER_VERBOSE',
 	'Will display what files the server has been notfied for.',
 	'',
 
 	'watch_server_double_check',
-	\$watch_server_double_check,
+	'WATCH_SERVER_DOUBLE_CHECK',
 	'As use_watch_server but also does ai hash verification.',
 	'',
 
 	'watch_server_double_check_stats_only',
-	\$watch_server_double_check_stats_only,
+	'WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY',
 	'As use_watch_server_doulbe_check  but only outputs statistics.',
 	'',
 	) ;
@@ -75,9 +71,11 @@ sub ResetWatchedFilesCheckerStat
 
 sub GetWatchedFilesCheckerStats
 {
+my ($pbs_config) = @_ ;
+
 if
 	(
-	($watch_server_double_check || $watch_server_double_check_stats_only)
+	($pbs_config->{WATCH_SERVER_DOUBLE_CHECK} || $pbs_config->{WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY})
 	&& ($watcher_false_negative || $watcher_false_positive)
 	)
 	{
@@ -101,7 +99,7 @@ sub GetWatchedFilesChecker
 {
 my ($pbs_config, $warp_signature, $nodes) = @_ ;
 
-unless($use_watch_server)
+unless($pbs_config->{USE_WATCH_SERVER})
 	{
 	return(\&PBS::Digest::IsFileModified)
 	}
@@ -127,7 +125,7 @@ eval
 		$PBS::pbs_run_information->{WATCH_SERVER}{WATCHES} = $number_of_watches ;
 		$PBS::pbs_run_information->{WATCH_SERVER}{MODIFIED} = $number_of_modified_files ;
 		
-		if(@modified_files && $watch_server_verbose)
+		if(@modified_files && $pbs_config->{WATCH_SERVER_VERBOSE})
 			{
 			PrintInfo "\twatcher detected: " . join("\n\twatcher detected: ",@modified_files) . "\n" ;
 			}
@@ -195,7 +193,7 @@ else
 		$modified_files{$name} = $type ;
 		}
 		
-	if($watch_server_double_check || $watch_server_double_check_stats_only)
+	if($pbs_config->{WATCH_SERVER_DOUBLE_CHECK} || $pbs_config->{WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY})
 		{
 		$files_checker = 
 			sub
@@ -212,7 +210,7 @@ else
 					if(! $md5_mismatch)
 						{
 						PrintWarning "Watcher: changed but MD5: unchanged, '$node_name'\n"
-							unless($watch_server_double_check_stats_only) ;
+							unless($pbs_config->{WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY}) ;
 
 						$watcher_false_positive++ ;
 						}
@@ -225,7 +223,7 @@ else
 				if((! exists $modified_files{$node_name}) && $md5_mismatch)
 					{
 					PrintError "Watcher: unchanged, MD5: changed, '$node_name'\n"
-							unless($watch_server_double_check_stats_only) ;
+							unless($pbs_config->{WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY}) ;
 						
 					$watcher_false_negative++ ;
 					$file_is_modified++ ;
@@ -284,9 +282,9 @@ return($files_checker) ;
 
 sub ClearWatchedFilesList
 {
-return unless $use_watch_server ;
-
 my ($pbs_config, $warp_signature) = @_ ;
+
+return unless $pbs_config->{USE_WATCH_SERVER} ;
 
 eval
 	{

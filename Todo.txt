@@ -1,49 +1,12 @@
-pbsuse caching
-	before a pbsuse is run it verifies that it's rules are not already present
-		the rules contain the md5 of the file to load
-
-	the user can force loading
-		the library does more than adding rules
-			do not register rules but do the rest, possible
-			fail if any rule is re registred
-				we don't want to inherit those rules from parent load
-
-
-	pbsuse X
-		X => rule1 rule2 rule3, md5
-		rule1 => X
-		rule2 => X
-		rule3 => X
-		
-		
-	subpbs -> pass all loaded rules by default if default behavior is to not reload a library if it has already be loaded and is the same
-
-	if a library does different things at different times, it can tag itself and we know have to not inherit it
-
-		library does different things depending on configuration
-
-			config debug => 1; load lib -> it adds debug specific rules
-
-			config debug => 0; load lib -> no rule is added
-
-		if only config can modify behavior (could be whatever this is code that does what it wants) we can
-			monitor config usage and tag the library automatically
-
-		rule can be tagged VOLATILE
-		any VOLATILE rule makes the library volatile
-		volatile libraries are always reloaded
-		
-
-#monitor rule usage and report those that don't match, add option
-
-monitor rule usage and report those that don't match, add option
-	if rules are inherited we'll need to know it has matched in the current package
-		just add the package in the stats, at the end of a graph build we can extract the info about
-		where a rule has matched or not
-			maybe generate some yaml that can be post processed
-
+register options to pbs config not local variable
 
 monitor config usage and report not used config, add option
+	--dcu
+
+	usage of config in builder is more difficult as the build are in a different process which doesn't
+		share the hash we use to keep stats, not even the nodes are shared
+
+		there is no package during build, just a bunch of nodes in separate processes
 
 
 write the generate file in cmake in pb
@@ -500,6 +463,140 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
 
+# pbsuse caching
+
+	=> too little difference in run time (10%) for the added complexity
+		it also doesn't handle files with (configs or functions) and rules 
+
+	before a pbsuse is run it verifies that it's rules are not already present
+		the rules contain the md5 of the file to load
+		the number of rules is also checked as rules can be removed
+
+	the user can force loading
+		the library does more than adding rules
+			do not register rules but do the rest, possible
+			fail if any rule is re registred
+				we don't want to inherit those rules from parent load
+		
+		if the library was loaded before, we can remove the rules it added
+
+	pbsuse X
+		X => rule1 rule2 rule3, md5
+		rule1 => X
+		rule2 => X
+		rule3 => X
+		
+		
+	subpbs -> pass all loaded rules by default if default behavior is to not reload a library if it has already be loaded and is the same
+
+	if a library does different things at different times, it can tag itself and we have to not inherit it
+
+		library does different things depending on configuration
+
+			config debug => 1; load lib -> it adds debug specific rules
+
+			config debug => 0; load lib -> no rule is added
+
+		if only config can modify behavior (could be whatever this is code that does what it wants) we can
+			monitor config usage and tag the library automatically
+
+		rule can be tagged VOLATILE
+		any VOLATILE rule makes the library volatile
+		volatile libraries are always reloaded
+		
+
+	reload files loaded after files that must be reloaded
+
+	monitor inherited rule usage and report those that don't match, add option
+		if rules are inherited we'll need to know it has matched in the current package
+			just add the package in the stats, at the end of a graph build we can extract the info about
+			where a rule has matched or not
+				maybe generate some yaml that can be post processed
+
+# rule inheritance ideas
+
+	=> gave too little saved time for added complexity
+
+	parent can pass rules or not
+		all of them or noting
+
+	?children can accept rules if they come from a known place
+	?children decide what to do with rules 
+
+	Pbs use can be decorated with the name of rules it registers
+		if the rules are present the file is not loaded
+
+	pbsfiles do more than register rules
+		they add config, but those are usually inherited
+		they do computation, create lists, ..., create functions that create rules
+
+	responsibility is left to user
+
+	the pbsfiles must still be loaded, so what the pbsfile does for extra is still done
+		we gain time by not loading specific files that contain rules
+
+	pbsfile can declare that it needs some rules and we fail if they are not inherited from the parent
+
+	prent can decide which supbs gets what rules
+		with 2 rules in pbs2
+			one to add the subpbs
+			one to manipulate the supbs/node
+
+		in pbs1 it needs to be directly in the subpbs declaration
+			less practical but it can be wrapped in a utility function
+
+		subpbs ..., INHERITS_RULES => []
+			rules must exist of the subpbs fails
+
+		pbsuse could return a list of added rules
+			that let's the user verify rules are there
+
+	subpbs can check if a rule is available
+		but we don't want to give access to rules
+		
+		they can do it via an API
+			extended PbsUse 
+
+			a query function
+		
+				HasRule 'name or die ; a pbsfile that doesn't know how to add rules but needs them or dies
+					pbsuse 'need_rules', 1, 'name' # does the same
+
+				HasRule 'name' or HasRule 'name2' or die ;
+						name and name2 can match the same node
+
+				HasRule 'name' and HasRule 'name2' or die ;
+					pbsuse 'need_rules', 1, 'name', 'name2' # does the same
+			
+			pbsuse
+
+				PbsUse from # loads and ok if already defined in the same file (md5)
+					remember what rules where loaded from file and don't load if they are
+					all present
+
+					that information can be inherited from parent, hidden to the user
+						list of what what pbsused, where
+
+				PbsUse from, no_redefines # loads and croaks if already defined even same file
+
+				PbsUse from, accept_existing_rule  # loads and croaks if rules exists and defined somewhere else
+
+				PbsUse from, accept_existing_rule_from_wherever  # loads and is happy
+					which one is kept?
+
+				PbsUse from, accept_existing_rule, qw('name', ...) # don't load if rules exist otherwise load
+
+				PbsUse from, override, qw('name', ...) # don't load if rules exist otherwise load, override rules
+
+				PbsUse from, override_local, qw('name', ...) # don't load if rules exist otherwise load, override rules in this subpbs
+
+	pbsuse adds the library to the nodes depended in the pbs run
+		we can keep the rule origin and add the library even if it matches a node TADA no more global library dependence, it's by node
+		if the rules are inherited, and we still use package dependency, they need to be added to the package
+
+
+
+#monitor rule usage and report those that don't match, add option
 #depend log with --ddr --ddl ...  even if the display doesn't use those options
 	#depend twice
 		depend

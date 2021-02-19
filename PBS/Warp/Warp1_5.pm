@@ -106,7 +106,7 @@ if($run_in_warp_mode)
 	my $nodes_in_warp = scalar(keys %$nodes) ;
 
 	# use filewatching or default MD5 checking
-	my $IsFileModified = RunUniquePluginSub($pbs_config, 'GetWatchedFilesChecker', $pbs_config, $warp_signature, $nodes) ;
+	my $IsFileModified = RunUniquePluginSub($pbs_config, 'GetWatchedFilesChecker', $warp_signature, $nodes) ;
 
 	# skip all tests if nothing is modified
 	if($run_in_warp_mode && defined $IsFileModified  && '' eq ref $IsFileModified  && 0 == $IsFileModified )
@@ -264,7 +264,7 @@ if($run_in_warp_mode)
 				
 			# force a refresh after we build files and generated events
 			# TODO: note that the synch should be by file not global
-			RunUniquePluginSub($pbs_config, 'ClearWatchedFilesList', $pbs_config, $warp_signature) ;
+			RunUniquePluginSub($pbs_config, 'ClearWatchedFilesList', $warp_signature) ;
 			}
 			
 		@build_result = ($build_result, $build_message, $new_dependency_tree, $nodes, $load_package, $build_sequence) ;

@@ -123,8 +123,9 @@ $tree->{__CONFIG}{CFLAGS} = PBS::Config::EvalConfig
 				(
 				'%OPTIMIZE_CFLAGS %WFLAGS',
 				$tree->{__CONFIG},
-				'CFLAGS',
-				"config override at " . __FILE__ . __LINE__,
+				"'CFLAGS override at " . __FILE__ . ':' . __LINE__,
+				$tree->{__LOAD_PACKAGE},
+				$tree->{__PBS_CONFIG},
 				) ;
 }
 

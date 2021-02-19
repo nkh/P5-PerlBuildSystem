@@ -160,7 +160,7 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 			# force a refresh after we build files and generated events
 			# TODO: note that the synch should be by file not global or a single failure 
 			#             would force a complete rebuild
-			RunUniquePluginSub($pbs_config, 'ClearWatchedFilesList', $pbs_config, $warp_signature) ;
+			RunUniquePluginSub($pbs_config, 'ClearWatchedFilesList', $warp_signature) ;
 			}
 			
 		@build_result = ($build_result, $build_message, $new_dependency_tree, $nodes) ;
@@ -464,7 +464,7 @@ PrintInfo(sprintf("Warp node regeneration time: %0.2f s.\n", tv_interval($t_node
 # use filewatching or default MD5 checking
 # TODO: we don't need real nodes to verify md5 with the watch server, only to register them
 #            if we were already registred, we wouldn't need to recreate the nodes
-my $IsFileModified = RunUniquePluginSub($pbs_config, 'GetWatchedFilesChecker', $pbs_config, $warp_signature, $nodes) ;
+my $IsFileModified = RunUniquePluginSub($pbs_config, 'GetWatchedFilesChecker', $warp_signature, $nodes) ;
 
 if(defined $IsFileModified  && '' eq ref $IsFileModified  && 0 == $IsFileModified )
 	{

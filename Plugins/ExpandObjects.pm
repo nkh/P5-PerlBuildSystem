@@ -53,10 +53,7 @@ sub GetFiles
 
 my ($subpbs_result) = @_ ;
 
-return
-	(
-	map{$_->{FILE}} @{ $subpbs_result->GetFileAndMd5()}
-	) ;
+map{$_->{FILE}} @{ $subpbs_result->GetFileAndMd5()}
 }
 
 #-------------------------------------------------------------------------------
