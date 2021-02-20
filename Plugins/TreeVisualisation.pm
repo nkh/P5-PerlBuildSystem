@@ -358,12 +358,22 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		}
 	if(@trees == 1)
 		{
-		my ($node_name) = grep {!/^__/} keys %$dependency_tree ;
+		my ($node, $node_name) ;
+
+		if ($dependency_tree->{__INSERTED_AT}{INSERTING_NODE} eq 'Root load')
+			{
+			($node_name) = grep {!/^__/} keys %$dependency_tree ;
+			$node = $dependency_tree->{$node_name} ;
+			}
+		else
+			{
+			($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
+			}
 
 		PrintInfo "Depend:\n" 
 				. DumpTree
 					(
-					$dependency_tree->{$node_name},
+					$node,
 					_INFO3_($node_name),
 					FILTER => $FilterDump,
 					INDENTATION => ($PBS::Output::indentation x 2),
@@ -387,12 +397,22 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 	}
 else
 	{
-	my ($node_name) = grep {!/^__/} keys %$dependency_tree ;
+	my ($node, $node_name) ;
+
+	if ($dependency_tree->{__INSERTED_AT}{INSERTING_NODE} eq 'Root load')
+		{
+		($node_name) = grep {!/^__/} keys %$dependency_tree ;
+		$node = $dependency_tree->{$node_name} ;
+		}
+	else
+		{
+		($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
+		}
 
 	PrintInfo "Depend:\n" 
 			. DumpTree
 				(
-				$dependency_tree->{$node_name},
+				$node,
 				_INFO3_($node_name),
 				FILTER => $FilterDump,
 				INDENTATION => ($PBS::Output::indentation x 2),

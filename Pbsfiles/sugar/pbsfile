@@ -25,13 +25,19 @@ Rule 'all2', ['all' => 'immediate_build'] ;
 
 Config IB => 'immediate_build' ;
 Config IBE => '.some_extension' ;
-Rule [IMMEDIATE_BUILD], 'immediate_build', ['%IB' => 'dependency%IBD'] 
+
+#demonstrate the use of configuration variables in depender and dependency description
+Rule [NA], 'immediate_build', ['%IB' => 'dependency%IBE'] 
 	=> "echo %COMPILER > %TARGET" ;
 
+# demonstrates NON_ACTIVE and the detection of variables in shell commands, see --dcu
 Rule [NA, IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
 	=> "echo %COMPILER > %TARGET" ;
 
-Rule [NA, IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
+abc
+
+# demonstrates the detection of variables in shell commands at build time, see --dcu
+Rule [IMMEDIATE_BUILD], 'immediate_build', ['immediate_build'] 
 	=> sub 
 		{
 		my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;

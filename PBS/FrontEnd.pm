@@ -517,7 +517,9 @@ else
 	$build_success = 0 ;
 	}
 my $plural= @$targets < 2 ? '' : 's' ;
-return($build_success, "PBS: target$plural: [@$targets], pbsfile: $pbs_config->{PBSFILE}\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
+my $short_pbsfile = GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) ;
+
+return($build_success, "PBS: target$plural: [@$targets], pbsfile: $short_pbsfile\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }
 
 #-------------------------------------------------------------------------------

@@ -1342,10 +1342,10 @@ if(0 && @{$pbs_config->{LOG_NODE_INFO}} && $node_name !~ /^__/)
 
 if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	{
-	PrintWarning3("Depend: '$node_name' [IMMEDIATE_BUILD]\n") ;
 	my(@build_sequence, %trigged_files) ;
 	
 	my $nodes_checker ;
+
 	PBS::Check::CheckDependencyTree
 		(
 		$tree,
@@ -1359,30 +1359,39 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		\%trigged_files,
 		) ;
 		
-	RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
-	
-	if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
+	if (@build_sequence)
 		{
-		my ($build_result, $build_message) = PBS::Build::BuildSequence
-							(
-							$pbs_config,
-							\@build_sequence,
-							$inserted_nodes,
-							) ;
-			
-		if($build_result == BUILD_SUCCESS)
+		PrintWarning3("Depend: '$node_name' [IMMEDIATE_BUILD]\n") ;
+
+		RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
+		
+		if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
 			{
-			PrintWarning3 "Depend: '$node_name' [IMMEDIATE_BUILD] done.\n" ;
+			my ($build_result, $build_message) = PBS::Build::BuildSequence
+								(
+								$pbs_config,
+								\@build_sequence,
+								$inserted_nodes,
+								) ;
+				
+			if($build_result == BUILD_SUCCESS)
+				{
+				PrintWarning3 "Depend: " . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD] done\n") ;
+				}
+			else
+				{
+				PrintError "Depend: " . _INFO3_("'$node_name'") . _ERROR_ (" [IMMEDIATE_BUILD] failed\n") ;
+				die "\n" ;
+				}
 			}
 		else
 			{
-			PrintError "Depend: '$node_name' [IMMEDIATE_BUILD] failed.\n" ;
-			die "\n" ;
+			PrintWarning "Depend: " . _INFO3_("'$node_name'") . _WARNING_ (" [IMMEDIATE_BUILD] skipped\n") ;
 			}
 		}
 	else
 		{
-		PrintWarning "Depend: '$node_name' [IMMEDIATE_BUILD] skipped\n" ;
+		PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_ (" [IMMEDIATE_BUILD] nothing to do\n") ;
 		}
 	}
 	

@@ -1,25 +1,12 @@
+immediate build builds twice when distro has changed
+	once because a file has changes
+	once because it finds the distro has changed
 
-# NOT_ACTIVE rule type
+	the build goes through BuildSequence not via FrontEnd
 
-#register options to pbs config not local variable
+		how does the distro get updates? at the end of the depend?
 
-?how does CREATOR create a builder
-
-use config in depender
-	*/*%COMPILER instead for $compiler = Config(qw(COMPILER') ; */*$compiler
-
-#monitor config usage and report not used config, add option
-	--dcu
-
-	usage of config in builder is more difficult as the build are in a different process which doesn't
-		share the hash we use to keep stats, not even the nodes are shared
-
-		there is no package during build, just a bunch of nodes in separate processes
-
-	#We can add variable in the builder when we register the rules but it's not sure they will be used
-
-	we can catch config access when building in sub at run time
-		if it uses EvalConfig
+		
 
 write the generate file in cmake in pb
 	all the examples, including generation of subpbs and super build
@@ -29,7 +16,7 @@ write the generate file in cmake in pb
 
 	comment that there is no use to re-generate anything
 
-error not in $@ ? s it due to "use warnings?"
+#error not in $@ ? s it due to "use warnings?"
 	can we install a warning handler before loading the files
 
 	Bareword found where operator expected at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
@@ -475,6 +462,30 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+# NOT_ACTIVE rule type
+
+#register options to pbs config not local variable
+
+#?how does CREATOR create a builder
+	the rule needs a builder and the creator uses it
+
+#use config in depender
+	*/*%COMPILER instead for $compiler = Config(qw(COMPILER') ; */*$compiler
+
+#monitor config usage and report not used config, add option
+	--dcu
+
+	usage of config in builder is more difficult as the build are in a different process which doesn't
+		share the hash we use to keep stats, not even the nodes are shared
+
+		there is no package during build, just a bunch of nodes in separate processes
+
+	#We can add variable in the builder when we register the rules but it's not sure they will be used
+
+	we can catch config access when building in sub at run time
+		if it uses EvalConfig
+
 
 # pbsuse caching
 
