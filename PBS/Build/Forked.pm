@@ -144,10 +144,18 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 							? sprintf("%0.2f", $time_remaining) . "s." 
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
 
-				my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
-				my $last_node = $remaining_nodes ? '' : "\r\e[KBuild: success: $number_of_already_build_node nodes\n" ;
+				do
+					{
+					my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
+				
+					PrintInfo "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes" ;
 
-				PrintInfo "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes$last_node"
+					if (0 == $remaining_nodes)
+						{
+						PrintNoColor "\r\e[K" ;
+						PrintInfo "Build: success, nodes: $number_of_already_build_node\n" ;
+						}
+					}
 					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} || $number_of_failed_builders ;
 				}
 
@@ -208,7 +216,10 @@ if ($number_of_failed_builders)
  
 	for my $failed_node (@failed_nodes)
 		{
-		PrintError "Build: failed: " . INFO3("'$failed_node->{__NAME}'\n", 0) ;
+		PrintError "Build: failed: " 
+				. _INFO3_("'$failed_node->{__NAME}'")
+				. ($failed_node->{__IMMEDIATE_BUILD} ? _WARNING3_(" [IMMEDIATE_BUILD]") : '')
+				. "\n" ;
 				 #. INFO2(", '" . GetRunRelativePath($pbs_config, $failed_node->{__BUILD_NAME}) . "'\n", 0) ;
 		}
 	}

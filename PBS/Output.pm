@@ -49,6 +49,8 @@ $Term::ANSIColor::AUTORESET = 1 ;
 
 use Term::Size::Any qw(chars) ;
 
+use File::Slurp ;
+
 #-------------------------------------------------------------------------------
 
 
@@ -186,8 +188,6 @@ my $lines =  join
 			)
 		. $ends_with_newline ;
 
-#my $lines = "$output_info_label" . $color_and_depth->($data, $indent, $color_indent) . $ends_with_newline ;
-
 print $glob "$output_info_label$lines" ;
 }
 
@@ -235,111 +235,87 @@ else
 
 sub GetLineWithContextFromPbsfileContent
 {
-my $pbs_config                  = shift ;
-my $file_name                   = shift ;
-my $number_of_blank_lines       = shift ;
-my $number_of_context_lines     = shift ;
-my $center_line_index           = shift ;
-my $center_line_colorizing_sub  = shift || sub{ COLOR('reset', @_) } ;
-my $context_colorizing_sub      = shift || sub{ COLOR('reset', @_) } ;
+my ($pbs_config) = @_ ;
 
-my @file = map {" $_\n" } split(/\n/, $pbs_config->{PBSFILE_CONTENT}) ;
-my $number_of_lines_skip = ($center_line_index - $number_of_context_lines) - 1 ;
+my @pbsfile_contents = map {" $_\n" } split(/\n/, $pbs_config->{PBSFILE_CONTENT}) ;
 
-my $top_context = $number_of_context_lines ;
-$top_context += $number_of_lines_skip if $number_of_lines_skip < 0 ;
+$_[1] = "Virtual pbsfile: $pbs_config->{VIRTUAL_PBSFILE_NAME}" ;
 
-my $line_with_context = '' ;
+GetLineWithContextFromList(\@pbsfile_contents, @_) ;
 
-$line_with_context.= "\n" for (1 .. $number_of_blank_lines) ;
-
-shift @file for (1 .. $number_of_lines_skip) ;
-my $line_number = $number_of_lines_skip ;
-
-my $t = $PBS::Output::indentation;
-$line_with_context .= INFO2("$pbs_config->{VIRTUAL_PBSFILE_NAME}\n", 0) ;
-
-for(1 .. $top_context)
-	{
-	my $text = shift @file ;
-	$line_number++ ;
-
-	next unless defined $text ;
-
-	$line_with_context .= $context_colorizing_sub->("$t$t$line_number $text", 0) ;
-	}
-		
-my $center_line_text = shift @file ;
-$line_number++ ;
-
-$line_with_context .= $center_line_colorizing_sub->("$t$t$line_number $center_line_text", 0) if defined $center_line_text ;
-
-for(1 .. $number_of_context_lines)
-	{
-	my $text = shift @file ;
-	$line_number++ ;
-
-	next unless defined $text ;
-	
-	$line_with_context .= $context_colorizing_sub->("$t$t$line_number $text", 0) ;
-	}
-
-$line_with_context .= "\n" for (1 .. $number_of_blank_lines) ;
-
-return($line_with_context) ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub GetLineWithContextFromFile
 {
-my $pbs_config                  = shift ;
-my $file_name                   = shift ;
-my $number_of_blank_lines       = shift ;
-my $number_of_context_lines     = shift ;
-my $center_line_index           = shift ;
-my $center_line_colorizing_sub  = shift || sub{ COLOR('reset', @_) } ;
-my $context_colorizing_sub      = shift || sub{ COLOR('reset', @_) } ;
+my (undef, $file_name) = @_ ;
 
-open(FILE, '<', $file_name) or die ERROR(qq[Can't open $file_name for context display: $!]), "\n" ;
+$_[1] = "file: $file_name" ; # change title
 
-my $number_of_lines_skip = ($center_line_index - $number_of_context_lines) - 1 ;
+GetLineWithContextFromList([read_file($file_name)], @_) ;
+}
 
-my $top_context = $number_of_context_lines ;
+sub GetLineWithContextFromList
+{
+my 
+	(
+	$list,
+	$pbs_config,
+	$title,
+	$blank_lines, $context_lines_before, $context_lines_after,
+	$center_line_index,
+	$center_line_colorizing_sub, $context_colorizing_sub,
+	$indent,
+	$no_title,
+	$shorten_title,
+	$title_colorizing_sub
+	) = @_ ;
+
+$center_line_colorizing_sub //= sub{ COLOR('reset', @_) } ;
+$context_colorizing_sub     //= sub{ COLOR('reset', @_) } ;
+$indent //='' ;
+$title_colorizing_sub   //= \&INFO2 ;
+
+my $line_number = 0 ;
+my $number_of_lines_skip = ($center_line_index - $context_lines_before) - 1 ;
+
+my $top_context = $context_lines_before ;
 $top_context += $number_of_lines_skip if $number_of_lines_skip < 0 ;
 
 my $line_with_context = '' ;
 
-$line_with_context.= "\n" for (1 .. $number_of_blank_lines) ;
+$line_with_context.= "\n" x $blank_lines ;
 
-<FILE> for (1 .. $number_of_lines_skip) ;
+do { shift @$list ; $line_number++ } for (1 .. $number_of_lines_skip) ;
 
 my $t = $PBS::Output::indentation;
 
-$line_with_context .= INFO2("$t${t}File: '$file_name'\n", 0) ;
+my $short_title = $shorten_title ? GetRunRelativePath($pbs_config, $title) : $title ;
+$line_with_context .= $title_colorizing_sub->("${t}$short_title\n", 0) unless $no_title ;
 
 for(1 .. $top_context)
 	{
-	my $text = <FILE> ;
+	my $text = shift @$list ; $line_number++ ;
+
 	next unless defined $text ;
 
-	$line_with_context .=  $context_colorizing_sub->("$t$t$. $text", 0) ;
+	$line_with_context .=  $context_colorizing_sub->("$t$indent$line_number $text", 0) ;
 	}
 		
-my $center_line_text = <FILE> ;
-$line_with_context .= $center_line_colorizing_sub->("$t$t$. $center_line_text", 0) if defined $center_line_text ;
+my $center_line_text = shift @$list ; $line_number++ ;
+$line_with_context .= $center_line_colorizing_sub->("$t$indent$line_number $center_line_text", 0) if defined $center_line_text ;
 
-for(1 .. $number_of_context_lines)
+for(1 .. $context_lines_after)
 	{
-	my $text = <FILE> ;
+	my $text = shift @$list ; $line_number++ ;
+
 	next unless defined $text ;
 	
-	$line_with_context .= $context_colorizing_sub->("$t$t$. $text", 0) ;
+	$line_with_context .= $context_colorizing_sub->("$t$indent$line_number $text", 0) ;
 	}
 
-$line_with_context .= "\n" for (1 .. $number_of_blank_lines) ;
-
-close(FILE) ;
+$line_with_context .= "\n" x ($blank_lines + 1) ;
 
 return($line_with_context) ;
 }
@@ -355,7 +331,7 @@ _print(\*STDERR, \&ERROR, GetLineWithContext(@_)) ;
 
 sub PbsDisplayErrorWithContext
 {
-PrintWithContext($_[0], $_[1],1, 4, $_[2], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
+PrintWithContext($_[0], $_[1],1, 4, $_[4], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
 }
 
 #-------------------------------------------------------------------------------

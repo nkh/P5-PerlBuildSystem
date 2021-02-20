@@ -376,7 +376,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
 			  
-			"\n# load OK\n1 ;\n",
+			"1 ;\n",
 			) ;
 		} ;
 
@@ -745,7 +745,6 @@ if($file_body eq '')
 
 $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '' ;
 $pbs_config->{TARGET_PATH} //= '' ;
-my $short_file = GetRunRelativePath($pbs_config, $file) ;
 
 PrintDebug <<OPF if defined ($pbs_config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE}) ;
 #>>>>> start of original file '$file'
@@ -757,11 +756,11 @@ OPF
 my $source = <<EOS ;
 #>>>>> start of file '$file'
 
-#line 0 '$short_file'
+#line 0 '$file'
 package $package ;
 $pre_code
 
-#line 1 '$short_file' 
+#line 1 '$file' 
 $file_body
 $post_code
 #<<<<< end of file '$file'
@@ -775,20 +774,27 @@ local $SIG{__WARN__} = sub { push @warnings, $_[0] } ;
 
 my $result = eval $source ;
 
-PrintInfo2 sprintf("PBS: load time: %0.4f.s\n", tv_interval ($t0, [gettimeofday]))
-	if $pbs_config->{DISPLAY_PBSFILE_LOAD_TIME} && $type eq 'Pbsfile' ;
-
 if($@)
 	{
+	# recompile with short name to get a more compact display
+	my $short_file = GetRunRelativePath($pbs_config, $file) ;
+	$source =~ s/$file/$short_file/g ;
+
+	@warnings = () ;
+	eval $source ;
+
 	my $indent = $PBS::Output::indentation ;
 
 	PrintError "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file)
 			. "\n\n"
-			. (join '', map {"$indent$_" } @warnings)
+			. (join '', map { "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
 			. (join '', (map {"$indent$_\n" } split(/\n/, $@))) ;
 	die "\n";
 	}
 	
+PrintInfo2 sprintf("PBS: load time: %0.4f.s\n", tv_interval ($t0, [gettimeofday]))
+	if $pbs_config->{DISPLAY_PBSFILE_LOAD_TIME} && $type eq 'Pbsfile' ;
+
 $type .= ': ' unless $type eq '' ;
 
 if((!defined $result) || ($result != 1))

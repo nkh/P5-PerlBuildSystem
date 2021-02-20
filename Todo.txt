@@ -1,3 +1,21 @@
+
+find where end of rule is to display better context
+
+install and where to find tools
+	find and check tools
+	build the tools and install them, depend on them at the installation location
+
+
+rework the options
+	
+	object verb
+
+	depend display dependencies
+	depend display matchining rules
+	depend display inserting rule
+	
+
+
 immediate build builds twice when distro has changed
 	once because a file has changes
 	once because it finds the distro has changed
@@ -6,30 +24,14 @@ immediate build builds twice when distro has changed
 
 		how does the distro get updates? at the end of the depend?
 
-		
 
-write the generate file in cmake in pb
+write the generate file in cmake in pbs
 	all the examples, including generation of subpbs and super build
 
 	#can evaluate shell command be used as a templating function
 		barely but it now renders references via DTD
 
 	comment that there is no use to re-generate anything
-
-#error not in $@ ? s it due to "use warnings?"
-	can we install a warning handler before loading the files
-
-	Bareword found where operator expected at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
-
-	sdlkmd"
-		(Missing operator before sdlkmd?)
-
-	    PBS: error loading file: '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped'
-
-	    Global symbol "$x" requires explicit package name (did you forget to declare "my $x"?) at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 1.
-	    syntax error at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
-
-	    sdlkmd sdakd "
 
 put new Pbsfiles/... in MANIFEST
 
@@ -92,9 +94,6 @@ broken in vi with color
 warp 1.8 pbs chain merge
 	linking during non warp depend must also update the pbsfile chain 
 
-#ddr
-	rule matching PBS_WARP_TREE is not shown
-
 use tmux to keep session open when an error happens
 	that would mean build in tmux
 		or rebuild only the failed build in tmux
@@ -138,7 +137,7 @@ Roadmap
 		distribution
 
 	Depend
-		rule caching
+		#rule caching
 			between pbs runs
 			between packages
 
@@ -369,24 +368,10 @@ Node@root: time to retire
 		
 	
 
-#new C depender, what if the compiler generates the dependencies but post build commands are not run?
-	=> we need the post pbs because the build is in another process and the warp is in the main process
-		meso warp fixes the problem without post pbs build commands but still needs to be
-		stiched up correctly when meso warp master generation fails (or is not run)
-
-	add: new c_depender test
-		current tests cover the change
-
-
-	#extra out directory
-	#takes an extra run to stabilize warp, fixed
-
-
 fork fails in windows, again!
 
 Tie::Hash::Index pulls in a zillion modules and libffi
 	
-check simplified dependencies rules and perl rules
 Check pbsfiles/config project
 
 document EvalShellCommand and the order they are run as well as --evaluate_shell_command_verbose 
@@ -462,6 +447,38 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#ddr
+	rule matching PBS_WARP_TREE is not shown
+
+#new C depender, what if the compiler generates the dependencies but post build commands are not run?
+	=> we need the post pbs because the build is in another process and the warp is in the main process
+		meso warp fixes the problem without post pbs build commands but still needs to be
+		stiched up correctly when meso warp master generation fails (or is not run)
+
+	add: new c_depender test
+		current tests cover the change
+
+
+	#extra out directory
+	#takes an extra run to stabilize warp, fixed
+
+
+#check simplified dependencies rules and perl rules
+#error not in $@ ? s it due to "use warnings?"
+	can we install a warning handler before loading the files
+
+	Bareword found where operator expected at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
+
+	sdlkmd"
+		(Missing operator before sdlkmd?)
+
+	    PBS: error loading file: '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped'
+
+	    Global symbol "$x" requires explicit package name (did you forget to declare "my $x"?) at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 1.
+	    syntax error at '/home/nadim/nadim/devel/repositories/perl_modules/P5-PerlBuildSystem/Pbsfiles/sugar/runtime/runtime_scoped' line 4, near "1
+
+	    sdlkmd sdakd "
 
 # NOT_ACTIVE rule type
 

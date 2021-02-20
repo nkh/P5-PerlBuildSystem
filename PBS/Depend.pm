@@ -12,7 +12,7 @@ use Data::TreeDumper ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
 use String::Truncate ;
-use List::Util qw(any) ;
+use List::Util qw(any max) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
 require Exporter ;
@@ -616,12 +616,17 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 
+				PrintInfo "$indent${indent}definition:\n" ;
 				PrintWithContext
 					(
+					$pbs_config,
 					$rule->{FILE},
-					1, 2, # context  size
+					0, 0, 2, # blank, context before, context after
 					$rule->{LINE},
 					\&INFO,
+					\&INFO2,
+					"$indent$indent",
+					1, # no file name
 					) if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 				}
 			}
@@ -755,10 +760,47 @@ for my $dependency (@node_dependencies)
 
 if(@sub_pbs > 1)
 	{
-	PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple matching subpbs:\n" ;
-	PrintError(DumpTree(\@sub_pbs, "Subpbs:")) ;
-	
-	Carp::croak  ;
+	PrintInfo3 _INFO3_("$indent'$node_name'") . _ERROR_(" matching subpbs rules: " . scalar(@sub_pbs) ."\n") ;
+
+	for (@sub_pbs)
+		{
+		PrintWithContext
+			(
+			$pbs_config,
+			$_->{RULE}{FILE},
+			0, 0, 2, # blank, context before, context after
+			$_->{RULE}{LINE},
+			\&WARNING,
+			\&INFO2,
+			$indent,
+			0, # show title
+			1, # shorten name
+			) ;
+
+		PrintNoColor("\n") ;
+		}
+
+=pod
+	# just the name and file:line
+	my $max = max map { length $_->{RULE}{NAME} } @sub_pbs ;
+
+	PrintError 
+		sprintf
+			(
+			"$indent%-${max}s "
+				. _INFO2_
+					(
+					"@ "
+					. GetRunRelativePath($pbs_config, $_->{RULE}{FILE})
+					. ":$_->{RULE}{LINE}\n"
+					),
+			$_->{RULE}{NAME}
+			) for @sub_pbs ;
+
+	# tree of subpbs rules
+	PrintError(DumpTree \@sub_pbs, "Subpbs:", MAX_DEPTH => 4, DISPLAY_ADDRESS => 0) ;
+=cut
+	die _ERROR_("PBS: error: multiple matching subpbs rules") . "\n" ;
 	}
 	
 
@@ -1361,12 +1403,13 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		
 	if (@build_sequence)
 		{
-		PrintWarning3("Depend: '$node_name' [IMMEDIATE_BUILD]\n") ;
-
 		RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
 		
 		if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
 			{
+			PrintInfo "Depend: " . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+			$PBS::Output::indentation_depth++ ;
+
 			my ($build_result, $build_message) = PBS::Build::BuildSequence
 								(
 								$pbs_config,
@@ -1374,24 +1417,18 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 								$inserted_nodes,
 								) ;
 				
-			if($build_result == BUILD_SUCCESS)
-				{
-				PrintWarning3 "Depend: " . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD] done\n") ;
-				}
-			else
-				{
-				PrintError "Depend: " . _INFO3_("'$node_name'") . _ERROR_ (" [IMMEDIATE_BUILD] failed\n") ;
-				die "\n" ;
-				}
+			$PBS::Output::indentation_depth-- ;
+
+			$build_result == BUILD_SUCCESS ? PrintNoColor "\n" : die "\n" ;
 			}
 		else
 			{
-			PrintWarning "Depend: " . _INFO3_("'$node_name'") . _WARNING_ (" [IMMEDIATE_BUILD] skipped\n") ;
+			PrintWarning "Depend: " . _INFO3_("'$node_name'") . _WARNING_ (" skipped\n") .  _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
 			}
 		}
 	else
 		{
-		PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_ (" [IMMEDIATE_BUILD] nothing to do\n") ;
+		#PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_(' nothing to do') . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
 		}
 	}
 	
