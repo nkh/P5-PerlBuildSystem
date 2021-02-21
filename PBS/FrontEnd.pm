@@ -362,6 +362,9 @@ if($display_user_help || $extract_pod_from_pbsfile)
 my ($pbs_config_ok, $pbs_config_message) = PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
 return(0, $pbs_config_message) unless $pbs_config_ok ;
 
+# compute distribution digest
+PBS::Digest::GetPbsDigest($pbs_config) ;
+
 unless($switch_parse_ok && $switch_parse_ok_subpbs_options)
 	{
 	# deferred to get a chance to display PBS help

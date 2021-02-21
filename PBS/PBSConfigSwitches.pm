@@ -984,7 +984,7 @@ EOT
 		'(DF) Display the nodes inserted because of a trigger.',
 		'',
 		
-	'dt|display_trigged'              => \$pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES},
+	'dt|display_triggered'              => \$pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES},
 		'(DF) Display the files that need to be rebuild and why they need so.',
 		'',
 		

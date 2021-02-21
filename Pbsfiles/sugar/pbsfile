@@ -18,15 +18,15 @@ Module '*/compiler_1' => 'compiler/compiler' ;
 AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
 
 # set extra configuration to module
-Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
+#Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
 Subpbs '*/compiler_2' => 'compiler/compiler' ;
 
 Rule 'all2', ['all' => 'immediate_build'] ;
 
+#demonstrate the use of configuration variables in depender and dependency description
 Config IB => 'immediate_build' ;
 Config IBE => '.some_extension' ;
 
-#demonstrate the use of configuration variables in depender and dependency description
 Rule [NA], 'immediate_build', ['%IB' => 'dependency%IBE'] 
 	=> "echo %COMPILER > %TARGET" ;
 

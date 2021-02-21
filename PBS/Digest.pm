@@ -95,7 +95,7 @@ unless (defined $PBS_DIGEST)
 		}
 	else
 		{
-		die ERROR("Can't compute digest for pbs distribution '$digest_file_name'.") . "\n" ;
+		die ERROR("Digest: Can't compute digest for pbs distribution '$digest_file_name'.") . "\n" ;
 		}
 	}
 
@@ -121,7 +121,6 @@ unless (exists $pbs_digest_checked{$digest_file})
 
 return @{$pbs_digest_checked{$digest_file}} ;
 }
-
 
 sub CheckDistribution
 {

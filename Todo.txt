@@ -5,6 +5,8 @@ install and where to find tools
 	find and check tools
 	build the tools and install them, depend on them at the installation location
 
+	install copies, doesn't move stuff around
+		hard link ?
 
 rework the options
 	
@@ -16,7 +18,7 @@ rework the options
 	
 
 
-immediate build builds twice when distro has changed
+#immediate build builds twice when distro has changed
 	once because a file has changes
 	once because it finds the distro has changed
 

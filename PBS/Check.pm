@@ -55,7 +55,6 @@ my $triggered = 0 ;
 	
 $tree->{__LEVEL} = $node_level ;
 my $name = $tree->{__NAME} ;
-
 push @traversal, $tree ;
 
 if(exists $tree->{__CYCLIC_FLAG})
@@ -194,72 +193,7 @@ if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
 			. "\n" ;
 	}
 	
-#----------------------------------------------------------------------------
-# handle the node type
-#----------------------------------------------------------------------------
-if($is_virtual)
-	{
-	if(exists $tree->{__LOCAL})
-		{
-		die ERROR("Node/File '$name' can't be VIRTUAL and LOCAL") ;
-		}
-		
-	if(-e $full_name)
-		{
-		if(-d $full_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
-			{
-			# do not generate warning
-			}
-		else
-			{
-			PrintWarning2("Check: '$name' is VIRTUAL but file '$full_name' exists.\n") ;
-			}
-		}
-	}
-	
-if(exists $tree->{__FORCED})
-	{
-	push @{$tree->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
-	
-	PrintInfo("$name: trigged on [FORCED] type.\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-	$triggered++ ;
-	}
-	
-#----------------------------------------------------------------------------
-
-unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
-	{
-	if( ! exists $tree->{__VIRTUAL} && ! -e $full_name)
-		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found on disk"} ;
-		PrintInfo("$name: trigged on itself [Doesn't exist]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-		$triggered++ ;
-		}
-	}
-
-if(! $triggered && defined $node_checker_rule)
-	{
-	my ($must_build, $why) = $node_checker_rule->($tree, $full_name) ;
-	if($must_build)
-		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
-		PrintInfo("$name: trigged on itself [$why]\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-		$triggered++ ;
-		}
-	}
-
-if(exists $tree->{__PBS_FORCE_TRIGGER})
-	{
-	for my $forced_trigger (@{$tree->{__PBS_FORCE_TRIGGER}})
-		{
-		my $message = $forced_trigger->{MESSAGE} // $forced_trigger->{REASON} // 'no message' ;
-		
-		PrintInfo("Check: '$name': trigged because of '$message'\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
-		
-		push @{$tree->{__TRIGGERED}}, $forced_trigger ;
-		$triggered++ ;
-		}
-	}
+my @dependency_triggering ;
 
 # IMPORTANT: this also generates child parents links for parallel build
 # do not make the block depend on previous triggers
@@ -285,11 +219,11 @@ for my $dependency_name (keys %$tree)
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$dependency->{__PARENTS}}, $tree ;
 
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" triggered by dependency [$dependency_name] [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			push @dependency_triggering, $dependency ;
 			}
 		else
 			{
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" NOT triggered by dependency [$dependency_name] [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			#PrintInfo2 "Check: " . INFO3("'$name'") . INFO2(" NOT triggered by dependency '$dependency_name' [$tree->{__CHILDREN_TO_BUILD}]\n") ;
 			}
 		}
 	else
@@ -322,7 +256,7 @@ for my $dependency_name (keys %$tree)
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$dependency->{__PARENTS}}, $tree ;
 
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+			push @dependency_triggering, $dependency ;
 			}
 		else
 			{
@@ -358,6 +292,78 @@ for my $dependency_name (keys %$tree)
 		}
 	}
 
+#----------------------------------------------------------------------------
+# handle the node type
+#----------------------------------------------------------------------------
+if($is_virtual)
+	{
+	if(exists $tree->{__LOCAL})
+		{
+		die ERROR("Node/File '$name' can't be VIRTUAL and LOCAL") ;
+		}
+		
+	if(-e $full_name)
+		{
+		if(-d $full_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
+			{
+			# do not generate warning
+			}
+		else
+			{
+			PrintWarning2("Check: '$name' is VIRTUAL but file '$full_name' exists.\n") ;
+			}
+		}
+	}
+	
+if(exists $tree->{__FORCED})
+	{
+	push @{$tree->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
+	
+	PrintWarning("Check: '$name' FORCED.\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+	$triggered++ ;
+	}
+	
+#----------------------------------------------------------------------------
+
+unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
+	{
+	if( ! exists $tree->{__VIRTUAL} && ! -e $full_name)
+		{
+		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found"} ;
+		PrintInfo2("Check: '$name' not found\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		$triggered++ ;
+		}
+	}
+
+if(! $triggered && defined $node_checker_rule)
+	{
+	my ($must_build, $why) = $node_checker_rule->($tree, $full_name) ;
+	if($must_build)
+		{
+		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
+		PrintInfo2("Check: '$name' $why\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		$triggered++ ;
+		}
+	}
+
+if(exists $tree->{__PBS_FORCE_TRIGGER})
+	{
+	for my $forced_trigger (@{$tree->{__PBS_FORCE_TRIGGER}})
+		{
+		my $message = $forced_trigger->{MESSAGE} // $forced_trigger->{REASON} // 'no message' ;
+		
+		PrintInfo("Check: '$name' PBS_FORCE_TRIGGER $message\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		
+		push @{$tree->{__TRIGGERED}}, $forced_trigger ;
+		$triggered++ ;
+		}
+	}
+
+if($pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} && $name !~ /^__/)
+	{
+	PrintInfo2 "Check: '$name' * '$_->{__NAME}'\n" for @dependency_triggering ;
+	}
+
 if(exists $tree->{__VIRTUAL})
 	{
 	# no digest files for virtual nodes
@@ -365,9 +371,9 @@ if(exists $tree->{__VIRTUAL})
 else
 	{
 	# the dependencies have been checked recursively ; the only thing a digest check could trigger with
-	# is package or node dependencies like pbsfile, variables, etc.. there should be a switch to only check that
+	# is package or node dependencies like pbsfile, variables, etc..
 	
-	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} ||  $triggered)
+	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} || $triggered)
 		{
 		# check digest
 		my $t0 = [gettimeofday];
@@ -380,8 +386,8 @@ else
 			for (@$reason)
 				{
 				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => ': ' . $_} ;
-				PrintInfo("$name: trigged on '__DIGEST_TRIGGERED'[$_]\n")
-					 if $pbs_config->{DEBUG_DISPLAY_TRIGGED_DEPENDENCIES} ;
+				PrintInfo2("Check: '$name' $_\n")
+					 if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 				}
 			
 			# since we allow nodes to be build by the step before check (ex object files  with "depend and build"
@@ -452,7 +458,7 @@ if($triggered)
 		{
 		if(defined $pbs_config->{DISPLAY_FILE_LOCATION})
 			{
-			PrintWarning("Relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}.\n")  ;
+			PrintWarning("Check: relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}.\n")  ;
 			PrintWarning(DumpTree($tree->{__TRIGGERED}, 'Cause:')) ;
 			}
 			
@@ -604,7 +610,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	PrintInfo("Locate: file:" . INFO3("'$unlocated_file':\n", 0)) if $display_search_info ;
+	PrintInfo("Locate: file:" . INFO3(" '$unlocated_file':\n", 0)) if $display_search_info ;
 	
 	if(-e $located_file)
 		{
