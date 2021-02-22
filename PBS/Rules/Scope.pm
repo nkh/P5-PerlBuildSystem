@@ -33,18 +33,13 @@ return if $pbs_config->{RULE_NO_SCOPE} ;
 
 if(exists $scope_per_package{$package} && exists $scope_per_package{$package}{$rule_name})
 	{
-	if($pbs_config->{DISPLAY_RULE_SCOPE})
-		{
-		PrintDebug "Scope: rule '$rule_name' scoped after:\n" ;
-		PrintDebug "\t\t$_\n" for (@{$scope_per_package{$package}{$rule_name}}) ;
-		}
+	PrintDebug "Scope: rule '$rule_name' scoped after: " . join(', ', @{$scope_per_package{$package}{$rule_name}}) . "\n"
+		if $pbs_config->{DISPLAY_RULE_SCOPE} ;
 
 	return @{$scope_per_package{$package}{$rule_name}}
 	}
-	{
-	PrintDebug "Scope: rule '$package:$rule_name':\n\t\tno scope\n" if $pbs_config->{DISPLAY_RULE_SCOPE} ;
-	return ()
-	}
+
+return ()
 }
 
 sub Scope

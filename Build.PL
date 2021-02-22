@@ -34,6 +34,7 @@ PBS/GraphViz.pm
 PBS/Output.pm
 PBS/PBS.pm
 PBS/Prf.pm
+PBS/PrfNop.pm
 PBS/PBSConfig.pm
 PBS/PBSConfigSwitches.pm
 PBS/Plugin.pm

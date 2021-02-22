@@ -359,20 +359,21 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			$pbs_config,
 			"use strict ;\n"
 			  . "use warnings ;\n"
+		  	  . "use PBS::PrfNop ;\n" # add sub AddTargets
 			  . "use PBS::Constants ;\n"
-			  . "use PBS::Shell ;\n"
 			  . "use PBS::Output ;\n"
 			  . "use PBS::Rules ;\n"
 			  . "use PBS::Rules::Scope ;\n"
 			  . "use PBS::Triggers ;\n"
 			  . "use PBS::PostBuild ;\n"
-			  . "use PBS::PBSConfig ;\n"
 			  . "use PBS::Config ;\n"
-			  . "use PBS::Check ;\n"
 			  . "use PBS::PBS ;\n"
 			  . "use PBS::Digest;\n"
-			  . "use PBS::Rules::Creator;\n"
-			  . "use PBS::Plugin;\n"
+			  #. "use PBS::Check ;\n"
+			  #. "use PBS::Shell ;\n"
+			  #. "use PBS::PBSConfig ;\n"
+			  #. "use PBS::Rules::Creator;\n"
+			  #. "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
 			  
 			"1 ;\n",
@@ -737,11 +738,18 @@ if($type eq 'Pbsfile')
 	
 if($file_body eq '')
 	{
-	open(FILE, '<', $file) or die "LoadFileInPackage: Error opening $file: $!\n" ;
-	
-	local $/ = undef ;
-	$file_body .= <FILE> ;
-	close(FILE) ;
+	if(defined $file)
+		{
+		open(FILE, '<', $file) or die ERROR("PBS: error opening '$file': $!") . "\n" ;
+		
+		local $/ = undef ;
+		$file_body .= <FILE> ;
+		close(FILE) ;
+		}
+	else
+		{
+		die  ERROR("LoadFileInPackage: no file name") . "\n" ;
+		}
 	}
 
 $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '' ;
@@ -797,7 +805,7 @@ $type .= ': ' unless $type eq '' ;
 if((!defined $result) || ($result != 1))
 	{
 	$result ||= 'undef' ;
-	die "PBS: error: $type$file didn't return OK [$result] (did you forget '1 ;' at the last line?)\n"  ;
+	die ERROR("PBS: $type$file didn't return OK [$result]") . "\n"  ;
 	}
 }
 

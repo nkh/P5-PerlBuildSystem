@@ -1,7 +1,3 @@
-test order now we have a new module
-
-find where end of rule is to display better context
-
 install and where to find tools
 	find and check tools
 	build the tools and install them, depend on them at the installation location
@@ -20,6 +16,13 @@ rework the options
 
 
 #immediate build builds twice when distro has changed
+
+#AddTarget in pbsfile
+
+#test order now we have a new module
+
+#find where end of rule is to display better context
+
 	once because a file has changes
 	once because it finds the distro has changed
 

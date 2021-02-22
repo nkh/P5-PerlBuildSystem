@@ -1,5 +1,7 @@
 #pbs all -no_build -dd -w 0 -ddnl -display_rule_statistics --display_dependency_time -rro -nli -ddl -display_depend_end -ddr -display_rule_to_order -tno -tnos
 
+AddTargets 'all' ;
+
 Use './sugar' ; use subs qw( MyAddRule Module get_modules) ;
 
 Config
@@ -21,6 +23,17 @@ AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
 Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
 #Subpbs '*/compiler_2' => 'compiler/compiler' ;
 
+rule [NA, 'yo'], 'bla' , [
+
+	'cxxc' =>
+	1,
+	2,
+	qw(
+a
+b
+cd)], 'cmd',
+'cmd'
+ ;
 Rule 'all2', ['all' => 'immediate_build'] ;
 
 #demonstrate the use of configuration variables in depender and dependency description

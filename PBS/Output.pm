@@ -299,7 +299,7 @@ for(1 .. $top_context)
 	}
 		
 
-if($pbs_config->{DISPLAY_PERL_CONTEXT})
+unless($pbs_config->{DISPLAY_NO_PERL_CONTEXT})
 	{
 	use PPR ;
 

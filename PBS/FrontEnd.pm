@@ -97,7 +97,7 @@ for my $subpbs_option (@$unchecked_subpbs_options)
 	{
 	$counter++ ;
 
-	PBS::PBSConfig::RegisterPbsConfig($package, {}) ;
+	PBS::PBSConfig::RegisterPbsConfig($package) ;
 	my $pbs_config = GetPbsConfig($package) ;
 
 	$pbs_config->{PBSFILE} = $package ;
@@ -252,7 +252,7 @@ if($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] eq '--get_bash_completion')
 	return(1) ;
 	}
 
-PBS::PBSConfig::RegisterPbsConfig('PBS', {}) ;
+PBS::PBSConfig::RegisterPbsConfig('PBS') ;
 my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
@@ -269,8 +269,6 @@ $pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
 
 for ( @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($_) }
   
-my ($targets) = $pbs_config->{TARGETS} ;
-
 if($pbs_config->{DISPLAY_LIB_PATH})
 	{
 	print 'PBS: lib paths:' . join(':', @{$pbs_config->{LIB_PATH}}) . "\n" ;
@@ -371,20 +369,55 @@ unless($switch_parse_ok && $switch_parse_ok_subpbs_options)
 	return(0, $parse_message . ' ' . $parse_message_subpbs_options);
 	}
 	
-for my $target (@$targets)
-	{
-	if($target =~ /^\@/ || $target =~ /\@$/ || $target =~ /\@/ > 1)
-		{
-		die ERROR "PBS: invalid composite target definition\n" ;
-		}
+GenerateDependFullLog($pbs_config, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) if $pbs_config->{DEPEND_FULL_LOG} ;
 
-	if($target =~ /@/)
+my $targets = $pbs_config->{TARGETS} ;
+
+unless(@$targets)
+	{
+	# try to get them from the pbsfile
+	my $load_package = 'PBS_GET_TARGET_FROM_PBSFILE' ;
+
+	my $targets_pbs_config = PBS::PBSConfig::RegisterPbsConfig
+				(
+				$load_package,
+				{
+					TARGET_PATH => '',
+					SHORT_DEPENDENCY_PATH_STRING => $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} // '…',
+					CONFIG_NAMESPACES => ['BuiltIn', 'User'],
+				}
+				) ;
+	eval 
 		{
-		die ERROR "PBS: only one composite target allowed\n" if @$targets > 1 ;
+		#use Clone; 
+		#my $pbs_config = Clone::clone $pbs_config ;
+		#$pbs_config->{TARGET_PATH} = '' ;
+		#PrintInfo "PBS: loading '" . GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) . "' to find target\n" ; 
+
+		PBS::PBS::LoadFileInPackage
+			(
+			'', # $type
+			$pbs_config->{PBSFILE},
+			$load_package,
+			$targets_pbs_config,
+			"use strict ;\n"
+			  . "use warnings ;\n"
+		  	  . "use PBS::Prf ;\n" # add sub AddTargets
+			  . "use PBS::Constants ;\n"
+			  . "use PBS::Output ;\n"
+			  . "use PBS::Rules ;\n"
+			  . "use PBS::Rules::Scope ;\n"
+			  . "use PBS::Triggers ;\n"
+			  . "use PBS::PostBuild ;\n"
+			  . "use PBS::Config ;\n"
+			  . "use PBS::PBS ;\n"
+			  . "use PBS::Digest;\n",
+			'1 ;', #$post_code
+			) ;
+
+		$targets = $targets_pbs_config->{TARGETS} // [] ;
 		}
 	}
-	
-GenerateDependFullLog($pbs_config, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) if $pbs_config->{DEPEND_FULL_LOG} ;
 
 $targets =
 	[
@@ -392,6 +425,16 @@ $targets =
 		{
 		my $target = $_ ;
 		
+		if($target =~ /^\@/ || $target =~ /\@$/ || $target =~ /\@/ > 1)
+			{
+			die ERROR "PBS: invalid composite target definition\n" ;
+			}
+
+		if($target =~ /@/)
+			{
+			die ERROR "PBS: only one composite target allowed\n" if @$targets > 1 ;
+			}
+
 		$target = $_ if file_name_is_absolute($_) ; # full path
 		$target = $_ if /^.\// ; # current dir (that's the build dir)
 		$target = "./$_" unless /^[.\/]/ ;
@@ -400,8 +443,8 @@ $targets =
 		} @$targets
 	] ;
 
-
-$pbs_config->{PACKAGE} = 'PBS' ; #hmm, should be unique
+$pbs_config->{PACKAGE} = "PBS" ; # should be unique
+$pbs_config->{TARGET_PATH} = '' ;
 
 # make the variables below accessible from a post pbs script
 my $build_success = 1 ;
@@ -514,11 +557,12 @@ if(@$targets)
 	}
 else
 	{
-	PrintError("PBS: no targets given on the command line!\n") ;
+	PrintError("PBS: no targets to build\n") ;
 	PBS::PBSConfigSwitches::DisplayUserHelp($pbs_config->{PBSFILE}, 1, 0) ;
 		
 	$build_success = 0 ;
 	}
+
 my $plural= @$targets < 2 ? '' : 's' ;
 my $short_pbsfile = GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) ;
 

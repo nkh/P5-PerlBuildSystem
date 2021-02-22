@@ -36,7 +36,7 @@ my %pbs_configuration ;
 sub RegisterPbsConfig
 {
 my $package  = shift ;
-my $configuration= shift ;
+my $configuration = shift // {} ;
 
 if(ref $configuration eq 'HASH')
 	{
@@ -46,6 +46,8 @@ else
 	{
 	PrintError("Config: RegisterPbsConfig: switches must be a hash reference.\n") ;
 	}
+
+$configuration
 }
 
 #-------------------------------------------------------------------------------
@@ -543,7 +545,8 @@ if($pbs_response_file)
 	{
 	unless(-e $pbs_response_file)
 		{
-		die ERROR "Error! Can't find prf '$pbs_response_file'." ;
+		PrintError "PBS: can't find prf '$pbs_response_file'" ;
+		die "\n" ;
 		}
 		
 	PBS::PBSConfig::RegisterPbsConfig($prf_load_package, {PRF_IGNORE_ERROR => $ignore_error}) ;

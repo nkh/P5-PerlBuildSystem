@@ -672,8 +672,8 @@ EOT
 		'When set and if an error occures in a Pbsfile, PBS will display the error line.',
 		'',
 		
-	'display_perl_context'            => \$pbs_config->{DISPLAY_PERL_CONTEXT},
-		'When displaying an error with context, parse the perl code to find the context.',
+	'display_no_perl_context'         => \$pbs_config->{DISPLAY_NO_PERL_CONTEXT},
+		'When displaying an error with context, do not parse the perl code to find the context end.',
 		'',
 		
 	'dpl|display_pbsfile_loading'     => \$pbs_config->{DISPLAY_PBSFILE_LOADING},
