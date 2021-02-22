@@ -9,7 +9,6 @@ use warnings ;
 use Data::Dumper ;
 use Data::TreeDumper ;
 #$Data::TreeDumper::Displaycallerlocation++ ;
-use Carp ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Spec::Functions qw(:ALL) ;
 
@@ -626,6 +625,8 @@ if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
 	{
 	my $load_information = join(':', $package, $file_name, $line) ;
 	my $previous_load_information = join(':', @{$files_loaded_via_PbsUse{$package}{$located_source_name}}) ;
+
+
 	PrintWarning(sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information.\n")) ;
 	}
 else
@@ -778,17 +779,13 @@ if($@)
 	{
 	# recompile with short name to get a more compact display
 	my $short_file = GetRunRelativePath($pbs_config, $file) ;
-	$source =~ s/$file/$short_file/g ;
-
-	@warnings = () ;
-	eval $source ;
 
 	my $indent = $PBS::Output::indentation ;
 
 	PrintError "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file)
 			. "\n\n"
-			. (join '', map { "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
-			. (join '', (map {"$indent$_\n" } split(/\n/, $@))) ;
+			. (join '', map { s/$file/$short_file/g ;  "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
+			. (join '', map {s/$file/$short_file/g ; "$indent$_\n" } split(/\n/, $@)) ;
 	die "\n";
 	}
 	

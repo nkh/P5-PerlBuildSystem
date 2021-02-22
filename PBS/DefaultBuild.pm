@@ -118,7 +118,7 @@ my $local_time =
 		{},
 		) ;
 
-my $added_nodes_in_run = @{PBS::Depend::GetNodesPerPbsRun()->{$load_package}} ;
+my $added_nodes_in_run = @{(PBS::Depend::GetNodesPerPbsRun()->{$load_package} // [])} ;
 $added_nodes_in_run -= 1 unless 0 == $PBS::Output::indentation_depth; # subpbses target is already counted in the parents count
 
 if ($pbs_config->{DISPLAY_DEPEND_END})

@@ -540,7 +540,7 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 				. $builder_override->{LINE}  . "'" ;
 				
 			PrintError "\nBuilder override $info didn't define a builder!\n" ;
-			PbsDisplayErrorWithContext($pbs_config, $builder_override->{FILE}, $builder_override->{LINE}) ;
+			PbsDisplayErrorWithContext $pbs_config, $builder_override->{FILE}, $builder_override->{LINE}  ;
 			}
 		}
 	else

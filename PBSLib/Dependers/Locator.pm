@@ -54,10 +54,10 @@ my @matching_nodes = LocateNodeInList($regex, $node_list) ;
 	
 if(0 == @matching_nodes)
 	{
-	PrintError "LocateUnique: '$regex' didn't matched any node @ $file_name:$line!\n" ;
+	PrintError "Locator: '$regex' didn't matched any node\n" ;
 	$file_name =~ s/'//g ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-	die ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+	die "\n" ;
 	}
 else
 	{
@@ -67,7 +67,7 @@ else
 		}
 	else
 		{
-		PrintError "LocateUnique '$regex' matched more than a node @ $file_name:$line!\n" ;
+		PrintError "Locateor: '$regex' matched more than one node\n" ;
 		
 		for (@matching_nodes)
 			{
@@ -75,8 +75,8 @@ else
 			}
 			
 		$file_name =~ s/'//g ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-		die ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+		die "\n" ;
 		}
 	}
 }
@@ -143,7 +143,7 @@ sub
 		}
 	else
 		{
-		PrintError "LocateorLocal '$regex' matched more than a node @ $file_name:$line!\n" ;
+		PrintError "Locator: '$regex' matched more than one node\n" ;
 		
 		for (@matching_nodes)
 			{
@@ -151,8 +151,8 @@ sub
 			}
 			
 		$file_name =~ s/'//g ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-		die ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+		die "\n" ;
 		}
 		
 	unless(defined $located_node)

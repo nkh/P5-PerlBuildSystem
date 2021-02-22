@@ -109,10 +109,10 @@ if(exists $triggers{$package})
 				)
 			)
 			{
-			PrintError("'$name' name is already used for for trigger defined at $trigger->{FILE}:$trigger->{LINE}\n") ;
-			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-			PbsDisplayErrorWithContext($pbs_config, $trigger->{FILE},$trigger->{LINE}) ;
-			die ;
+			PrintError "Triggers: '$name' already defined\n" ;
+			PbsDisplayErrorWithContext $pbs_config, $trigger->{FILE},$trigger->{LINE} ;
+			PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+			die "\n" ;
 			}
 		}
 	}
@@ -122,11 +122,11 @@ my $trigger_sub ;
 if('ARRAY' eq ref $trigger_definition)
 	{
 	unless(@$trigger_definition)
-	{
-	PrintError("Nothing defined in rule '$name' defined @ '$file_name,$line'.\n") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-	die ;
-	}
+		{
+		PrintError "Triggers: '$name' invalid definition\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
+		}
 
 	my($triggered_node, @triggers) = @$trigger_definition;
 	
@@ -160,9 +160,9 @@ else
 		}
 	else
 		{
-		PrintError("Invalid triger definition @ '$file_name:$line'. Expecting an array ref or a code ref.\n") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-		die ;
+		PrintError "Trigger: invalid definition, expecting an array ref or a code reference\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
 		}
 	}
 	
@@ -215,17 +215,15 @@ for my $Pbsfile (@_)
 	if(exists $imported_triggers{"$package=>$Pbsfile"})
 		{
 		PrintWarning
-			(
 			"At $file_name:$line: Triggers from '$Pbsfile' have already been imported in package '$package'"
 				. "at "
 				. $imported_triggers{"$package=>$Pbsfile"}{FILE}
 				. ':'
 				. $imported_triggers{"$package=>$Pbsfile"}{LINE}
-				. ". Ignoring.\n"
-			) ;
+				. ". Ignoring.\n" ;
 			
-		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-		PbsDisplayErrorWithContext($pbs_config, $imported_triggers{"$package=>$Pbsfile"}{FILE}, $imported_triggers{"$package=>$Pbsfile"}{LINE}) ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+		PbsDisplayErrorWithContext $pbs_config, $imported_triggers{"$package=>$Pbsfile"}{FILE}, $imported_triggers{"$package=>$Pbsfile"}{LINE} ;
 		}
 	else
 		{
@@ -241,14 +239,14 @@ for my $Pbsfile (@_)
 	
 		if($trigger_exports_definition  eq '')
 			{
-			PrintWarning("No 'ExportTriggers' sub in '$Pbsfile' at $file_name:$line.\n") ;
+			PrintWarning "No 'ExportTriggers' sub in '$Pbsfile' at $file_name:$line.\n" ;
 			}
 		else
 			{
 			my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 			unless(defined $pbs_config->{NO_TRIGGER_IMPORT_INFO})
 				{
-				PrintInfo("Trigger: Importing from '$Pbsfile:$definition_line' into package '$package' at $file_name:$line.\n") ;
+				PrintInfo "Trigger: Importing from '$Pbsfile:$definition_line' into package '$package' at $file_name:$line.\n"  ;
 			   }
 			   
 			$trigger_exports_definition =~ s/sub\s+ExportTriggers// ;
@@ -256,7 +254,7 @@ for my $Pbsfile (@_)
 			$definition_line-- ; # reserve room for #line ...
 			$trigger_exports_definition = "#line $definition_line $Pbsfile\npackage $package ;\n" . $trigger_exports_definition ;
 			
-			#~ PrintInfo("$trigger_exports_definition\n") ;
+			#~ PrintInfo "$trigger_exports_definition\n" ;
 			
 			eval $trigger_exports_definition ;
 			die $@ if $@ ;

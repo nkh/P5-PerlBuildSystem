@@ -223,38 +223,30 @@ my ($pbs_config) = @_ ;
 
 if($pbs_config->{PBSFILE_CONTENT})
 	{
-	GetLineWithContextFromPbsfileContent(@_) ;
+	my @pbsfile_contents = map {" $_\n" } split(/\n/, $pbs_config->{PBSFILE_CONTENT}) ;
+
+	$_[1] = "Virtual pbsfile: $pbs_config->{VIRTUAL_PBSFILE_NAME}" ;
+
+	GetLineWithContextFromList(\@pbsfile_contents, @_) ;
 	}
 else
 	{
-	GetLineWithContextFromFile(@_) ;
+	my (undef, $file_name) = @_ ;
+
+	$_[1] = "file: $file_name" ; # change title
+
+	if (-e $file_name)
+		{
+		GetLineWithContextFromList([read_file($file_name)], @_) ;
+		}
+	else
+		{
+		die ERROR("PBS: file not found '$file_name") . "\n" ;
+		}
 	}
 }
 
 #-------------------------------------------------------------------------------
-
-sub GetLineWithContextFromPbsfileContent
-{
-my ($pbs_config) = @_ ;
-
-my @pbsfile_contents = map {" $_\n" } split(/\n/, $pbs_config->{PBSFILE_CONTENT}) ;
-
-$_[1] = "Virtual pbsfile: $pbs_config->{VIRTUAL_PBSFILE_NAME}" ;
-
-GetLineWithContextFromList(\@pbsfile_contents, @_) ;
-
-}
-
-#-------------------------------------------------------------------------------
-
-sub GetLineWithContextFromFile
-{
-my (undef, $file_name) = @_ ;
-
-$_[1] = "file: $file_name" ; # change title
-
-GetLineWithContextFromList([read_file($file_name)], @_) ;
-}
 
 sub GetLineWithContextFromList
 {
@@ -264,16 +256,18 @@ my
 	$pbs_config,
 	$title,
 	$blank_lines, $context_lines_before, $context_lines_after,
-	$center_line_index,
+	$center_line_index, $number_of_center_lines,
 	$center_line_colorizing_sub, $context_colorizing_sub,
-	$indent,
+	$indent_title, $indent,
 	$no_title,
 	$shorten_title,
 	$title_colorizing_sub
 	) = @_ ;
 
+$number_of_center_lines //= 1 ;
 $center_line_colorizing_sub //= sub{ COLOR('reset', @_) } ;
 $context_colorizing_sub     //= sub{ COLOR('reset', @_) } ;
+$indent_title //='' ;
 $indent //='' ;
 $title_colorizing_sub   //= \&INFO2 ;
 
@@ -291,8 +285,9 @@ do { shift @$list ; $line_number++ } for (1 .. $number_of_lines_skip) ;
 
 my $t = $PBS::Output::indentation;
 
+my $title_indent = $indent_title ? $t : '' ;
 my $short_title = $shorten_title ? GetRunRelativePath($pbs_config, $title) : $title ;
-$line_with_context .= $title_colorizing_sub->("${t}$short_title\n", 0) unless $no_title ;
+$line_with_context .= $title_colorizing_sub->("$title_indent$indent$short_title\n", 0) unless $no_title ;
 
 for(1 .. $top_context)
 	{
@@ -303,8 +298,29 @@ for(1 .. $top_context)
 	$line_with_context .=  $context_colorizing_sub->("$t$indent$line_number $text", 0) ;
 	}
 		
-my $center_line_text = shift @$list ; $line_number++ ;
-$line_with_context .= $center_line_colorizing_sub->("$t$indent$line_number $center_line_text", 0) if defined $center_line_text ;
+
+if($pbs_config->{DISPLAY_PERL_CONTEXT})
+	{
+	use PPR ;
+
+	my $source_code = join '', @$list ;
+
+	if ($source_code =~ m{\s*((?&PerlTerm)) $PPR::GRAMMAR }x)
+		{
+		my $term = "$1\n" ;
+		$number_of_center_lines = $term =~ tr[\n][\n] ;
+
+		$number_of_center_lines = 1 if $number_of_center_lines < 1 ; 
+		$number_of_center_lines = 25 if $number_of_center_lines > 25 ; 
+		}
+	}
+
+
+for(1 .. $number_of_center_lines)
+	{
+	my $center_line_text = shift @$list ; $line_number++ ;
+	$line_with_context .= $center_line_colorizing_sub->("$t$indent$line_number $center_line_text", 0) if defined $center_line_text ;
+	} ;
 
 for(1 .. $context_lines_after)
 	{
@@ -331,7 +347,20 @@ _print(\*STDERR, \&ERROR, GetLineWithContext(@_)) ;
 
 sub PbsDisplayErrorWithContext
 {
-PrintWithContext($_[0], $_[1],1, 4, $_[4], \&ERROR, \&INFO) if defined $PBS::Output::display_error_context ;
+my ($pbs_config, $file, $line) = @_ ;
+
+PrintWithContext
+	(
+	$pbs_config,
+	$file,
+	1, 1, 3, # $blank_lines, $context_lines_before, $context_lines_after,
+	$line, 1, # $center_line_index, $number_of_center_lines,
+	\&ERROR, \&INFO2, #$center_line_colorizing_sub, $context_colorizing_sub,
+	undef, $PBS::Output::indentation, # $indent_title, $indent,
+	0, # $no_title,
+	1, # $shorten_title,
+	undef, # $title_colorizing_sub
+	) if defined $PBS::Output::display_error_context ;
 }
 
 #-------------------------------------------------------------------------------

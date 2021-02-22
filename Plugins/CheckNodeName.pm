@@ -13,10 +13,10 @@ my ($node_name, $rule) = @_ ;
 
 if($node_name =~ /\s/ || $node_name =~ /\\/)
 	{
-	PrintError "Node '$node_name' contains spaces and/or backslashes. rule $rule->{NAME}$rule->{ORIGIN}\n" ;
+	PrintError "Check : '$node_name' contains spaces and/or backslashes\n" ;
 		
-	PbsDisplayErrorWithContext($pbs_config, $rule->{FILE}, $rule->{LINE}) ;
-	die ;
+	PbsDisplayErrorWithContextr $pbs_config, $rule->{FILE}, $rule->{LINE} ;
+	die "\n" ;
 	}
 }
 

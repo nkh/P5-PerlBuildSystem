@@ -258,7 +258,7 @@ if($plugin_sub_to_run)
 	if(! defined wantarray)
 		{
 		eval {$plugin_sub_to_run->(@plugin_arguments)} ;
-		die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
+		die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 		}
 	else
 		{
@@ -266,7 +266,7 @@ if($plugin_sub_to_run)
 			{
 			my @results ;
 			eval {@results = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
+			die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 			
 			return(@results) ;
 			}
@@ -274,7 +274,7 @@ if($plugin_sub_to_run)
 			{
 			my $result ;
 			eval {$result = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
+			die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 			
 			return($result) ;
 			}
@@ -282,7 +282,7 @@ if($plugin_sub_to_run)
 	}
 else
 	{
-	PrintWarning "Plugin: couldn't find '$plugin_sub_name'.\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+	PrintWarning "Plugin: couldn't find '$plugin_sub_name'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 	return ;
 	}
 }

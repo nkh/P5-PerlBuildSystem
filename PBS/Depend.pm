@@ -622,10 +622,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$pbs_config,
 					$rule->{FILE},
 					0, 0, 2, # blank, context before, context after
-					$rule->{LINE},
+					$rule->{LINE}, 1,
 					\&INFO,
 					\&INFO2,
-					"$indent$indent",
+					0, "$indent$indent",
 					1, # no file name
 					) if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 				}
@@ -697,11 +697,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							: $rule->{NAME} . $rule->{ORIGIN} ;
 				
 				my $dependency_names = join ' ', map{$_->{NAME}} @dependencies ;
-				PrintError "\nDepend: Error: self referential rule\n"
+				PrintError "\nDepend: self referential rule\n"
 						. "\trule: '$rule_info'\n"
 						. "\tcycle: $node_name => $dependency_names\n" ;
 				
-				PbsDisplayErrorWithContext($pbs_config, $rule->{FILE}, $rule->{LINE}) ;
+				PbsDisplayErrorWithContext $pbs_config, $rule->{FILE}, $rule->{LINE} ;
 				die "\n";
 				}
 			
@@ -760,7 +760,7 @@ for my $dependency (@node_dependencies)
 
 if(@sub_pbs > 1)
 	{
-	PrintInfo3 _INFO3_("$indent'$node_name'") . _ERROR_(" matching subpbs rules: " . scalar(@sub_pbs) ."\n") ;
+	PrintInfo3 _INFO3_("$indent'$node_name' ") . _ERROR_(scalar(@sub_pbs) . " matching subpbs rules.\n") ;
 
 	for (@sub_pbs)
 		{
@@ -769,10 +769,10 @@ if(@sub_pbs > 1)
 			$pbs_config,
 			$_->{RULE}{FILE},
 			0, 0, 2, # blank, context before, context after
-			$_->{RULE}{LINE},
+			$_->{RULE}{LINE}, 1,
 			\&WARNING,
 			\&INFO2,
-			$indent,
+			0, $indent,
 			0, # show title
 			1, # shorten name
 			) ;

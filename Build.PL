@@ -43,6 +43,7 @@ PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
 PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
+PBS/Rules/Order.pm
 PBS/Rules/Scope.pm
 PBS/Triggers.pm
 PBS/PostBuild.pm

@@ -36,24 +36,24 @@ for my $key (keys %$depender_definition)
 	{
 	if($key !~ /^[A-Z_]+$/)
 		{
-		Carp::carp ERROR("Invalid sub Pbs rule at: '$name'. Keys must be upper case. '$key' is not at $file_name:$line.\n") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-		die ;
+		PrintError "Rules: '$name' keys must be upper case: '$key'\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+		die "\n" ;
 		}
 	}
 	
 unless(exists $depender_definition->{NODE_REGEX})
 	{
-	Carp::carp ERROR("No 'NODE_REGEX' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-	die ;
+	PrintError "'$name' no 'NODE_REGEX'\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+	die "\n" ;
 	}
 	
 unless(exists $depender_definition->{PBSFILE})
 	{
-	Carp::carp ERROR("No 'PBSFILE' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-	die ;
+	PrintError "'$name' no PBSFILE\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+	die "\n" ;
 	}
 	
 unless
@@ -64,18 +64,18 @@ unless
 	&& '' ne $depender_definition->{PACKAGE}
 	)
 	{
-	Carp::carp ERROR("Invalid or missing 'PACKAGE' for '$name' at $file_name:$line.\n") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-	die ;
+	PrintError "Rules: '$name' Invalid or missing 'PACKAGE'\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+	die "\n" ;
 	}
 	
 if(exists $depender_definition->{ALIAS})
 	{
 	if($depender_definition->{ALIAS} eq '')
 		{
-		Carp::carp ERROR("Empty alias for '$name' at $file_name:$line.\n") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-		die ;
+		PrintError "Rules: '$name' Empty alias\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+		die "\n" ;
 		}
 	
 	unless(file_name_is_absolute($depender_definition->{ALIAS}) || $depender_definition->{ALIAS} =~ /^\.\//)
@@ -100,9 +100,9 @@ if(ref $depender_definition->{NODE_REGEX} eq 'Regexp')
 	}
 else
 	{
-	PrintError "NODE_REGEX in rule '$name' @ '$file_name:$line' is not a perl regex.\n" ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-	die ;
+	PrintError "Rules: '$name' NODE_REGEX is not a perl regex\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+	die "\n" ;
 	}
 
 PBS::PBSConfig::CheckPackageDirectories($depender_definition) ;

@@ -53,9 +53,9 @@ if('ARRAY' eq ref $triggered_and_triggering)
 			
 		unless($build_ok)
 			{
-			PrintError("Plugin: SimplifyRule::AddTriger, Invalid rule at '$file_name:$line' $build_message\n") ;
-			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-			die ;
+			PrintError "Plugin: SimplifyRule::AddTriger, invalid rule, $build_message\n" ;
+			PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+			die "\n" ;
 			}
 			
 		my $original = $trigger ;
@@ -120,9 +120,9 @@ unless('Regexp' eq ref $node_regex)
 		}
 	else
 		{	
-		PrintError("Plugin: SimplifyRule::AddSubpbsRule, Invalid rule at '$file_name:$line' $build_message\n") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-		die ;
+		PrintError "Plugin: SimplifyRule::AddSubpbsRule, invalid rule, $build_message\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
 		}
 	}
 
@@ -177,9 +177,9 @@ if(defined $dependent && '' eq ref $dependent)
 		
 	unless($dependency_regex_ok)
 		{
-		PrintError("Pluigin: SimplifyRule::AddRule, Invalid rule at '$file_name:$line' $dependency_regex_message\n") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-		die ;
+		PrintError "Plugin: SimplifyRule::AddRule, invalid rule, $dependency_regex_message\n" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
 		}
 		
 	my $sub_dependent_regex = qr/^$dependent_path_regex($dependent_prefix_regex)$dependent_regex$/ ;
@@ -236,9 +236,9 @@ elsif (defined $dependent && 'HASH' eq ref $dependent)
 			}
 		else
 			{	
-			PrintError("Plugin: SimplifyRule::AddRule, Invalid rule at  '$file_name:$line' $build_message\n") ;
-			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-			die ;
+			PrintError "Plugin: SimplifyRule::AddRule, $build_message\n" ;
+			PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+			die "\n" ;
 			}
 		}
 	}
@@ -268,9 +268,9 @@ else
 		}
 	else
 		{
-		Carp::carp ERROR("Plugin: Invalid rule at '$file_name:$line'. Expecting a string or an array ref as first argument.") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-		die ;
+		PrintError "Plugin: invalid rule, expecting a string or an array ref as first argument" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
 		}
 	}
 
@@ -332,7 +332,7 @@ my $error_message   = '' ;
 
 if((! defined $dependent_regex_definition) || $dependent_regex_definition eq '')
 	{
-	return(0, 'Empty Regex definition') ;
+	return(0, 'empty regex definition') ;
 	}
 
 $dependent_regex_definition = 
@@ -351,7 +351,7 @@ $dependent_path =~ s|\\|/|g;
 my $dependent_regex = $dependent_name . $dependent_ext ;
 unless(defined $dependent_regex)
 	{
-	$error_message = "Invalid dependency definition" ;
+	$error_message = "invalid dependency definition" ;
 	}
 	
 my $dependent_path_regex = $dependent_path ;

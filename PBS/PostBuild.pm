@@ -87,26 +87,26 @@ if(exists $post_build_commands{$package})
 				)
 			)
 			{
-			Carp::carp ERROR("'$name' name is already used for for post build command defined at $post_build_commands->{FILE}:$post_build_commands->{LINE}\n") ;
-			PbsDisplayErrorWithContext($pbs_config, $file_name, $line) ;
-			PbsDisplayErrorWithContext($pbs_config, $post_build_commands->{FILE}, $post_build_commands->{LINE}) ;
-			die ;
+			PrintError "Post Build: '$name'  already used\n" ;
+			PbsDisplayErrorWithContext $pbs_config, $post_build_commands->{FILE}, $post_build_commands->{LINE} ;
+			PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+			die "\n" ;
 			}
 		}
 	}
 	
 if('' eq ref $switch || 'HASH' eq ref $switch)
 	{
-	Carp::carp ERROR("Invalid post build command definition") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-	die ;
+	PrintError "Post Build: Invalid command definition\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+	die "\n" ;
 	}
 	
 if(defined $builder_sub && 'CODE' ne ref $builder_sub)
 	{
-	Carp::carp ERROR("Error: Builder must be a sub reference.\n") ;
-	PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-	die ;
+	PrintError"Post Build: Builder must be a sub reference\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+	die "\n" ;
 	}
 	
 my $post_build_depender_sub ;
@@ -115,9 +115,9 @@ if('ARRAY' eq ref $switch)
 	{
 	unless(@$switch)
 		{
-		Carp::carp ERROR("Nothing defined in post build definition at: $name") ;
-		PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-		die ;
+		PrintError "Post Build: '$name' nothing defined in post build definition" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		die "\n" ;
 		}
 
 	my @post_build_regexes ;
@@ -139,9 +139,9 @@ if('ARRAY' eq ref $switch)
 		
 		unless($build_ok)
 			{
-			Carp::carp ERROR($build_message) ;
-			PbsDisplayErrorWithContext($pbs_config, $file_name,$line) ;
-			die ;
+			PrintError $build_message ;
+			PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+			die "\n" ;
 			}
 			
 		push @post_build_regexes, [$post_build_path_regex, $post_build_prefix_regex, $post_build_regex];

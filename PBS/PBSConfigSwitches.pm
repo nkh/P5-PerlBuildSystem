@@ -521,10 +521,6 @@ EOT
 		'shell commands output are not displayed, except if an error occures.',
 		'',
 		
-	'qow|query_on_warning'            => \$PBS::Output::query_on_warning,
-		'When displaying a warning, Pbs will query you for continue or stop.',
-		'',
-		
 	'dm|dump_maxdepth=i'              => \$pbs_config->{MAX_DEPTH},
 		'Maximum depth of the structures displayed by pbs.',
 		'',
@@ -674,6 +670,10 @@ EOT
 		
 	'dec|display_error_context'       => \$PBS::Output::display_error_context,
 		'When set and if an error occures in a Pbsfile, PBS will display the error line.',
+		'',
+		
+	'display_perl_context'            => \$pbs_config->{DISPLAY_PERL_CONTEXT},
+		'When displaying an error with context, parse the perl code to find the context.',
 		'',
 		
 	'dpl|display_pbsfile_loading'     => \$pbs_config->{DISPLAY_PBSFILE_LOADING},
