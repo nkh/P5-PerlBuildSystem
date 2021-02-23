@@ -1,31 +1,16 @@
-trigger does it still work?
+#GetConfigAccess per node
 
-node config and exporting
+does it still work?
 
-	PATH
-		through --keep_environment
+	trigger
+	builder override
 
-		can be set in config but must be used
+set node pbs config
 
-		inherited from parent
+	node sub in rule
 
-		per package
-			Config PATH => ...
-
-		per node
-			node_sub_config
-			
-
-		=> PATH must be set before
-			shell command
-			perl command
-
-		? other variables are exported too?
-			option to list which variables are exported
-
-node pbs config and exporting
-
-GetConfigAccess per node
+	inject the pbs cofig cheange from command line
+		via --pbs_options
 
 install and where to find tools
 	find and check tools
@@ -487,6 +472,29 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+# node config and exporting
+
+	PATH
+		through --keep_environment
+
+		can be set in config but must be used
+
+		inherited from parent
+
+		per package
+			Config PATH => ...
+
+		per node
+			node_sub_config
+			
+
+		=> PATH must be set before
+			shell command
+			perl command
+
+		? other variables are exported too?
+			option to list which variables are exported
 
 #immediate build builds twice when distro has changed
 

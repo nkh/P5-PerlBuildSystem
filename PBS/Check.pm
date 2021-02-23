@@ -334,7 +334,7 @@ unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 		$triggered++ ;
 		}
 	}
-
+	
 if(! $triggered && defined $node_checker_rule)
 	{
 	my ($must_build, $why) = $node_checker_rule->($tree, $full_name) ;

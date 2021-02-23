@@ -445,6 +445,9 @@ eval # rules might throw an exception
 			}
 		}
 
+	# get all the config variables from the node's package
+	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
+
 	($build_result, $build_message) = $builder->
 						(
 						$file_tree->{__CONFIG},
@@ -456,6 +459,19 @@ eval # rules might throw an exception
 						$rule_used_to_build,
 						) ;
 						
+	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE})
+		{
+		my $accessed = PBS::Config::GetConfigAccess($file_tree->{__NAME}) ;
+		my @not_accessed = 
+			$pbs_config->{DISPLAY_TARGET_PATH_USAGE}
+				? sort grep { ! exists $accessed->{$_} } keys %{$file_tree->{__CONFIG}}
+				: sort grep { ! exists $accessed->{$_} && $_ ne 'TARGET_PATH'} keys %{$file_tree->{__CONFIG}} ;
+
+		use Data::TreeDumper ;
+		PrintInfo DumpTree { Accessed => $accessed, 'Not accessed' => \@not_accessed},
+			 "\nConfig: variable usage for '$file_tree->{__NAME}:", DISPLAY_ADDRESS => 0 ;
+		}
+
 	unless(defined $build_result || $build_result == BUILD_SUCCESS || $build_result == BUILD_FAILED)
 		{
 		$build_result = BUILD_FAILED ;

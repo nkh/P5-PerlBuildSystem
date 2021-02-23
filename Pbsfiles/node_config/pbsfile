@@ -4,8 +4,8 @@ AddTargets 'all' ;
 
 Config(VARIABLE => 1) ;
 
-rule [V], 'all', [all => 1, 2] ;
+rule [V], 'all', [all => 1, 2], BuildOk ;
 
-rule 1, [1], ['echo $VARIABLE', 'echo %VARIABLE'] ;
-rule 2, [2], ['echo $VARIABLE', 'echo %VARIABLE'], NodeConfig(VARIABLE => 2), ExportConfig('VAR') ;
+rule 1, [1], ['echo $VARIABLE > %TARGET', 'echo %VARIABLE'] ;
+rule 2, [2], ['echo $VARIABLE > %TARGET', 'echo %VARIABLE %X'], NodeConfig(VARIABLE => 2, X =>3), ExportConfig('VAR') ;
 

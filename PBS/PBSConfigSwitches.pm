@@ -696,6 +696,14 @@ EOT
 		'Display config variables not used.',
 		'',
 		
+	'dncu|display_node_config_usage' => \$pbs_config->{DISPLAY_NODE_CONFIG_USAGE},
+		'Display config variables not used by nodes.',
+		'',
+		
+	'display_target_path_usage' => \$pbs_config->{DISPLAY_TARGET_PATH_USAGE},
+		"Don't remove TARGET_PATH from config usage report.",
+		'',
+		
 	'display_nodes_per_pbsfile'        => \$pbs_config->{DISPLAY_NODES_PER_PBSFILE},
 		'Display how many nodes where added by each pbsfile run.',
 		'',
@@ -1084,6 +1092,10 @@ EOT
 		
 	'tnb|tree_name_build'               => \$pbs_config->{DEBUG_DISPLAY_TREE_NAME_BUILD},
 		'(DF) Display the build name of the nodes. Must be used with --tno',
+		'',
+		
+	'trigger_all'                        => \$pbs_config->{DEBUG_TRIGGER_ALL},
+		'(DF) As if all node triggered, see --trigger',
 		'',
 		
 	'trigger_none'                        => \$pbs_config->{DEBUG_TRIGGER_NONE},

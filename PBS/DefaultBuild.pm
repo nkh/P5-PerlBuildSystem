@@ -220,7 +220,10 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 if($pbs_config->{DISPLAY_CONFIG_USAGE})
 	{
 	my $accessed = PBS::Config::GetConfigAccess($load_package) ;
-	my @not_accessed = sort grep { ! exists $accessed->{$_} && $_ ne 'TARGET_PATH'} keys %$config ;
+	my @not_accessed = 
+		$pbs_config->{DISPLAY_TARGET_PATH_USAGE}
+			? sort grep { ! exists $accessed->{$_} } keys %$config
+			: sort grep { ! exists $accessed->{$_} && $_ ne 'TARGET_PATH'} keys %$config ;
 
 	PrintInfo DumpTree { Accessed => $accessed, 'Not accessed' => \@not_accessed},
 		 "Config: variable usage for '$targets->[0]':", DISPLAY_ADDRESS => 0 ;
