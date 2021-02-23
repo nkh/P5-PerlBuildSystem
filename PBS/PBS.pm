@@ -371,7 +371,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::Digest;\n"
 			  #. "use PBS::Check ;\n"
 			  #. "use PBS::Shell ;\n"
-			  #. "use PBS::PBSConfig ;\n"
+			  . "use PBS::PBSConfig ;\n"
 			  #. "use PBS::Rules::Creator;\n"
 			  #. "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
@@ -593,7 +593,7 @@ else
 	{
 	unless(defined $pbs_config->{LIB_PATH})
 		{
-		PrintError("Can't search for '$source_name', PBS lib path is not defined (PBS_LIB_PATH)!\n") ;
+		PrintError("PBS: Can't search for '$source_name', PBS lib path is not defined\n") ;
 		die "\n" ;
 		}
 
@@ -613,7 +613,7 @@ unless(defined $located_source_name)
 	{
 	my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
 	
-	die ERROR("PbsUse: Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.") . "\n" ;
+	die ERROR("PBS: Can't locate '$source_name' in PBS libs [$paths] @ $file_name:$line.") . "\n" ;
 	}
 
 $pbs_use_level++ ; # indent the PbsUse output to make the hierarchy more visible

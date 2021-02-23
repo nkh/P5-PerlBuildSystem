@@ -135,7 +135,10 @@ doc/pnw2004/examples/package_fiddle.pl
 doc/user_manual.pod
 
 
+PBSLib/Builders/SingleRunBuilder.pm
 PBSLib/Builders/Objects.pm
+
+PBSLib/Node/Config.pm
 
 PBSLib/Configs/Compilers/cl.pm
 PBSLib/Configs/Compilers/compiler.pm

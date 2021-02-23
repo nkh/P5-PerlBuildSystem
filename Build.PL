@@ -103,6 +103,8 @@ qw(
 PBSLib/Builders/SingleRunBuilder.pm
 PBSLib/Builders/Objects.pm
 
+PBSLib/Node/Config.pm
+
 PBSLib/Configs/Compilers/cl.pm
 PBSLib/Configs/Compilers/compiler.pm
 PBSLib/Configs/Compilers/gcc.pm

@@ -49,19 +49,31 @@ my %configs ;
 
 sub GetPackageConfig
 {
-my $package = shift ;
-my ($caller_package, $file_name, $line) = caller() ;
+my ($package, $config) = @_ ;
+
+my (undef, $file_name, $line) = caller() ;
 
 if(defined $package && $package ne '')
 	{
-	$configs{$package} = {} unless (exists $configs{$package}) ;
-	
+	if (exists $configs{$package})
+		{
+		if(defined $config)
+			{
+			PrintWarning "Config: overriding '$package' config @ '$file_name:$line'\n" ;
+
+			$configs{$package} = $config ; 
+			}
+		}
+	else
+		{
+		$configs{$package} = defined $config ? $config : {} ;
+		}
+
 	return($configs{$package}) ;
 	}
 else
 	{
-	PrintWarning("Config: 'GetPackageConfig' mandatory argument missing at '$file_name:$line'\n") ;
-	return({}) ;
+	die ERROR("Config: unknown package @ '$file_name:$line'\n") . "\n" ;
 	}
 }
 
@@ -71,11 +83,14 @@ sub GetConfigFrom
 {
 my ($package, $file_name, $line) = caller() ;
 
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
+
 my $from = shift ; # namespace
 
 unless(defined $from)
 	{
-	PrintWarning "Config: 'GetConfigFrom' mandatory argument missing at '$file_name:$line'\n" ;
+	PrintWarning "Config: 'GetConfigFrom' no argument, returning nothing @ '$file_name:$line'\n" ;
 	#~ PbsDisplayErrorWithContext$pbs_config, $file_name,$line ;
 	return () ;
 	}
@@ -99,17 +114,38 @@ return
 sub ClonePackageConfig
 {
 my ($source_package, $destination_package) = @_ ;
-my ($caller_package, $file_name, $line) = caller() ;
+my (undef, $file_name, $line) = caller() ;
 
 use Clone ;
-$configs{$destination_package} =  Clone::clone($configs{$source_package}) ;
+$configs{$destination_package} = Clone::clone($configs{$source_package}) ;
 }
+
+sub GetClone
+{
+my (undef, $file_name, $line) = caller() ;
+
+my ($config) = @_ ;
+
+if(exists $configs{$config})
+	{
+	Clone::clone $configs{$config} ;
+	}
+else
+	{
+	PrintError "Config: can't clone unexisting '$config' @ $file_name:$line" ;
+	die "\n" ;
+	}
+}
+
 
 #-------------------------------------------------------------------------------
 
 sub GetConfig
 {
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
@@ -128,6 +164,9 @@ __GetConfig
 sub GetConfigKeys
 {
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
@@ -176,7 +215,7 @@ if(@config_variables == 0)
 	{
 	unless($wantarray)
 		{
-		PrintWarning("Config: 'GetConfig' is returning the whole config but it was not called in list context at '$file_name:$line'\n") ;
+		PrintWarning "Config: 'GetConfig' is returning the whole config but it was not called in list context @ '$file_name:$line'\n" ;
 		}
 		
 	push @{$config_access{$package}{$_}}, $origin for keys %$user_config ;
@@ -186,7 +225,7 @@ if(@config_variables == 0)
 	
 if(@config_variables > 1 && (!$wantarray))
 	{
-	PrintWarning("Config: 'GetConfig' is asked for multiple values but it was not called in list context at '$file_name:$line'\n") ;
+	PrintWarning "Config: 'GetConfig' is asked for multiple values but it was not called in list context @ '$file_name:$line'\n" ;
 	}
 
 for my $config_variable (@config_variables)
@@ -203,7 +242,7 @@ for my $config_variable (@config_variables)
 		{
 		if($pbs_config->{NO_SILENT_OVERRIDE} || ! $silent_not_exists)
 			{
-			PrintWarning("Config: User config variable '$config_variable' doesn't exist at '$file_name:$line'; returning undef\n") ;
+			PrintWarning "Config: User config variable '$config_variable' doesn't exist @ '$file_name:$line'; returning undef\n" ;
 			}
 			
 		#~ PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
@@ -226,6 +265,9 @@ else
 sub GetConfigFromAsList
 {
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 my $from = shift ; # from namespace
 
@@ -253,6 +295,9 @@ sub GetConfigAsList
 {
 my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ; $file_name =~ s/'$// ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}, undef) ;
@@ -379,6 +424,9 @@ sub Config
 
 my ($package, $file_name, $line) = caller() ;
 
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
+
 if(@_ > 1)
 	{
 	AddConfigEntry($package, 'CURRENT', 'User', "$package:$file_name:$line", @_) ;
@@ -402,6 +450,9 @@ sub AddConfig
 {
 # available within Pbsfiles
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 AddConfigEntry($package, 'CURRENT', 'User', "$package:$file_name:$line", @_) ;
 }
@@ -432,9 +483,13 @@ ConfigVariableNotDefined(@_) || ConfigVariableEmpty(@_) ;
 }
 
 #-------------------------------------------------------------------------------
+
 sub AddConditionalConfig
 {
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 _AddConditionalConfig($package, $file_name, $line, 'USER', @_) ;
 }
@@ -442,6 +497,10 @@ _AddConditionalConfig($package, $file_name, $line, 'USER', @_) ;
 sub AddConditionalConfigTo
 {
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
+
 my $class = shift ;
 
 _AddConditionalConfig($package, $file_name, $line, $class, @_) ;
@@ -477,8 +536,12 @@ while(@_)
 sub AddConfigTo
 {
 # available within Pbsfiles
-my $class = shift ;
 my ($package, $file_name, $line) = caller() ;
+
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
+
+my $class = shift ;
 
 AddConfigEntry($package, 'CURRENT', $class, "$package:$file_name:$line", @_) ;
 }
@@ -501,7 +564,7 @@ MergeConfig($package, $type, $class, $origin, @_) ;
 
 sub DisplayAllConfigs
 {
-PrintInfo(DumpTree(\%configs, 'All configurations:')) ;
+PrintInfo DumpTree(\%configs, 'All configurations:') ;
 }
 
 #------------------------------------------------------------------------------------------
@@ -533,13 +596,13 @@ if(defined $global_flags)
 		
 	if($global_attributes{LOCKED} && $global_attributes{UNLOCKED})
 		{
-		PrintError("Config: Global configuration flag defined at '$origin', is declared as LOCKED and UNLOCKED") ;
+		PrintError "Config: Global configuration flag defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
 		die "\n";
 		}
 		
 	if($global_attributes{OVERRIDE_PARENT} && $global_attributes{LOCAL})
 		{
-		PrintError("Config: Global configuration flag defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL") ;
+		PrintError "Config: Global configuration flag defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
 		die "\n";
 		}
 	}
@@ -551,7 +614,7 @@ my $header_displayed = 0 ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
-	PrintInfo("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") ;
+	PrintInfo "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" ;
 	$header_displayed++ ;
 	}
 
@@ -596,7 +659,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		if(@found_invalid_attribute)
 			{
 			PrintError
-				"Config: variable '$key' with attributes '$flags' defined at '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
+				"Config: variable '$key' with attributes '$flags' defined @ '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
 				. "Valid attributes are: " . join( ', ',  sort keys %valid_attributes) ;
 				
 			die "\n" ;
@@ -613,13 +676,13 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		
 		if($locked && $unlocked)
 			{
-			PrintError("Config: variable '$key' defined at '$origin', is declared as LOCKED and UNLOCKED") ;
+			PrintError "Config: variable '$key' defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
 			die  "\n" ;
 			}
 			
 		if($override_parent && $local)
 			{
-			PrintError("Config: variable '$key' defined at '$origin', is declared as OVERRIDE_PARENT and LOCAL") ;
+			PrintError "Config: variable '$key' defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
 			die "\n" ;
 			}
 		}
@@ -655,7 +718,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			}
 		else
 			{
-			PrintInfo("\t$key => $value\n") ;
+			PrintInfo "\t$key => $value\n" ;
 			}
 		}
 		
@@ -710,7 +773,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		if($config_to_merge_to->{$type}{$class}{$key}{LOCKED} && (! $force))
 			{
-			PrintError("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintError "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintError
@@ -751,7 +814,7 @@ EOH
 			my $value_txt = defined $value ? $value : 'undef' ;
 			
 			# just show where the override happens to avoid cluttering the display
-			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "this Override at '$origin'" ;
+			push @{$config_to_merge_to->{$type}{$class}{$key}{ORIGIN}},  "this Override @ '$origin'" ;
 			
 			unless($silent_override)
 				{
@@ -827,7 +890,7 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintWarning2
@@ -850,7 +913,7 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintWarning2
@@ -876,7 +939,7 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintWarning2
@@ -902,7 +965,7 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintWarning2
@@ -925,7 +988,7 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
+			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
 			$header_displayed++ ;
 
 			PrintWarning2
@@ -1047,6 +1110,9 @@ sub AddCompositeDefine
 my ($variable_name, %defines) = @_;
 my ($package, $file_name, $line) = caller() ;
 
+my ($source_package) = @_ ;
+do { $package = $source_package ; shift } if exists $configs{$source_package} ;
+
 if(keys %defines)
 	{
 	my @defines = map { "$_=$defines{$_}" } sort keys %defines ;
@@ -1086,7 +1152,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CO
 	my $warning = "Config:" ;
 	$warning .= " PACKAGE_CONFIG_NO_INHERITANCE" if $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} ;
 	$warning .= " --no_config_inheritance" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
-	$warning .= " for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
+	$warning .= " for '$sub_node_name' defined @ '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
 
 	PrintWarning "$warning\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
 
@@ -1094,7 +1160,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CO
 		{
 		%sub_config = %{$sub_pbs_hash->{PACKAGE_CONFIG}} ;
 
-		my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+		my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined @ '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
 		if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 	        	{
@@ -1159,7 +1225,7 @@ my $sub_pbs_package_config = $rule->{TEXTUAL_DESCRIPTION}{PACKAGE_CONFIG} ;
 my $subpbd_definition_location = "#line " . $sub_pbs->[0]{RULE}{LINE} . " " . $sub_pbs->[0]{RULE}{FILE} ;
 	
 PBS::PBSConfig::RegisterPbsConfig($subpbs_package_node_config, $pbs_config) ;
-PBS::Config::ClonePackageConfig($load_package, $subpbs_package_node_config) ;
+ClonePackageConfig($load_package, $subpbs_package_node_config) ;
 
 # check the $sub_pbs_package_config for type validity
 if('HASH' ne ref $sub_pbs_package_config)
@@ -1173,7 +1239,7 @@ if('HASH' ne ref $sub_pbs_package_config)
 	die "\n" ;
 	}
 	
-my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined at '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
+my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined @ '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}'" ;
 
 if($pbs_config->{DISPLAY_CONFIGURATION})
 	{
@@ -1337,8 +1403,6 @@ to define local variable that override parent variable but let children get thei
 Here is the output from the config example found in the distribution:
 
 	[nadim@khemir PBS]$ pbs -p Pbsfiles/config/parent.pl -dc -nh -tta -nsi parent
-	No source directory! Using '/home/nadim/Dev/PerlModules/PerlBuildSystem-0.24'.
-	No Build directory! Using '/home/nadim/Dev/PerlModules/PerlBuildSystem-0.24'.
 	Config for 'PBS':
 	|- OPTIMIZE_FLAG_1 = O3
 	|- OPTIMIZE_FLAG_2 = O3
@@ -1373,3 +1437,4 @@ Khemir Nadim ibn Hamouda. nadim@khemir.net
 --no_silent_override
 
 =cut
+

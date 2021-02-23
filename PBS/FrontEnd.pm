@@ -245,7 +245,7 @@ sub Pbs
 my $t0 = [gettimeofday];
 my (%pbs_arguments) = @_ ;
 
-if($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] eq '--get_bash_completion')
+if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--get_bash_completion')
 	{
 	ParseSwitchesAndLoadPlugins({}, []) ; #load plugins
 	PBS::PBSConfigSwitches::GetCompletion() ;
@@ -384,6 +384,8 @@ unless(@$targets)
 				{
 					TARGET_PATH => '',
 					SHORT_DEPENDENCY_PATH_STRING => $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} // '…',
+					LIB_PATH => $pbs_config->{LIB_PATH},
+					PLUGIN_PATH => $pbs_config->{PLUGIN_PATH},
 					CONFIG_NAMESPACES => ['BuiltIn', 'User'],
 				}
 				) ;
@@ -410,6 +412,7 @@ unless(@$targets)
 			  . "use PBS::Triggers ;\n"
 			  . "use PBS::PostBuild ;\n"
 			  . "use PBS::Config ;\n"
+			  . "use PBS::PBSConfig ;\n"
 			  . "use PBS::PBS ;\n"
 			  . "use PBS::Digest;\n",
 			'1 ;', #$post_code

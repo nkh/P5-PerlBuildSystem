@@ -101,7 +101,7 @@ return sub
 	$tree->{__VERY_SPECIAL_BUILDER_ARGUMENTS} = [@definition_time_arguments] ;
 	
 	use Data::TreeDumper ;
-	PrintDebug DumpTree($tree, "configuration for $tree->{__NAME}") ;
+	PrintDebug DumpTree($tree, "configuration for $tree->{__NAME}", MAX_DEPTH => 2 ) ;
 	}
 }
 
@@ -114,6 +114,8 @@ $config,
 $tree,
 $inserted_nodes,
 ) = @_ ;
+
+PrintWarning2 "ChangeConfig is Obsolete, use Node/Config.pm for a proper implementation\n\tthe examples are still good for node_subs" ;
 
 $tree->{__CONFIG} = {%{$tree->{__CONFIG}}} ; # config is share get our own copy (note! this is not deep)
 

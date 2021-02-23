@@ -1,0 +1,11 @@
+Use 'Node/Config' ;
+
+AddTargets 'all' ;
+
+Config(VARIABLE => 1) ;
+
+rule [V], 'all', [all => 1, 2] ;
+
+rule 1, [1], ['echo $VARIABLE', 'echo %VARIABLE'] ;
+rule 2, [2], ['echo $VARIABLE', 'echo %VARIABLE'], NodeConfig(VARIABLE => 2), ExportConfig('VAR') ;
+

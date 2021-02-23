@@ -1,9 +1,59 @@
+trigger does it still work?
+
+node config and exporting
+
+	PATH
+		through --keep_environment
+
+		can be set in config but must be used
+
+		inherited from parent
+
+		per package
+			Config PATH => ...
+
+		per node
+			node_sub_config
+			
+
+		=> PATH must be set before
+			shell command
+			perl command
+
+		? other variables are exported too?
+			option to list which variables are exported
+
+node pbs config and exporting
+
+GetConfigAccess per node
+
 install and where to find tools
 	find and check tools
 	build the tools and install them, depend on them at the installation location
 
 	install copies, doesn't move stuff around
 		hard link ?
+
+
+	depend on the installed tool and let the installed tool depend on it's source
+
+		%tool => find_tool, die if not found or can't be build
+				trigger?
+
+				if it can be build it must be checked
+
+		rule
+			dependencies
+			builder: %tool xxx
+			builder: %tool2 yyy
+
+			# make tools dependencies ?
+				we can catch the tool usage
+
+				shell commands display which command is used, its full path
+					PATH can be changed by node
+
+		via a node sub
 
 rework the options
 	
@@ -13,22 +63,6 @@ rework the options
 	depend display matchining rules
 	depend display inserting rule
 	
-
-
-#immediate build builds twice when distro has changed
-
-#AddTarget in pbsfile
-
-#test order now we have a new module
-
-#find where end of rule is to display better context
-
-	once because a file has changes
-	once because it finds the distro has changed
-
-	the build goes through BuildSequence not via FrontEnd
-
-		how does the distro get updates? at the end of the depend?
 
 
 write the generate file in cmake in pbs
@@ -453,6 +487,21 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#immediate build builds twice when distro has changed
+
+#AddTarget in pbsfile
+
+#test order now we have a new module
+
+#find where end of rule is to display better context
+
+	once because a file has changes
+	once because it finds the distro has changed
+
+	the build goes through BuildSequence not via FrontEnd
+
+		how does the distro get updates? at the end of the depend?
 
 #ddr
 	rule matching PBS_WARP_TREE is not shown

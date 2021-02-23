@@ -223,7 +223,7 @@ if($node_needs_rebuild)
 						{
 						my $error = join ', ' , map {my (undef, $message) = %$_; $message} @$make_path_errors ;
 
-						return (BUILD_FAILED, "'$build_name' Error: $error.") ;
+						return (BUILD_FAILED, "'$build_name' error: $error.") ;
 						}
 					}
 				
@@ -432,6 +432,19 @@ eval # rules might throw an exception
 	#DEBUG HOOK, jump into perl debugger if so asked
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1) ;
 	
+	local %ENV = %ENV ;
+
+	if(exists $file_tree->{__EXPORT_CONFIG})
+		{
+		for my $regex ( @{ $file_tree->{__EXPORT_CONFIG} } )
+			{
+			for my $config_key (keys %{$file_tree->{__CONFIG}})
+				{
+				$ENV{$config_key} = $file_tree->{__CONFIG}{$config_key} if $config_key =~ $regex ;
+				}
+			}
+		}
+
 	($build_result, $build_message) = $builder->
 						(
 						$file_tree->{__CONFIG},
@@ -511,11 +524,12 @@ my ($file_tree) = @_ ;
 my $pbs_config = $file_tree->{__PBS_CONFIG} ;
 
 my @rules_with_builders ;
+
 for my $rule (@{$file_tree->{__MATCHING_RULES}})
 	{
 	my $rule_number = $rule->{RULE}{INDEX} ;
 	my $dependencies_and_build_rules = $rule->{RULE}{DEFINITIONS} ;
-	
+
 	my $builder = $dependencies_and_build_rules->[$rule_number]{BUILDER} ;
 	
 	# change the name of this variable as it is a rule now not a builder
@@ -526,11 +540,7 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 		{
 		if(defined $builder_override->{BUILDER})
 			{
-			push @rules_with_builders,
-				{
-				INDEX => $rule_number,
-				DEFINITION => $builder_override,
-				} ;
+			push @rules_with_builders, { INDEX => $rule_number, DEFINITION => $builder_override, } ;
 			}
 		else
 			{
@@ -545,10 +555,8 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 		}
 	else
 		{
-		if(defined $builder)
-			{
-			push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] } ;
-			}
+		push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] } 
+			if defined $builder ;
 		}
 	}
 	
