@@ -6,7 +6,6 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::TreeDumper ;
 use Carp ;
  
 require Exporter ;
@@ -20,25 +19,26 @@ our $VERSION = '0.01' ;
 use File::Basename ;
 use Sub::Identify qw< sub_name get_code_location > ;
 
-use PBS::Shell ;
-use PBS::PBSConfig ;
-use PBS::Output ;
 use PBS::Constants ;
 use PBS::Config ;
+use PBS::PBSConfig ;
+use PBS::Output ;
 use PBS::Rules ;
 use PBS::Plugin;
+
+use PBS::Shell ;
 
 #-------------------------------------------------------------------------------
 
 sub GenerateBuilder
 {
-my ($pbs_config, $config, $shell, $builder, $package, $name, $file_name, $line) = @_ ;
+my ($pbs_config, $config, $builder, $package, $name, $file_name, $line) = @_ ;
 
+! defined $builder and                            return () ;
 ref $builder eq '' || ref $builder eq 'ARRAY' and return GenerateBuilderFromStringOrArray(@_) ;
 ref $builder eq 'CODE' and                        return GenerateBuilderFromSub(@_) ;
-! defined $builder and                            return () ;
 			
-die ERROR "Invalid Builder definition for '$name' at '$file_name:$line'\n" ;
+die ERROR ("PBS: invalid builder definition for '$name' @ '$file_name:$line'") . "\n" ;
 }
 
 #-------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ for (@$shell_commands)
 		next ;
 		}
 		
-	die ERROR "Rule: invalid command type for '$name' at '$file_name:$line', mut be string or code reference.\n" ;
+	die ERROR "Rule: invalid command type for '$name' @ '$file_name:$line', mut be string or code reference.\n" ;
 	}
 
 my $generated_builder = sub { BuilderFromStringOrArray($shell_commands, $shell, $package, $name, $file_name, $line, @_) } ;
@@ -90,7 +90,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 	push @evaluated_shell_commands, EvaluateShellCommandForNode
 						(
 						$shell_command,
-						"rule '$name' at '$file_name:$line'",
+						"rule '$name' @ '$file_name:$line'",
 						$tree,
 						) ;
 	}
@@ -130,7 +130,7 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	
 	if(exists $tree->{__SHELL_ORIGIN} && $tree->{__PBS_CONFIG}{ADD_ORIGIN})
 		{
-		PrintWarning "set at $tree->{__SHELL_ORIGIN}" ;
+		PrintWarning "set @ $tree->{__SHELL_ORIGIN}" ;
 		}
 		
 	print STDERR "\n" ;
@@ -174,7 +174,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		my $command = EvaluateShellCommandForNode
 						(
 						$shell_command,
-						"rule '$name' at '$file_name:$line'",
+						"rule '$name' @ '$file_name:$line'",
 						$tree,
 						$dependencies,
 						$triggering_dependencies,
@@ -235,7 +235,7 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	
 	if(exists $tree->{__SHELL_ORIGIN} && $tree->{__PBS_CONFIG}{ADD_ORIGIN})
 		{
-		PrintWarning "set at $tree->{__SHELL_ORIGIN}" ;
+		PrintWarning "set @ $tree->{__SHELL_ORIGIN}" ;
 		}
 		
 	print STDERR "\n" ;
