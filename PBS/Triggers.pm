@@ -13,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddTrigger ImportTriggers) ;
+our @EXPORT = qw(AddTrigger Trigger trigger ImportTriggers Triggers triggers) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
@@ -27,6 +27,7 @@ use PBS::Plugin ;
 use PBS::PBSConfig ;
 
 use Data::TreeDumper ;
+
 #-------------------------------------------------------------------------------
 
 # Triggers let the user insert dependency trees within the current 
@@ -83,6 +84,9 @@ RegisterTrigger
 	$triggered_and_triggering,
 	) ;
 }
+
+*Trigger=\&AddTrigger ;
+*trigger=\&AddTrigger ;
 
 #-------------------------------------------------------------------------------
 
@@ -180,7 +184,7 @@ my $trigger_rule =
 
 if(defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES})
 	{
-	PrintInfo("Trigger: Adding $name$origin\n")  ;
+	PrintInfo("Trigger: Registering $name$origin\n")  ;
 	PrintInfo2(DumpTree($trigger_rule, 'trigger rule:')) if defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION} ;
 	}
 
@@ -216,7 +220,7 @@ for my $Pbsfile (@_)
 		{
 		PrintWarning
 			"At $file_name:$line: Triggers from '$Pbsfile' have already been imported in package '$package'"
-				. "at "
+				. "@ "
 				. $imported_triggers{"$package=>$Pbsfile"}{FILE}
 				. ':'
 				. $imported_triggers{"$package=>$Pbsfile"}{LINE}
@@ -246,8 +250,9 @@ for my $Pbsfile (@_)
 			my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 			unless(defined $pbs_config->{NO_TRIGGER_IMPORT_INFO})
 				{
-				PrintInfo "Trigger: Importing from '$Pbsfile:$definition_line' into package '$package' at $file_name:$line.\n"  ;
-			   }
+				PrintInfo "Trigger: Importing from '$Pbsfile:$definition_line' @ "
+						 . GetRunRelativePath($pbs_config, $file_name) . ":$line.\n"  ;
+			 	}
 			   
 			$trigger_exports_definition =~ s/sub\s+ExportTriggers// ;
 			
@@ -264,6 +269,9 @@ for my $Pbsfile (@_)
 		}
 	}
 }
+
+*Triggers=\&ImportTriggers ;
+*triggers=\&ImportTriggers ;
 
 #-------------------------------------------------------------------------------
 1 ;

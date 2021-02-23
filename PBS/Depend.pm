@@ -480,7 +480,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my @node_type ;
 				for my $type (VIRTUAL, LOCAL, FORCED, TRIGGER_INSERTED)
 					{
-					push @node_type, ($type =~ s/^__//r) if exists $tree->{$type} ;
+					push @node_type, map { $_ eq 'TRIGGER_INSERTED' ? 'T' : $_ } ($type =~ s/^__//r) if exists $tree->{$type} ;
 					}
 
 				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . '] ' : '' ;
@@ -616,18 +616,21 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					
 				DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 
-				PrintInfo "$indent${indent}definition:\n" ;
-				PrintWithContext
-					(
-					$pbs_config,
-					$rule->{FILE},
-					0, 0, 2, # blank, context before, context after
-					$rule->{LINE}, 1,
-					\&INFO,
-					\&INFO2,
-					0, "$indent$indent",
-					1, # no file name
-					) if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
+				if($pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION})
+					{
+					PrintInfo "$indent${indent}'$rule->{NAME}' definition:\n" ;
+					PrintWithContext
+						(
+						$pbs_config,
+						$rule->{FILE},
+						0, 0, 2, # blank, context before, context after
+						$rule->{LINE}, 1,
+						\&INFO,
+						\&INFO2,
+						0, "$indent$indent",
+						1, # no file name
+						) ;
+					}
 				}
 			}
 			
@@ -813,7 +816,7 @@ my $trigger_rules_displayed = exists $trigger_rules{$load_package} ;
 my $trigger_rules = ( $trigger_rules{$load_package} //= [PBS::Triggers::GetTriggerRules($load_package)] ) ;
 my $number_of_trigger_rules = scalar(@{$trigger_rules}) ;
 
-PrintInfo("Trigger: rules: $number_of_trigger_rules\n") 
+PrintInfo2("${indent}trigger rules: $number_of_trigger_rules\n") 
 	if !$trigger_rules_displayed && $number_of_trigger_rules && defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES} ;
 
 for my $dependency (@dependencies)
@@ -840,30 +843,49 @@ for my $dependency (@dependencies)
 		if($match)
 			{
 			my $trigger_info_name =  $trigger_rule->{NAME} ;
-			my $trigger_info =  $trigger_info_name . $trigger_rule->{ORIGIN} ;
+			my $trigger_info =  $trigger_info_name . ':' . $trigger_rule->{FILE} . ':' . $trigger_rule->{LINE};
 								
-			my $current_trigger_message = '' ;
-			
 			next if($triggered_node_name eq $node_name) ;
 			
+			my $trigger_message = '' ;
+			sub format_trigger_message
+				{
+				  INFO("${PBS::Output::indentation}Trigger:")
+				. _INFO3_(" '$_[1]'")
+				. _INFO_
+					(
+					" $_[2]"
+					. ", triggered by: " . _INFO3_("'$_[3]'")
+					. _INFO2_ (" @ '" . GetRunRelativePath($_[0], $_[4]) . "'\n")
+					) 
+				}
+
 			if(exists $inserted_nodes->{$triggered_node_name})
 				{
-				$current_trigger_message = "${indent}Trigger: ignoring '$triggered_node_name' from '$trigger_info'"
-								. ", trigger: '$dependency_name', was already in the graph.\n" ;
+				$trigger_message = format_trigger_message $pbs_config,
+							$triggered_node_name,
+							'was already in the graph',
+							$dependency_name,
+							$trigger_info,
 				}
 			else
 				{
-				$current_trigger_message = "${indent}Trigger: adding '$triggered_node_name' from '$trigger_info'"
-								. ", trigger: '$dependency_name'.\n" ;
-								
 				if(exists $triggered_nodes{$triggered_node_name})
 					{
-					$current_trigger_message .= "${indent}Trigger: ignoring duplicate '$triggered_node_name' from  "
-									. "'$triggered_nodes{$triggered_node_name}[TRIGGER_INFO]'"
-									. ", was added by trigger: '$triggered_nodes{$triggered_node_name}[TRIGGERING_NODE_NAME]'.\n"
+					$trigger_message = format_trigger_message $pbs_config,
+								$triggered_node_name,
+								'ignoring duplicate',
+								$triggered_nodes{$triggered_node_name}[TRIGGERING_NODE_NAME],
+								$triggered_nodes{$triggered_node_name}[TRIGGER_INFO]
 					}
 				else
 					{
+					$trigger_message = format_trigger_message $pbs_config,
+								$triggered_node_name,
+								'added',
+								$dependency_name,
+								$trigger_info ;
+
 					$triggered_nodes{$triggered_node_name} = [$triggered_node_name, $dependency_name, $trigger_info, $trigger_info_name] ;
 					push @triggered_nodes, $triggered_nodes{$triggered_node_name} ;
 					}
@@ -871,7 +893,7 @@ for my $dependency (@dependencies)
 				
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES})
 				{
-				PrintInfo($current_trigger_message)  ;
+				PrintNoColor($trigger_message)  ;
 				}
 			}
 		}
@@ -912,6 +934,7 @@ for my $triggered_node_data (@triggered_nodes)
 		__LOAD_PACKAGE     => $load_package,
 		__PBS_CONFIG       => $pbs_config,
 		__TRIGGER_INSERTED => $triggering_node_name,
+		__TRIGGER_ROOT     => 1,
 		__MATCHING_RULES   => [],
 		) ;
 		
@@ -1169,8 +1192,12 @@ if(@has_matching_non_subpbs_rules)
 		if (! exists $tree->{$dependency}{__DEPENDED} && ! DependencyIsSource($tree, $dependency, $inserted_nodes) ) 
 			{
 			my %sum_matching_rules = %{$parent_matching_rules} ;
-			push @{$sum_matching_rules{$_}}, $node_name for (@node_matching_rules) ;
-
+			
+			if($node_name !~ /^__/)
+				{
+				push @{$sum_matching_rules{$_}}, $node_name for (@node_matching_rules) ;
+				}
+			
 			# rule run once
 			my @sub_dependency_rules = $pbs_config->{RULE_RUN_ONCE}
 							? grep { $_->{MULTI} || ! exists $_->{MATCHED} } @$dependency_rules
@@ -1220,7 +1247,7 @@ elsif(@sub_pbs)
 	# run subpbs
 	#-------------------------------------------------------------
 	my $node_is_trigger_inserted = exists $tree->{__TRIGGER_INSERTED} ;
-	PrintInfo3("${indent}Subpbs: trigger_inserted '$node_name'\n") if $node_is_trigger_inserted ; 
+	PrintInfo3("${indent}Subpbs: '$node_name' [T]\n") if $node_is_trigger_inserted ; 
 
 	# temporarily eliminate ourself from the existing nodes list
 	# this means that any extra information in the node will not be available to subpbs, eg: we display the trigger insert info before the subps
@@ -1285,6 +1312,7 @@ elsif(@sub_pbs)
 	shift @{$nodes_per_pbs_run{$sub_pbs_load_package}} ; # node existed before subpbs
 
 	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
+#=pod
 	if ($node_is_trigger_inserted)
 		{
 		for my $name (keys %$already_inserted_nodes)
@@ -1296,7 +1324,7 @@ elsif(@sub_pbs)
 				}
 			}
 		} 
-
+#=cut
 	$sub_tree->{$sub_node_name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED} if $node_is_trigger_inserted ;
 	
 	# keep this node insertion info
@@ -1543,12 +1571,14 @@ my ($linked_node_info, @link_type) ;
 # • ■ ○ dkmdklf
 # ☘ ♾ ♿ ⚒ ⚓ ⚔ ⚕ ⚖ ⚗ ⚘ ⚙ ⚚ ⚛ ⚜ ☀ 
 
+
 push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
-push @link_type, 'trigger inserted'  if exists $dependency->{__TRIGGER_INSERTED} ;
 
 if($dependency_is_source)
 	{
-	$linked_node_info = WARNING "${indent}'$dependency_name' " . _INFO2_("ᴸᴵᴺᴷᴵᴺᴳ");
+	$linked_node_info  = WARNING "${indent}'$dependency_name'" ;
+	$linked_node_info .= WARNING ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
+	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
 
@@ -1557,7 +1587,9 @@ if($dependency_is_source)
 	}
 else
 	{
-	$linked_node_info = INFO3 "${indent}'$dependency_name' " . _INFO2_("ᴸᴵᴺᴷᴵᴺᴳ");
+	$linked_node_info  = INFO3 "${indent}'$dependency_name'" ;
+	$linked_node_info .= INFO3 ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
+	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, exists $dependency->{__DEPENDED}
 				? scalar ( grep { ! /^__/ } keys %$dependency )

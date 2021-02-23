@@ -199,19 +199,9 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 
 		unless($rule->{MATCHED})
 			{
-			my $rule_info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
+			my $info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
 
-			PrintInfo2
-				(
-				"Depend: '$rule_info' @ $target_string"
-			 	. _WARNING3_
-					(
-					" rule didn't match"
-					. ", calls : $rule->{STATS}{CALLS}"
-					. ", skipped: " . ($rule->{STATS}{SKIPPED} // 0)
-					)
-				. "\n"
-				) ;
+			PrintWarning3 "Depend: '$info' @ $target_string didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
 			}
 		}
 	}
@@ -329,7 +319,9 @@ eval
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				PrintInfo("Check: trigger inserted '$inserted_nodes->{$node_name}{__NAME}'\n") unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+				PrintInfo "Check: " . INFO3("'$inserted_nodes->{$node_name}{__NAME}' [T]\n")
+					 unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
+
 				my @triggered_build_sequence ;
 				
 				PBS::Check::CheckDependencyTree

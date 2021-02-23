@@ -409,11 +409,30 @@ else
 		($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
 		}
 
+	my $root = $node ;
+	my $root_name = $node_name ;
+
+	my @roots  = {$root_name => $root} ;
+
+	for my $node_name (keys %$inserted_nodes)
+		{
+		if(exists $inserted_nodes->{$node_name}{__TRIGGER_ROOT})
+			{
+			$root_name = 'roots' ;
+
+			push @roots, 
+				{
+				"$node_name" . _INFO2_ (", triggered by: '$inserted_nodes->{$node_name}{__TRIGGER_INSERTED}'")
+					 => $inserted_nodes->{$node_name}
+				} ;
+			}
+		}
+
 	PrintInfo "Depend:\n" 
 			. DumpTree
 				(
-				$node,
-				_INFO3_($node_name),
+				(@roots == 1 ? $root : \@roots),
+				$root_name,
 				FILTER => $FilterDump,
 				INDENTATION => ($PBS::Output::indentation x 2),
 				@extra_options
@@ -423,15 +442,6 @@ else
 	
 print Term::ANSIColor::color('reset');
 
-# find the inserted roots
-# todo: make this an option
-#for my $node_name (keys %$inserted_nodes)
-#	{
-#	if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
-#		{
-#		push @trees, $node_name + title: "$node_name, triggered by '$inserted_nodes->{$node_name}{__TRIGGER_INSERTED}')"
-#		}
-#	}
 }
 
 #-------------------------------------------------------------------------------

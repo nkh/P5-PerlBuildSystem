@@ -1,16 +1,11 @@
-#GetConfigAccess per node
 
 does it still work?
 
-	trigger
-	builder override
+	trigger, ok
+	builder override ? remove any new builder is an override since we just have one builder
+		having multiple builders is easy but we need a use case to implement it
 
-set node pbs config
-
-	node sub in rule
-
-	inject the pbs cofig cheange from command line
-		via --pbs_options
+	post build command ? remove, give it the possibility to continue 
 
 install and where to find tools
 	find and check tools
@@ -57,6 +52,13 @@ write the generate file in cmake in pbs
 		barely but it now renders references via DTD
 
 	comment that there is no use to re-generate anything
+
+set node pbs config
+	can't see use case really 
+		we can set options on subpbs already, nodes doesn't seem necessary
+
+	a nice syntax
+		rule ...., '--dncu', '--ddl', ... 
 
 put new Pbsfiles/... in MANIFEST
 
@@ -472,6 +474,8 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#GetConfigAccess per node
 
 # node config and exporting
 

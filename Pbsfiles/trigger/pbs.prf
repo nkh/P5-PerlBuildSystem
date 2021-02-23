@@ -1,2 +1,3 @@
 AddTargets('all') ;
-AddCommandLineSwitches(qw /-dpt -no_default_path_warning --display_pbsfile_loading --display_depend_end -ddl -bni -tno --display_trigger_rule_definition --display_trigger_rules/) ;
+AddCommandLineSwitches(qw/ --display_pbsfile_loading --display_depend_end -ddl -tno --display_trigger_rule_definition --display_trigger_rules /) ;
+

@@ -181,11 +181,11 @@ my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
 $ends_with_newline //= '' ;
 
 my $lines =  join
-			(
-			"\n$output_info_label",
-			map { $_ ne "\e[K\e[K" ? $color_and_depth->($_, $indent, $color_indent) : q{} }
-				split /\n(?:\Q$reset\E)?/, $data
-			)
+		(
+		"\n$output_info_label",
+		map { $_ ne "\e[K\e[K" ? $color_and_depth->($_, $indent, $color_indent) : q{} }
+			split /\n(?:\Q$reset\E)?/, $data
+		)
 		. $ends_with_newline ;
 
 print $glob "$output_info_label$lines" ;

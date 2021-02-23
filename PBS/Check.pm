@@ -187,7 +187,7 @@ $tree->{__BUILD_NAME} = $full_name ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
 	{
-	PrintInfo "Check: node: " . INFO3($name) 
+	PrintInfo "Check: " . INFO3($name) 
 			. INFO2($is_alternative_source ? ' -> [R]' : '')
 			. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
 			. "\n" ;
