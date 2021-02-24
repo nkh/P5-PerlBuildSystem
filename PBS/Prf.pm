@@ -12,7 +12,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddTargets AddCommandLineDefinitions AddCommandLineSwitches) ;
+our @EXPORT = qw(AddTargets target AddCommandLineDefinitions AddCommandLineSwitches) ;
 our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
@@ -29,6 +29,8 @@ my ($package, $file_name, $line) = caller() ;
 my $pbs_config = GetPbsConfig(caller) ;
 push @{$pbs_config->{TARGETS}}, @_ ;
 }
+
+*target=\&AddTargets ;
 
 #-------------------------------------------------------------------------------
 

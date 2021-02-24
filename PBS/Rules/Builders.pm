@@ -13,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(GenerateBuilder) ;
+our @EXPORT = qw(GenerateBuilder RunEvaluatedShellCommand) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
@@ -59,6 +59,7 @@ for (@$shell_commands)
 	{
 	if(ref $_ eq '')
 		{
+		# record what configs are used, see -dcu
 		PBS::Config::EvalConfig($_, $config, "AddRule @ " . GetRunRelativePath($pbs_config, $file_name) . ":$line", $package, $pbs_config, 1) ;
 		next ;
 		}
@@ -79,42 +80,20 @@ return($generated_builder, [], \%rule_type) ;
 
 #-------------------------------------------------------------------------------
 
-sub ShellCommandGenerator
-{
-die "not used" ;
-my ($shell_commands, $name, $file_name, $line, $tree) = @_;
-
-my @evaluated_shell_commands ;
-for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
-	{
-	push @evaluated_shell_commands, EvaluateShellCommandForNode
-						(
-						$shell_command,
-						"rule '$name' @ '$file_name:$line'",
-						$tree,
-						) ;
-	}
-	
-return(@evaluated_shell_commands) ;
-}
-
-#-------------------------------------------------------------------------------
-
 sub BuilderFromStringOrArray
 {
 my($shell_commands, $shell, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
 
 my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
 
-my $node_shell = $shell ;
 my $is_node_local_shell = '' ;
 
 if(exists $tree->{__SHELL_OVERRIDE})
 	{
 	if(defined $tree->{__SHELL_OVERRIDE})
 		{
-		$node_shell = $tree->{__SHELL_OVERRIDE} ;
-		$is_node_local_shell = ' [N]'
+		$shell = $tree->{__SHELL_OVERRIDE} ;
+		$is_node_local_shell = ' [O]'
 		}
 	else
 		{
@@ -123,7 +102,7 @@ if(exists $tree->{__SHELL_OVERRIDE})
 		}
 	}
 	
-$tree->{__SHELL_INFO} = $node_shell->GetInfo() ; 
+$tree->{__SHELL_INFO} = $shell->GetInfo() ; 
 if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	{
 	PrintWarning "Using shell$is_node_local_shell: '$tree->{__SHELL_INFO}' " ;
@@ -151,14 +130,18 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 	
 	if('CODE' eq ref $shell_command)
 		{
-		my $perl_sub_name = sub_name($shell_command) ;
+		my ($perl_sub_name, $file, $line) = (sub_name($shell_command), get_code_location($shell_command)) ;
 
-		my ($file, $line) = get_code_location($shell_command) ;
-		$perl_sub_name .= " $file:$line" ;
-
-		PrintUser $command_information . "Build: sub: $perl_sub_name\n" ;
+		if ($perl_sub_name =~/^BuildOk|TouchOk/)
+			{
+			PrintUser $command_information . "Build: $perl_sub_name\n" ;
+			}
+		else
+			{
+			PrintUser $command_information . "Build: sub: $perl_sub_name $file:$line\n" ;
+			}
 		
-		my @result = $node_shell->RunPerlSub($shell_command, @_) ;
+		my @result = $shell->RunPerlSub($shell_command, @_) ;
 		
 		if($result[0] == 0)
 			{
@@ -180,7 +163,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$triggering_dependencies,
 						) ;
 						
-		$node_shell->RunCommand($command) ;
+		$shell->RunCommand($command) ;
 		}
 	}
 	
@@ -210,15 +193,14 @@ my ($shell, $builder, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
 
 my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
 
-my $node_shell = $shell ;
 my $is_node_local_shell = '' ;
 
 if(exists $tree->{__SHELL_OVERRIDE})
 	{
 	if(defined $tree->{__SHELL_OVERRIDE})
 		{
-		$node_shell = $tree->{__SHELL_OVERRIDE} ;
-		$is_node_local_shell = ' [N]'
+		$shell = $tree->{__SHELL_OVERRIDE} ;
+		$is_node_local_shell = ' [O]'
 		}
 	else
 		{
@@ -227,7 +209,7 @@ if(exists $tree->{__SHELL_OVERRIDE})
 		}
 	}
 	
-$tree->{__SHELL_INFO} = $node_shell->GetInfo() ; # :-) doesn't help as this might not be in the root process
+$tree->{__SHELL_INFO} = $shell->GetInfo() ; # :-) doesn't help as this might not be in the root process
 	
 if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 	{
@@ -251,10 +233,7 @@ PrintInfo2 "Build: sub: $perl_sub_name\n"
 			&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER}
 			&& ! $PBS::Shell::silent_commands ;
 
-return
-	(
-	$node_shell->RunPerlSub($builder, @_)
-	) ;
+shell->RunPerlSub($builder, @_)
 } ;
 
 #-------------------------------------------------------------------------------
@@ -268,6 +247,17 @@ RunPluginSubs($tree->{__PBS_CONFIG}, 'EvaluateShellCommand', \$shell_command, $t
 $shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, $shell_command_info, $tree->{__LOAD_PACKAGE}, $tree->{__PBS_CONFIG}) ;
 
 return($shell_command) ;
+}
+
+sub RunEvaluatedShellCommand
+{
+my($shell_command, $shell_command_info, $tree, $dependencies, $triggered_dependencies) = @_ ;
+
+RunPluginSubs($tree->{__PBS_CONFIG}, 'EvaluateShellCommand', \$shell_command, $tree, $dependencies, $triggered_dependencies) ;
+
+$shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, $shell_command_info, $tree->{__LOAD_PACKAGE}, $tree->{__PBS_CONFIG}) ;
+
+RunShellCommands $shell_command ;
 }
 
 #-------------------------------------------------------------------------------

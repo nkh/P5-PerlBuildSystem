@@ -13,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk) ;
+our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk) ;
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -31,6 +31,7 @@ use PBS::Plugin ;
 use PBS::Rules::Order ;
 use PBS::Rules::Scope ;
 use PBS::Stack ;
+use PBS::Shell ;
 
 #-------------------------------------------------------------------------------
 
@@ -621,10 +622,21 @@ my ($package, $file_name, $line) = caller() ;
 
 return subname BuildOk => sub
 	{
-	#my ($config, $file_to_build, $dependencies, $triggering_dependencies, $file_tree, $inserted_nodes) = @_ ;
-	
 	PrintInfo3("BuildOk: $message\n") if defined $message ;
 	return(1, $message // 'BuildOk: no message') ;
+	} ;
+}
+
+sub TouchOk
+{
+#builder
+subname TouchOk => sub
+	{
+	my (undef, $file_to_build) = @_ ;
+
+	local $PBS::Shell::silent_commands = 1 ;
+
+	RunShellCommands "touch $file_to_build" ;
 	} ;
 }
 

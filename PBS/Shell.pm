@@ -13,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(RunShellCommands RunHostedShellCommands) ;
+our @EXPORT = qw(RunCommand RunShellCommands RunHostedShellCommands) ;
 our $VERSION = '0.02' ;
 
 our $silent_commands = 0 ;
@@ -49,8 +49,7 @@ else
 
 sub RunCommand
 {
-my $self = shift ;
-my $command = shift ;
+my ($self, $command) = @_ ;
 
 RunShellCommands($command) ;
 }
@@ -59,10 +58,7 @@ RunShellCommands($command) ;
 
 sub RunPerlSub
 {
-my $self = shift ;
-my $perl_sub = shift ;
-
-#my ($config, $file_to_build, $dependencies, $triggering_dependencies, $node, $inserted_nodes) = @_ ;
+my ($self, $perl_sub, @args) = @_ ;
 
 if($PBS::Shell::silent_commands_output)
 	{
@@ -92,7 +88,7 @@ if($PBS::Shell::silent_commands_output)
 	}
 else
 	{
-	$perl_sub->(@_) ;
+	$perl_sub->(@args) ;
 	}
 }
 

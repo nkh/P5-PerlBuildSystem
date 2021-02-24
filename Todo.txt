@@ -7,6 +7,8 @@ does it still work?
 
 	post build command ? remove, give it the possibility to continue 
 
+other default names and extensions for pbsfiles
+
 install and where to find tools
 	find and check tools
 	build the tools and install them, depend on them at the installation location
