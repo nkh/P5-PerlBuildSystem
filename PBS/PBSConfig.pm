@@ -397,9 +397,8 @@ if($pbs_config->{DEBUG_TRIGGER_NONE} && $pbs_config->{DEBUG_TRIGGER_ALL})
 	{
 	PrintWarning "Config: --trigger_none and --trigger_all  switch are given, --trigger_all takes precedence.\n" ;
 	delete $pbs_config->{DEBUG_TRIGGER_NONE} ;
-
 	}
-	
+
 if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	{
 	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ ;

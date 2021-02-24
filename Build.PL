@@ -32,6 +32,7 @@ PBS/Log/Html.pm
 PBS/Log/ForkedLNI.pm
 PBS/GraphViz.pm
 PBS/Node.pm
+PBS/Nop.pm
 PBS/Output.pm
 PBS/PBS.pm
 PBS/Prf.pm

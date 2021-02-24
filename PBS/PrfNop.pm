@@ -11,13 +11,16 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddTargets target) ;
+our @EXPORT = qw(AddTargets target AddCommandLineSwitches pbsconfig) ;
 our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
 sub AddTargets {}
 *target=\&AddTargets ;
+
+sub AddCommandLineSwitches {}
+*pbsconfig=\&AddCommandLineSwitches ;
 
 1 ;
 

@@ -382,6 +382,7 @@ unless(@$targets)
 				(
 				$load_package,
 				{
+					PBSFILE => $pbs_config->{PBSFILE},
 					TARGET_PATH => '',
 					SHORT_DEPENDENCY_PATH_STRING => $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} // '…',
 					LIB_PATH => $pbs_config->{LIB_PATH},
@@ -400,7 +401,7 @@ unless(@$targets)
 			"use strict ;\n"
 			  . "use warnings ;\n"
 			  . "use Data::TreeDumper;\n"
-		  	  . "use PBS::Prf ;\n" # add sub AddTargets
+		  	  . "use PBS::Prf ;\n" # target and pbs options functions
 			  . "use PBS::Constants ;\n"
 			  . "use PBS::Output ;\n"
 			  . "use PBS::Rules ;\n"
@@ -414,7 +415,16 @@ unless(@$targets)
 			'1 ;', #$post_code
 			) ;
 
+		die "$@\n" if $@ ;
+		
 		$targets = $targets_pbs_config->{TARGETS} // [] ;
+		
+		for (sort keys %$targets_pbs_config)
+			{
+			$pbs_config->{$_} = $targets_pbs_config->{$_} if defined $targets_pbs_config->{$_} ;
+			}
+		
+		PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
 		}
 	}
 

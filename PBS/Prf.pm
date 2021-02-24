@@ -12,7 +12,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddTargets target AddCommandLineDefinitions AddCommandLineSwitches) ;
+our @EXPORT = qw(AddTargets target AddCommandLineDefinitions AddCommandLineSwitches pbsconfig) ;
 our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
@@ -78,11 +78,7 @@ my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($pbs_config) ;
 
 my $ignore_error = $pbs_config->{'PRF_IGNORE_ERROR'} ;
 
-local $SIG{__WARN__} 
-	= sub 
-		{
-		PrintWarning $_[0] unless $ignore_error ;
-		} ;
+local $SIG{__WARN__} = sub { PrintWarning $_[0] unless $ignore_error } ;
 		
 use Getopt::Long ;
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
@@ -92,11 +88,13 @@ unless(GetOptions(@flags))
 	}
 }
 
+*pbsconfig=\&AddCommandLineSwitches ;
+
 #------------------------------------------------------------------------
 
 1 ;
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------
 
 __END__
 =head1 NAME

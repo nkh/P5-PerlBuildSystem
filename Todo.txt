@@ -1,10 +1,12 @@
+PBS::Nop
+	to replace pbs rules etc ... when just searching for targets or options
 
 other default names and extensions for pbsfiles
 	vi options or plugin
 
 #does it still work?
 
-	creator
+	# creator
 		no, used builder override, needs re-write
 
 	ok trigger
