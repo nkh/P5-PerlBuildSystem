@@ -144,6 +144,7 @@ PBSLib/Wizards/BuilderSub.pl
 PBSLib/Wizards/Creator.pl
 PBSLib/Wizards/Distributor.pl
 PBSLib/Wizards/NodeSub.pl
+PBSLib/Wizards/PostBuild.pl
 PBSLib/Wizards/Plugin.pl
 PBSLib/Wizards/PostPbs.pl
 PBSLib/Wizards/Prf.pl

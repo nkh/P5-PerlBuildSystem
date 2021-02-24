@@ -16,7 +16,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddPostBuildCommand) ;
+our @EXPORT = qw(AddPostBuildCommand post_build) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
@@ -33,19 +33,9 @@ my %post_build_commands;
 
 sub GetPostBuildRules
 {
-my $package = shift ;
-my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
+my ($package) = @_ ;
 
-my @post_build_commands = () ;
-
-PrintInfo("Get all post build commands for package: '$package'\n") if defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION} ;
-
-if(exists $post_build_commands{$package})
-	{
-	push @post_build_commands, @{$post_build_commands{$package}} ;
-	}
-
-return(@post_build_commands) ;
+exists $post_build_commands{$package} ? @{$post_build_commands{$package}} : () ;
 }
 
 #-------------------------------------------------------------------------------
@@ -66,6 +56,7 @@ RegisterPostBuildCommand
 	$switch, $builder_sub, $build_arguments,
 	) ;
 }
+*post_build=\&AddPostBuildCommand ;
 
 sub RegisterPostBuildCommand
 {
@@ -87,7 +78,7 @@ if(exists $post_build_commands{$package})
 				)
 			)
 			{
-			PrintError "Post Build: '$name'  already used\n" ;
+			PrintError "Depend: post build '$name' is already used\n" ;
 			PbsDisplayErrorWithContext $pbs_config, $post_build_commands->{FILE}, $post_build_commands->{LINE} ;
 			PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
 			die "\n" ;
@@ -97,15 +88,15 @@ if(exists $post_build_commands{$package})
 	
 if('' eq ref $switch || 'HASH' eq ref $switch)
 	{
-	PrintError "Post Build: Invalid command definition\n" ;
-	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+	PrintError "Depend: post build: invalid command definition\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
 	die "\n" ;
 	}
 	
 if(defined $builder_sub && 'CODE' ne ref $builder_sub)
 	{
-	PrintError"Post Build: Builder must be a sub reference\n" ;
-	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+	PrintError"Depend: post build: builder must be a sub reference\n" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
 	die "\n" ;
 	}
 	
@@ -115,8 +106,8 @@ if('ARRAY' eq ref $switch)
 	{
 	unless(@$switch)
 		{
-		PrintError "Post Build: '$name' nothing defined in post build definition" ;
-		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
+		PrintError "Depend: post build '$name', nothing defined in post build definition" ;
+		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
 		die "\n" ;
 		}
 
@@ -186,7 +177,7 @@ my $origin = ":$package:$file_name:$line" ;
 
 my $post_build_definition = 
 	{
-	TYPE                => 'unused field', #unused type field
+	TYPE                => [], #unused type field
 	NAME                => $name,
 	ORIGIN              => $origin,
 	FILE                => $file_name,
@@ -197,14 +188,14 @@ my $post_build_definition =
 	TEXTUAL_DESCRIPTION => $switch, # keep a visual on how the rule was defined
 	} ;
 
-if(defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION})
+if($pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION} || $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION})
 	{
-	PrintInfo("Adding post build command: '$name$origin'\n")  ;
+	PrintInfo "Depend: adding post build command: $name:" . GetRunRelativePath($pbs_config, $file_name) . ":$line\n"  ;
 	}
 
-if(defined $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION})
+if($pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION})
 	{
-	PrintInfo(DumpTree($post_build_definition, "post build commands '$name' definition:")) ;
+	PrintInfo DumpTree $post_build_definition, '', DISPLAY_ADDRESS => 0 ;
 	}
 
 push @{$post_build_commands{$package}}, $post_build_definition ;

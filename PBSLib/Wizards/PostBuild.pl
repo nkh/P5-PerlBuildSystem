@@ -13,7 +13,7 @@ my ($build_result, $build_message, $config, $names, $dependencies, $triggered_de
 
 return($build_result, $build_message) if $build_result != BUILD_SUCCESS ;
 
-PrintUser DumpTree [$config, $names, $dependencies, $triggered_dependencies, $argument], 'Post build:', USE_ASCII => 1 ;
+PrintUser DumpTree [$config, $names, $dependencies, $triggered_dependencies, $argument], 'Post Build:', USE_ASCII => 1 ;
 
 return(1, "PostBuildCommandTest OK.") ;
 }

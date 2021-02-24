@@ -180,7 +180,7 @@ for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
 		{
 		push @{$tree->{__POST_BUILD_COMMANDS}}, $post_build_command ;
 		
-		PrintInfo "Depend: '$node_name' post build command, '$post_build_command->{NAME}$post_build_command->{ORIGIN}'\n"
+		PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_(", post build command: $post_build_command->{NAME}$post_build_command->{ORIGIN}\n")
 			if $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS} ;
 		}
 	}

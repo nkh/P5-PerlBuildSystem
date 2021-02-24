@@ -1,13 +1,15 @@
 
 does it still work?
 
-	trigger, ok
+	ok trigger
+	ok, post build command ? remove, give it the possibility to continue 
+
 	builder override ? remove any new builder is an override since we just have one builder
 		having multiple builders is easy but we need a use case to implement it
 
-	post build command ? remove, give it the possibility to continue 
 
 other default names and extensions for pbsfiles
+	vi options or plugin
 
 install and where to find tools
 	find and check tools

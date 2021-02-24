@@ -264,10 +264,7 @@ if($node_needs_rebuild)
 		($build_result, $build_message) = (BUILD_FAILED, $reason) ;
 		}
 	
-	if($build_result == BUILD_SUCCESS)
-		{
-		($build_result, $build_message) = RunPostBuildCommands($pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
-		}
+	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
 
 	if($build_result == BUILD_SUCCESS)
 		{
@@ -583,7 +580,7 @@ return(\@rules_with_builders) ;
 
 sub RunPostBuildCommands
 {
-my ($pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
+my ($node_build_result, $node_build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
 
 my $build_name = $file_tree->{__BUILD_NAME} ;
 my $name       = $file_tree->{__NAME} ;
@@ -605,13 +602,17 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 			TRIGGERED_DEPENDENCIES => $triggered_dependencies,
 			ARGUMENTS              => \$post_build_command->{BUILDER_ARGUMENTS},
 			NODE                   => $file_tree,
+			NODE_BUILD_RESULT      => $node_build_result,
+			NODE_BUILD_MESSAGE     => $node_build_message, 
 			) ;
 		
 		#DEBUG HOOK
 		$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1) ;
 		
-		($build_result, $build_message) = $post_build_command->{BUILDER}
+		($build_result, my $pb_build_message) = $post_build_command->{BUILDER}
 							(
+							$node_build_result,
+							$node_build_message,
 							$file_tree->{__CONFIG},
 							[$name, $build_name],
 							$dependencies,
@@ -621,6 +622,8 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 							$inserted_nodes,
 							) ;
 							
+		$build_message .= "$pb_build_message " ;
+
 		#DEBUG HOOK
 		$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message) ;
 		} ;
@@ -651,7 +654,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		}
 	}
 
-return($build_result, $build_message) ;
+return($build_result, "$node_build_message, post build: $build_message") ;
 }
 
 #-------------------------------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.46' ;
+our $VERSION = '0.47' ;
 
 use PBS::Config ;
 use PBS::PBSConfig ;
@@ -391,11 +391,6 @@ unless(@$targets)
 				) ;
 	eval 
 		{
-		#use Clone; 
-		#my $pbs_config = Clone::clone $pbs_config ;
-		#$pbs_config->{TARGET_PATH} = '' ;
-		#PrintInfo "PBS: loading '" . GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) . "' to find target\n" ; 
-
 		PBS::PBS::LoadFileInPackage
 			(
 			'', # $type
@@ -404,6 +399,7 @@ unless(@$targets)
 			$targets_pbs_config,
 			"use strict ;\n"
 			  . "use warnings ;\n"
+			  . "use Data::TreeDumper;\n"
 		  	  . "use PBS::Prf ;\n" # add sub AddTargets
 			  . "use PBS::Constants ;\n"
 			  . "use PBS::Output ;\n"

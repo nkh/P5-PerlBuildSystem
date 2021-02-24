@@ -181,6 +181,7 @@ PBSLib/Wizards/template.pl
 
 PBSLib/Wizards/StandardPbsfile.pl
 PBSLib/Wizards/NodeSub.pl
+PBSLib/Wizards/PostBuild.pl
 PBSLib/Wizards/SimpleDependerSub.pl
 PBSLib/Wizards/BuilderSub.pl
 PBSLib/Wizards/Subpbs.pl
@@ -233,10 +234,10 @@ Pbsfiles/micro_warp/Pbsfile.pl
 Pbsfiles/locate_or_local/Pbsfile.pl
 Pbsfiles/locate_or_local/trigger.pl
 
-Pbsfiles/trigger/Pbsfile.pl
+Pbsfiles/trigger/pbsfile.pl
 Pbsfiles/trigger/trigger.pl
 
-Pbsfiles/post_build/post_build.pl
+Pbsfiles/post_build/pbsfile.pl
 
 Pbsfiles/remote_fork/Pbsfile.pl
 

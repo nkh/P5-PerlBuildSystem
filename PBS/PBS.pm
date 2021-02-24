@@ -359,6 +359,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			$pbs_config,
 			"use strict ;\n"
 			  . "use warnings ;\n"
+			  . "use Data::TreeDumper;\n"
 		  	  . "use PBS::PrfNop ;\n" # add sub AddTargets
 			  . "use PBS::Constants ;\n"
 			  . "use PBS::Output ;\n"
@@ -369,9 +370,9 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::Config ;\n"
 			  . "use PBS::PBS ;\n"
 			  . "use PBS::Digest;\n"
+			  . "use PBS::PBSConfig ;\n"
 			  #. "use PBS::Check ;\n"
 			  #. "use PBS::Shell ;\n"
-			  . "use PBS::PBSConfig ;\n"
 			  #. "use PBS::Rules::Creator;\n"
 			  #. "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
