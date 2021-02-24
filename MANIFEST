@@ -219,6 +219,8 @@ Pbsfiles/test1/cyclic.pl
 
 Pbsfiles/immediate_build/pbsfile.pl
 
+Pbsfiles/multi_depender/pbsfile.pl
+
 Pbsfiles/user_build/user_build.pl
 
 Pbsfiles/java/Pbsfile.pl

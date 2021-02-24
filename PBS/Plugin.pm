@@ -197,7 +197,7 @@ for my $plugin_path (sort keys %loaded_plugins)
 		PrintInfo "\trunning in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		
 		eval {$plugin_sub->(@plugin_arguments)} ;
-		die ERROR "Plugin: error running '$plugin_sub_name':\n$@" if $@ ;
+		die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 		}
 	else
 		{

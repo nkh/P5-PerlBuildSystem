@@ -1,4 +1,6 @@
 
+use PBS::Output ;
+
 =head1 CheckNodeName
 
 Check node names before it is added to the dependency graph
@@ -15,7 +17,7 @@ if($node_name =~ /\s/ || $node_name =~ /\\/)
 	{
 	PrintError "Check : '$node_name' contains spaces and/or backslashes\n" ;
 		
-	PbsDisplayErrorWithContextr $pbs_config, $rule->{FILE}, $rule->{LINE} ;
+	PbsDisplayErrorWithContext $pbs_config, $rule->{FILE}, $rule->{LINE} ;
 	die "\n" ;
 	}
 }

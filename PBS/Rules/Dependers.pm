@@ -222,19 +222,24 @@ $depender_sub =
 		
 		if($dependent_matcher->($tree->{__PBS_CONFIG}, $dependent, $config->{TARGET_PATH}, $node_name_matches_ddrr))
 			{
+			my ($has_matched, @all_dependencies) ;
+
 			for my $depender (@dependers)
 				{
-				PrintDebug "# todo: match more than one\n" ;
-
-				return $depender->
-						(
-						$dependent,
-						$config,
-						$tree,
-						$inserted_nodes,
-						$rule_definition,
-						) ;
+				my ($match, @dependencies) = $depender->
+								(
+								$dependent,
+								$config,
+								$tree,
+								$inserted_nodes,
+								$rule_definition,
+								) ;
+				
+				$has_matched += $match ;
+				push @all_dependencies, @dependencies if $match ;
 				}
+
+			return $has_matched, @all_dependencies ;
 			}
 		else
 			{
