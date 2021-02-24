@@ -373,7 +373,6 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::PBSConfig ;\n"
 			  #. "use PBS::Check ;\n"
 			  #. "use PBS::Shell ;\n"
-			  #. "use PBS::Rules::Creator;\n"
 			  #. "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
 			  
@@ -411,11 +410,11 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 							}
 						} @$targets ;
 				
-				return([1, @targets]) ;
+				return(1, @targets) ;
 				}
 			else
 				{
-				return([0]) ;
+				return(0) ;
 				}
 			},
 		) ;

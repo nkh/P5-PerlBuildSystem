@@ -181,6 +181,7 @@ else
 	}
 
 $full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
+
 my $is_virtual = exists $tree->{__VIRTUAL} ;
 
 $tree->{__BUILD_NAME} = $full_name ;

@@ -32,7 +32,7 @@ sub GenerateDepender
 {
 my ($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) =  @_ ;
 
-my @depender_node_subs_and_types ; # types is a special case to display info about dependers that are also creators
+my @depender_node_subs_and_types ; # types are a special case to display info about dependers
 
 for (ref $depender_definition)
 	{
@@ -55,7 +55,7 @@ for (ref $depender_definition)
 		} ;
 		
 	# DEFAULT
-		PrintError "Rules: '$name' Invalid depender definition\n" ;
+		PrintError "Rules: '$name' Invalid depender definition \n" ;
 		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
 		die "\n" ;
 	}
@@ -78,19 +78,14 @@ my $depender_sub =
 			{
 			my ($dependent, $config, $tree, $inserted_nodes, $rule_definition) = @_ ;
 			
-			my ($dependencies, $builder_override) ;
-			
-			($dependencies, $builder_override) = $code_reference->
-									(
-									$dependent,
-									$config,
-									$tree,
-									$inserted_nodes,
-									undef, # rule local
-									undef, # rule local
-									$rule_definition,
-									) ;
-			return($dependencies, $builder_override) ;
+			return  $code_reference->
+					(
+					$dependent,
+					$config,
+					$tree,
+					$inserted_nodes,
+					$rule_definition,
+					) ;
 			} ;
 	
 return($depender_sub) ;
@@ -119,38 +114,10 @@ my ($depender_sub, $node_subs) ;
 
 my($dependent_regex_definition, @dependencies) = @$depender_definition ;
 
-#----------------------------------------
-# creator definition, if any
-#----------------------------------------
-my $creator_sub ;
-
-if('ARRAY' eq ref $dependent_regex_definition)
-	{
-	if('CODE' eq ref $dependent_regex_definition->[0])
-		{
-		my $creator_definition = $dependent_regex_definition ;
-		my $creator            = shift @$creator_definition ;
-		my @creator_args       = @$creator_definition ;
-		
-		# the creator sub receives the same arguments as a depender sub
-		# note that the dependers sub is run before the creator sub
-		$creator_sub = sub {$creator->(@_, @creator_args) ;} ;
-		push @types, CREATOR ;
-		
-		$dependent_regex_definition = shift @dependencies ;
-		}
-	else
-		{
-		PrintError "Rules: '$name' invalid creator definition, first element must be a creator sub reference\n" ;
-		PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
-		die "\n" ;
-		}
-	}
-	
-# remove spurious undefs. those are allowed so one can write [ 'x' => undef]
+# remove spurious undefs. those are allowed so one can write [ 'x' => undef ]
 @dependencies = grep {defined $_} @dependencies ;
 
-my ($dependencies_evaluator, $dependent_matcher) ;
+my ($dependent_matcher, $dependencies_evaluator) ;
 
 if('' eq ref $dependent_regex_definition)
 	{
@@ -162,18 +129,18 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 	{
 	$dependent_matcher = sub
 				{
-				my ($dependent_to_check, $target_path, $display_regex) = @_ ;
+				my ($pbs_config, $dependent_to_check, $target_path, $display_regex) = @_ ;
 				
 				$target_path =~ s[/$][] ;
 				
 				$dependent_regex_definition=~ s/\%TARGET_PATH/$target_path/ ;
 			
-use Carp qw(cluck) ;
-#print STDERR cluck ;
-				if($display_regex && $dependent_to_check !~ /^__/)
-					{
-					PrintInfo2("${PBS::Output::indentation}$dependent_regex_definition $name:$file_name:$line\n") ;
-					}
+				PrintInfo2
+					"${PBS::Output::indentation}$dependent_regex_definition $name:"
+					. GetRunRelativePath($pbs_config, $file_name)
+					. ":$line\n" 
+						
+						if $display_regex && $dependent_to_check !~ /^__/ ;
 					
 				return($dependent_to_check =~ $dependent_regex_definition) ;
 				} ;
@@ -184,12 +151,14 @@ elsif('CODE' eq ref $dependent_regex_definition)
 	{
 	$dependent_matcher =  sub
 				{
-				my ($dependent_to_check, $target_path, $display_regex) = @_ ;
+				my ($pbs_config, $dependent_to_check, $target_path, $display_regex) = @_ ;
 				
-				if($display_regex && $dependent_to_check !~ /^__/)
-					{
-					PrintInfo2("${PBS::Output::indentation}perl sub $name:$file_name:$line\n") ;
-					}
+				PrintInfo2
+					"${PBS::Output::indentation}perl sub $name:"
+					. GetRunRelativePath($pbs_config, $file_name)
+					. ":$line\n" 
+						
+						if $display_regex && $dependent_to_check !~ /^__/ ;
 					
 				return($dependent_regex_definition->(@_)) ;
 				} ;			
@@ -207,29 +176,10 @@ else
 # depend subs
 #----------------------------------------
 my @depender_subs ;
-my @post_depender_subs ;
 
 for my $dependency (@dependencies)
 	{
-	if('ARRAY' eq ref $dependency)
-		{
-		#----------------------------------------
-		# post dependency generator
-		#----------------------------------------
-		if('CODE' eq ref $dependency->[0])
-			{
-			my ($depender_sub, @depender_args)  = @$dependency ;
-			
-			push @post_depender_subs, sub {return ($depender_sub->(@_, @depender_args)) ;} ;
-			}
-		else
-			{
-			PrintError "Rules: '$name' invalid depender definition" ;
-			PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
-			die "\n" ;
-			}
-		}
-	elsif('CODE' eq ref $dependency)
+	if('CODE' eq ref $dependency)
 		{
 		push @depender_subs, $dependency ;
 		}
@@ -248,18 +198,15 @@ for my $dependency (@dependencies)
 #----------------------------------------
 	
 my @dependers ;
+
 push @dependers, $dependencies_evaluator ; # dependers matching dependencies defined with strings (could contain $name ...)
 push @dependers, @depender_subs ;
-push @dependers, @post_depender_subs ;
-push @dependers, $creator_sub if defined $creator_sub ;
 
 $depender_sub = 
 	sub 
 		{
 		my ($dependent, $config, $tree, $inserted_nodes, $rule_definition) = @_ ;
 		
-		my ($dependencies, $builder_override) ;
-
 		my $node_name_matches_ddrr = 0 ;
 		if ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
 			{
@@ -273,27 +220,25 @@ $depender_sub =
 				}
 			}
 		
-		if($dependent_matcher->($dependent, $config->{TARGET_PATH}, $node_name_matches_ddrr))
+		if($dependent_matcher->($tree->{__PBS_CONFIG}, $dependent, $config->{TARGET_PATH}, $node_name_matches_ddrr))
 			{
 			for my $depender (@dependers)
 				{
-				($dependencies, $builder_override) = $depender->
-									(
-									$dependent,
-									$config,
-									$tree,
-									$inserted_nodes,
-									$dependencies,
-									$builder_override,
-									$rule_definition,
-									) ;
+				PrintDebug "# todo: match more than one\n" ;
+
+				return $depender->
+						(
+						$dependent,
+						$config,
+						$tree,
+						$inserted_nodes,
+						$rule_definition,
+						) ;
 				}
-				
-			return($dependencies, $builder_override) ;
 			}
 		else
 			{
-			return([0, 'No match']) ;
+			return(0, 'No match') ;
 			}
 		} ;
 
@@ -304,26 +249,23 @@ return($depender_sub, $node_subs, \@types) ;
 
 sub GenerateDependenciesEvaluator
 {
-my ($rule_definition, $rule_name, $file_name, $line) = @_ ;
+my ($dependencies, $rule_name, $file_name, $line) = @_ ;
 
-my $dependencies_evaluator = sub
+sub
 	{
-	my ($dependent, $config, $tree, $inserted_nodes, $dependencies, $builder_override) = @_ ;
+	my ($dependent, $config, $tree, $inserted_nodes) = @_ ;
 	
 	my ($basename, $path, $ext) = File::Basename::fileparse($dependent, ('\..*')) ;
 	my $name = $basename . $ext ;
 	$path =~ s/\/$// ;
 	
 	my @path_elements = split('/',$path) ;
-
-	my @all_dependencies ;
-	my $matched_perl_regex = 0 ;
+	my @dependencies ;
 	
-	for my $dependency_definition (@$rule_definition)
+	for my $dependency (@$dependencies)
 		{
-		if('' eq ref $dependency_definition)
+		if('' eq ref $dependency)
 			{
-			my $dependency = $dependency_definition ;
 			$dependency =~ s/\$name/$name/g ;
 			$dependency =~ s/\$basename/$basename/g ;
 
@@ -337,21 +279,12 @@ my $dependencies_evaluator = sub
 
 			$dependency =~ s/\$file_no_ext/$path_no_dot\/$basename/g ;
 			
-			push @all_dependencies, $dependency ;
+			push @dependencies, $dependency ;
 			}
 		}
 	
-	if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$dependencies > 1)
-		{
-		unshift @all_dependencies,	$dependencies->[1 .. (@{$dependencies} - 1)] ;
-		}
-	
-	unshift @all_dependencies, 1 ; # this depender matched
-	
-	return(\@all_dependencies, $builder_override) ;
-	} ;
-	
-return($dependencies_evaluator) ;
+	return 1, @dependencies ;
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -360,7 +293,7 @@ sub BuildDependentRegex
 {
 # Given a simplified dependent definition, this sub creates a perl regex
 
-my $dependent_regex_definition = shift ;
+my ($dependent_regex_definition) = @_ ;
 my $error_message   = '' ;
 
 return(0, 'Empty Regex definition') if $dependent_regex_definition eq '' ;
@@ -371,7 +304,7 @@ $dependent_path =~ s|\\|/|g;
 my $dependent_regex = $dependent_name . $dependent_ext ;
 unless(defined $dependent_regex)
 	{
-	$error_message = "Invalid dependency definition" ;
+	$error_message = "invalid dependency definition" ;
 	}
 	
 my $dependent_path_regex = $dependent_path ;

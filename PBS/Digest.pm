@@ -26,7 +26,7 @@ our @EXPORT = qw(
 		AddConfigVariableDependencies AddNodeConfigVariableDependencies
 		AddSwitchDependencies         AddNodeSwitchDependencies
 		
-		ExcludeFromDigestGeneration   NoDigest SourcesMatch
+		ExcludeFromDigestGeneration   NoDigest SourcesMatch Sources sources
 		ForceDigestGeneration         GenerateNodeDigest
 		GetDigest
 		
@@ -729,6 +729,8 @@ _ExcludeFromDigestGeneration($package, $file_name, $line, map { ; "$_" => $_ } @
 }
 
 *SourcesMatch =\&NoDigest ;
+*Sources =\&NoDigest ;
+*sources =\&NoDigest ;
 
 sub ExcludeFromDigestGeneration
 {

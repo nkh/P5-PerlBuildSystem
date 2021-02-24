@@ -127,7 +127,7 @@ sub SimplifiedAddRule
 my ($package, $file_name, $line) = caller() ;
 my $location = "#line $line '$file_name" ;
 
-my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @_) ;
+my ($types, $name, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @_) ;
 
 if('' eq ref $dependent)
 	{
@@ -157,7 +157,6 @@ if('' eq ref $dependent)
 	$dependencies = GeneratePurePerlTypeDependencies($dependencies) ;
 	
 	my $dependent_and_dependencies = [$sub_dependent_regex, @$dependencies];
-	unshift @$dependent_and_dependencies, $creator if($creator) ;
 		
 	eval <<"EOE" ;
 $location
@@ -222,7 +221,7 @@ sub ParseRule
 {
 my ($file_name, $line, @rule_definition) = @_ ;
 
-my ($rule_type, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = (0);
+my ($rule_type, $name, $dependent, $dependencies, $builder, $node_subs) = (0);
 
 my $first_argument = shift @rule_definition ;
 
@@ -252,12 +251,6 @@ if('ARRAY' eq ref $depender_and_dependencies)
 	{
 	($dependent, my @dependencies) = @$depender_and_dependencies ;
 	
-	if('ARRAY' eq ref $dependent)
-		{
-		$creator = $dependent ;
-		$dependent = shift @dependencies ;
-		}
-		
 	$dependencies = \@dependencies ;
 	}
 else
@@ -265,7 +258,7 @@ else
 	$dependent = $depender_and_dependencies ;
 	}
 	
-return ($rule_type, $name, $creator, $dependent, $dependencies, $builder, $node_subs) ;
+return ($rule_type, $name, $dependent, $dependencies, $builder, $node_subs) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -285,7 +278,7 @@ $dependent_path =~ s|\\|/|g;
 my $dependent_regex = $dependent_name . $dependent_ext ;
 unless(defined $dependent_regex)
 	{
-	$error_message = "Invalid dependency definition" ;
+	$error_message = "invalid dependency definition" ;
 	}
 	
 my $dependent_path_regex = $dependent_path ;

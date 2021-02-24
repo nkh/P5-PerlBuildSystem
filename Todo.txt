@@ -1,15 +1,53 @@
 
-does it still work?
+other default names and extensions for pbsfiles
+	vi options or plugin
+
+#does it still work?
+
+	creator
+		no, used builder override, needs re-write
 
 	ok trigger
 	ok, post build command ? remove, give it the possibility to continue 
 
-	builder override ? remove any new builder is an override since we just have one builder
+	=> remove builder override ? remove any new builder is an override since we just have one builder
 		having multiple builders is easy but we need a use case to implement it
 
+			the use case is builder override!
 
-other default names and extensions for pbsfiles
-	vi options or plugin
+			a builder override happens when a rule depender returns it
+
+			a rule can have multiple dependers
+
+			but we still just use one so a rule like
+
+				target => depender[d1, builder_override], depender[d2, builder_override]
+			would only run one of the builders
+
+			the whole rule is complicated
+
+				target may optionally have multiple dependencies and it builds
+				differently depending on which dependencies are found
+
+				and it's the depender that knows how to build the target, no no!
+
+			that's better written with multiple rules
+
+			target => d1_list d2_list
+				builder that acts differently based on the content of the lists
+
+					-s d1_list && -s d2_list && build_1
+							||
+					!-s d1_list && -s d2_list && build_2
+							...
+
+
+			d1_list => d1
+			d2_list => d2
+
+
+
+ 
 
 install and where to find tools
 	find and check tools
@@ -47,8 +85,6 @@ rework the options
 	depend display matchining rules
 	depend display inserting rule
 	
-
-
 write the generate file in cmake in pbs
 	all the examples, including generation of subpbs and super build
 

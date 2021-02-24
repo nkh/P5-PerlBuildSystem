@@ -210,7 +210,7 @@ if($node_needs_rebuild)
 			{
 			if(exists $file_tree->{__BUILD_DONE})
 				{
-				PrintWarning "Build is already done: $file_tree->{__BUILD_DONE}\n" ;
+				PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
 				}
 			else
 				{
@@ -545,32 +545,8 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 
 	my $builder = $dependencies_and_build_rules->[$rule_number]{BUILDER} ;
 	
-	# change the name of this variable as it is a rule now not a builder
-	my $builder_override  = $rule->{RULE}{BUILDER_OVERRIDE} ;
-	my $rule_dependencies = join ' ', map {$_->{NAME}} @{$rule->{DEPENDENCIES}} ;
-	
-	if(defined $builder_override)
-		{
-		if(defined $builder_override->{BUILDER})
-			{
-			push @rules_with_builders, { INDEX => $rule_number, DEFINITION => $builder_override, } ;
-			}
-		else
-			{
-			my $info = 
-				  "'" . $builder_override->{NAME} . "' at  '"
-				. $builder_override->{FILE}  . ":"
-				. $builder_override->{LINE}  . "'" ;
-				
-			PrintError "\nBuilder override $info didn't define a builder!\n" ;
-			PbsDisplayErrorWithContext $pbs_config, $builder_override->{FILE}, $builder_override->{LINE}  ;
-			}
-		}
-	else
-		{
-		push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] } 
-			if defined $builder ;
-		}
+	push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $dependencies_and_build_rules->[$rule_number] } 
+		if defined $builder ;
 	}
 	
 return(\@rules_with_builders) ;

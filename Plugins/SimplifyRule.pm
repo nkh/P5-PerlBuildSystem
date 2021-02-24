@@ -144,11 +144,11 @@ my $display_rule_transformation = $pbs_config->{DISPLAY_SIMPLIFIED_RULE_TRANSFOR
 
 PrintDebug DumpTree($rule_definition, "Plugin: SimplifyRule::AddRule, input:") if $display_rule_transformation ;
 
-my ($types, $name, $creator, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @$rule_definition) ;
+my ($types, $name, $dependent, $dependencies, $builder, $node_subs) = ParseRule($file_name, $line, @$rule_definition) ;
 
 PrintDebug DumpTree
 	(
-	{ TYPES => $types, NAME => $name, CREATOR => $creator, DEPENDENT => $dependent, DEPENDENCIES => $dependencies, BUILDER => $builder, NODE_SUBS => $node_subs },
+	{ TYPES => $types, NAME => $name, DEPENDENT => $dependent, DEPENDENCIES => $dependencies, BUILDER => $builder, NODE_SUBS => $node_subs },
 	"Plugin: SimplifyRule::AddRule ParseRule:"
 	) if $display_rule_transformation ;
 
@@ -158,7 +158,6 @@ if(defined $dependent && 'Regexp' eq ref $dependent)
 	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$dependent, @$dependencies];
-	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
@@ -190,7 +189,6 @@ if(defined $dependent && '' eq ref $dependent)
 	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$sub_dependent_regex, @$dependencies];
-	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
@@ -202,7 +200,6 @@ elsif (defined $dependent && 'CODE' eq ref $dependent)
 	$dependencies = TransformToPurePerlDependencies($pbs_config, $package, $config, $file_name, $line, $dependencies) ;
 	
 	my $dependent_and_dependencies = [$dependent, @$dependencies];
-	unshift @$dependent_and_dependencies, $creator if($creator) ;
 	
 	@$rule_definition = ($types, $name, $dependent_and_dependencies, $builder, $node_subs) ;
 
@@ -250,7 +247,7 @@ sub ParseRule
 {
 my ($file_name, $line, @rule_definition) = @_ ;
 
-my ($rule_type, $name, $creator, $dependent, $dependencies) ;
+my ($rule_type, $name, $dependent, $dependencies) ;
 
 my $first_argument = shift @rule_definition ;
 
@@ -280,12 +277,6 @@ if('ARRAY' eq ref $depender_and_dependencies)
 	{
 	($dependent, my @dependencies) = @$depender_and_dependencies ;
 	
-	if('ARRAY' eq ref $dependent)
-		{
-		$creator = $dependent ;
-		$dependent = shift @dependencies ;
-		}
-		
 	$dependencies = \@dependencies ;
 	}
 else
@@ -318,7 +309,7 @@ else
 		}
 	}
 
-return ($rule_type, $name, $creator, $dependent, $dependencies, scalar(@builder) ? \@builder : undef, scalar(@node_subs) ? \@node_subs : undef) ;
+return ($rule_type, $name, $dependent, $dependencies, scalar(@builder) ? \@builder : undef, scalar(@node_subs) ? \@node_subs : undef) ;
 }
 
 #-------------------------------------------------------------------------------

@@ -292,9 +292,10 @@ Argument 2 and 3 are for advanced use, you can safely ignore them.
 		    (
 		       # argument 0: match flag and dependency list
 		       [
-		       1 # matched '.c' file
-		       , (["$1.h"], ["$1.h2"]) # note the encapsulation into arrays
-		       ]
+			       1 # matched '.c' file
+			       , "$1.h", "$1.h2"
+		       ],
+
 		       # argument 1: optional builder override
 		       # argument 2: optional arguments override
 		    ) ;

@@ -21,7 +21,7 @@ AddRule 'manual c depender', ['*/*.c' => '*.h'] => BuildOk() ;
 AddRule 'shared lib', [$shared_lib => 'HelloWorldNative.c']
 	=> '%CC %DEPENDENCY_LIST -o %FILE_TO_BUILD -shared %CFLAGS_INCLUDE' ;
 
-AddRule [CREATOR], 'java to header', ['*/*.h' => '*.class'] , \&myBuild;
+AddRule [IMMEDIATE_BUILD], 'java to header', ['*/*.h' => '*.class'] , \&myBuild;
   
 AddRule 'classes', ['*/*.class' => '*.java']
     , 'javac -d %FILE_TO_BUILD_PATH %DEPENDENCY_LIST'; 

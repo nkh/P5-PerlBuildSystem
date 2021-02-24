@@ -24,7 +24,7 @@ Provides the following replacement variables:
 	%DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY
 	%TRIGGERED_DEPENDENCY_LIST
 	%DEPENDENCY_LIST
-	%DEPENDENCY_LIST_n
+	%DEPENDENCIES
 
 =over 2
 
@@ -139,21 +139,25 @@ $path =~ s/\/$// ;
 for 
 	(
 	[ BUILD_DIRECTORY                          => $build_directory ],
+
 	[ FILE_TO_BUILD_DIR                        => $path ],
 	[ FILE_TO_BUILD_PATH                       => $path ],
 	[ FILE_TO_BUILD_NAME                       => "$basename$ext" ],
 	[ FILE_TO_BUILD_BASENAME                   => $basename ],
 	[ FILE_TO_BUILD_NO_EXT                     => "$path\/$basename"],
 	[ FILE_TO_BUILD                            => $file_to_build ],
+
 	[ TARGET_DIR                               => $path ],
 	[ TARGET_PATH                              => $path ],
 	[ TARGET_NAME                              => "$basename$ext" ],
 	[ TARGET_BASENAME                          => $basename ],
 	[ TARGET_NO_EXT                            => "$path\/$basename"],
 	[ TARGET                                   => $file_to_build ],
+
 	[ DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY => $dependency_list_relative_build_directory],
 	[ TRIGGERED_DEPENDENCY_LIST                => $triggered_dependency_list],
 	[ DEPENDENCY_LIST                          => $dependency_list],
+	[ DEPENDENCES                              => $dependency_list],
 	)
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)

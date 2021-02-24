@@ -252,10 +252,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	my $file = defined $pbs_config->{PBSFILE_CONTENT} ? 'virtual' : $rule->{FILE} ;
 	my $rule_info = GetRunRelativePath($pbs_config, $rule_name . _INFO2_(" @ $file:$rule_line")) ;
 
-	my $depender  = $rule->{DEPENDER} ;
-	my ($dependency_result, $builder_override) = $depender->($node_name, $config, $tree, $inserted_nodes, $rule) ;
-
-	my ($triggered, @dependencies ) = @$dependency_result ;
+	my ($triggered, @dependencies) = $rule->{DEPENDER}->($node_name, $config, $tree, $inserted_nodes, $rule) ;
 	
 	die ERROR "Depend: Error: While depending '$node_name', rule $rule_info, returned an undefined dependency\n"
 		if grep {! defined } @dependencies ;
@@ -275,11 +272,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 		push @{$tree->{__MATCHING_RULES}}, 
 			{
-			  RULE => 
+			RULE => 
 				{
 				INDEX             => $rule_index,
 				DEFINITIONS       => $dependency_rules,
-				BUILDER_OVERRIDE  => $builder_override,
 				},
 			DEPENDENCIES => \@dependencies,
 			};
@@ -494,7 +490,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 				my $rule_type = '' ;
 				$rule_type .= '[B]'  if(defined $rule->{BUILDER}) ;
-				$rule_type .= '[BO]' if($builder_override) ;
 				$rule_type .= '[S]'  if(defined $rule->{NODE_SUBS}) ;
 				$rule_type = " $rule_type" unless $rule_type eq '' ;
 
@@ -1081,7 +1076,6 @@ if(@has_matching_non_subpbs_rules)
 		for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			{
 			my $rule = $dependency_rules->[$rule_index] ;
-			my $depender  = $rule->{DEPENDER} ;
 
 			# skip rule if it depends on another rule
 			$rule->{STATS}{CALLS}++ ;
@@ -1107,9 +1101,8 @@ if(@has_matching_non_subpbs_rules)
 				}
 
 			local $sort_tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} = 0 ; # temporarily disable message
-			my ($dependency_result) = $depender->($dependency, $config, $sort_tree, $inserted_nodes, $rule) ;
 
-			my ($triggered, @dependencies ) = @$dependency_result ;
+			my ($triggered, @dependencies) = $rule->{DEPENDER}->($dependency, $config, $sort_tree, $inserted_nodes, $rule) ;
 			
 			if($triggered)
 				{

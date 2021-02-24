@@ -9,8 +9,6 @@ AddRule 'rule_2', [qr<\.o$> => '$path/$basename.c'] ;
 
 AddRule 'rule_3', 
 	[
-		[sub{return(@_[4 .. 5])}] # creator
-		
 		 #~ => qr<\.c$> => # regex
 		 #~ => sub{ $_[0] =~ qr<\.c$>} => # regex
 		 #~ => AnyMatch(qr<\.c$>, qr<f1>) => # regex
@@ -19,7 +17,7 @@ AddRule 'rule_3',
 			  #~ AnyMatch(qr<\.c$>, qr<f1>)
 			#~ , NoMatch(qr/xx/)
 			#~ ) => # regex
-		 => AndMatch(qr<\.c$>, NoMatch(qr/xx/)) => # regex
+		 AndMatch(qr<\.c$>, NoMatch(qr/xx/)) => # regex
 				#normal dependency definition
 				# available: $path $basename $name $ext
 				'$path/$basename.h',

@@ -31,6 +31,7 @@ PBS/Graph/Snapshots.pm
 PBS/Log/Html.pm
 PBS/Log/ForkedLNI.pm
 PBS/GraphViz.pm
+PBS/Node.pm
 PBS/Output.pm
 PBS/PBS.pm
 PBS/Prf.pm
@@ -42,7 +43,6 @@ PBS/Rules.pm
 PBS/Rules.pm
 PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
-PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
 PBS/Rules/Order.pm
 PBS/Rules/Scope.pm
@@ -141,7 +141,6 @@ PBSLib/Utils/VisualStudioProjectFile.pm
 
 PBSLib/Wizards/Breakpoint.pl
 PBSLib/Wizards/BuilderSub.pl
-PBSLib/Wizards/Creator.pl
 PBSLib/Wizards/Distributor.pl
 PBSLib/Wizards/NodeSub.pl
 PBSLib/Wizards/PostBuild.pl

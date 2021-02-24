@@ -56,6 +56,7 @@ PBS/Graph/Html.pm
 PBS/Graph/Snapshots.pm
 PBS/GraphViz.pm
 PBS/Log/Html.pm
+PBS/Node.pm
 PBS/Output.pm
 PBS/Prf.pm
 PBS/PrfNop.pm
@@ -64,7 +65,6 @@ PBS/PBSConfig.pm
 PBS/PBSConfigSwitches.pm
 PBS/Plugin.pm
 PBS/Rules.pm
-PBS/Rules/Creator.pm
 PBS/Rules/Builders.pm
 PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
@@ -189,7 +189,6 @@ PBSLib/Wizards/Breakpoint.pl
 PBSLib/Wizards/Distributor.pl
 PBSLib/Wizards/PostPbs.pl
 PBSLib/Wizards/Plugin.pl
-PBSLib/Wizards/Creator.pl
 PBSLib/Wizards/Prf.pl
 
 Pbsfiles/hello/pbs.prf
@@ -218,9 +217,7 @@ Pbsfiles/test1/P2.pl
 Pbsfiles/test1/P3.pl
 Pbsfiles/test1/cyclic.pl
 
-Pbsfiles/creator/dependency_2_to_A
-Pbsfiles/creator/dependency_to_A
-Pbsfiles/creator/Pbsfile.pl
+Pbsfiles/immediate_build/pbsfile.pl
 
 Pbsfiles/user_build/user_build.pl
 

@@ -151,27 +151,6 @@ _EOF_
     like($stderr, qr|\$undefined_variable' : BUILD_FAILED : No matching rule\n|, 'Correct error message in output');
 }
 
-sub creator_sub : Test(2) {
-# Write files
-    $t->write_pbsfile(<<'_EOF_');
-    ExcludeFromDigestGeneration('in-files' => qr/\.in$/);
-    AddRule 'second', [ 'file.target' => 'subdir/file.intermediate' ] =>
-	'cp %DEPENDENCY_LIST %FILE_TO_BUILD';
-    AddRule 'creator sub', [
-			    sub {
-                                my ($dependent, $target_path) = @_;
-				return ($dependent =~ qr|^\./subdir/file.intermediate$| &&
-					$target_path =~ qr|^$|);
-			    } => 'subdir/$basename.in'] =>
-	'cat %DEPENDENCY_LIST > %FILE_TO_BUILD';
-_EOF_
-    $t->write('subdir/file.in', 'file contents');
-
-# Build
-    $t->build_test;
-    $t->test_target_contents('file contents');
-}
-
 sub dependent_matchers : Test(2) {
 # Write files
     $t->write_pbsfile(<<'_EOF_');

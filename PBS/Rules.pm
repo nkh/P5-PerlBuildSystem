@@ -17,21 +17,21 @@ our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubp
 our $VERSION = '0.09' ;
 
 use File::Basename ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use Time::HiRes qw( gettimeofday tv_interval ) ;
+use List::Util qw( any ) ;
 
-use PBS::Rules::Dependers ;
-use PBS::Rules::Builders ;
-
-use PBS::PBSConfig ;
 use PBS::Config ;
 use PBS::Output ;
 use PBS::Constants ;
 use PBS::Plugin ;
+use PBS::Stack ;
+use PBS::Shell ;
+
+use PBS::Rules::Dependers ;
+use PBS::Rules::Builders ;
 
 use PBS::Rules::Order ;
 use PBS::Rules::Scope ;
-use PBS::Stack ;
-use PBS::Shell ;
 
 #-------------------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ sub ExtractRules
 	
 my ($pbs_config, $pbsfile, $rules, @rules_namespaces) = @_ ;
 
-my (@creator_rules, @dependency_rules, @post_dependency_rules) ;
+my @dependency_rules ;
 
 for my $rules_namespace (@rules_namespaces)
 	{
@@ -79,35 +79,14 @@ for my $rules_namespace (@rules_namespaces)
 		{
 		for my $rule (@{$rules->{$rules_namespace}})
 			{
-			my ($post_depend, $creator) ;
-			
-			for my $rule_type (@{$rule->{TYPE}})
-				{
-				$creator++ if $rule_type eq CREATOR ;
-				}
-				
-			if($creator)
-				{
-				push @creator_rules, $rule ;
-				}
-			else
-				{
-				if($post_depend)
-					{
-					push @post_dependency_rules, $rule ;
-					}
-				else
-					{
-					push @dependency_rules, $rule ;
-					}
-				}
+			push @dependency_rules, $rule ;
 			}
 		}
 	}
 
 @dependency_rules = PBS::Rules::Order::OrderRules($pbs_config, $pbsfile, @dependency_rules) ;
 
-return(@creator_rules, @dependency_rules, @post_dependency_rules) ;
+return(@dependency_rules) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -388,7 +367,7 @@ if (exists $rule_type{__NOT_ACTIVE})
 	}
 
 # this test is mainly to catch the error when the user forgot to write the rule name.
-my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED NOT_ACTIVE VIRTUAL LOCAL FORCED CREATOR INTERNAL IMMEDIATE_BUILD) ;
+my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED NOT_ACTIVE VIRTUAL LOCAL FORCED INTERNAL IMMEDIATE_BUILD) ;
 for my $rule_type (@$rule_types)
 	{
 	my $order_regex = join '|', qw(indexed before first_plus after match_after last_minus) ;
@@ -416,42 +395,6 @@ if(exists $package_rules{$package}{$class})
 		}
 	}
 
-#>>>>>>>>>>>>>
-# special handling for CREATOR  rules
-# if a rule is [CREATOR] and no creator was defined in the depender definition,
-# we put a creator in the depender definition and give the builder as argument to the creator
-
-# this lets us write :
-# AddRule [CREATOR], [ 'a' =>' b'], 'touch %FILE_TO_BUILD' ;
-# and have the creator handle the digest part and call the builder to create the node
-
-if($rule_type{__CREATOR})
-	{
-	if('ARRAY' eq ref $depender_definition)
-		{
-		if('ARRAY' eq ref $depender_definition->[0])
-			{
-			die ERROR "[CREATOR] rules can't have a creator defined within depender!\n" ;
-			}
-			
-		if(defined $builder_definition)
-			{
-			#Let there be magic!
-			unshift @$depender_definition, [GenerateCreator($builder_definition)] ;
-			$builder_definition = undef ;
-			}
-		else
-			{
-			die ERROR "[CREATOR] rules must have a builder!\n" ;
-			}
-		}
-	else
-		{
-		die ERROR "[CREATOR] rules must have depender in form ['object_to_create => dependencies]!\n" ;
-		}
-	}
-#<<<<<<<<<<<<<<<<<<<<<<
-
 my ($builder_sub, $node_subs1, $builder_generated_types) = GenerateBuilder($pbs_config, $config, $builder_definition, $package, $name, $file_name, $line) ;
 $builder_generated_types ||= {} ;
 
@@ -468,13 +411,6 @@ for my $rule_type (@$rule_types)
 if($rule_type{__VIRTUAL} && $rule_type{__LOCAL})
 	{
 	PrintError "Rules 'VIRTUAL' and 'LOCAL' are not compatible\n" ;
-	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
-	die "\n" ;
-	}
-	
-if($rule_type{__VIRTUAL} && $rule_type{__CREATOR})
-	{
-	PrintError "Rules: 'VIRTUAL' and 'CREATOR' are incompatible\n" ;
 	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
 	die "\n" ;
 	}
@@ -536,7 +472,7 @@ $rule_definition->{NODE_SUBS} = $node_subs if @$node_subs ;
 if(defined $pbs_config->{DEBUG_DISPLAY_RULES})
 	{
 	my $class_info = "[$class" ;
-	$class_info .= ' CREATOR' if $rule_type{__CREATOR};
+	#$class_info .= ' ' if $rule_type{};
 	$class_info .= ']' ;
 		
 	if('HASH' eq ref $depender_definition)

@@ -7,10 +7,12 @@ print "Please give a one line description of this Pbsfile: " ;
 my $purpose = <STDIN> ;
 chomp($purpose) ;
 
-print <<EOP ;
+#print <<EOP ;
 =head1 PBSFILE USER HELP
 
-=head2 I<Pbsfile.pl>
+=head2 I<pbsfile.pl>
+
+# documentation displayed when -uh is used
 
 $purpose
 
@@ -18,57 +20,28 @@ $purpose
 
 =head2 Top rules
 
-=over 2 
-
-=item * all
-
-=back
+...
 
 =cut
 
-PbsUse('Rules/...') ; 
-PbsUse('Configs/...') ; 
+pbsuse 'Rules/...' ; 
+pbsuse 'Configs/...' ; 
 
 #-------------------------------------------------------------------------------
 
-AddRule [VIRTUAL], 'rule_name', ['dependent' => '', ''], \&BUILDER, [\&node_sub, \&node_sub] ;
+rule [V], 'rule_name', ['dependent' => '', ''], \&BUILDER, [\&node_sub, ...] ;
 
 
-=head2 Rule 'xxxx'
+=head2 Rule 'rule_name'
 
-blah ...
-
-blah ...
+	normal pod documentation
 
 =cut
 
-AddRule 'rule_name',['*\*.*' => '*.*'], \&BUILDER, [\&node_sub, \&node_sub] ;
+rule 'rule_name2', ['*\*.*' => '*.*'], \&BUILDER, [\&node_sub, ...] ;
 
-=comment
+rule 'rule_name3', ['*\*.*' => '*.*'], "command" ;
 
-Some  comments that won't apear if --uh is used.
+rule 'subpbs_name', {NODE_REGEX => '', PBSFILE => './Pbsfile.pl', PACKAGE => ''} ;
 
-=cut
-
-
-AddRule 'rule_name',['*\*.*' => '*.*']
-	, "command"
-	, [\&node_sub, \&node_sub] ;
-
-AddRule 'subpbs_name', {NODE_REGEX => '', PBSFILE => './Pbsfile.pl', PACKAGE => ''} ;
-
-# Subpbs
-for my \$subpbs_args
-	(
-	#  rule_name             node_regex                   Pbsfile              pbs_package
-	[''     , qr!!, '', ''     ] ,
-	[''     , qr!!, '', ''     ] ,
-	[''     , qr!!, '', ''     ] ,
-	)
-	{
-	AddSubpbsRule(\@\$subpbs_args) ;
-	}
-
-
-EOP
-
+subpbs qr/regex/, $pbsfile ;

@@ -32,8 +32,7 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		NOT_ACTIVE not_active NA
 		VIRTUAL V virtual
 		FORCED forced
-		CREATOR creator
-		IMMEDIATE_BUILD immediate_build
+		IMMEDIATE_BUILD immediate_build I
 
 		LOCAL
 
@@ -75,9 +74,6 @@ use constant DEPENDER           => 1 ;
 use constant DEPENDER_FILE_NAME => 0 ;
 use constant DEPENDER_PACKAGE   => 1 ;
 
-# creator --------------------------------------------------------
-use constant NEED_REBUILD => 1 ;
-
 # node types --------------------------------------------------------
 use constant TRIGGER_INSERTED   => '__TRIGGER_INSERTED' ;
 
@@ -93,9 +89,8 @@ use constant virtual            => '__VIRTUAL' ;
 use constant LOCAL              => '__LOCAL' ;
 use constant FORCED             => '__FORCED' ;
 use constant forced             => '__FORCED' ;
-use constant CREATOR            => '__CREATOR' ;
-use constant creator            => '__CREATOR' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
+use constant I                  => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
 
 use constant MULTI              => '__MULTI' ;
