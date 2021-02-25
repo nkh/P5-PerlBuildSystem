@@ -376,7 +376,7 @@ my $targets = $pbs_config->{TARGETS} ;
 unless(@$targets)
 	{
 	# try to get them from the pbsfile
-	my $load_package = 'PBS_GET_TARGET_FROM_PBSFILE' ;
+	my $load_package = 'PBS_GET_TARGET_AND_OPTIONS_FROM_PBSFILE' ;
 
 	my $targets_pbs_config = PBS::PBSConfig::RegisterPbsConfig
 				(

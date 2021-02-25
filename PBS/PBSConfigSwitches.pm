@@ -300,8 +300,16 @@ EOT
 		'',
 		'',
 
-	'p|pbsfile=s'                     => \$pbs_config->{PBSFILE},
+	'p|pbsfile=s'               => \$pbs_config->{PBSFILE},
 		'Pbsfile use to defines the build.',
+		'',
+		
+	'pfn|pbsfile_names=s'               => \$pbs_config->{PBSFILE_NAMES},
+		'string containing space separated file names that can be pbsfiles.',
+		'',
+		
+	'pfe|pbsfile_extensions=s'               => \$pbs_config->{PBSFILE_EXTENSIONS},
+		'string containing space separated extensionss that can match a pbsfile.',
 		'',
 		
 	'prf|pbs_response_file=s'         => \$pbs_config->{PBS_RESPONSE_FILE},

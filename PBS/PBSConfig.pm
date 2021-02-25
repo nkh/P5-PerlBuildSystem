@@ -605,14 +605,18 @@ if(defined $pbs_config->{PBSFILE})
 	}
 else
 	{
-	my @pbsfile_names;
+	my @pbsfile_names = split /\s+/, ($pbs_config->{PBSFILE_NAMES} // '') ;
+	my @pbsfile_extensions =  split /\s+/, ($pbs_config->{PBSFILE_EXTENSIONS} // '') ;
+
+	@pbsfile_extensions = qw(*.pl *.pbs) unless @pbsfile_extensions ;
+
 	if($^O eq 'MSWin32')
 		{
-		@pbsfile_names = qw(pbsfile.pl pbsfile) ;
+		@pbsfile_names = qw(pbsfile.pl pbsfile) unless @pbsfile_names;
 		}
 	else
 		{
-		@pbsfile_names = qw(Pbsfile.pl pbsfile.pl Pbsfile pbsfile) ;
+		@pbsfile_names = qw(Pbsfile.pl pbsfile.pl Pbsfile pbsfile) unless @pbsfile_names ;
 		}
 
 	my %existing_pbsfile = map{( $_ => 1)} grep { -e "./$_"} @pbsfile_names ;
@@ -629,19 +633,39 @@ else
 			}
 		else
 			{
-			$error_message = "PBS: found the following pbsfiles:\n" ;
+			$error_message = "PBS: found the following files as pbsfiles candidates:\n" ;
 			
 			for my $found_pbsfile (keys %existing_pbsfile)
 				{
 				$error_message .= "\t$found_pbsfile\n" ;
 				}
-				
-			$error_message .= "Only one can be defined!\n" ;
 			}
 		}
 	else
 		{
-		$error_message = "PBS: no 'pbsfile' to define build.\n" ;
+		use File::Find::Rule;
+
+		my @files = File::Find::Rule->file()
+				->name( @pbsfile_extensions, @pbsfile_names )
+				->maxdepth(1)
+				->in( '.' ) ;
+
+		if (0 == @files)
+			{
+			$error_message = "PBS: no 'pbsfile' to define build.\n" ;
+			}
+		elsif (1 == @files)
+			{
+			$pbsfile = $files[0] ;
+			PrintWarning "PBS: using '$pbsfile' as pbsfile\n" ;
+			}
+		else
+			{
+			PrintWarning "PBS: found the following  files as pbsfile candidates:\n" ;
+			PrintWarning DumpTree \@files, '', DISPLAY_ADDRESS => 0 ;
+
+			$error_message = "PBS: no 'pbsfile' to define build.\n" ;
+			}
 		}
 	}
 
