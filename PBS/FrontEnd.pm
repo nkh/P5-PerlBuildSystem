@@ -1,6 +1,5 @@
 
 package PBS::FrontEnd ;
-use PBS::Debug ;
 
 use 5.006 ;
 use strict ;
@@ -12,6 +11,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use Module::Util qw(find_installed) ;
 use File::Spec::Functions qw(:ALL) ;
 use File::Slurp ;
+use File::HomeDir;
 
 require Exporter ;
 
@@ -401,7 +401,7 @@ unless(@$targets)
 			"use strict ;\n"
 			  . "use warnings ;\n"
 			  . "use Data::TreeDumper;\n"
-		  	  . "use PBS::Prf ;\n" # target and pbs options functions
+			  . "use PBS::Prf ;\n" # target and pbs options functions
 			  . "use PBS::Constants ;\n"
 			  . "use PBS::Output ;\n"
 			  . "use PBS::Rules ;\n"
@@ -585,7 +585,7 @@ sub ParseSwitchesAndLoadPlugins
 # This is a bit hairy since plugins might add switches that are accepted on the command line and in a prf and
 # the plugin path can be defined on the command line and in a prf!
 # We load the pbs config twice. Once to handle the paths and the switches pertinent to plugin loading
-# and once to "really" load the config.
+# and once to "really" load the config. We also loade the global config pbs.prf
 
 my ($pbs_config, $command_line_arguments) = @_ ;
 my $parse_message = '' ;
@@ -598,34 +598,82 @@ $pbs_config->{LIB_PATH} = [] ;
 (my $command_line_switch_parse_ok, my $command_line_parse_message, my $command_line_config, my $command_line_targets)
 	= PBS::PBSConfig::ParseSwitches(undef, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
 
-$pbs_config->{PLUGIN_PATH} = $command_line_config->{PLUGIN_PATH} if(@{$command_line_config->{PLUGIN_PATH}}) ;
-$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $command_line_config->{DISPLAY_PLUGIN_RUNS};
-$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $command_line_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $command_line_config->{NO_DEFAULT_PATH_WARNING} ;
+$pbs_config->{PLUGIN_PATH}              = $command_line_config->{PLUGIN_PATH} if @{$command_line_config->{PLUGIN_PATH}} ;
+$pbs_config->{DISPLAY_PLUGIN_RUNS}      = $command_line_config->{DISPLAY_PLUGIN_RUNS};
+$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO} = $command_line_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+$pbs_config->{NO_DEFAULT_PATH_WARNING}  = $command_line_config->{NO_DEFAULT_PATH_WARNING} ;
+$pbs_config->{LIB_PATH}                 = $command_line_config->{LIB_PATH} if @{$command_line_config->{LIB_PATH}} ;
 
-$pbs_config->{LIB_PATH} = $command_line_config->{LIB_PATH} if(@{$command_line_config->{LIB_PATH}}) ;
+$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION} = $command_line_config->{DISPLAY_PBS_CONFIGURATION_LOCATION} ;
 
 #  handle -plp && -ppp in a prf
 unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 	{
-	my ($pbs_response_file, $prf_config) 
-		= PBS::PBSConfig::ParsePrfSwitches
-			(
-			$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
-			$command_line_config->{PBS_RESPONSE_FILE},
-			undef, # run prf in separate namespace
-			PARSE_PRF_SWITCHES_IGNORE_ERROR,
-			) ;
+	if(defined $command_line_config->{PBS_RESPONSE_FILE})
+		{
+		my ($pbs_response_file, $prf_config) 
+			= PBS::PBSConfig::ParsePrfSwitches
+				(
+				$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+				$command_line_config->{PBS_RESPONSE_FILE},
+				undef, # run prf in separate namespace
+				PARSE_PRF_SWITCHES_IGNORE_ERROR,
+				) ;
+				
+		$prf_config->{PLUGIN_PATH} ||= [] ;
+		$prf_config->{LIB_PATH} ||= [] ;
+		
+		push @{$pbs_config->{PLUGIN_PATH}}, @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
+		$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $prf_config->{DISPLAY_PLUGIN_RUNS};
+		$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+		$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
+		
+		push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
+		}
+
+	my $dist_data = File::HomeDir->my_dist_data( 'PBS' ) ;
+
+	if(defined $dist_data)
+		{
+		my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
+		my $prf_config ; 
+
+		if( -e $pbs_response_file)
+			{
+			($pbs_response_file, $prf_config) 
+				= PBS::PBSConfig::ParsePrfSwitches
+					(
+					$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+					$pbs_response_file,
+					undef, # run prf in separate namespace
+					PARSE_PRF_SWITCHES_IGNORE_ERROR,
+					) ;
+					
+			$prf_config->{PLUGIN_PATH} ||= [] ;
+			$prf_config->{LIB_PATH} ||= [] ;
 			
-	$prf_config->{PLUGIN_PATH} ||= [] ;
-	$prf_config->{LIB_PATH} ||= [] ;
-	
-	push @{$pbs_config->{PLUGIN_PATH}}, @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
-	$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $prf_config->{DISPLAY_PLUGIN_RUNS};
-	$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-	$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
-	
-	push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
+			push @{$pbs_config->{PLUGIN_PATH}}, @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
+			$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $prf_config->{DISPLAY_PLUGIN_RUNS};
+			$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+			$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
+			
+			push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
+			}
+		else
+			{
+			$pbs_response_file = File::HomeDir->my_dist_data( 'PBS', { create => 1 } ) . "/pbs.prf" ;
+
+			PrintInfo "PBS: creating empty default config '$pbs_response_file'\n" ; 
+			write_file $pbs_response_file, "# pbs default config\n#pbsconfig qw/ --dd -j 12 / ;\n\n1 ;\n"
+			}
+		}
+	else
+		{
+		my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS', { create => 1 } ) . "/pbs.prf" ;
+
+		PrintInfo "PBS: creating empty default config '$pbs_response_file'\n" ; 
+		write_file $pbs_response_file, "# pbs default config\n#pbsconfig qw/ --dd -j 12 / ;\n\n1 ;\n"
+		}
 	}
 
 # nothing defined on the command line and in a prf, last resort, use the distribution files
@@ -706,6 +754,8 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 			$pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
 			$pbs_config->{PBS_RESPONSE_FILE},
 			undef, # package to run prf in
+			0,
+			$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 			) ;
 			
 	#merging to PBS config, CLI has higher priority
@@ -721,6 +771,44 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 		elsif('HASH' eq ref $prf_config->{$key})
 			{
 			# commandline definitions and user definitions
+			if(! exists $pbs_config->{$key} || 0 == keys(%{$pbs_config->{$key}}))
+				{
+				$pbs_config->{$key} = $prf_config->{$key}
+				}
+			}
+		else
+			{
+			if(! exists $pbs_config->{$key} || ! defined $pbs_config->{$key})
+				{
+				$pbs_config->{$key} = $prf_config->{$key}
+				}
+			}
+		}
+
+	$pbs_response_file = File::HomeDir->my_dist_data('PBS') . "/pbs.prf" ;
+
+	($pbs_response_file, $prf_config) 
+		= PBS::PBSConfig::ParsePrfSwitches
+			(
+			$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+			$pbs_response_file,
+			undef, # run prf in separate namespace
+			0,
+			$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
+			) ;
+
+	# merging to PBS config, 
+	for my $key (keys %$prf_config)
+		{
+		if('ARRAY' eq ref $prf_config->{$key})
+			{
+			if(! exists $pbs_config->{$key} || 0 == @{$pbs_config->{$key}})
+				{
+				$pbs_config->{$key} = $prf_config->{$key}
+				}
+			}
+		elsif('HASH' eq ref $prf_config->{$key})
+			{
 			if(! exists $pbs_config->{$key} || 0 == keys(%{$pbs_config->{$key}}))
 				{
 				$pbs_config->{$key} = $prf_config->{$key}

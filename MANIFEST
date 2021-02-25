@@ -177,20 +177,20 @@ PBSLib/Dependers/Matchers.pm
 PBSLib/UserBuild/Multiple_O_Compile.pm
 PBSLib/UserBuild/BuildSequenceMiner.pm
 
-PBSLib/Wizards/menu.pl
-PBSLib/Wizards/template.pl
-
-PBSLib/Wizards/StandardPbsfile.pl
+PBSLib/Wizards/Breakpoint.pl
+PBSLib/Wizards/BuilderSub.pl
+PBSLib/Wizards/DependentMatcher.pl
+PBSLib/Wizards/Distributor.pl
 PBSLib/Wizards/NodeSub.pl
 PBSLib/Wizards/PostBuild.pl
-PBSLib/Wizards/SimpleDependerSub.pl
-PBSLib/Wizards/BuilderSub.pl
-PBSLib/Wizards/Subpbs.pl
-PBSLib/Wizards/Breakpoint.pl
-PBSLib/Wizards/Distributor.pl
-PBSLib/Wizards/PostPbs.pl
 PBSLib/Wizards/Plugin.pl
+PBSLib/Wizards/PostPbs.pl
 PBSLib/Wizards/Prf.pl
+PBSLib/Wizards/SimpleDependerSub.pl
+PBSLib/Wizards/StandardPbsfile.pl
+PBSLib/Wizards/Subpbs.pl
+PBSLib/Wizards/menu.pl
+PBSLib/Wizards/template.pl
 
 Pbsfiles/hello/pbs.prf
 Pbsfiles/hello/Pbsfile.pl

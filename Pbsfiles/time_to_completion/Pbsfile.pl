@@ -5,7 +5,7 @@
 
 # note: source nodes have no rules run on them and can't get start time and duration set
 
-PbsUse './gant' ;
+pbsuse './gant' ;
 
 rule 'all',	['all' => 'a', 'b'],	["touch %TARGET"], GantTime(5, 3) ;
 rule 'a',	['a' => 'c'],		["touch %TARGET"], GantTime(1, 2) ;

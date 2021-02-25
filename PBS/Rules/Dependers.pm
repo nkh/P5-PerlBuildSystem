@@ -135,14 +135,21 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 				
 				$dependent_regex_definition=~ s/\%TARGET_PATH/$target_path/ ;
 			
-				PrintInfo2
-					"${PBS::Output::indentation}$dependent_regex_definition $name:"
-					. GetRunRelativePath($pbs_config, $file_name)
-					. ":$line\n" 
+				if( $dependent_to_check !~ /__PBS/ )
+					{
+					PrintInfo2
+						"${PBS::Output::indentation}$dependent_regex_definition $name:"
+						. GetRunRelativePath($pbs_config, $file_name)
+						. ":$line\n" 
+							
+							if $display_regex ;
 						
-						if $display_regex && $dependent_to_check !~ /^__/ ;
-					
-				return($dependent_to_check =~ $dependent_regex_definition) ;
+					return $dependent_to_check =~ $dependent_regex_definition ;
+					}
+				else
+					{
+					return 0 ;
+					}
 				} ;
 				
 	$dependencies_evaluator = GenerateDependenciesEvaluator(\@dependencies, $name, $file_name, $line) ;
@@ -153,15 +160,22 @@ elsif('CODE' eq ref $dependent_regex_definition)
 				{
 				my ($pbs_config, $dependent_to_check, $target_path, $display_regex) = @_ ;
 				
-				PrintInfo2
-					"${PBS::Output::indentation}perl sub $name:"
-					. GetRunRelativePath($pbs_config, $file_name)
-					. ":$line\n" 
+				if( $dependent_to_check !~ /__PBS/ )
+					{
+					PrintInfo2
+						"${PBS::Output::indentation}<< sub >> $name:"
+						. GetRunRelativePath($pbs_config, $file_name)
+						. ":$line\n" 
+							
+							if $display_regex ;
 						
-						if $display_regex && $dependent_to_check !~ /^__/ ;
-					
-				return($dependent_regex_definition->(@_)) ;
-				} ;			
+					return $dependent_regex_definition->(@_) ;
+					}
+				else
+					{
+					return 0 ;
+					}
+				} ;
 				
 	$dependencies_evaluator = GenerateDependenciesEvaluator(\@dependencies, $name, $file_name, $line) ;
 	}
@@ -197,10 +211,7 @@ for my $dependency (@dependencies)
 	}
 #----------------------------------------
 	
-my @dependers ;
-
-push @dependers, $dependencies_evaluator ; # dependers matching dependencies defined with strings (could contain $name ...)
-push @dependers, @depender_subs ;
+my @dependers = ($dependencies_evaluator, @depender_subs) ;
 
 $depender_sub = 
 	sub 

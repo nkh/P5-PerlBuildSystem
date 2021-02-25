@@ -142,6 +142,7 @@ PBSLib/Utils/VisualStudioProjectFile.pm
 
 PBSLib/Wizards/Breakpoint.pl
 PBSLib/Wizards/BuilderSub.pl
+PBSLib/Wizards/DependentMatcher.pl
 PBSLib/Wizards/Distributor.pl
 PBSLib/Wizards/NodeSub.pl
 PBSLib/Wizards/PostBuild.pl

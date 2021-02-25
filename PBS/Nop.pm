@@ -1,5 +1,5 @@
 
-package PBS::Rules ;
+package PBS::Rules::Nop ;
 
 use 5.006 ;
 

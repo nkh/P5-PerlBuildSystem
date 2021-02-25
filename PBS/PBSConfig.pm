@@ -526,10 +526,11 @@ use constant PARSE_PRF_SWITCHES_IGNORE_ERROR => 1 ;
 
 sub ParsePrfSwitches
 {
-my ($no_anonymous_pbs_response_file, $pbs_response_file_to_use, $load_package, $ignore_error) = @_ ; # reference to the config in the PBS namespace
+my ($no_anonymous_pbs_response_file, $pbs_response_file_to_use, $load_package, $ignore_error, $display_location) = @_ ;
 
 my $package = caller() ;
 my $prf_load_package = 'PBS_PRF_SWITCHES_' . $package . '_' . $parse_prf_switches_run ;
+$parse_prf_switches_run++ ;
 
 if(defined $load_package)
 	{
@@ -544,16 +545,19 @@ else
 my $pbs_response_file ;
 unless($no_anonymous_pbs_response_file)
 	{
-	$pbs_response_file = 'pbs.prf' if(-e 'pbs.prf') ;
+	$pbs_response_file = 'pbs.prf' if -e 'pbs.prf' ;
 	}
 
 my $user = GetUserName() ;
 
-$pbs_response_file = "$user.prf" if(-e "$user.prf") ;
-$pbs_response_file =  $pbs_response_file_to_use if(defined $pbs_response_file_to_use) ;
+$pbs_response_file = "$user.prf" if -e "$user.prf" ;
+$pbs_response_file =  $pbs_response_file_to_use if defined $pbs_response_file_to_use ;
 
 if($pbs_response_file)
 	{
+	PrintInfo "PBS: loading prf '$pbs_response_file'\n"
+		if $display_location ;
+
 	unless(-e $pbs_response_file)
 		{
 		PrintError "PBS: can't find prf '$pbs_response_file'" ;
@@ -577,11 +581,11 @@ if($pbs_response_file)
 	my $pbs_config = GetPbsConfig($prf_load_package) ;
 	delete $pbs_config->{PRF_IGNORE_ERROR} ;
 	
-	return($pbs_response_file, $pbs_config) ;
+	return $pbs_response_file, $pbs_config ;
 	}
 else
 	{
-	return('no prf defined', {}) ;
+	return 'no prf defined', {} ;
 	}
 }
 

@@ -656,7 +656,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 			if(@{$parent_matching_rules->{$rule_name}} == 1)
 				{
-				PrintWarning "$indent${indent}warning, rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
+				PrintWarning "$indent${indent}warning: rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
 				}
 
 			if
@@ -665,7 +665,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				&& ! (@{$parent_matching_rules->{$rule_name}} % 5)
 				)
 				{
-				PrintWarning "$indent${indent}warning, rule '$rule_name' matched '$node_name' and "
+				PrintWarning "$indent${indent}warning: rule '$rule_name' matched '$node_name' and "
 						. scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
 				}
 			} 
@@ -1196,6 +1196,9 @@ if(@has_matching_non_subpbs_rules)
 							? grep { $_->{MULTI} || ! exists $_->{MATCHED} } @$dependency_rules
 							: () ;
 			
+			$PBS::Output::indentation_depth++ if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
+			PrintInfo2($PBS::Output::indentation . ("-" x 10) . "\n") if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
+			
 			my $local_time = 
 				CreateDependencyTree
 				(
@@ -1210,6 +1213,8 @@ if(@has_matching_non_subpbs_rules)
 				$pbs_config->{RULE_RUN_ONCE} ? \@sub_dependency_rules : $dependency_rules,
 				\%sum_matching_rules,
 				) ;
+
+			$PBS::Output::indentation_depth-- if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
 
 			$rule_time += $local_time ;
 			}
@@ -1305,7 +1310,7 @@ elsif(@sub_pbs)
 	shift @{$nodes_per_pbs_run{$sub_pbs_load_package}} ; # node existed before subpbs
 
 	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
-#=pod
+
 	if ($node_is_trigger_inserted)
 		{
 		for my $name (keys %$already_inserted_nodes)
@@ -1317,7 +1322,7 @@ elsif(@sub_pbs)
 				}
 			}
 		} 
-#=cut
+
 	$sub_tree->{$sub_node_name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED} if $node_is_trigger_inserted ;
 	
 	# keep this node insertion info
@@ -1591,6 +1596,7 @@ else
 				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info_2') ;
 	}
 
+PrintInfo2("$indent$indent" . ("-" x 10) . "\n") if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
 $linked_node_info .= _INFO2_ ' ⁻ ' . join(' ⁻ ', @link_type) ;
 
 if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE})

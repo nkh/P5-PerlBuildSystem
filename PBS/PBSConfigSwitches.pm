@@ -676,6 +676,10 @@ EOT
 		'Display the pbs configuration matching  the regex.',
 		'',
 		
+	'dpcl|display_pbs_configuration_location'=> \$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
+		'Display the pbs configuration location.',
+		'',
+		
 	'dec|display_error_context'       => \$PBS::Output::display_error_context,
 		'When set and if an error occures in a Pbsfile, PBS will display the error line.',
 		'',
@@ -734,6 +738,10 @@ EOT
 		
 	'dflo|depend_full_log_options=s' => \$pbs_config->{DEPEND_FULL_LOG_OPTIONS},
 		'Set extra display options for full log.',
+		'',
+		
+	'ddi|display_depend_indented' => \$pbs_config->{DISPLAY_DEPEND_INDENTED},
+		'Display an extra blank line araound a depend.',
 		'',
 		
 	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},

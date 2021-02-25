@@ -7,19 +7,16 @@ sub AnyMatch
 {
 my @regexes = @_ ;
 
-return
-	(
-	sub
+sub
+	{
+	for my $regex (@regexes)
 		{
-		for my $regex (@regexes)
-			{
-			$regex =~ s/\%TARGET_PATH\//$_[1]/ ;
-			return(1) if $_[0] =~ $regex ;
-			}
-			
-		return(0) ;
+		$regex =~ s/\%TARGET_PATH\//$_[1]/ ;
+		return $_[1] =~ $regex ;
 		}
-	) ;
+		
+	0 ;
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -28,22 +25,18 @@ sub NoMatch
 {
 my @regexes = @_ ;
 
-return
-	(
-	sub
+sub
+	{
+	my $matched = 0 ;
+	
+	for my $regex (@regexes)
 		{
-		my $matched = 0 ;
-		
-		for my $regex (@regexes)
-			{
-			$regex =~ s/\%TARGET_PATH\//$_[1]/ ;
-			$matched++ if $_[0] =~ $regex ;
-			}
-			
-		return(0) if $matched ;
-		return(1) ;
+		$regex =~ s/\%TARGET_PATH\//$_[1]/ ;
+		$matched++ if $_[1] =~ $regex ;
 		}
-	) ;
+		
+	return ! $matched ;
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -52,34 +45,28 @@ sub AndMatch
 {
 my @dependent_regex = @_ ;
 
-return
-	(
-	sub
+sub
+	{
+	for my $dependent_regex (@dependent_regex)
 		{
-		for my $dependent_regex (@dependent_regex)
+		if('Regexp' eq ref $dependent_regex)
 			{
-			if('Regexp' eq ref $dependent_regex)
-				{
-				$dependent_regex  =~ s/\%TARGET_PATH\//$_[1]/ ;
-				return(0) unless $_[0] =~ $dependent_regex ;
-				}
-			elsif('CODE' eq ref $dependent_regex)
-				{
-				# assume code
-				unless($dependent_regex->(@_))
-					{
-					return(0) ;
-					}
-				}
-			else
-				{
-				confess() ;
-				}
-			}
+			$dependent_regex =~ s/\%TARGET_PATH\//$_[2]/ ;
 			
-		return(1) ;
+			return 0 unless $_[1] =~ $dependent_regex ;
+			}
+		elsif('CODE' eq ref $dependent_regex)
+			{
+			return 0 unless $dependent_regex->(@_) ;
+			}
+		else
+			{
+			confess() ;
+			}
 		}
-	) ;
+		
+	1 ;
+	}
 }
 
 #-------------------------------------------------------------------------------

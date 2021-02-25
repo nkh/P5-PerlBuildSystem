@@ -14,15 +14,15 @@ sub
 
 # insert gant nodes in the graph
 
-PbsUse('Dependers/Matchers') ;
+pbsuse 'Dependers/Matchers' ; # for NoMatch
 
 # all nodes get a gant node dependency, except PBS internal nodes
-Rule 'gant_dependency', [AndMatch(qr<.>, NoMatch(qr/__PBS/), NoMatch(qr/\.gant$/)) => '$path/$basename.gant'] ;
+rule 'gant_dependency', [ NoMatch(qr/__PBS/, qr/\.gant$/) => '$path/$basename.gant' ] ;
 
 # gant node rule
 #	depender adds the original node's dependencies
 #	builder compute delivery time
-Rule 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
+rule 'gant_node', ['*.gant' => \&GANTDepender], \&ComputeGANTTime ;
 
 sub GANTDepender
 {
