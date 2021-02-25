@@ -44,7 +44,7 @@ for
 
 PbsUse('Rules/Object_rules_utils') ; # for object dependencies cache generation 
 
-AddRule [MULTI], 'c_objects',   [ '*/*.o' => '*.c'   , \&exists_on_disk],  GetConfig('CC_SYNTAX') ;
+AddRule [MULTI], 'c_objects',   [ '*/*.o' => '*.c', \&exists_on_disk],  GetConfig('CC_SYNTAX') ;
 
 # or set of rules to pick a source file for object files
 # comment out if you have object files generated from different sources

@@ -741,7 +741,11 @@ EOT
 		'',
 		
 	'ddi|display_depend_indented' => \$pbs_config->{DISPLAY_DEPEND_INDENTED},
-		'Display an extra blank line araound a depend.',
+		'Add indentation before node.',
+		'',
+		
+	'dds|display_depend_separator=s' => \$pbs_config->{DISPLAY_DEPEND_SEPARATOR},
+		'Display a separator between nodes.',
 		'',
 		
 	'ddnl|display_depend_new_line' => \$pbs_config->{DISPLAY_DEPEND_NEW_LINE},

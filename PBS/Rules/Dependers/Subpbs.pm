@@ -120,9 +120,9 @@ return
 			PrintInfo2("${PBS::Output::indentation}$depender_definition->{NODE_REGEX} [$sub_pbs_dependent_regex]. Subpbs rule '$name' @ $file_name:$line.\n") ;
 			}
 		
-		$dependent_to_check =~ /^$sub_pbs_dependent_regex$/ && return ([1, $depender_definition]) ;
+		$dependent_to_check =~ /^$sub_pbs_dependent_regex$/ && return 1, $depender_definition ;
 		
-		return([0, "No Match subpbs '$sub_pbs_dependent_regex'"]) ;
+		return 0, "No Match subpbs '$sub_pbs_dependent_regex'" ;
 		}
 	) ;
 }

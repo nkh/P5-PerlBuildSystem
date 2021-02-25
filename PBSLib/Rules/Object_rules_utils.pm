@@ -1,5 +1,6 @@
 
 use PBS::Output ;
+use List::Util qw( any) ;
 
 #-------------------------------------------------------------------------------
 
@@ -11,57 +12,37 @@ my
 	$config,
 	$tree,
 	$inserted_nodes,
-	$dependencies,         # rule local
-	$builder_override,     # rule local
-	$rule_definition,      # for introspection
+	$rule_definition, # for introspection
 	) = @_ ;
 
 my $build_directory    = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
 my $source_directories = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 
-my ($triggered, @my_dependencies) ;
+my $missing = 0 ;
+my $message ;
 
-shift @$dependencies ; # previous trigger state
-
-for my $source (@$dependencies)
+for my $source ( grep { $_ !~ /^__/ } keys %$tree )
 	{
 	my ($build_name) = PBS::Check::LocateSource($source, $build_directory, $source_directories, $tree->{__PBS_CONFIG}{DISPLAY_SEARCH_INFO}) ;
 
-	if( -e $build_name)
+	unless(-e $build_name)
 		{
-		push @my_dependencies, $source ;
-		$triggered = 1 ;
-		}
-	else
-		{
-		my $node_name_matches_ddrr = 0 ;
-		if ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
-			{
-			for my $regex (@{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX}})
-				{
-				if($dependent_to_check =~ /$regex/)
-					{
-					$node_name_matches_ddrr = 1 ;
-					last ;
-					}
-				}
-			}
-
-		if($node_name_matches_ddrr)
-			{
-			PrintInfo 
-				$PBS::Output::indentation x 2
-				. "'exists_on_disk: rule: $rule_definition->{NAME},"  # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 
-				. " no match\n" ;
-			}
-
-		# all listed dependencies must exist
-		($triggered, @my_dependencies) = (0) ;
-		last ;
+		$missing++ ;
+		
+		$message //= $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} 
+				&& any { $dependent_to_check =~ $_ } @{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX}} ;
+		
+		PrintInfo 
+			$PBS::Output::indentation x 2
+			. "'exists_on_disk: rule: $rule_definition->{NAME},"  # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 
+			. " $source not found\n"
+				if $message ;
 		}
 	}
 
-return([$triggered, @my_dependencies], $builder_override) ;
+die ERROR("PBS: exists on disk failed ($missing)") . "\n" if $missing ;
+
+1 ;
 }
 
 #-------------------------------------------------------------------------------
@@ -77,9 +58,7 @@ my
         $config,
         $tree,
         $inserted_nodes,
-        $dependencies,         # rule local
-        $builder_override,     # rule local
-        $rule_definition,      # for introspection
+        $rule_definition, # for introspection
         ) = @_ ;
 
 my @dependencies = grep {! /^__/ } keys %$tree ;
@@ -112,7 +91,7 @@ elsif (0 == @dependencies)
 
 	}
 
-return [0] ;
+return 0 ;
 }
 
 #-------------------------------------------------------------------------------

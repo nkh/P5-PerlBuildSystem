@@ -1174,9 +1174,9 @@ if(@has_matching_non_subpbs_rules)
 
 				my $rule = $dependency_rules->[$matching_rule_index] ;
 
-				my ($dependency_result) = $rule->{DEPENDER}->($dependency, $config, $tree->{$dependency}, $inserted_nodes, $rule) ;
+				my ($matched) = $rule->{DEPENDER}->($dependency, $config, $tree->{$dependency}, $inserted_nodes, $rule) ;
 
-				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($dependency_result->[0]) ;
+				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($matched) ;
 				}
 				
 			PrintColor('ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
@@ -1195,10 +1195,12 @@ if(@has_matching_non_subpbs_rules)
 			my @sub_dependency_rules = $pbs_config->{RULE_RUN_ONCE}
 							? grep { $_->{MULTI} || ! exists $_->{MATCHED} } @$dependency_rules
 							: () ;
-			
-			$PBS::Output::indentation_depth++ if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
-			PrintInfo2($PBS::Output::indentation . ("-" x 10) . "\n") if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
-			
+
+			$PBS::Output::indentation_depth++ if $pbs_config->{DISPLAY_DEPEND_INDENTED} && $node_name !~ /^__PBS/ ;
+
+			PrintInfo2 $PBS::Output::indentation . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
+				if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
+
 			my $local_time = 
 				CreateDependencyTree
 				(
@@ -1214,7 +1216,7 @@ if(@has_matching_non_subpbs_rules)
 				\%sum_matching_rules,
 				) ;
 
-			$PBS::Output::indentation_depth-- if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
+			$PBS::Output::indentation_depth-- if $pbs_config->{DISPLAY_DEPEND_INDENTED} && $node_name !~ /^__PBS/ ;
 
 			$rule_time += $local_time ;
 			}
@@ -1414,26 +1416,26 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 	
 	my $nodes_checker ;
 
-	PBS::Check::CheckDependencyTree
-		(
-		$tree,
-		0, # node level
-		$inserted_nodes,
-		$pbs_config,
-		$config,
-		$nodes_checker,
-		undef, # single node checker
-		\@build_sequence,
-		\%trigged_files,
-		) ;
-		
-	if (@build_sequence)
+	if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
 		{
-		RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
-		
-		if($pbs_config->{DO_BUILD} || $pbs_config->{DO_IMMEDIATE_BUILD})
+		PBS::Check::CheckDependencyTree
+			(
+			$tree,
+			0, # node level
+			$inserted_nodes,
+			$pbs_config,
+			$config,
+			$nodes_checker,
+			undef, # single node checker
+			\@build_sequence,
+			\%trigged_files,
+			) ;
+			
+		if (@build_sequence)
 			{
-			PrintInfo "Depend: " . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+			RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
+		
+			PrintInfo "$indent" . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
 			$PBS::Output::indentation_depth++ ;
 
 			my ($build_result, $build_message) = PBS::Build::BuildSequence
@@ -1449,12 +1451,12 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			}
 		else
 			{
-			PrintWarning "Depend: " . _INFO3_("'$node_name'") . _WARNING_ (" skipped\n") .  _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+			#PrintInfo "$indent" . _INFO3_("'$node_name'") . _INFO_(' nothing to do') . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
 			}
 		}
 	else
 		{
-		#PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_(' nothing to do') . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+		PrintWarning "$indent" . _INFO3_("'$node_name'") . _WARNING_ (" skipped [IMMEDIATE_BUILD]\n") ;
 		}
 	}
 	
@@ -1540,9 +1542,9 @@ else
 				next ;
 				}
 
-			my ($dependency_result) = $rule->{DEPENDER}->($dependency_name, $config, $dependency, $inserted_nodes, $rule) ;
+			my ($matched) = $rule->{DEPENDER}->($dependency_name, $config, $dependency, $inserted_nodes, $rule) ;
 
-			if($dependency_result->[0])
+			if($matched)
 				{
 				$local_rule_info .= COLOR 'ignoring_local_rule', "${indent}${indent}ignoring local rule", 0, 1 ;
 
@@ -1563,7 +1565,7 @@ else
 	}
 
 my ($linked_node_info, @link_type) ;
-#  ⁻ · ⁽ ⁾ ⁺ ⁻ ⁼
+#  ⁻ · ⁽ ⁾ ⁺ ⁻ ⁼ 
 #ᴬ ᴮ ᶜ ᴰ ᴱ ᶠ ᴳ ᴴ ᴵ ᴶ ᴷ ᴸ ᴹ ᴺ ᴼ ᴾ ᵠ ᴿ ˢ ᵀ ᵁ ⱽ ᵂ ˣ ʸ ᶻ > 
 #ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ᵠ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ 
 # • ■ ○ dkmdklf
@@ -1572,10 +1574,12 @@ my ($linked_node_info, @link_type) ;
 
 push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
 
+my $link_indent = ($pbs_config->{DISPLAY_DEPEND_INDENTED} ? $indent : '' ) . $indent ;
+
 if($dependency_is_source)
 	{
-	$linked_node_info  = WARNING "${indent}'$dependency_name'" ;
-	$linked_node_info .= WARNING ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
+	$linked_node_info  = _WARNING_ "$link_indent'$dependency_name'" ;
+	$linked_node_info .= _WARNING_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
@@ -1585,8 +1589,8 @@ if($dependency_is_source)
 	}
 else
 	{
-	$linked_node_info  = INFO3 "${indent}'$dependency_name'" ;
-	$linked_node_info .= INFO3 ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
+	$linked_node_info  = _INFO3_ "$link_indent'$dependency_name'" ;
+	$linked_node_info .= _INFO3_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 
 	push @link_type, exists $dependency->{__DEPENDED}
@@ -1596,7 +1600,9 @@ else
 				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info_2') ;
 	}
 
-PrintInfo2("$indent$indent" . ("-" x 10) . "\n") if $pbs_config->{DISPLAY_DEPEND_INDENTED} ;
+PrintInfo2 $link_indent . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
+	if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
+
 $linked_node_info .= _INFO2_ ' ⁻ ' . join(' ⁻ ', @link_type) ;
 
 if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE})

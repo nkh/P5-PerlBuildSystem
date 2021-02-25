@@ -14,7 +14,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(GenerateDepender GenerateDependerFromArray GenerateSubpbsDepender BuildDependentRegex) ;
+our @EXPORT = qw(GenerateDepender GenerateDependerFromArray BuildDependentRegex) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
@@ -117,7 +117,7 @@ my($dependent_regex_definition, @dependencies) = @$depender_definition ;
 # remove spurious undefs. those are allowed so one can write [ 'x' => undef ]
 @dependencies = grep {defined $_} @dependencies ;
 
-my ($dependent_matcher, $dependencies_evaluator) ;
+my $dependent_matcher ;
 
 if('' eq ref $dependent_regex_definition)
 	{
@@ -141,7 +141,6 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 						"${PBS::Output::indentation}$dependent_regex_definition $name:"
 						. GetRunRelativePath($pbs_config, $file_name)
 						. ":$line\n" 
-							
 							if $display_regex ;
 						
 					return $dependent_to_check =~ $dependent_regex_definition ;
@@ -151,8 +150,6 @@ elsif('Regexp' eq ref $dependent_regex_definition)
 					return 0 ;
 					}
 				} ;
-				
-	$dependencies_evaluator = GenerateDependenciesEvaluator(\@dependencies, $name, $file_name, $line) ;
 	}
 elsif('CODE' eq ref $dependent_regex_definition)
 	{
@@ -166,7 +163,6 @@ elsif('CODE' eq ref $dependent_regex_definition)
 						"${PBS::Output::indentation}<< sub >> $name:"
 						. GetRunRelativePath($pbs_config, $file_name)
 						. ":$line\n" 
-							
 							if $display_regex ;
 						
 					return $dependent_regex_definition->(@_) ;
@@ -176,16 +172,16 @@ elsif('CODE' eq ref $dependent_regex_definition)
 					return 0 ;
 					}
 				} ;
-				
-	$dependencies_evaluator = GenerateDependenciesEvaluator(\@dependencies, $name, $file_name, $line) ;
 	}
 else
 	{
-	PrintError "Depend: '$name' unexpected matcher definition\n" ;
+	PrintError "Depend: '$name' unexpected non regex or sub matcher definition\n" ;
 	PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
 	die "\n" ;
 	}
 	
+my $dependencies_evaluator = GenerateDependenciesEvaluator(\@dependencies, $name, $file_name, $line) ;
+
 #----------------------------------------
 # depend subs
 #----------------------------------------
@@ -254,7 +250,7 @@ $depender_sub =
 			}
 		else
 			{
-			return(0, 'No match') ;
+			return 0, 'No match' ;
 			}
 		} ;
 
@@ -278,8 +274,9 @@ sub
 	my @path_elements = split('/',$path) ;
 	my @dependencies ;
 	
-	for my $dependency (@$dependencies)
+	for my $ref (@$dependencies)
 		{
+		my $dependency = $ref ;
 		if('' eq ref $dependency)
 			{
 			$dependency =~ s/\$name/$name/g ;

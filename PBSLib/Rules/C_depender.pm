@@ -46,20 +46,12 @@ my
         undef,
         $tree,
         undef,
-        $dependencies,         # rule local
-        $builder_override,     # rule local
         ) = @_ ;
 
-my ($triggered, @previous_dependencies, @my_dependencies) ;
-
-if(defined $dependencies && @$dependencies && $dependencies->[0] == 1 && @$dependencies > 1)
-        {
-        # previous depender defined dependencies
-        $triggered       = shift @{$dependencies} ;
-        @previous_dependencies = @{$dependencies} ;
-        }
-
+my $pbs_config = $tree->{__PBS_CONFIG} ;
 my $digest_file_name = PBS::Digest::GetDigestFileName($tree) ;
+
+my @dependencies;
 
 # if .o node was previously build the dependencies will be cached in the .o digest
 if(-e $digest_file_name)
@@ -78,28 +70,23 @@ if(-e $digest_file_name)
 			{
 			for my $dependency ( grep {/\.h$/} keys %$digest)
 				{
-				if($digest->{$dependency} ne  PBS::Digest::GetFileMD5($dependency))
+				if($digest->{$dependency} ne PBS::Digest::GetFileMD5($dependency))
 					{
-					my  $pbs_config = $tree->{__PBS_CONFIG} ;
-
 					PrintWarning "Depend: C depender: '$tree->{__NAME}' dependency '$dependency' changed, removing cached dependencies.\n" 
 						if $pbs_config->{DISPLAY_DIGEST} ;
-
-					@my_dependencies = () ;
-					last ;
+					
+					@dependencies = () ;
 					}
-
-				push @my_dependencies, $dependency ;
+				
+				push @dependencies, $dependency ;
 				}
 			}
-		}	
+		}
+
+	return 1, @dependencies ;
 	}
 
-$triggered = 1 ;
-unshift @my_dependencies, $triggered ;
-push @my_dependencies, @previous_dependencies ;
-
-return(\@my_dependencies, $builder_override) ;
+return 0 ;
 }
 
 #-------------------------------------------------------------------------------

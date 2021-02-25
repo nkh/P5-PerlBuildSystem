@@ -1,7 +1,20 @@
 PBS::Nop
 	to replace pbs rules etc ... when just searching for targets or options
 
-other default names and extensions for pbsfiles
+-depend_indent
+
+colors in DumpTree and width!
+
+hide rule matches
+	those without dependencies
+	specific rule name
+	specific nodes --ddrr
+
+interrupt build after node is build
+
+prioritize node / build only a node
+
+#other default names and extensions for pbsfiles
 	vi options or plugin
 
 #does it still work?
