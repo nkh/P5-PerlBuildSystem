@@ -70,7 +70,7 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_BAR_PRO
 	}
 
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
-my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available) , truncate => 'middle' });
 my @failed_nodes ;
 
 while ($number_of_nodes_to_build > $number_of_already_build_node)
@@ -553,7 +553,7 @@ my ($pbs_config, $build_queue, $builders, $node_build_index, $number_of_nodes_to
 my $started_builders = 0 ;
 
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
-my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available) , truncate => 'middle' });
 
 # find which builder finished, start building on them
 for my $builder (@$builders)

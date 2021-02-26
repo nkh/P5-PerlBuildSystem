@@ -1713,12 +1713,25 @@ if($word_to_complete !~ /^\s?$/)
 	my (@flags_and_help, @slice, @switches) = GetSwitches() ;
 	push @switches, $slice[0] while (@slice = splice @flags_and_help, 0, 4 ) ; 
 
+	my $options = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
+
 	use Tree::Trie ;
 	my $trie = new Tree::Trie ;
+	$trie->add( map { ("-" . $_) , ("--" . $_) } @{$options }) ;
 
-	$trie->add( map { ("-" . $_) , ("--" . $_) } @{ Term::Bash::Completion::Generator::de_getop_ify_list(\@switches)}) ;
+	my @matches = $trie->lookup($word_to_complete) ;
 
-	print join("\n", $trie->lookup($word_to_complete)) . "\n" ;
+	if(@matches)
+		{
+		print join("\n", @matches) . "\n" ;
+		}
+	else
+		{
+		my $word = $word_to_complete =~ s/^-*//r ;
+		@matches = grep { /$word/ } @$options ;
+
+		print join("\n", map { "--$_" } @matches) . "\n" ;
+		}
 	}
 }
 

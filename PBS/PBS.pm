@@ -720,7 +720,7 @@ my $t0 = [gettimeofday];
 if($type eq 'Pbsfile')
 	{
 	my $available = PBS::Output::GetScreenWidth() ;
-	my $em = String::Truncate::elide_with_defaults({ length => $available - 12, truncate => 'left' });
+	my $em = String::Truncate::elide_with_defaults({ length => ($available - 12 < 3 ? 3 : $available - 12), truncate => 'left' });
 
 	PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 	PrintInfo2("PBS: loading '" . $em->($file) . "'\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;

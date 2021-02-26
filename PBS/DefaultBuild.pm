@@ -73,7 +73,7 @@ my $start_nodes = scalar(keys %$inserted_nodes) ;
 $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
-my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' });
+my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
 my $target_string = '' ; 
 $target_string .= $em->($_) for (@$targets) ; 
@@ -138,7 +138,7 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	my $template = "Depend: '%s', time: $time, local time: $time2\n" ;
 	my $available = PBS::Output::GetScreenWidth() - length($template) ;
 
-	my $em = String::Truncate::elide_with_defaults({ length => $available, truncate => 'middle' }) ;
+	my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' }) ;
 
 	PrintInfo2 sprintf($template, $em->(GetRunRelativePath($pbs_config, $Pbsfile, 1))) ;
 	}
