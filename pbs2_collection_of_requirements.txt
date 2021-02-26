@@ -266,7 +266,7 @@ FORCED and __PBS_FORCE_TRIGGER
 		but we now integrate the H files in the graph and pbs handles them as 
 		any nodes
 
-Creator vs IMMEDIATE_BUILDi
+Creator vs IMMEDIATE_BUILD
 	Creator, file that need to exists before depending a node
 		often a file that itself points to other dependencies
 

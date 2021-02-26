@@ -467,7 +467,7 @@ EOT
 
 	'nba|node_build_actions=s'               => $pbs_config->{NODE_BUILD_ACTIONS},
 		'actions that are run on a node at build time.',
-		'',
+		q~example: pbs -ke .  -nba '3::stop' -nba "trigger::priority 4::message '%name'" -trigger '.' -w 0  -fb -dpb0 -j 12 -nh~,
 
 	'ns|no_stop'                      => \$pbs_config->{NO_STOP},
 		'Continues building even if a node couldn\'t be buid. See --bi.',

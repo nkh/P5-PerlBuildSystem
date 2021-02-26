@@ -167,7 +167,7 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 		}
 	}
 	
-return 1 , "OK Building $file_to_build" ;
+return 1 , "OK" ;
 }
 
 #-------------------------------------------------------------------------------

@@ -1,88 +1,10 @@
 PBS::Nop
 	to replace pbs rules etc ... when just searching for targets or options
 
-#-depend_indent
-
 colors in DumpTree and width!
+	pass option when colors are not used or globsl option
 
-hide rule matches
-	those without dependencies
-		ddrnd
-
-	specific rule name
-		ddrn
-
-	specific nodes --ddrr
-
-		--ddrrn
---node_build_actions ' thenode/name/hahah : prio 1 : message %node is build : ! make sound : stop'
-	+ verbose
-	+ no shell commands
-
-	interrupt build after node is build
-	display message when node is buid
-
-	prioritize node / build only a node
-		if queu is parents first, i think, queue the dependencies and be done
-			
-		--prioritize regex ...
-
-	why not a breakpoint ?
-		not as easy as on the command line
-
-		breakpoint much more powerful
-
-#other default names and extensions for pbsfiles
-	vi options or plugin
-
-#does it still work?
-
-	ok, node@root
-
-	# creator
-		no, used builder override, needs re-write
-
-	ok trigger
-	ok, post build command ? remove, give it the possibility to continue 
-
-	=> remove builder override ? remove any new builder is an override since we just have one builder
-		having multiple builders is easy but we need a use case to implement it
-
-			the use case is builder override!
-
-			a builder override happens when a rule depender returns it
-
-			a rule can have multiple dependers
-
-			but we still just use one so a rule like
-
-				target => depender[d1, builder_override], depender[d2, builder_override]
-			would only run one of the builders
-
-			the whole rule is complicated
-
-				target may optionally have multiple dependencies and it builds
-				differently depending on which dependencies are found
-
-				and it's the depender that knows how to build the target, no no!
-
-			that's better written with multiple rules
-
-			target => d1_list d2_list
-				builder that acts differently based on the content of the lists
-
-					-s d1_list && -s d2_list && build_1
-							||
-					!-s d1_list && -s d2_list && build_2
-							...
-
-
-			d1_list => d1
-			d2_list => d2
-
-
-
- 
+document all breakpoints
 
 install and where to find tools
 	find and check tools
@@ -132,7 +54,7 @@ set node pbs config
 	can't see use case really 
 		we can set options on subpbs already, nodes doesn't seem necessary
 
-	a nice syntax
+	a nice syntax using node subs
 		rule ...., '--dncu', '--ddl', ... 
 
 put new Pbsfiles/... in MANIFEST
@@ -208,6 +130,11 @@ on error generate a script that
 		display debugging information
 
 	run ranger 
+
+	save the latest errors let the user start the sessions
+
+	a utility lists the errors and sets up the environment
+		a piece of bash
 
 move NodeInformation to methods
 	many information elements are generated and added to the log or output
@@ -311,7 +238,7 @@ Roadmap
 	graph generation
 		* variants in the same graph
 
-		remove local nodes 
+		from different build a utility merges them not pbs
 
 	debugger
 		interface
@@ -549,6 +476,85 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#--node_build_actions ' thenode/name/hahah : prio 1 : message %node is build : ! make sound : stop'
+	+ verbose
+	+ no shell commands
+
+	interrupt build after node is build
+	display message when node is buid
+
+	prioritize node / build only a node
+		if queu is parents first, i think, queue the dependencies and be done
+			
+		--prioritize regex ...
+
+	why not a breakpoint ?
+		not as easy as on the command line
+
+		breakpoint much more powerful
+
+#-depend_indent
+
+# hide rule matches
+	those without dependencies
+		ddrnd
+
+	specific rule name
+		ddrn
+
+	specific nodes --ddrr
+
+		--ddrrn
+
+#other default names and extensions for pbsfiles
+	vi options or plugin
+
+#does it still work?
+
+	ok, node@root
+
+	# creator
+		no, used builder override, needs re-write
+
+	ok trigger
+	ok, post build command ? remove, give it the possibility to continue 
+
+	=> remove builder override ? remove any new builder is an override since we just have one builder
+		having multiple builders is easy but we need a use case to implement it
+
+			the use case is builder override!
+
+			a builder override happens when a rule depender returns it
+
+			a rule can have multiple dependers
+
+			but we still just use one so a rule like
+
+				target => depender[d1, builder_override], depender[d2, builder_override]
+			would only run one of the builders
+
+			the whole rule is complicated
+
+				target may optionally have multiple dependencies and it builds
+				differently depending on which dependencies are found
+
+				and it's the depender that knows how to build the target, no no!
+
+			that's better written with multiple rules
+
+			target => d1_list d2_list
+				builder that acts differently based on the content of the lists
+
+					-s d1_list && -s d2_list && build_1
+							||
+					!-s d1_list && -s d2_list && build_2
+							...
+
+
+			d1_list => d1
+			d2_list => d2
+
 
 #GetConfigAccess per node
 

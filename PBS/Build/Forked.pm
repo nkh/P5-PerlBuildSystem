@@ -113,11 +113,10 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 		write_file($pbs_config->{TRIGGERS_FILE}, {append => 1, err_mode => "carp"}, "{NAME => '$built_node->{__NAME}', BUILD_RESULT => $build_result},\n") or 
 			do
 			{
-			PrintError "Build: Couldn't append to trigger file '$pbs_config->{TRIGGERS_FILE}'\n" ;
+			PrintError "Build: couldn't append to trigger file '$pbs_config->{TRIGGERS_FILE}'\n" ;
 			die "\n" ;
 			} ;
 		
-	my $index = 0 ;
 	for my $actions ( grep { $built_node->{__NAME} =~ $_->[0]} @{$pbs_config->{NODE_BUILD_ACTIONS}})
 		{
 		for my $template (grep { m/^\s*message\s+/i } @$actions)
@@ -125,7 +124,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			(my $text = $template) =~ s/^\s*message\s+//i ;
 			$text =~ s/%name/$built_node->{__NAME}/g ;
 			$text =~ s/%build_result/$build_result/g ;
-			PrintDebug "\n$built_node->{__NAME} [$index] $text\n" ;
+			PrintDebug "Build: $text\n" if $text ne q{};
 			}
 
 		for my $stop (grep { m/^\s*stop\b/i } @$actions)
@@ -134,11 +133,12 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			$text =~ s/%name/$built_node->{__NAME}/g ;
 			$text =~ s/%build_result/$build_result/g ;
 
-			PrintDebug "\n$built_node->{__NAME} [$index] Stop $text\n" ;
-			die "\n" ;
-			}
+			$text = "at $built_node->{__NAME}" if $text eq q{} ;
 
-		$index++ ;
+			PrintWarning "Build: stop $text\n" ;
+
+			$number_of_failed_builders++ ;
+			}
 		}
 
 		if($build_result == BUILD_SUCCESS)
@@ -279,6 +279,24 @@ return $excluded ;
 }
 
 
+sub GetDescendents
+{
+my ($node) = @_ ;
+
+#PrintDebug DumpTree [ map { $_->{__NAME} } GetDescendents($node) ], $node->{__NAME} ;
+
+my @all ;
+
+for my $dependent ( grep { ! /^__/ } keys %$node )
+	{
+	push @all, $node->{$dependent} ;
+	push @all, GetDescendents($node->{$dependent}) ;
+	}
+
+@all ;
+}
+
+
 #---------------------------------------------------------------------------------------------------------------
 
 sub EnqueuTerminalNodes
@@ -288,7 +306,7 @@ my ($build_sequence, $pbs_config) = @_ ;
 my ($build_queue, $number_of_terminal_nodes, @level_statistics) = (List::PriorityQueue->new, 0) ;
 my (%already_built_nodes, @enqueued_nodes) ;
 
-for my $node (@$build_sequence)
+for my $node (reverse @$build_sequence)
 	{
 	# node in the build sequence might have been build already.
 	# when a node is build, its __BUILD_DONE field is set
@@ -302,7 +320,7 @@ for my $node (@$build_sequence)
 			#$already_built_nodes{$child}++ ;
 			$node->{__CHILDREN_TO_BUILD}-- ;
 
-			#PrintWarning "Build: node: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child'\n" ;l
+			#PrintWarning "Build: '$node->{__NAME}', decremented child to build count: $node->{__CHILDREN_TO_BUILD}, removed child: '$child'\n" ;l
 			}
 		}
 
@@ -311,28 +329,34 @@ for my $node (@$build_sequence)
 		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
 		}
 
-	my $priority ;
+	my $priority = $node->{__WEIGHT_PRIORITY}  // 8 ; # set by parent or default
 	for my $actions (@{$pbs_config->{NODE_BUILD_ACTIONS}})
 		{
 		if ($node->{__NAME} =~ $actions->[0])
 			{
-			for my $prio (grep { m/^\s*priority\s+(\d+)/i ? $1 : () } @$actions)
+			for my $prio (map { m/^\s*priority\s+(\d+)/i ? $1 : () } @$actions)
 				{
-				$priority = $prio ;
+				PrintWarning "PBS: invalid priority in --node_build_actions, 0 <= prio <= 8, ignoring\n" && next if $prio >= 9 ;
+			
+				$priority = $prio if $prio < $priority ;
 				}
 			}
 		}
 
-	PrintDebug "Setting '$node->{__NAME}' priority to $priority\n" if defined $priority ;
+	$_->{__WEIGHT_PRIORITY} = $priority for (GetDescendents($node)) ;
 
-	$node->{__WEIGHT} = $node->{__LEVEL} << 8 | ($node->{__CHILDREN_TO_BUILD} // 0) ;
+	$node->{__WEIGHT} = $node->{__LEVEL} << $priority | ($node->{__CHILDREN_TO_BUILD} // 0) ;
+	$node->{__WEIGHT_PRIORITY} = $priority ;
 
 	#enqueue node if it's terminal
 	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: enqueuing node: '$node->{__NAME}', weight: $node->{__WEIGHT}\n" ;
+			PrintInfo2 "Build: -> '$node->{__NAME}'"
+					. ", weight: $node->{__WEIGHT}/"
+					. ( $priority != 8 ? _WARNING3_($priority) : _INFO2_($priority))
+					. _INFO2_("\n") ;
 			}
 			
 		$number_of_terminal_nodes++ ;
@@ -340,7 +364,7 @@ for my $node (@$build_sequence)
 		}
 	}
 	
-	#PrintInfo2 "Build: already built node: '$_' ($already_built_nodes{$_})\n" for (sort keys %already_built_nodes) ;
+	#PrintInfo2 "Build: already built '$_' ($already_built_nodes{$_})\n" for (sort keys %already_built_nodes) ;
 
 return($build_queue, $number_of_terminal_nodes, \@level_statistics) ;
 }
@@ -370,7 +394,7 @@ if($number_of_builders > $number_of_terminal_nodes)
 
 $number_of_builders ||= 1 ; #safeguard for user errors
 
-PrintInfo("Build: process: $number_of_builders, max: $pbs_config->{JOBS}, terminal nodes: $number_of_terminal_nodes\n")
+PrintInfo "Build: process: $number_of_builders, max: $pbs_config->{JOBS}, terminal nodes: $number_of_terminal_nodes\n"
 	if(defined $pbs_config->{DISPLAY_JOBS_INFO}) ;
 
 return($number_of_builders ) ;
@@ -497,7 +521,7 @@ if(@waiting_for_messages)
 	{
 	if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 		{
-		PrintWarning "Build: waiting for node: $_\n" for(@waiting_for_messages) ;
+		PrintWarning "Build: waiting for $_\n" for(@waiting_for_messages) ;
 		}
 		
 	# block till we get end of build from a builder thread
@@ -577,16 +601,20 @@ for my $builder (@$builders)
 		{
 		PrintInfo3 "\e[${distance}A"
 				. "\r\e[K"
-				. $em ->("Build: builder: $builder->{INDEX}, node: $node_to_build->{__NAME}")
+				. $em ->("Build: '$node_to_build->{__NAME}', builder: $builder->{INDEX}")
 				. "\e[${distance}B" ;
 		}
 
 	if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 		{
+		my $priority = $node_to_build->{__WEIGHT_PRIORITY} ;
 		my $percent_done = int(($node_index * 100) / $number_of_nodes_to_build) ;
 		my $node_build_sequencer_info = "$node_index/$number_of_nodes_to_build, $percent_done%" ;
 		
-		PrintInfo2 "Build: starting node: '$node_to_build->{__NAME}', stat: $node_build_sequencer_info, pid: $builder->{PID}\n" ;
+		PrintInfo2 "Build: » '$node_to_build->{__NAME}'" 
+					. ", weight: $node_to_build->{__WEIGHT}/"
+					. ( $priority != 8 ? _WARNING3_($priority) : _INFO2_($priority))
+					. _INFO2_(", stat: $node_build_sequencer_info, pid: $builder->{PID}\n") ;
 		}
 	}
 
@@ -730,11 +758,11 @@ if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 	{
 	if($build_result == BUILD_SUCCESS)
 		{
-		PrintInfo "Build: node: '$built_node->{__NAME}', build result: $build_result, message: $build_message\n" ;
+		PrintInfo2 "Build: « '$built_node->{__NAME}', message: $build_message\n" ;
 		}
 	else
 		{
-		PrintError "Build: node: '$built_node->{__NAME}', build result: $build_result, message: $build_message\n" ;
+		PrintError "Build: '$built_node->{__NAME}', result: $build_result, message: $build_message\n" ;
 		}
 	}
 	
@@ -758,16 +786,21 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: node: '$parent->{__NAME}', children to build count reached 0, enqueuing.\n" ;
+			my $priority = $parent->{__WEIGHT_PRIORITY} ;
+
+			PrintInfo2 "Build: → '$parent->{__NAME}'"
+					. ", weight: $parent->{__WEIGHT}/"
+					. ( $priority != 8 ? _WARNING3_($priority) : _INFO2_($priority))
+					. _INFO2_("\n") ;
 			}
-			
+
 		$build_queue->insert($parent, $parent->{__WEIGHT}) ;
 		}
 	else
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			PrintInfo2 "Build: node: '$node->{__NAME}', parent: '$parent->{__NAME}', new children to build cound: $parent->{__CHILDREN_TO_BUILD}.\n" ;
+			PrintInfo2 "Build: ↓ '$parent->{__NAME}', count: $parent->{__CHILDREN_TO_BUILD}\n" ;
 			}
 		}
 	}
