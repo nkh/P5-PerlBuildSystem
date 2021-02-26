@@ -236,6 +236,11 @@ else
 		}
 	}
 
+for my $actions (grep { '' eq ref $_ } @{$pbs_config->{NODE_BUILD_ACTIONS}})
+	{
+	$actions = [ map { s/^\s+// ; s/\s+$// ; $_ } split /::/, $actions ] ;
+	}
+
 $pbs_config->{CHECK_JOBS} //= 4 ;
 $pbs_config->{CHECK_JOBS} = 4 if $pbs_config->{CHECK_JOBS} < 0 ;
 
@@ -404,7 +409,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ ;
 	}
 	
-if(@{$pbs_config->{DISPLAY_TREE_FILTER}})
+if(@{$pbs_config->{DISPLAY_TREE_FILTER} // []})
 	{
 	$pbs_config->{DISPLAY_TREE_FILTER} =  {map {$_ => 1} @{$pbs_config->{DISPLAY_TREE_FILTER}}} ;
 	}

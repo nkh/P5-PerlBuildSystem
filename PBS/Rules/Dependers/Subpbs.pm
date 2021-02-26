@@ -6,9 +6,7 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::TreeDumper ;
 use Carp ;
-use File::Spec::Functions qw(:ALL) ;
 
 require Exporter ;
 
@@ -19,6 +17,10 @@ our @EXPORT = qw(GenerateSubpbsDepender) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
+use File::Spec::Functions qw(:ALL) ;
+use List::Util qw(any) ;
+
+use Data::TreeDumper ;
 
 use PBS::PBSConfig ;
 use PBS::Output ;
@@ -107,24 +109,26 @@ else
 
 PBS::PBSConfig::CheckPackageDirectories($depender_definition) ;
 
-return
-	(
-	sub 
+sub 
+	{
+	my ($dependent, $config, $tree) = @_ ;
+
+	my $node_name_matches_ddrr = 0 ;
+	if ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
 		{
-		my $dependent_to_check = shift ; 
-		my $config             = shift ;
-		my $tree               = shift ;
-	
-		if($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
-			{
-			PrintInfo2("${PBS::Output::indentation}$depender_definition->{NODE_REGEX} [$sub_pbs_dependent_regex]. Subpbs rule '$name' @ $file_name:$line.\n") ;
-			}
-		
-		$dependent_to_check =~ /^$sub_pbs_dependent_regex$/ && return 1, $depender_definition ;
-		
-		return 0, "No Match subpbs '$sub_pbs_dependent_regex'" ;
+		$node_name_matches_ddrr = any { $dependent =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}} ;
+		$node_name_matches_ddrr = 0 if any { $dependent =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX_NOT}} ;
+		$node_name_matches_ddrr = 1 if any { $name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME}} ;
+		$node_name_matches_ddrr = 0 if any { $name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}} ;
 		}
-	) ;
+
+	PrintInfo2 "${PBS::Output::indentation}$depender_definition->{NODE_REGEX} [$sub_pbs_dependent_regex]. Subpbs rule '$name' @ $file_name:$line.\n"
+		if $node_name_matches_ddrr ;
+	
+	return $dependent =~ /^$sub_pbs_dependent_regex$/
+		? (1, $depender_definition) 
+		: (0, "No Match subpbs '$sub_pbs_dependent_regex'") ;
+	}
 }
 
 #-------------------------------------------------------------------------------

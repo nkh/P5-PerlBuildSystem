@@ -18,6 +18,7 @@ our @EXPORT = qw(GenerateDepender GenerateDependerFromArray BuildDependentRegex)
 our $VERSION = '0.01' ;
 
 use File::Basename ;
+use List::Util qw(any) ;
 
 use PBS::PBSConfig ;
 use PBS::Output ;
@@ -214,19 +215,16 @@ $depender_sub =
 		{
 		my ($dependent, $config, $tree, $inserted_nodes, $rule_definition) = @_ ;
 		
-		my $node_name_matches_ddrr = 0 ;
+		my $node_name_matches_ddrr = 0 ; 
+
 		if ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX})
 			{
-			for my $regex (@{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX}})
-				{
-				if($dependent =~ /$regex/)
-					{
-					$node_name_matches_ddrr = 1 ;
-					last ;
-					}
-				}
+			$node_name_matches_ddrr = any { $dependent =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}} ;
+			$node_name_matches_ddrr = 0 if any { $dependent =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX_NOT}} ;
+			$node_name_matches_ddrr = 1 if any { $rule_definition->{NAME} =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME}} ;
+			$node_name_matches_ddrr = 0 if any { $rule_definition->{NAME} =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}} ;
 			}
-		
+
 		if($dependent_matcher->($tree->{__PBS_CONFIG}, $dependent, $config->{TARGET_PATH}, $node_name_matches_ddrr))
 			{
 			my ($has_matched, @all_dependencies) ;

@@ -117,6 +117,30 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			die "\n" ;
 			} ;
 		
+	my $index = 0 ;
+	for my $actions ( grep { $built_node->{__NAME} =~ $_->[0]} @{$pbs_config->{NODE_BUILD_ACTIONS}})
+		{
+		for my $template (grep { m/^\s*message\s+/i } @$actions)
+			{
+			(my $text = $template) =~ s/^\s*message\s+//i ;
+			$text =~ s/%name/$built_node->{__NAME}/g ;
+			$text =~ s/%build_result/$build_result/g ;
+			PrintDebug "\n$built_node->{__NAME} [$index] $text\n" ;
+			}
+
+		for my $stop (grep { m/^\s*stop\b/i } @$actions)
+			{
+			(my $text = $stop) =~ s/^\s*stop\s*//i ;
+			$text =~ s/%name/$built_node->{__NAME}/g ;
+			$text =~ s/%build_result/$build_result/g ;
+
+			PrintDebug "\n$built_node->{__NAME} [$index] Stop $text\n" ;
+			die "\n" ;
+			}
+
+		$index++ ;
+		}
+
 		if($build_result == BUILD_SUCCESS)
 			{
 			if($pbs_config->{DISPLAY_PROGRESS_BAR})
@@ -286,6 +310,20 @@ for my $node (@$build_sequence)
 		{
 		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
 		}
+
+	my $priority ;
+	for my $actions (@{$pbs_config->{NODE_BUILD_ACTIONS}})
+		{
+		if ($node->{__NAME} =~ $actions->[0])
+			{
+			for my $prio (grep { m/^\s*priority\s+(\d+)/i ? $1 : () } @$actions)
+				{
+				$priority = $prio ;
+				}
+			}
+		}
+
+	PrintDebug "Setting '$node->{__NAME}' priority to $priority\n" if defined $priority ;
 
 	$node->{__WEIGHT} = $node->{__LEVEL} << 8 | ($node->{__CHILDREN_TO_BUILD} // 0) ;
 

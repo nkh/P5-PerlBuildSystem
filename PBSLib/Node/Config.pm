@@ -7,7 +7,7 @@ my @c = @_ ;
 
 sub 
 	{
-	my ($dependent_to_check, $config, $tree, $inserted_nodes,) = @_ ;
+	my ($node_name, $config, $tree, $inserted_nodes,) = @_ ;
 
 	# update node's package config, this goes through all the config tests
 	Config GetNodeConfig($tree), @c ;

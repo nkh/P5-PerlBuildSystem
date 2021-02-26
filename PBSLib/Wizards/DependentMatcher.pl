@@ -29,5 +29,14 @@ else
 # example
 rule 'gant_dependency', [ sub{ $_[1] !~ qr/__PBS/ && $_[1] !~ qr/\.gant$/} => '$path/$basename.gant'] ;
 
+# dependency_evaluator
+
+sub 
+{
+my ($dependent, $config, $tree, $inserted_nodes, $rule_definition) = @_ ;
+
+return ($match, @dependencies) ;
+}
+
 EOP
 

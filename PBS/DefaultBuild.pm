@@ -426,18 +426,17 @@ if($pbs_config->{DO_BUILD})
 			{
 			$post_build_commands++ ;
 
-			if ($pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS})
-				{
-				PrintInfo("Build: running post build command for node:" . USER(" '$node->{__NAME}'\n", 0)) ;
-				}
+			PrintInfo "Build: running post build command for node:" . USER(" '$node->{__NAME}'\n", 0) 
+				if $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 
 			my @r = $node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
-			PrintInfo2("${indent}node sub returned: @r\n") if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
+
+			PrintInfo2 "${indent}node sub returned: @r\n" if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 			}
 		}
 
 	PrintInfo(sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.\n", tv_interval($t0_pbs_post_build, [gettimeofday])))
-		 if ($post_build_commands && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS}) ;
+		 if $post_build_commands && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 
 	}
 else
@@ -446,10 +445,8 @@ else
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
-		if(! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value)
-			{
-			PrintWarning("Build: $debug_flag\n") ;
-			}
+		PrintWarning "Build: $debug_flag\n"
+			if ! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value ;
 		}
 
 	($build_result, $build_message) = (0, 'No build flags') ;
@@ -458,7 +455,7 @@ else
 RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
-return($build_result, $build_message, \@build_sequence) ;
+return $build_result, $build_message, \@build_sequence ;
 }
 
 #-------------------------------------------------------------------------------

@@ -163,6 +163,7 @@ my $indent = $PBS::Output::indentation ;
 my $node_name = $tree->{__NAME} ;
 
 my $node_name_matches_ddrr = any { $node_name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}} ;
+$node_name_matches_ddrr = 0 if any { $node_name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX_NOT}} ;
 
 my %dependency_rules ; # keep a list of  which rules generated which dependencies
 my $has_dependencies = 0 ;
@@ -174,13 +175,19 @@ PrintInfo2("Rule: target:" . _INFO3_("'$node_name'") . _INFO2_(", rules: " . sca
 
 for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
 	{
-	my ($match) = $post_build_command->{DEPENDER}($node_name) ;
-	
+	my ($match, $message) = $post_build_command->{DEPENDER}($node_name) ;
+
 	if($match)
 		{
 		push @{$tree->{__POST_BUILD_COMMANDS}}, $post_build_command ;
 		
-		PrintInfo "Depend: " . _INFO3_("'$node_name'") . _INFO_(", post build command: $post_build_command->{NAME}$post_build_command->{ORIGIN}\n")
+		PrintInfo3 "$indent'" . GetRunRelativePath($pbs_config, $node_name) . "'"
+			. _INFO_
+				(
+				", post build command: $post_build_command->{NAME}: "
+				. GetRunRelativePath($pbs_config, $post_build_command->{FILE})
+				. ":$post_build_command->{LINE}\n"
+				)
 			if $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS} ;
 		}
 	}
@@ -207,6 +214,10 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 	$rule->{STATS}{CALLS}++ ;
 
 	my ($matched, @not_matched) = (0) ;
+
+	my $node_name_matches_ddrr = $node_name_matches_ddrr ;
+	$node_name_matches_ddrr = 1 if any { $rule_name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME}} ;
+	$node_name_matches_ddrr = 0 if any { $rule_name =~ $_ } @{$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}} ;
 
 	# skip rule if it depends on another rule
 	for my $before ( @{ $rule->{BEFORE} // [] })
@@ -502,23 +513,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
 				
-				my $no_dependencies = '' ;
-				unless(@dependency_names)
-					{
-					my $display_warning = 1 ;
-					
-					for my $regex (@{ $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} })
-						{
-						if($node_name =~ /$regex/)
-							{
-							$display_warning = 0 ;
-							last ;
-							} 
-						}
-
-					$no_dependencies = '' ;
-					}
-
 				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
 
 				my $glyph = '' eq $pbs_config->{TARGET_PATH}
@@ -578,7 +572,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						}
 					else
 						{
-						PrintInfo "$indent$indent$no_dependencies\n" ;
+						PrintInfo "\n" ;
 						}
 					}
 				else

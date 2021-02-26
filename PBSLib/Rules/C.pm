@@ -68,11 +68,23 @@ PBS::Depend::HasNoDependencies 'dependency cache', qr/\.trigger_dependencies$/ ;
 AddPostBuildCommand 'o_local_dependency_merge', ['*/*.o'], 
 	sub 
 	{
-	my ($config, $name, $dependencies, $triggered_dependencies, $argument, $node, $inserted_nodes) = @_ ;
+	my
+		(
+		$node_build_result,
+		$node_build_message,
+		$config,
+		$names,
+		$dependencies,
+		$triggered_dependencies,
+		$arguments,
+		$node,
+		$inserted_nodes,
+		) = @_ ;
 
 	# merge dependencies in local process graph, end up in digest
 	InsertDependencyNodes($node, $inserted_nodes) ;
-	return(1, "PostBuildInsertDependencies OK.") ;
+
+	return $node_build_result, $node_build_message ;
 	} ;
 
 AddRule [MULTI], 'o_global_dependency_merge', ['*/*.o'],

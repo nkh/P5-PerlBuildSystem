@@ -584,7 +584,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 		#DEBUG HOOK
 		$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1) ;
-		
+
 		($build_result, my $pb_build_message) = $post_build_command->{BUILDER}
 							(
 							$node_build_result,
@@ -630,7 +630,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		}
 	}
 
-return($build_result, "$node_build_message, post build: $build_message") ;
+return $build_result, "Build: $node_build_message\nPost build: $build_message" ;
 }
 
 #-------------------------------------------------------------------------------------------------------

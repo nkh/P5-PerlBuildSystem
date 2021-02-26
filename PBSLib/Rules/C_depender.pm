@@ -40,13 +40,7 @@ use Cwd ;
 
 sub GetObjectDependencies
 {
-my
-        (
-        undef,
-        undef,
-        $tree,
-        undef,
-        ) = @_ ;
+my (undef, undef, $tree) = @_ ;
 
 my $pbs_config = $tree->{__PBS_CONFIG} ;
 my $digest_file_name = PBS::Digest::GetDigestFileName($tree) ;
@@ -97,12 +91,19 @@ my ($node, $inserted_nodes) = @_ ;
 
 #return unless exists $node->{__BUILD_DONE} ;
 
+#PrintDebug DumpTree $node, 'InsertDependencyNodes', MAX_DEPTH => 1 ;
+
 my $dependency_name = "$node->{__NAME}.pbs_o_dep" ;
 
-my ($volume,$directories,$file) = splitpath($node->{__BUILD_NAME});
+my ($volume, $directories, $file) = splitpath($node->{__BUILD_NAME});
 my ($dependency_file, $o_dependencies) = ("$directories.$file.pbs_o_dep", '') ;
 
-$o_dependencies = read_file $dependency_file or die ERROR "C_DEPENDER: can't read '$dependency_file, $!'\n" ;
+unless( -e $dependency_file )
+	{
+	die ERROR("C Dep: parsing dependency file '". GetRunRelativePath($node->{__PBS_CONFIG}, $dependency_file, 1) . ", error: '$!'") . "\n" ;
+	}
+
+$o_dependencies = read_file $dependency_file ;
 
 # in gcc case, it is a makefile we parse
 $o_dependencies =~ s/^.*:\s+// ;

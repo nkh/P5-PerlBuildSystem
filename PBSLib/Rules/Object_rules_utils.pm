@@ -32,6 +32,8 @@ for my $source ( grep { $_ !~ /^__/ } keys %$tree )
 		$message //= $tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} 
 				&& any { $dependent_to_check =~ $_ } @{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX}} ;
 		
+		$message = 0 if any { $dependent_to_check =~ $_ } @{$tree->{__PBS_CONFIG}{DISPLAY_DEPENDENCIES_REGEX_NOT}} ;
+		
 		PrintInfo 
 			$PBS::Output::indentation x 2
 			. "'exists_on_disk: rule: $rule_definition->{NAME},"  # "@ $rule_definition->{FILE}:$rule_definition->{LINE}\n" 

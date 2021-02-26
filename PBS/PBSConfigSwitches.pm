@@ -139,6 +139,9 @@ $pbs_config->{USER_OPTIONS} ||= {} ;
 $pbs_config->{KEEP_ENVIRONMENT} ||= [] ;
 $pbs_config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
 $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} ||= [] ;
+$pbs_config->{DISPLAY_DEPENDENCIES_REGEX_NOT} ||= [] ;
+$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME} ||= [] ;
+$pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT} ||= [] ;
 $pbs_config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} ||= [] ;
 $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX} ||= [] ;
@@ -150,6 +153,7 @@ $pbs_config->{POST_PBS} ||= [] ;
 $pbs_config->{DISPLAY_TREE_FILTER} ||= [] ;
 $pbs_config->{DISPLAY_TEXT_TREE_REGEX} ||= [] ;
 $pbs_config->{BREAKPOINTS} ||= [] ;
+$pbs_config->{NODE_BUILD_ACTIONS} ||= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $pbs_config) ;} ;
 
@@ -461,6 +465,10 @@ EOT
 		'User defined Build() is ignored if present.',
 		'',
 
+	'nba|node_build_actions=s'               => $pbs_config->{NODE_BUILD_ACTIONS},
+		'actions that are run on a node at build time.',
+		'',
+
 	'ns|no_stop'                      => \$pbs_config->{NO_STOP},
 		'Continues building even if a node couldn\'t be buid. See --bi.',
 		'',
@@ -729,7 +737,7 @@ EOT
 		'',
 		
 	'dlm|depend_log_merged' => \$pbs_config->{DEPEND_LOG_MERGED},
-		'Merge children subpbs out put in log.',
+		'Merge children subpbs output in log.',
 		'',
 		
 	'dfl|depend_full_log' => \$pbs_config->{DEPEND_FULL_LOG},
@@ -973,7 +981,19 @@ EOT
 		'',
 		
 	'ddrr|display_dependencies_regex=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX},
-		'Define the regex used to qualify a dependency for display.',
+		'Node matching the regex are displayed.',
+		'',
+		
+	'ddrrn|display_dependencies_regex_not=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_REGEX_NOT},
+		'Node matching the regex are not displayed.',
+		'',
+		
+	'ddrn|display_dependencies_rule_name=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME},
+		'Node matching rules matching the regex are displayed.',
+		'',
+		
+	'ddrnn|display_dependencies_rule_name_not=s'=> $pbs_config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT},
+		'Node matching rules matching the regex are not displayed.',
 		'',
 		
 	'dnsr|display_node_subs_run'      => \$pbs_config->{DISPLAY_NODE_SUBS_RUN},
@@ -1594,8 +1614,12 @@ if(defined $Pbsfile && $Pbsfile ne '')
 		}
 	else
 		{
+		my $pod_output = '' ;
 		open my $input, '<', \$pod or die "Can't redirect from scalar input: $!\n";
-		Pod::Text->new (alt => 1, sentence => 0, width => 78)->parse_from_file ($input) ;
+		open my $output, '>', \$pod_output  or die "Can't redirect from scalar input: $!\n";
+		Pod::Text->new (alt => 1, sentence => 1, width => 78)->parse_from_file ($input, $output) ;
+
+		PrintDebug $pod_output ;
 		}
 	}
 else

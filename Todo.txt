@@ -1,23 +1,43 @@
 PBS::Nop
 	to replace pbs rules etc ... when just searching for targets or options
 
--depend_indent
+#-depend_indent
 
 colors in DumpTree and width!
 
 hide rule matches
 	those without dependencies
+		ddrnd
+
 	specific rule name
+		ddrn
+
 	specific nodes --ddrr
 
-interrupt build after node is build
+		--ddrrn
+--node_build_actions ' thenode/name/hahah : prio 1 : message %node is build : ! make sound : stop'
+	+ verbose
+	+ no shell commands
 
-prioritize node / build only a node
+	interrupt build after node is build
+	display message when node is buid
+
+	prioritize node / build only a node
+		if queu is parents first, i think, queue the dependencies and be done
+			
+		--prioritize regex ...
+
+	why not a breakpoint ?
+		not as easy as on the command line
+
+		breakpoint much more powerful
 
 #other default names and extensions for pbsfiles
 	vi options or plugin
 
 #does it still work?
+
+	ok, node@root
 
 	# creator
 		no, used builder override, needs re-write

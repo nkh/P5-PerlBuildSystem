@@ -6,9 +6,6 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::TreeDumper ;
-use File::Spec::Functions qw(:ALL) ;
-
 use Carp ;
  
 require Exporter ;
@@ -20,6 +17,9 @@ our @EXPORT = qw(AddPostBuildCommand post_build) ;
 our $VERSION = '0.01' ;
 
 use File::Basename ;
+use File::Spec::Functions qw(:ALL) ;
+
+use Data::TreeDumper ;
 
 use PBS::Output ;
 use PBS::Constants ;
@@ -115,7 +115,7 @@ if('ARRAY' eq ref $switch)
 	
 	for my $post_build_regex_definition (@$switch)
 		{
-		unless(file_name_is_absolute($post_build_regex_definition) || $post_build_regex_definition=~ /^\.\//)
+		unless(file_name_is_absolute($post_build_regex_definition) || $post_build_regex_definition =~ /^\.\//)
 			{
 			$post_build_regex_definition= "./$post_build_regex_definition" ;
 			}
@@ -135,40 +135,32 @@ if('ARRAY' eq ref $switch)
 			die "\n" ;
 			}
 			
-		push @post_build_regexes, [$post_build_path_regex, $post_build_prefix_regex, $post_build_regex];
+		push @post_build_regexes, "^$post_build_path_regex$post_build_prefix_regex$post_build_regex\$";
 		}
 		
-		$post_build_depender_sub = sub 
+	$post_build_depender_sub = sub 
+					{
+					my ($node_name) = @_ ; 
+					my $index = -1 ;
+					
+					for my $regex (@post_build_regexes)
 						{
-						my $name_to_check = shift ; 
-						my $index = -1 ;
+						$index++ ;
 						
-						for my $post_build_regex (@post_build_regexes)
+						#PrintDebug "post build '$name' checking '$node_name' with regex: '$regex'\n" ;
+						
+						if($node_name =~ $regex)
 							{
-							$index++ ;
-							my ($post_build_path_regex, $post_build_prefix_regex, $post_build_regex) = @$post_build_regex;
+							#PrintDebug DumpTree $switch, "post build matched" ;
 							
-							#~ print "post build '$name' checking '$name_to_check' with regex:" ;
-							#~ print "'/^$post_build_path_regex$post_build_prefix_regex$post_build_regex\$/'\n" ;
-							
-							if($name_to_check =~ /^$post_build_path_regex$post_build_prefix_regex$post_build_regex$/)
-								{
-								#~ print "matched " . Dumper($switch) . "\n" ;
-								#~ print "matched \n" ;
-								
-								return(1, "regex index: $index matched") ;
-								}
-							else
-								{
-								#~ print "No match\n" ;
-								}
+							return 1, "regex index: $index matched" ;
 							}
-							
-						return(0, "'$name_to_check' didn't match any post build ccommand regex") ;
 						}
+						
+					return 0, "'$node_name' didn't match any post build ccommand regex" ;
+					}
 	}
-	
-if('CODE' eq ref $switch)
+elsif('CODE' eq ref $switch)
 	{
 	$post_build_depender_sub = $switch ;
 	}

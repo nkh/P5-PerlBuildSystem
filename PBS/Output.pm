@@ -375,7 +375,8 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 	my $cwd = Cwd::getcwd() ;
 	$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
 
-	$file =~ s/$pbs_config->{TARGET_PATH}/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g unless $no_target_path ;
+	$file =~ s~$pbs_config->{TARGET_PATH}~$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~g unless $no_target_path ;
+	$file =~ s~\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
 
 	$file =~ s/$_/PBS_LIB\//g for (@{$pbs_config->{LIB_PATH}}) ;
 	}
