@@ -201,19 +201,19 @@ sub PrintNoColor {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
 sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 
-sub PrintError {_print(\*STDERR, \&ERROR, @_)}
+sub PrintError   {_print(\*STDERR, \&ERROR, @_)}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_)}
 sub PrintWarning2{_print(\*STDERR, \&WARNING2, @_)}
 sub PrintWarning3{_print(\*STDERR, \&WARNING3, @_)}
 sub PrintWarning4{_print(\*STDERR, \&WARNING4, @_)}
-sub PrintInfo{_print(\*STDERR, \&INFO, @_ )}
-sub PrintInfo2{_print(\*STDERR, \&INFO2, @_)}
-sub PrintInfo3{_print(\*STDERR, \&INFO3, @_)}
-sub PrintInfo4{_print(\*STDERR, \&INFO4, @_)}
-sub PrintInfo5{_print(\*STDERR, \&INFO5, @_)}
-sub PrintUser{_print(\*STDERR, \&USER, @_)}
-sub PrintShell {_print(\*STDERR, \&SHELL, @_)}
-sub PrintDebug{_print(\*STDERR, \&DEBUG, @_)}
+sub PrintInfo    {_print(\*STDERR, \&INFO, @_ )}
+sub PrintInfo2   {_print(\*STDERR, \&INFO2, @_)}
+sub PrintInfo3   {_print(\*STDERR, \&INFO3, @_)}
+sub PrintInfo4   {_print(\*STDERR, \&INFO4, @_)}
+sub PrintInfo5   {_print(\*STDERR, \&INFO5, @_)}
+sub PrintUser    {_print(\*STDERR, \&USER, @_)}
+sub PrintShell   {_print(\*STDERR, \&SHELL, @_)}
+sub PrintDebug   {_print(\*STDERR, \&DEBUG, @_)}
 
 #-------------------------------------------------------------------------------
 

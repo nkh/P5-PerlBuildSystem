@@ -173,7 +173,7 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 
 	$rule_name_max_length++ ; # we add ':' to the name
 
-	PrintInfo("\t\t" . (' ' x ${rule_name_max_length}) . " called  skipped  matched\n\n") ;
+	PrintInfo "\t\t" . (' ' x ${rule_name_max_length}) . " called  skipped  matched\n\n" ;
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
@@ -239,7 +239,7 @@ if(DEPEND_ONLY == $build_type || $pbs_config->{DEPEND_ONLY})
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-	PrintInfo("\r\e[K")
+	PrintInfo "\r\e[K"
 		unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 
@@ -252,7 +252,7 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo(sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday]))) ;
+	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
 	}
 else
 	{
@@ -282,9 +282,23 @@ else
 			}
 		else
 			{
-			PrintError("Build: no such build point: '$build_point'\n") ;
-			DisplayCloseMatches($build_point, $inserted_nodes) ;
-			die "\n" ;
+			my @matches = GetCloseMatches($build_point, $inserted_nodes) ;
+
+			if(@matches == 0)
+				{
+				PrintError "PBS: no such node '$build_point', found nothing matching\n" ;
+				die "\n" ;
+				}
+			elsif(@matches == 1)
+				{
+				$build_node = $inserted_nodes->{$matches[0]} ;
+				}
+			else
+				{
+				PrintError          "PBS: no such node '$build_point'\n" ;
+				DisplayCloseMatches $build_point, $inserted_nodes ;
+				die "\n" ;
+				}
 			}
 		}
 	}
@@ -315,7 +329,7 @@ eval
 		
 		unless(exists $inserted_nodes->{$node_name}{__CHECKED})
 			{
-			#~PrintWarning("Node '$inserted_nodes->{$node_name}{__NAME}' wasn't checked!\n") ;
+			#~PrintWarning "Node '$inserted_nodes->{$node_name}{__NAME}' wasn't checked!\n" ;
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
@@ -348,7 +362,7 @@ eval
 	PrintInfo $stat_message unless $stat_message eq ''  ;
 	} ;
 
-PrintInfo(sprintf("Check: time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday]))) if $pbs_config->{DISPLAY_CHECK_TIME} ;
+PrintInfo sprintf("Check: time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday])) if $pbs_config->{DISPLAY_CHECK_TIME} ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	{
@@ -435,7 +449,7 @@ if($pbs_config->{DO_BUILD})
 			}
 		}
 
-	PrintInfo(sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.\n", tv_interval($t0_pbs_post_build, [gettimeofday])))
+	PrintInfo sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.\n", tv_interval($t0_pbs_post_build, [gettimeofday]))
 		 if $post_build_commands && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 
 	}

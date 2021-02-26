@@ -14,7 +14,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(DisplayCloseMatches) ;
+our @EXPORT = qw(GetCloseMatches DisplayCloseMatches) ;
 our $VERSION = '0.04' ;
 
 use PBS::Output ;
@@ -463,32 +463,8 @@ if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{B
 
 #----------------------------------------------------------------------
 
-sub DisplayCloseMatches
-{
-# displays the nodes that match a  simple regex
-
-my $node_name = shift ;
-my $tree = shift ;
-
-my @matches ;
-for (keys %$tree)
-	{
-	if( $tree->{$_}{__NAME} =~ /$node_name/)
-		{
-		push @matches, $tree->{$_}{__NAME} ;
-		}
-	}
-
-if(@matches)
-	{
-	PrintInfo("PBS: found nodes:\n") ;
-	
-	for (@matches)
-		{
-		PrintInfo("\t$_\n") ;
-		}
-	}
-}
+sub GetCloseMatches     { grep { $_[1]->{$_}{__NAME} =~ /$_[0]/ } keys %{$_[1]} }
+sub DisplayCloseMatches { PrintInfo2 "PBS: found:\n\t" . join("\n\t", GetCloseMatches(@_)) }
 
 #-------------------------------------------------------------------------------
 
