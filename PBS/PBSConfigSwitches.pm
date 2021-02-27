@@ -513,10 +513,6 @@ EOT
 		. "some nodes are generated from non files or don't always have dependencies as for C cache which dependency file "
 		. "is created on the fly if it doens't exist.",
 
-	'cddp|check_nodes_depended_in_different_package' => \$pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE},
-		'Display a warning if a node is added in a package but depended in another one, except for subpbs.',
-		'',
-	
 	'display_duplicate_info'           => \$pbs_config->{DISPLAY_DUPLICATE_INFO},
 		'PBS will display which dependency are duplicated for a node.',
 		'',

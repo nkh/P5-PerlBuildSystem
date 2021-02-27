@@ -72,16 +72,16 @@ $rule->{BUILDER} =
 			PrintUser "Build: SingleRunBuilder" . INFO2(" @ '$file_name:$line'\n\n") ;
 
 			push @already_built, $file_to_build ;
-			return($builder->(@_)) ;
+			return $builder->(@_) ;
 			}
 		else
 			{
-			PrintUser "Build: SingleRunBuilder" . INFO2(" @ '$file_name:$line'\n") ;
+			PrintUser  "Build: SingleRunBuilder" . INFO2(" @ '$file_name:$line'\n") ;
 			PrintInfo2 "\talready run for '$_'\n" for @already_built  ;
 			PrintInfo2 "\n" ;
 
 			push @already_built, $file_to_build ;
-			return(1, "SingleRunBuilder @ '$file_name:$line' was already run") ;
+			return 1, "SingleRunBuilder @ '$file_name:$line' was already run" ;
 			}
 		} ;
 

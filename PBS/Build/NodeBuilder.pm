@@ -32,7 +32,7 @@ use PBS::PBSConfig ;
 
 sub NodeNeedsRebuild
 {
-my ($node) = @_ ;
+my ($node, $inserted_nodes) = @_ ;
 
 # virtual node have no digests so we can't check it
 return(0) if exists $node->{__VIRTUAL} ;
@@ -40,7 +40,7 @@ return(0) if exists $node->{__VIRTUAL} ;
 local $PBS::Output::indentation_depth ;
 $PBS::Output::indentation_depth += 2 ;
 
-my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node) ;
+my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
 
 for my $trigger (@{ $node->{__TRIGGERED} })
 	{
@@ -183,11 +183,11 @@ if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 	#todo: Need to regenerate the digest with the new pbsfile
 	# nothing to do
 
-	($node_needs_rebuild, my $why) = NodeNeedsRebuild($file_tree) ;
+	($node_needs_rebuild, my $why) = NodeNeedsRebuild($file_tree, $inserted_nodes) ;
 
 	unless ($node_needs_rebuild)
 		{
-		PrintUser "Skipping node build, no dependency change\n" ;
+		PrintWarning3 "Skipping node build, no dependency change\n" ;
 		
 		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No dependency change.") ;	
 		}

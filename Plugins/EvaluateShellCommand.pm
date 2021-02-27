@@ -157,7 +157,7 @@ for
 	[ DEPENDENCY_LIST_RELATIVE_BUILD_DIRECTORY => $dependency_list_relative_build_directory],
 	[ TRIGGERED_DEPENDENCY_LIST                => $triggered_dependency_list],
 	[ DEPENDENCY_LIST                          => $dependency_list],
-	[ DEPENDENCES                              => $dependency_list],
+	[ DEPENDENCIES                             => $dependency_list],
 	)
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)

@@ -77,13 +77,14 @@ if(exists $tree->{__CYCLIC_FLAG})
 		{
 		if(exists $tree->{__TRIGGERED})
 			{
-			return(1) ;
+			return 1 ;
 			}
 		else
 			{
-			return(0) ;
+			return 0 ;
 			}
 		}
+
 	my $node_info = "inserted at '$tree->{__INSERTED_AT}{INSERTION_FILE}' rule '$tree->{__INSERTED_AT}{INSERTION_RULE}'" ;
 	
 	if(NodeIsGenerated($tree))
@@ -130,34 +131,33 @@ if (NodeIsGenerated($tree))
 		$depended_at .= $rule->{LINE} ;
 		}
 
-	PrintInfo "Check: " . INFO3("'$name'", 0) , WARNING(" inserted and depended in different pbsfiles", 0)
-			. INFO2(", inserted: $inserted_at", 0)
-			. INFO2(", depended: $depended_at", 0)
+	PrintInfo "Check: " . _INFO3_("'$name'") . _WARNING_(" inserted and depended in different pbsfiles")
+			. _INFO2_(", inserted: $inserted_at")
+			. _INFO2_(", depended: $depended_at")
 			. "\n"
-		if $depend_in_different_package && $pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} ;
+		if $depend_in_different_package ;
 
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintInfo "Check: "
-			. INFO3("'$name'", 0)
-			. WARNING
+			. _INFO3_("'$name'")
+			. _WARNING_
 				(
 				" no dependencies"
 				. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
-				, 0
 				)
-			. INFO2(", inserted: $inserted_at", 0)
+			. _INFO2_(", inserted: $inserted_at")
 
 			# display different depend package if not already displayed
-			. ($depend_in_different_package && !$pbs_config->{CHECK_NODES_DEPENDED_DIFFERENT_PACAKGE} 
-				? INFO2(", depended: $depended_at", 0) 
+			. ($depend_in_different_package && !$depend_in_different_package 
+				? _INFO2_(", depended: $depended_at") 
 				: '')
 			. "\n"
 				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{
-		PrintInfo "Check: " . INFO3("'$name'", 0) . WARNING(" no matching rules", 0). INFO2(", inserted: $inserted_at\n", 0) ;
+		PrintInfo "Check: " . _INFO3_("'$name'") . _WARNING_(" no matching rules") . _INFO2_(", inserted: $inserted_at\n") ;
 		}
 	}
 
@@ -198,7 +198,7 @@ my @dependency_triggering ;
 
 # IMPORTANT: this also generates child parents links for parallel build
 # do not make the block depend on previous triggers
-for my $dependency_name (keys %$tree)
+for my $dependency_name (sort keys %$tree)
 	{
 	my $dependency = $tree->{$dependency_name} ;
 
@@ -311,7 +311,7 @@ if($is_virtual)
 			}
 		else
 			{
-			PrintWarning2("Check: '$name' is VIRTUAL but file '$full_name' exists.\n") ;
+			PrintWarning2 "Check: '$name' is VIRTUAL but file '$full_name' exists.\n" ;
 			}
 		}
 	}
@@ -320,7 +320,7 @@ if(exists $tree->{__FORCED})
 	{
 	push @{$tree->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
 	
-	PrintWarning("Check: '$name' FORCED.\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+	Print Warning "Check: '$name' FORCED.\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 	$triggered++ ;
 	}
 	
@@ -331,7 +331,7 @@ unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	if( ! exists $tree->{__VIRTUAL} && ! -e $full_name)
 		{
 		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found"} ;
-		PrintInfo2("Check: '$name' not found\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		PrintInfo2 "Check: '$name' not found\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 		$triggered++ ;
 		}
 	}
@@ -342,7 +342,7 @@ if(! $triggered && defined $node_checker_rule)
 	if($must_build)
 		{
 		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
-		PrintInfo2("Check: '$name' $why\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		PrintInfo2 "Check: '$name' $why\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 		$triggered++ ;
 		}
 	}
@@ -353,7 +353,7 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 		{
 		my $message = $forced_trigger->{MESSAGE} // $forced_trigger->{REASON} // 'no message' ;
 		
-		PrintInfo("Check: '$name' PBS_FORCE_TRIGGER $message\n") if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		PrintInfo "Check: '$name' PBS_FORCE_TRIGGER $message\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 		
 		push @{$tree->{__TRIGGERED}}, $forced_trigger ;
 		$triggered++ ;
@@ -362,7 +362,7 @@ if(exists $tree->{__PBS_FORCE_TRIGGER})
 
 if($pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} && $name !~ /^__/)
 	{
-	PrintInfo2 "Check: '$name' * '$_->{__NAME}'\n" for @dependency_triggering ;
+	PrintInfo2 "Check: '$name' triggered by '$_->{__NAME}'\n" for @dependency_triggering ;
 	}
 
 if(exists $tree->{__VIRTUAL})
@@ -380,20 +380,19 @@ else
 		my $t0 = [gettimeofday];
 		
 		my ($must_build_because_of_digest, $reason) = (0, '') ;
-		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($tree) unless $triggered ;
+		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($tree, $inserted_nodes) unless $triggered ;
 
 		if($must_build_because_of_digest)
 			{
 			for (@$reason)
 				{
 				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => ': ' . $_} ;
-				PrintInfo2("Check: '$name' $_\n")
-					 if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+				PrintInfo2 "Check: '$name' $_\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 				}
 			
 			# since we allow nodes to be build by the step before check (ex object files  with "depend and build"
 			# we still want to trigger the node as some particular tasks might be done by the "builder
-			# ie: write a digest for the node ot run post build commands
+			# ie: write a digest for the node or run post build commands
 			$triggered++ ;
 			}
 		}
@@ -459,8 +458,8 @@ if($triggered)
 		{
 		if(defined $pbs_config->{DISPLAY_FILE_LOCATION})
 			{
-			PrintWarning("Check: relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}.\n")  ;
-			PrintWarning(DumpTree($tree->{__TRIGGERED}, 'Cause:')) ;
+			PrintWarning "Check: relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}.\n"  ;
+			PrintWarning DumpTree($tree->{__TRIGGERED}, 'Cause:') ;
 			}
 			
 		$tree->{__BUILD_NAME} = $full_name ;
@@ -498,7 +497,7 @@ else
 		
 		unless($repository_name eq $build_directory_name)
 			{
-			PrintWarning("PBS: forcing local copy of '$repository_name' to '$build_directory_name'.\n") if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
+			PrintWarning "PBS: forcing local copy of '$repository_name' to '$build_directory_name'.\n" if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
 			
 			# build a  localizer rule on the fly for this node
 			my $localizer =
@@ -527,24 +526,20 @@ else
 							eval 
 								{
 								$result = copy($repository_name, $build_directory_name) ;
-								
-								return($result) unless $result ;
-								
-								return($result) ;
 								} ;
 							
 							if($@)
 								{
-								return(0, "Copy '$repository_name' -> '$build_directory_name' failed! $@\n") ;
+								return 0, "Copy '$repository_name' -> '$build_directory_name' failed! $@\n" ;
 								}
 								
 							if($result)
 								{
-								return(1, "Copy '$repository_name' -> '$build_directory_name' succes.\n") ;
+								return 1, "Copy '$repository_name' -> '$build_directory_name' succes.\n" ;
 								}
 							else
 								{
-								return(0, "Copy '$repository_name' -> '$build_directory_name' failed! $!\n") ;
+								return 0, "Copy '$repository_name' -> '$build_directory_name' failed! $!\n" ;
 								}
 							},
 					TEXTUAL_DESCRIPTION => 'Rule to localize a file from the repository.',
@@ -580,7 +575,7 @@ pop @traversal ;
 
 $tree->{__CHECKED}++ ;
 
-return($triggered) ;
+return $triggered ;
 }
 
 #-------------------------------------------------------------------------------
@@ -591,11 +586,7 @@ sub LocateSource
 # if the file doesn't exist in any of the build directory or other directories
 # the file is then locate in the build directory
 
-my $file                     = shift ;
-my $build_directory          = shift ;
-my $other_source_directories = shift ;
-my $display_search_info      = shift ;
-my $display_all_alternates   = shift ;
+my ($file, $build_directory, $other_source_directories, $display_search_info, $display_all_alternates) = @_ ; 
 
 my $located_file = $file ; # for files starting at root
 my $alternative_source = 0 ;
@@ -611,7 +602,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	PrintInfo("Locate: file:" . INFO3(" '$unlocated_file':\n", 0)) if $display_search_info ;
+	PrintInfo "Locate: file:" . _INFO3_(" '$unlocated_file':\n") if $display_search_info ;
 	
 	if(-e $located_file)
 		{
@@ -622,11 +613,12 @@ unless(file_name_is_absolute($file))
 		$year += 1900 ;
 		$month++ ;
 		
-		PrintInfo("Locate: found in build directory:" . INFO2(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n", 0)) if $display_search_info ;
+		PrintInfo "Locate: found in build directory:" . _INFO2_(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n")
+			if $display_search_info ;
 		}
 	else
 		{
-		PrintInfo("Locate: not found in build directory:" . INFO2(" '$build_directory'.\n", 0)) if($display_search_info) ;
+		PrintInfo "Locate: not found in build directory:" . _INFO2_(" '$build_directory'.\n") if($display_search_info) ;
 		}
 		
 	if((! $file_found) || $display_all_alternates)
@@ -648,20 +640,20 @@ unless(file_name_is_absolute($file))
 					
 					if($file_found)
 						{
-						PrintWarning(
+						PrintWarning
 							"Locate: also located as "
 							. " '$searched_file'"
 							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
-							) if $display_search_info ;
+								if $display_search_info ;
 						}
 					else
 						{
 						$file_found++ ;
-						PrintInfo(
+						PrintInfo
 							"Locate: found:"
 							. " '$searched_file'"
 							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
-							) if $display_search_info ;
+								if $display_search_info ;
 						
 						$located_file = $searched_file ;
 						$alternative_source++ ;
@@ -670,24 +662,24 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					PrintInfo("Locate: not located as:" . INFO2(" '$searched_file'\n", 0)) if $display_search_info ;
+					PrintInfo "Locate: not located as:" . _INFO2_(" '$searched_file'\n") if $display_search_info ;
 					}
 				}
 			else
 				{
-				die ERROR("Locate: Error: Search path sub is unimplemented!") ;
+				die ERROR("Locate: Error: Search path sub is unimplemented!") . "\n" ;
 				}
 			}
 		}
 	}
 else
 	{
-	PrintInfo("Locate: absolute pathy:" . INFO2(" $located_file\n", 0)) if $display_search_info ;
+	PrintInfo "Locate: absolute pathy:" . _INFO2_(" $located_file\n") if $display_search_info ;
 	}
 
-PrintInfo("Locate: chosing: $located_file [$alternative_source, $other_source_index]\n") if $display_search_info ;
+PrintInfo "Locate: chosing: $located_file [$alternative_source, $other_source_index]\n" if $display_search_info ;
 
-return($located_file, $alternative_source, $other_source_index) ;
+return $located_file, $alternative_source, $other_source_index ;
 }
 
 #-------------------------------------------------------------------------------
@@ -703,22 +695,22 @@ if(-e $dependent)
 	{
 	if((stat($dependency))[9] > (stat($dependent))[9])
 		{
-		return(1, "$dependency newer than $dependent") ;
+		return 1, "$dependency newer than $dependent" ;
 		}
 	else
 		{
-		return(0, "Time stamp OK") ;
+		return 0, "Time stamp OK" ;
 		}
 	}
 else
 	{
 	if(-e $dependency)
 		{
-		return(0, "'$dependent' doesn't exist") ;
+		return 0, "'$dependent' doesn't exist" ;
 		}
 	else
 		{
-		die ERROR "Can't Check time stamp on non existing nodes!" ;
+		die ERROR("Can't Check time stamp on non existing nodes!") . "\n"  ;
 		}
 	}
 }

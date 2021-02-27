@@ -134,11 +134,11 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 
 		if ($perl_sub_name =~/^BuildOk|TouchOk/)
 			{
-			PrintUser $command_information . "Build: $perl_sub_name\n" ;
+			PrintInfo3 $command_information . "Build: $perl_sub_name\n" ;
 			}
 		else
 			{
-			PrintUser $command_information . "Build: sub: $perl_sub_name $file:$line\n" ;
+			PrintInfo3 $command_information . "Build: sub: $perl_sub_name $file:$line\n" ;
 			}
 		
 		my @result = $shell->RunPerlSub($shell_command, @_) ;

@@ -90,8 +90,8 @@ unless (defined $PBS_DIGEST)
 
 	if(defined (my $file_digest = GetFileMD5($digest_file_name, 0)))
 		{
-		$PBS_DIGEST_FOR_NODE = "\n\$pbs_digest = { '$digest_file_name' => '$file_digest'}  ;\n\n" ;
 		$PBS_DIGEST = $pbs_digest ;
+		$PBS_DIGEST_FOR_NODE = "\n\$pbs_digest = { '$digest_file_name' => '$file_digest'}  ;\n\n" ;
 		}
 	else
 		{
@@ -173,6 +173,8 @@ if(-e $digest_file)
 					(
 					$pbs_config,
 					$digest_file,
+					undef, # will not be used pbs_digest values are all set
+					[ keys %$pbs_digest],
 					$pbs_digest,
 					$digest,
 					) ;
@@ -307,7 +309,7 @@ else
 		}
 	}
 
-return($md5) ;
+return $md5 ;
 }
 
 #-------------------------------------------------------------------------------
@@ -411,11 +413,11 @@ if (exists $package_config_variable_dependencies{$package})
 	
 if(exists $package_dependencies{$package})
 	{
-	return({ %{$package_dependencies{$package}}, %config_variables}) ;
+	return { %{$package_dependencies{$package}}, %config_variables} ;
 	}
 else
 	{
-	return( {%config_variables} );
+	return {%config_variables} ;
 	}
 }
 
@@ -599,10 +601,40 @@ for my $entry (values %$node)
 		}
 	}
 
-my $pbsfile = $node->{__INSERTED_AT}{INSERTION_FILE} ;
-$node_dependencies{$pbsfile} = GetFileMD5($pbsfile) ;
+#my $pbsfile = $node->{__INSERTED_AT}{INSERTION_FILE} ;
+#$node_dependencies{$pbsfile} = GetFileMD5($pbsfile) ;
 
-return(\%node_dependencies) ;
+return \%node_dependencies ;
+}
+
+sub GetNodeDigestNoMD5
+{
+my ($node) = @_ ;
+
+my %node_dependencies = %{GetNodeDigestNoChildren($node)} ;
+
+# add node children to digest
+for my $entry (values %$node)
+	{
+	next unless 'HASH' eq ref $entry ;
+	next unless exists $entry->{__NAME} ;
+
+	my $dependency = $entry ;
+	my $dependency_name = $dependency->{__NAME} ;
+
+	next if $dependency_name =~ /^__/ ;
+
+	if(exists $dependency->{__VIRTUAL})
+		{
+		$node_dependencies{$dependency_name} = 'VIRTUAL' ;
+		}
+	else
+		{
+		$node_dependencies{$dependency_name} = undef ;
+		}
+	}
+
+return \%node_dependencies ;
 }
 
 #-------------------------------------------------------------------------------
@@ -914,7 +946,7 @@ for my $name (keys %{$force_digest{$package}})
 		}
 	}
 
-return($generate_digest) ;
+return $generate_digest ;
 }
 
 #-------------------------------------------------------------------------------
@@ -928,41 +960,14 @@ warn DumpTree(\%package_dependencies, "All package digests:") ;
 
 sub GetAllPackageDigests
 {
-return(\%package_dependencies) ;
+return \%package_dependencies ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub IsNodeDigestDifferent
 {
-my $node = shift ;
-
-return
-	(
-	CompareExpectedDigestWithDigestFile($node, \&CompareDigests)
-	) ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub IsNodeDigestIncluded
-{
-my $node = shift ;
-
-return
-	(
-	CompareExpectedDigestWithDigestFile($node, \&DigestIsIncluded)
-	) ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub CompareExpectedDigestWithDigestFile
-{
-my $node = shift ;
-my $comparator = shift ;
-
-my $digest_file_name = GetDigestFileName($node) ;
+my ($node, $inserted_nodes) = @_ ;
 
 my $pbs_config = $node->{__PBS_CONFIG} ;
 
@@ -970,24 +975,12 @@ my ($rebuild_because_of_digest, $result_message, $number_of_differences) = (0, [
 
 if(NodeIsGenerated($node))
 	{
+	my $digest_file_name = GetDigestFileName($node) ;
+
 	if(-e $digest_file_name)
 		{
-		my $current_md5 ;
-		
-		unless(defined ($current_md5 = GetFileMD5($node->{__BUILD_NAME})))
-			{
-			$current_md5 = "Can't open '$node->{__BUILD_NAME}' to compute MD5 digest: $!" ;
-			}
-			
-		my $node_digest = 
-			{
-			%{GetPackageDigest($node->{__LOAD_PACKAGE})},
-			%{GetNodeDigest($node)},
-			$node->{__NAME} => $current_md5,
-			__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
-			} ;
-			
 		my ($digest, $sources, $pbs_digest) ;
+
 		unless (($digest, $sources, $pbs_digest) = do $digest_file_name) 
 			{
 			PrintWarning "Digest: couldn't parse '$digest_file_name': $@" if $@;
@@ -995,22 +988,51 @@ if(NodeIsGenerated($node))
 			
 		if('HASH' eq ref $digest)
 			{
-			my ($digest_is_different, $why) =
-				$comparator->
+			my $node_digest_no_md5 = GetNodeDigestNoMD5($node) ;
+ 			my @node_digest_no_md5_keys = keys %$node_digest_no_md5 ;
+
+			my @size_sorted =
+				(
 					(
-					$pbs_config,
-					$node->{__BUILD_NAME},
-					$node_digest,
-					$digest,
-					) ;
-					
-			if($digest_is_different)
+					sort { -s $inserted_nodes->{$a}{__BUILD_NAME} > -s $inserted_nodes->{$b}{__BUILD_NAME} }
+						(
+						$node->{__NAME},
+						grep { ! defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys,
+						)
+					),
+					(
+					 grep { defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys
+					),
+				) ;
+
+			my $node_digest = 
 				{
-				($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, $why, scalar @{$why} ) ;
-				}
-			else
+				%{GetPackageDigest($node->{__LOAD_PACKAGE})},
+				%$node_digest_no_md5,
+				$node->{__NAME} => undef,
+				__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
+				} ;
+			
+			#PrintUser DumpTree [$inserted_nodes->{$node->{__NAME}}{__BUILD_NAME}, \@size_sorted, $node_digest], $node->{__NAME} ;
+			
+			($rebuild_because_of_digest, $result_message, $number_of_differences)
+				= RebuildBecauseOfPbsDependency($pbs_config, $pbs_digest) ;
+
+			unless ($rebuild_because_of_digest)
 				{
-				($rebuild_because_of_digest, $result_message, $number_of_differences) = RebuildBecauseOfPbsDependency($pbs_config, $pbs_digest) ;
+				($rebuild_because_of_digest, $result_message, $number_of_differences)
+					= CompareDigests
+						(
+						$pbs_config,
+						$node->{__BUILD_NAME},
+						$inserted_nodes,
+						[
+							'__DEPENDING_PBSFILE',
+							@size_sorted, 
+						],
+						$node_digest,
+						$digest,
+						) ;
 				}
 			}
 		else
@@ -1029,7 +1051,7 @@ else
 	($rebuild_because_of_digest, $result_message) = (0, ['excluded from digest'], 0) ;
 	}
 	
-return($rebuild_because_of_digest, $result_message, $number_of_differences) ;
+return $rebuild_because_of_digest, $result_message, $number_of_differences ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1099,14 +1121,14 @@ else
 	PrintInfo2 "Trigger: '$file' not trigger (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 
-return($file_is_modified) ;
+return $file_is_modified ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub CompareDigests
 {
-my ($pbs_config, $name, $expected_digest, $digest) = @_ ;
+my ($pbs_config, $name, $inserted_nodes, $order, $expected_digest, $digest) = @_ ;
 
 my ($display_digest, $display_different_digest_only) 
 	= ($pbs_config->{DISPLAY_DIGEST}, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY}) ;
@@ -1117,17 +1139,19 @@ my @in_expected_digest_but_not_file_digest ;
 my @in_file_digest_but_not_expected_digest ;
 my @different_in_file_digest ;
 
-for my $key( keys %$expected_digest)
+for my $key (@$order)
 	{
 	if(exists $digest->{$key})
 		{
+		$expected_digest->{$key} //= GetFileMD5($inserted_nodes->{$key}{__BUILD_NAME}) // "Can't compute '$key' MD5" ;
+	
 		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
 			{
 			if($key =~ /$trigger_regex/)
 				{
 				PrintUser "Trigger (digest_md5): $key =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				$digest->{$key} = "--trigger match  '$trigger_regex'" ;
-
+				
 				last ;
 				}
 			}
@@ -1144,12 +1168,16 @@ for my $key( keys %$expected_digest)
 			{
 			push @different_in_file_digest, $key ;
 			$digest_is_different++ ;
+			
+			last ;
 			}
 		}
 	else
 		{
 		push @in_expected_digest_but_not_file_digest, $key ;
 		$digest_is_different++ ;
+		
+		last ;
 		}
 	}
 	
@@ -1207,95 +1235,7 @@ else
 	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
 	}
 
-return($digest_is_different, \@digest_different_text);
-}
-
-#-------------------------------------------------------------------------------
-
-sub DigestIsIncluded
-{
-my ($pbs_config, $name, $expected_digest, $digest) = @_ ;
-
-my ($display_digest, $display_different_digest_only) 
-	= ($pbs_config->{DISPLAY_DIGEST}, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY}) ;
-
-my $digest_is_different = 0 ;
-
-my @in_expected_digest_but_not_file_digest ;
-my @in_file_digest_but_not_expected_digest ;
-my @different_in_file_digest ;
-
-for my $key( keys %$expected_digest)
-	{
-	if(exists $digest->{$key})
-		{
-		if
-			(
-			   (defined $digest->{$key} && ! defined $expected_digest->{$key})
-			|| (! defined $digest->{$key} && defined $expected_digest->{$key})
-			|| (
-				   defined $digest->{$key} && defined $expected_digest->{$key} 
-				&& !Compare($digest->{$key}, $expected_digest->{$key})
-			   )
-			)
-			{
-			push @different_in_file_digest, $key ;
-			$digest_is_different++ ;
-			}
-		}
-	else
-		{
-		push @in_expected_digest_but_not_file_digest, $key ;
-		$digest_is_different++ ;
-		}
-	}
-	
-my @digest_different_text ;
-
-if($digest_is_different)
-	{
-	PrintWarning("Digest: file $name differences [$digest_is_different]:\n") if($display_digest) ;
-	
-	for my $key (@in_file_digest_but_not_expected_digest)
-		{
-		my $digest_value = $digest->{$key} || 'undef' ;
-		
-		my $only_in_file_digest_text = "key '$key' exists only in file digest" ;
-		push @digest_different_text, $only_in_file_digest_text ;
-		
-		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
-		}
-		
-	for my $key (@different_in_file_digest)
-		{
-		my $digest_value = $digest->{$key} || 'undef' ;
-		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-		
-		my $different_digest_text = "$key: $digest_value != $expected_digest_value" ;
-		push @digest_different_text, $different_digest_text ;
-		
-		PrintError("\t$different_digest_text\n") if($display_digest) ;
-		}
-		
-	for my $key (@in_expected_digest_but_not_file_digest)
-		{
-		my $expected_digest_value = $expected_digest->{$key} || 'undef' ;
-		
-		my $only_in_expected_digest_text = "key '$key' exists only in expected digest" ;
-		push @digest_different_text, $only_in_expected_digest_text ;
-		
-		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
-		}
-	}
-else
-	{
-	my $digest_is_identical = "Digests: file '$name' no differences" ;
-	push @digest_different_text, $digest_is_identical ;
-		
-	PrintInfo("$digest_is_identical.\n") if($display_digest && ! $display_different_digest_only) ;
-	}
-
-return(!$digest_is_different, \@digest_different_text) ;
+return $digest_is_different, \@digest_different_text, scalar(@digest_different_text)  ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1321,7 +1261,7 @@ else
 	$digest_file_name = "${directories}.$file.pbs_md5" ;
 	}
 
-return($digest_file_name) ;
+return $digest_file_name ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1365,7 +1305,7 @@ if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
 		unlink($digest_file_name) ;
 		}
 		
-	return() ;
+	return () ;
 	}
 
 if(NodeIsGenerated($node))

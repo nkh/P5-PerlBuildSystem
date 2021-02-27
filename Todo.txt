@@ -1,3 +1,14 @@
+
+
+optimize digest checking
+	sort md5 per file size and check the small ones first
+
+	stop as soon as there is a mismatch
+		compute md5 on the fly
+
+		pass current digest empty and let the checker fill it
+
+
 generate color functions on the fly from colo definitions
 	PrintSomeColor display warning if color doesn't exist
 		mean we need to catch error, was there a way with autoload?
@@ -6,7 +17,7 @@ PBS::Nop
 	to replace pbs rules etc ... when just searching for targets or options
 
 colors in DumpTree and width!
-	pass option when colors are not used or globsl option
+	pass option when colors are not used or global option
 
 document all breakpoints
 
@@ -16,7 +27,6 @@ install and where to find tools
 
 	install copies, doesn't move stuff around
 		hard link ?
-
 
 	depend on the installed tool and let the installed tool depend on it's source
 
