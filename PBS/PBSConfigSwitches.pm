@@ -1531,6 +1531,8 @@ sub DisplaySwitchHelp
 {
 my $switch = shift ;
 
+use Term::ANSIColor ;
+
 my @flags_and_help = GetSwitches() ;
 my $help_was_displayed = 0 ;
 
@@ -1540,11 +1542,11 @@ for (my $i = 0 ; $i < @flags_and_help; $i += 4)
 	
 	for (split /\|/, $switch_definition)
 		{
-		if(/^$switch$/)
+		if(/^$switch\s*=*.*$/)
 			{
-			print(ERROR("$switch_definition: ")) ;
-			print(INFO( "$help_text\n")) ;
-			print(INFO( "\n$long_help_text\n")) unless $long_help_text eq '' ;
+			PrintError "$switch_definition: " ;
+			PrintInfo  "$help_text\n" ;
+			PrintInfo  "\n$long_help_text\n" unless $long_help_text eq '' ;
 			
 			$help_was_displayed++ ;
 			}
@@ -1553,7 +1555,7 @@ for (my $i = 0 ; $i < @flags_and_help; $i += 4)
 	last if $help_was_displayed ;
 	}
 	
-print(ERROR("Unrecognized switch '$switch'.\n")) unless $help_was_displayed ;	
+PrintError "Unrecognized switch '$switch'.\n" unless $help_was_displayed ;	
 }
 
 #-------------------------------------------------------------------------------
@@ -1728,10 +1730,33 @@ if($word_to_complete !~ /^\s?$/)
 		}
 	else
 		{
-		my $word = $word_to_complete =~ s/^-*//r ;
-		@matches = grep { /$word/ } @$options ;
 
-		print join("\n", map { "--$_" } @matches) . "\n" ;
+		if($word_to_complete =~ /\?$/)
+			{
+			my ($word) = $word_to_complete =~ m/^-*(.+)\?$/ ;
+
+			@matches = grep { /^$word\s*$/ } @$options ;
+
+			if(1 == @matches)
+				{
+				PrintInfo "\n\n";
+				DisplaySwitchHelp(@matches) ;
+				
+				@matches = map { "--$_" } grep { /$word/ } @$options ;
+				print @matches > 1 ? join("\n", @matches) . "\n" : "\n.\n" ;
+				}
+			else
+				{
+				print join("\n", map { "--$_" } grep { /$word/ } @$options) . "\n" ;
+				}
+			}
+		else
+			{
+			my $word = $word_to_complete =~ s/^-*//r ;
+			@matches = grep { /$word/ } sort @$options ;
+
+			print join("\n", map { "--$_" } @matches) . "\n" ;
+			}
 		}
 	}
 }

@@ -1,9 +1,9 @@
 
 control C handler to generate warp
 
-display rule type in rule stats
+#display rule type in rule stats
 
-generate color functions on the fly from colo definitions
+generate color functions on the fly from color definitions
 	PrintSomeColor display warning if color doesn't exist
 		mean we need to catch error, was there a way with autoload?
 	
@@ -12,6 +12,9 @@ PBS::Nop
 
 colors in DumpTree and width!
 	pass option when colors are not used or global option
+
+	wrapping errors from module
+
 
 document all breakpoints
 

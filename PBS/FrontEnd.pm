@@ -160,7 +160,6 @@ $pbs_config_extra_options->{$_}++
 
 my @full_log_options ;
 my $options_file ;
-
 if($pbs_config->{DEPEND_FULL_LOG_OPTIONS})
 	{
 	$options_file = $pbs_config->{DEPEND_FULL_LOG_OPTIONS} unless $pbs_config->{DEPEND_FULL_LOG_OPTIONS} eq {} ;

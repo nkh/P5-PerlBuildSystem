@@ -10,7 +10,6 @@
 -trace_pbs_stack
 
 -display_subpbs_info
--check_nodes_depended_in_different_package
 -display_duplicate_info
 -display_pbsfile_loading
 -display_pbsfile_load_time
