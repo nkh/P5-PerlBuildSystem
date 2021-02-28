@@ -716,6 +716,8 @@ else
 			{
 			print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 
+			my $print_separator ;
+
 			# collect builder output and display it
 			while(<$builder_channel>)
 				{
@@ -730,9 +732,11 @@ else
 				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
 
 				PrintVerbatim "$o\n" unless $no_output ;
+
+				$print_separator++ unless $no_output || $o eq q{} ;
 				}
 
-			PrintVerbatim "\n" ;
+			PrintVerbatim "\n" if $print_separator ;
 			}
 		}
 	else

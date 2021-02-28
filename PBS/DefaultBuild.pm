@@ -20,8 +20,10 @@ use Data::TreeDumper;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
+use List::Util qw(any) ;
 
 use PBS::Build ;
+use PBS::Rules ;
 use PBS::Depend ;
 use PBS::Check ;
 use PBS::Output ;
@@ -150,12 +152,20 @@ if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 
 if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 	{
-	my ($rule_name_max_length, $calls, $skipped, $matches, $number_of_rules) = (0, 0, 0, 0, 0) ;
+	my ($rule_type_max_length, $rule_name_max_length, $calls, $skipped, $matches, $number_of_rules) = (0, 0, 0, 0, 0, 0) ;
+	my %types ;
 
-	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
+	for my $rule ( @{$rules->{Builtin}}, @{$rules->{User}} )
 		{
+		my $rule_types = GetRuleTypes($rule) ;
+
+		$types{$rule->{NAME}} = $rule_types ;
+		
 		my $length = length($rule->{NAME}) ;
 		$rule_name_max_length = $length if $length > $rule_name_max_length ; 
+
+		my $type_length = length($rule_types) ;
+		$rule_type_max_length = $type_length if $type_length > $rule_type_max_length ; 
 
 		$number_of_rules++ ;
 		$calls += $rule->{STATS}{CALLS} // 0 ; 
@@ -173,19 +183,19 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 
 	$rule_name_max_length++ ; # we add ':' to the name
 
-	PrintInfo "\t\t" . (' ' x ${rule_name_max_length}) . " called  skipped  matched\n\n" ;
+	PrintInfo "\t\t" . (' ' x $rule_name_max_length) . " called  skipped  matched types\n\n" ;
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
 		my $matched = scalar(@{$rule->{STATS}{MATCHED} // []}) ;
 		$matched = $matched ? sprintf("%7d", $matched) : _ERROR_(sprintf("%7s", 0)) ;
-			
 
-		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d  %s ",
+		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d %s %-${rule_type_max_length}s",
 					"$rule->{NAME}:",
 					($rule->{STATS}{CALLS} // 0),
 					($rule->{STATS}{SKIPPED} // 0),
-					$matched ;
+					$matched,
+					$types{$rule->{NAME}} ;
 
 		PrintInfo "\t\t$stat\n" ;
 		}

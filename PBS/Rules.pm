@@ -13,7 +13,7 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk) ;
+our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk GetRuleTypes) ;
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -367,7 +367,7 @@ if (exists $rule_type{__NOT_ACTIVE})
 	}
 
 # this test is mainly to catch the error when the user forgot to write the rule name.
-my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED NOT_ACTIVE VIRTUAL LOCAL FORCED INTERNAL IMMEDIATE_BUILD) ;
+my %valid_types = map{ ("__$_", 1)} qw(FIRST LAST MULTI UNTYPED NOT_ACTIVE VIRTUAL LOCAL FORCED INTERNAL IMMEDIATE_BUILD BUILDER_OVERRIDE) ;
 for my $rule_type (@$rule_types)
 	{
 	my $order_regex = join '|', qw(indexed before first_plus after match_after last_minus) ;
@@ -640,6 +640,31 @@ RegisterRule
 	undef,
 	undef,
 	) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetRuleTypes
+{
+my ($rule) = @_ ;
+
+my @rule_types ;
+
+push @rule_types, 'V'  if any { VIRTUAL eq $_ } @{$rule->{TYPE}} ;
+push @rule_types, 'M'  if defined $rule->{MULTI} ;
+
+push @rule_types, (any { BUILDER_OVERRIDE eq $_ } @{$rule->{TYPE}}) 
+			? 'BO'
+			: defined $rule->{BUILDER}
+				? 'B'
+				: () ;
+
+push @rule_types, 'F'  if any { FORCED eq $_ } @{$rule->{TYPE}} ;
+push @rule_types, 'S'  if defined $rule->{NODE_SUBS} ;
+push @rule_types, 'L'  if any { LOCAL eq $_ } @{$rule->{TYPE}} ;
+
+my $rule_type = @rule_types ? ' [' . join(', ', @rule_types) . ']' : '' ;
+
 }
 
 #-------------------------------------------------------------------------------

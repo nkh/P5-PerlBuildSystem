@@ -12,8 +12,32 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(GetNodeBuildName GetBuildName) ;
+our @EXPORT = qw(GetInsertionFile GetInsertionRule GetNodeBuildName GetBuildName) ;
 our $VERSION = '0.01' ;
+
+#-------------------------------------------------------------------------------
+
+sub GetInsertionRule
+{
+my ($tree) = @_ ;
+
+exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+	? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
+	: $tree->{__INSERTED_AT}{INSERTION_RULE}
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetInsertionFile
+{
+my ($tree) = @_ ;
+
+exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+	? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}
+	: $tree->{__INSERTED_AT}{INSERTION_FILE}
+}
+
+#-------------------------------------------------------------------------------
 
 sub GetNodeBuildName
 {

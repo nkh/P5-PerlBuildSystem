@@ -20,8 +20,8 @@ Module '*/compiler_1' => 'compiler/compiler' ;
 AddSubpbsRule '*/runtime' => 'runtime/runtime_scoped' ;
 
 # set extra configuration to module
-Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
-#Subpbs '*/compiler_2' => 'compiler/compiler' ;
+#Subpbs 'compiler_2', '*/compiler_2' => 'compiler/compiler', 'compiler_2', DEBUG_DISPLAY_DEPENDENCIES => 1 , DEBUG_DISPLAY_DEPENDENCIES_LONG => 1 ;
+Subpbs '*/compiler_2' => 'compiler/compiler' ;
 
 rule [NA, 'yo'], 'bla' , [
 

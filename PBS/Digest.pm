@@ -5,13 +5,7 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
 use Carp ;
-use Data::Compare;
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Spec::Functions qw(:ALL) ;
-use Module::Util qw(find_installed) ;
 
 require Exporter ;
 
@@ -35,15 +29,23 @@ our @EXPORT = qw(
 		NodeIsGenerated NodeIsSource DependencyIsSource
 		) ;
 
-our $VERSION = '0.06' ;
+our $VERSION = '0.07' ;
 our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
 
+#use Data::Dumper ;
+use File::Find ;
+use File::Spec::Functions qw(:ALL) ;
+use List::Util qw(first) ;
+use Module::Util qw(find_installed) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
+use Data::TreeDumper ;
+use Data::Compare;
+
 use PBS::PBSConfig ;
 use PBS::Output ;
-
-use File::Find ;
 
 use constant PBS_DISTRIBUTION_DIGEST => '/.pbs_distribution_digest' ;
 
@@ -174,7 +176,8 @@ if(-e $digest_file)
 					$pbs_config,
 					$digest_file,
 					undef, # will not be used pbs_digest values are all set
-					[ keys %$pbs_digest],
+					0, # don't --trigger pbs distibution
+					[ sort keys %$pbs_digest],
 					$pbs_digest,
 					$digest,
 					) ;
@@ -601,9 +604,6 @@ for my $entry (values %$node)
 		}
 	}
 
-#my $pbsfile = $node->{__INSERTED_AT}{INSERTION_FILE} ;
-#$node_dependencies{$pbsfile} = GetFileMD5($pbsfile) ;
-
 return \%node_dependencies ;
 }
 
@@ -828,19 +828,25 @@ my($node) = @_ ;
 
 if(exists $node->{__LOAD_PACKAGE})
 	{
-	PBS::Digest::IsDigestToBeGenerated
-		(
-		exists $node->{__MATCHING_RULES}
-		&& defined $node->{__MATCHING_RULES}[0]
-		&& exists $node->{__MATCHING_RULES}[0]{RULE}
-		&& exists $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
-		&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
-		&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
-			? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
-			: $node->{__LOAD_PACKAGE},
+	unless(exists $node->{__NODE_IS_GENERATED})
+		{
+		$node->{__NODE_IS_GENERATED} =
+			PBS::Digest::IsDigestToBeGenerated
+				(
+				exists $node->{__MATCHING_RULES}
+				&& defined $node->{__MATCHING_RULES}[0]
+				&& exists $node->{__MATCHING_RULES}[0]{RULE}
+				&& exists $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+				&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+				&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+					? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+					: $node->{__LOAD_PACKAGE},
 
-		$node
-		) ; 
+				$node
+				) ; 
+		}
+
+	$node->{__NODE_IS_GENERATED} ;
 	}
 else
 	{
@@ -988,44 +994,43 @@ if(NodeIsGenerated($node))
 			
 		if('HASH' eq ref $digest)
 			{
-			my $node_digest_no_md5 = GetNodeDigestNoMD5($node) ;
- 			my @node_digest_no_md5_keys = keys %$node_digest_no_md5 ;
-
-			my @size_sorted =
-				(
-					(
-					sort { -s $inserted_nodes->{$a}{__BUILD_NAME} > -s $inserted_nodes->{$b}{__BUILD_NAME} }
-						(
-						$node->{__NAME},
-						grep { ! defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys,
-						)
-					),
-					(
-					 grep { defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys
-					),
-				) ;
-
-			my $node_digest = 
-				{
-				%{GetPackageDigest($node->{__LOAD_PACKAGE})},
-				%$node_digest_no_md5,
-				$node->{__NAME} => undef,
-				__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
-				} ;
-			
-			#PrintUser DumpTree [$inserted_nodes->{$node->{__NAME}}{__BUILD_NAME}, \@size_sorted, $node_digest], $node->{__NAME} ;
-			
 			($rebuild_because_of_digest, $result_message, $number_of_differences)
 				= RebuildBecauseOfPbsDependency($pbs_config, $pbs_digest) ;
 
 			unless ($rebuild_because_of_digest)
 				{
+				my $node_digest_no_md5 = GetNodeDigestNoMD5($node) ;
+				my @node_digest_no_md5_keys = keys %$node_digest_no_md5 ;
+
+				my @size_sorted =
+					(
+						(
+						sort { -s $inserted_nodes->{$a}{__BUILD_NAME} > -s $inserted_nodes->{$b}{__BUILD_NAME} }
+							(
+							$node->{__NAME},
+							grep { ! defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys,
+							)
+						),
+						(
+						 grep { defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys
+						),
+					) ;
+
+				my $node_digest = 
+					{
+					%{GetPackageDigest($node->{__LOAD_PACKAGE})},
+					%$node_digest_no_md5,
+					$node->{__NAME} => undef,
+					__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
+					} ;
+				
 				($rebuild_because_of_digest, $result_message, $number_of_differences)
 					= CompareDigests
 						(
 						$pbs_config,
 						$node->{__BUILD_NAME},
 						$inserted_nodes,
+						1, # --trigger nodes in the digest
 						[
 							'__DEPENDING_PBSFILE',
 							@size_sorted, 
@@ -1128,7 +1133,7 @@ return $file_is_modified ;
 
 sub CompareDigests
 {
-my ($pbs_config, $name, $inserted_nodes, $order, $expected_digest, $digest) = @_ ;
+my ($pbs_config, $name, $inserted_nodes, $trigger, $order, $expected_digest, $digest) = @_ ;
 
 my ($display_digest, $display_different_digest_only) 
 	= ($pbs_config->{DISPLAY_DIGEST}, $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY}) ;
@@ -1139,19 +1144,23 @@ my @in_expected_digest_but_not_file_digest ;
 my @in_file_digest_but_not_expected_digest ;
 my @different_in_file_digest ;
 
+my @digest_different_text ;
+
 for my $key (@$order)
 	{
 	if(exists $digest->{$key})
 		{
 		$expected_digest->{$key} //= GetFileMD5($inserted_nodes->{$key}{__BUILD_NAME}) // "Can't compute '$key' MD5" ;
 	
-		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
-			{
-			if($key =~ /$trigger_regex/)
+		if($trigger)
+		 	{
+			if( my $trigger_regex = first { $key =~ $_ } @{$pbs_config->{TRIGGER}} )
 				{
 				PrintUser "Trigger (digest_md5): $key =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
-				$digest->{$key} = "--trigger match  '$trigger_regex'" ;
-				
+
+				push @digest_different_text, "$key [--trigger] " ;
+			
+				$digest_is_different++ ;
 				last ;
 				}
 			}
@@ -1190,8 +1199,6 @@ for my $key( keys %$digest)
 		}
 	}
 	
-my @digest_different_text ;
-
 if($digest_is_different)
 	{
 	PrintWarning("Digest: file: $name differences [$digest_is_different]:\n") if($display_digest) ;

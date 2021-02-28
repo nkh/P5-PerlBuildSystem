@@ -31,6 +31,7 @@ use PBS::PostBuild ;
 use PBS::Plugin;
 use PBS::Information ;
 use PBS::Digest ;
+use PBS::Node ;
 
 #-----------------------------------------------------------------------------------------
 
@@ -351,17 +352,9 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
-				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
-
-				my $glyph = '' eq $pbs_config->{TARGET_PATH}
-						? "./"
-						: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
-
-				my $short_node_name = $node_name ;
-				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
 				my $subpbs_file = $rule->{TEXTUAL_DESCRIPTION}{PBSFILE} ;
-				$subpbs_file =~ s/^.\//$glyph\// unless $no_short_name ;
 
 				my $rule_info = $rule_name . _INFO2_(" @ $file:$rule_line") ;
 				$rule_info = GetRunRelativePath($pbs_config, $rule_info, 1) ;
@@ -387,9 +380,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 									. GetRunRelativePath
 										(
 										$pbs_config,
-										exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-											? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
-											: $tree->{__INSERTED_AT}{INSERTION_RULE},
+										GetInsertionRule($tree),
 										1 # no target path replacement
 										)
 									)
@@ -513,14 +504,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					$forced_trigger = ' FORCED_TRIGGER!' ;
 					}
 				
-				my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
-
-				my $glyph = '' eq $pbs_config->{TARGET_PATH}
-						? "./"
-						: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
-
-				my $short_node_name = $node_name ;
-				$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
 				my $node_matches = $rules_matching > 1 ? _INFO2_(" ($rules_matching*)") : '' ;
 
@@ -530,9 +514,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 									. GetRunRelativePath
 										(
 										$pbs_config,
-										exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-											? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
-											: $tree->{__INSERTED_AT}{INSERTION_RULE}
+										GetInsertionRule($tree) ,
 										)
 									)
 								: '' ;
@@ -565,14 +547,14 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 										? _WARNING_("'" . $em->($_) . "'")
 										: _INFO_("'" . $em->($_) . "'")
 									} 
-									map { s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_ }
+									map { GetTargetRelativePath($pbs_config, $_) }
 										@dependency_names
 								)
 							. "\n" ;
 						}
 					else
 						{
-						PrintInfo "\n" ;
+						#PrintInfo2 "$indent${indent}-\n" ;
 						}
 					}
 				else
@@ -587,10 +569,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 								(
 								' ',
 								map { DependencyIsSource($tree, $_, $inserted_nodes) ? _WARNING_("'$_'") : _INFO_("'$_'") }
-									map
-										{
-										s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ; $_
-										}
+									map { GetTargetRelativePath($pbs_config, $_) }
 										 @dependency_names
 								)
 							)
@@ -1045,6 +1024,10 @@ if(@has_matching_non_subpbs_rules)
 	$tree->{__DEPENDING_PBSFILE} = PBS::Digest::GetFileMD5($Pbsfile) ;
 	$tree->{__LOAD_PACKAGE} = $load_package;
 	
+	my $inserted_in_file = GetInsertionFile($tree) ;
+
+	$tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE}++ if $inserted_in_file ne $Pbsfile ;
+
 	# order so dependencies that do not match subpbs are depended first
 	my (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies) ;
 
@@ -1280,9 +1263,7 @@ elsif(@sub_pbs)
 	my %inserted_nodes_snapshot ;
 	%inserted_nodes_snapshot = %$inserted_nodes if $node_is_trigger_inserted ;
 
-	my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
-				: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
+	my $inserted_at = GetInsertionRule($tree) ;
 
 	$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 
@@ -1355,17 +1336,9 @@ else
 		&& NodeIsGenerated($tree)
 		)
 		{
-		my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
-		my $glyph = '' eq $pbs_config->{TARGET_PATH}
-				? "./"
-				: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+		my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
-		my $short_node_name = $node_name ;
-		$short_node_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
-
-		my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-					? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
-					: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
+		my $inserted_at = GetInsertionRule($tree) ;
 
 		$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 		
@@ -1568,11 +1541,15 @@ my ($linked_node_info, @link_type) ;
 
 push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
 
-my $link_indent = ($pbs_config->{DISPLAY_DEPEND_INDENTED} ? $indent : '' ) . $indent ;
+my $link_indent = $indent . $indent ; # -dd
+$link_indent .= $indent if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ; # -ddl
+$link_indent .= $indent if $pbs_config->{DISPLAY_DEPEND_INDENTED} && ! $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG};
+
+my $short_dependency_name = GetTargetRelativePath($pbs_config, $dependency_name) ;
 
 if($dependency_is_source)
 	{
-	$linked_node_info  = _WARNING_ "$link_indent'$dependency_name'" ;
+	$linked_node_info  = _WARNING_ "$link_indent" . "'$short_dependency_name'" ;
 	$linked_node_info .= _WARNING_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 
@@ -1583,7 +1560,7 @@ if($dependency_is_source)
 	}
 else
 	{
-	$linked_node_info  = _INFO3_ "$link_indent'$dependency_name'" ;
+	$linked_node_info  = _INFO3_ "$link_indent" . "'$short_dependency_name'" ;
 	$linked_node_info .= _INFO3_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 	$linked_node_info .= _INFO2_(" ᴸᴵᴺᴷᴵᴺᴳ");
 

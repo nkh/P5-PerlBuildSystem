@@ -37,7 +37,7 @@ require Exporter;
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
 
-		GetRunRelativePath
+		GetRunRelativePath GetTargetRelativePath
 		) ;
 		
 $VERSION = '0.06' ;
@@ -376,7 +376,7 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 	$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
 
 	$file =~ s~$pbs_config->{TARGET_PATH}~$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~g unless $no_target_path ;
-	$file =~ s~\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
+	$file =~ s~^\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
 
 	$file =~ s/$_/PBS_LIB\//g for (@{$pbs_config->{LIB_PATH}}) ;
 	}
@@ -384,6 +384,20 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 $file
 }
 
+sub GetTargetRelativePath
+{
+my ($pbs_config, $name) = @_ ;
+
+my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
+my $short_name = $name ;
+my $glyph = '' eq $pbs_config->{TARGET_PATH}
+		? "./"
+		: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+
+$short_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
+
+$short_name
+}
 
 #-------------------------------------------------------------------------------
 1 ;

@@ -1,13 +1,7 @@
 
+control C handler to generate warp
 
-optimize digest checking
-	sort md5 per file size and check the small ones first
-
-	stop as soon as there is a mismatch
-		compute md5 on the fly
-
-		pass current digest empty and let the checker fill it
-
+display rule type in rule stats
 
 generate color functions on the fly from colo definitions
 	PrintSomeColor display warning if color doesn't exist
@@ -490,6 +484,16 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+
+# optimize digest checking
+	sort md5 per file size and check the small ones first
+
+	stop as soon as there is a mismatch
+		compute md5 on the fly
+
+		pass current digest empty and let the checker fill it
+
 
 #--node_build_actions ' thenode/name/hahah : prio 1 : message %node is build : ! make sound : stop'
 	+ verbose

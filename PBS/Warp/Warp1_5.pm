@@ -377,40 +377,34 @@ for my $file (sort {($warp_dependents->{$b}{LEVEL} // 0)  <=> ($warp_dependents-
 
 		$trigger_log_warp .= "{ PBSFILE_NAME => '$file', NODES => " . scalar(@nodes_triggered) . "},\n" ;
 
+		delete @{$nodes}{@nodes_triggered} ;
+
 		# remove all sub nodes
 		for my $sub_level (map {$node_names->[$_]} keys %{$warp_dependents->{$file}{SUB_LEVELS}})
 			{
 			push @nodes_triggered,
 				grep{ exists $nodes->{$_} } 
 					map {$node_names->[$_]} keys %{$warp_dependents->{$sub_level}{DEPENDENTS}} ;
-			}
-
-		delete @{$nodes}{@nodes_triggered} ;
-		}
-
-	if($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
-		{
-		if($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
-			{
-			PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n"
-				if @nodes_triggered ;
-			}
-		else
-			{
-			if (@nodes_triggered)
-				{
-				PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n" ;
-				}
-			else
-				{
-				PrintInfo "Warp: checking '$file', OK\n" ;
-				}
+	
+			delete @{$nodes}{@nodes_triggered} ;
 			}
 		}
-	elsif ($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
+
+	if ($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
 		{
 		PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n"
 			if @nodes_triggered ;
+		}
+	elsif($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
+		{
+		if (@nodes_triggered)
+			{
+			PrintInfo "Warp: checking '$file', " . ERROR("removed nodes: " . scalar(@nodes_triggered)) . "\n" ;
+			}
+		else
+			{
+			PrintInfo "Warp: checking '$file', OK\n" ;
+			}
 		}
 
 	if ($pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_triggered)
@@ -803,31 +797,18 @@ for my $node_name (keys %$inserted_nodes)
 			delete $nodes{$node_name}{__LOCATION} unless defined $nodes{$node_name}{__LOCATION} ;
 			}
 			
-		if(exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-			&& exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE})
+		my $inserting_node = exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+					&& exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+					? $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+					: $node->{__INSERTED_AT}{INSERTING_NODE} ;
+
+		unless (exists $nodes_index{$inserting_node})
 			{
-			my $inserting_node = $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE} ;
-
-			unless (exists $nodes_index{$inserting_node})
-				{
-				push @node_names, $inserting_node ;
-				$nodes_index{$inserting_node} = $#node_names ;
-				}
-			
-			$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$inserting_node} ;
+			push @node_names, $inserting_node ;
+			$nodes_index{$inserting_node} = $#node_names ;
 			}
-		else
-			{
-			my $inserting_node = $node->{__INSERTED_AT}{INSERTING_NODE} ;
-
-			unless (exists $nodes_index{$inserting_node})
-				{
-				push @node_names, $inserting_node ;
-				$nodes_index{$inserting_node} = $#node_names ;
-				}
-
-			$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$inserting_node} ;
-			}
+		
+		$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$inserting_node} ;
 		
 		if(exists $node->{__DEPENDED_AT})
 			{

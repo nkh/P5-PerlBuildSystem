@@ -33,6 +33,7 @@ use vars qw($VERSION @ISA @EXPORT) ;
 		VIRTUAL V virtual
 		FORCED forced
 		IMMEDIATE_BUILD immediate_build I
+		BUILDER_OVERRIDE builder_override BO
 
 		LOCAL
 
@@ -92,6 +93,9 @@ use constant forced             => '__FORCED' ;
 use constant IMMEDIATE_BUILD    => '__IMMEDIATE_BUILD' ;
 use constant I                  => '__IMMEDIATE_BUILD' ;
 use constant immediate_build    => '__IMMEDIATE_BUILD' ;
+use constant BUILDER_OVERRIDE   => '__BUILDER_OVERRIDE' ;
+use constant builder_override   => '__BUILDER_OVERRIDE' ;
+use constant BO                 => '__BUILDER_OVERRIDE' ;
 
 use constant MULTI              => '__MULTI' ;
 use constant multi              => '__MULTI' ;

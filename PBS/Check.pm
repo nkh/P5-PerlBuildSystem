@@ -23,6 +23,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use PBS::Cyclic ;
 use PBS::Output ;
 use PBS::Digest ;
+use PBS::Node ;
 
 #-------------------------------------------------------------------------------
 
@@ -108,17 +109,7 @@ if (NodeIsGenerated($tree))
 	 
 	my @dependencies = grep { $_ !~ /^__/ } keys %$tree ;
 
-	my $inserted_at = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_RULE}
-				: $tree->{__INSERTED_AT}{INSERTION_RULE} ;
-	$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
-
-	my $inserted_in_file = exists $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
-				? $tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTION_FILE}
-				: $tree->{__INSERTED_AT}{INSERTION_FILE} ;
-
-	my $depended_in_file = $tree->{__DEPENDED_AT} // $inserted_in_file ;
-	my $depend_in_different_package = $inserted_in_file ne $depended_in_file && ! $tree->{__MATCHED_SUBPBS} ;
+	my $inserted_at = GetRunRelativePath($pbs_config, GetInsertionRule($tree)) ;
 
 	my $depended_at = '' ;
 
@@ -135,7 +126,7 @@ if (NodeIsGenerated($tree))
 			. _INFO2_(", inserted: $inserted_at")
 			. _INFO2_(", depended: $depended_at")
 			. "\n"
-		if $depend_in_different_package ;
+		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ;
 
 	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
@@ -149,7 +140,7 @@ if (NodeIsGenerated($tree))
 			. _INFO2_(", inserted: $inserted_at")
 
 			# display different depend package if not already displayed
-			. ($depend_in_different_package && !$depend_in_different_package 
+			. ($tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE}
 				? _INFO2_(", depended: $depended_at") 
 				: '')
 			. "\n"
@@ -311,7 +302,7 @@ if($is_virtual)
 			}
 		else
 			{
-			PrintWarning2 "Check: '$name' is VIRTUAL but file '$full_name' exists.\n" ;
+			PrintWarning2 "Check: '$name' is VIRTUAL but file '" . GetRunRelativePath($pbs_config, $full_name) . "' exists\n" ;
 			}
 		}
 	}
@@ -386,7 +377,7 @@ else
 			{
 			for (@$reason)
 				{
-				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => ': ' . $_} ;
+				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $_} ;
 				PrintInfo2 "Check: '$name' $_\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 				}
 			
@@ -408,7 +399,7 @@ if(NodeIsGenerated($tree))
 			PrintUser "Trigger: '$name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 
-			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
+			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
 			$triggered++ ;
 			}
 		}

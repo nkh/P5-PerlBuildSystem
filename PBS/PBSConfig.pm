@@ -295,6 +295,9 @@ else
 	push @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}}, '.' ;
 	}
 
+push @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}}, '.'
+	unless @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
+
 $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} = undef if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}) ;
 
 $pbs_config->{DISPLAY_DIGEST}++ if defined $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;

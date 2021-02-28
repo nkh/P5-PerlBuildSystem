@@ -7,8 +7,6 @@ use 5.006 ;
 use strict ;
 use warnings ;
 use Carp ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Path qw(make_path) ;
 
 require Exporter ;
 
@@ -18,6 +16,10 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 
 our $VERSION = '0.02' ;
+
+use Time::HiRes qw(gettimeofday tv_interval) ;
+use File::Path qw(make_path) ;
+use List::Util qw (any) ;
 
 use PBS::Config ;
 use PBS::Depend ;
@@ -133,22 +135,8 @@ my $node_build_sequencer_info = shift ;
 
 my $t0 = [gettimeofday];
 
-my $display_node = 0 ;
-
-if (0 != @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}})
-	{
-	for my $regex (@{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}})
-		{
-		if($file_tree->{__NAME} =~ $regex)
-			{
-			$display_node++ ; last ;
-			}
-		}
-	}
-else
-	{
-	$display_node++ ;
-	}
+my $display_node = any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
+$display_node = 0 if any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT}} ;
 
 local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
 local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
@@ -199,9 +187,16 @@ if($node_needs_rebuild)
 	
 	if(@$rules_with_builders)
 		{
-		# choose last builder if multiple Builders
+		# choose builder
 		my $rule_used_to_build = $rules_with_builders->[-1] ;
-		
+
+		for my $rule (@$rules_with_builders)
+			{
+			$rule_used_to_build = $rule 
+				if $rule->{DEFINITION}{BUILDER} != $rule_used_to_build
+					&& any { BUILDER_OVERRIDE eq $_ }  @{$rule->{DEFINITION}{TYPE}} ;
+			}
+
 		if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 			{
 			($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
@@ -311,7 +306,7 @@ if($build_result == BUILD_SUCCESS)
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
 		$build_message //= '' ;
-		PrintInfo("Build: result: $build_result, message: \"$build_message\", node: " . INFO2("'$file_tree->{__NAME}'", 0) . "\n") ;
+		PrintInfo "Node: " . _INFO3_("'$file_tree->{__NAME}'") . _INFO_(", result: $build_result, message: $build_message\n") ;
 		}
 
 	$file_tree->{__BUILD_DONE} = "BuildNode Done." ;
@@ -609,7 +604,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 	if($@) 
 		{
 		$build_result = BUILD_FAILED ;
-		$build_message = "\n\t Building $build_name '$rule_info': Exception type: $@" ;
+		$build_message = "\n\t post build  $build_name '$rule_info': error: $@" ;
 		}
 		
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
@@ -617,7 +612,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		print $lh INFO "Post build result for '$rule_info' on '$name': $build_result : $build_message\n\n" ;
 		}
 		
-	if(defined $pbs_config->{DISPLAY_POST_BUILD_RESULT})
+	if($pbs_config->{DISPLAY_POST_BUILD_RESULT})
 		{
 		PrintInfo("Post build result for '$rule_info' on '$name': $build_result : $build_message\n") ;
 		}
@@ -630,7 +625,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		}
 	}
 
-return $build_result, "Build: $node_build_message\nPost build: $build_message" ;
+return $build_result, "Build: $node_build_message" .($build_message ne q{} ? "Post build: $build_message\n" : '') ;
 }
 
 #-------------------------------------------------------------------------------------------------------

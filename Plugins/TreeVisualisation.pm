@@ -36,6 +36,7 @@ use PBS::Digest ;
 use PBS::Information ;
 use Data::TreeDumper ;
 use Data::TreeDumper::Utils ;
+use List::Util qw(any) ;
 
 #-------------------------------------------------------------------------------
 
@@ -147,9 +148,13 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					{
 					my $tag ;
 					
-					$tag = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
-					$tag = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
-					$tag = (NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_)) . GetColor('info_2')  ;
+					$tag  = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
+					$tag  = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
+					$tag  = NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
+					$tag .= _WARNING_(' ⋂') if $tree->{$_}{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ;
+					$tag .= _ERROR_(' ∅ ') if ! @{$tree->{$_}{__MATCHING_RULES} // []} && NodeIsGenerated($tree->{$_}) ;
+ 					$tag .= GetColor('info_2')  ;
+					
 					
 					$_ = [$_, $tag] if defined $tag ;
 					}
@@ -323,17 +328,13 @@ my @extra_options ;
 # colorize tree in blocks
 use Term::ANSIColor qw(:constants) ;
 my @colors = map { GetColor($_) } qw ( ttcl_1 ttcl_2 ttcl_3 ttcl_4 ) ;
+my @one_color = map { GetColor($_) } qw ( ttcl_1 ) ;
 
-push @extra_options, 'COLOR_LEVELS' => [\@colors, ''] if $pbs_config->{TREE_COLOR_LEVELS} ;
-
-# terminal width
+push @extra_options, 'COLOR_LEVELS' => $pbs_config->{TREE_COLOR_LEVELS} ? [\@colors, ''] : [\@one_color, ''] ;
 push @extra_options, 'WRAP_WIDTH' => $pbs_config->{WRAP_WIDTH} if $pbs_config->{WRAP_WIDTH} ;
-
 push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
 
-my @trees ;
-
-my $matching_nodes = 0 ;
+my ($matching_nodes, @trees)  = (0) ;
 
 if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 	{
@@ -341,14 +342,11 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 		{
 		last if $matching_nodes == $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} ;
 
-		for my $regex (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
+		if(any { $node_name =~ $_ } @{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 			{
-			if($node_name =~ $regex)
-				{
-				push @trees, $node_name ;
-				$matching_nodes++;
-				last ;
-				}
+			push @trees, $node_name ;
+			$matching_nodes++;
+			last ;
 			}
 		}
 
@@ -370,29 +368,27 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 			($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
 			}
 
-		PrintInfo "Depend:\n" 
-				. DumpTree
-					(
-					$node,
-					_INFO3_($node_name),
-					FILTER => $FilterDump,
-					INDENTATION => ($PBS::Output::indentation x 2),
-					@extra_options
-					)
+		PrintInfo DumpTree
+				(
+				$node,
+				_INFO3_($node_name),
+				FILTER => $FilterDump,
+				INDENTATION => $PBS::Output::indentation,
+				@extra_options
+				)
 		}
 	else
 		{
 		my %trees = ( map { ($_ => $inserted_nodes->{$_}) } @trees ) ;
 
-		PrintInfo "Depend:\n" 
-				. DumpTree
-					(
-					\%trees,
-					"dependency graphs",
-					FILTER => $FilterDump,
-					INDENTATION => ($PBS::Output::indentation x 2),
-					@extra_options
-					) ;
+		PrintInfo DumpTree
+				(
+				\%trees,
+				"dependency graphs",
+				FILTER => $FilterDump,
+				INDENTATION => $PBS::Output::indentation,
+				@extra_options
+				) ;
 		}
 	}
 else
@@ -428,15 +424,14 @@ else
 			}
 		}
 
-	PrintInfo "Depend:\n" 
-			. DumpTree
-				(
-				(@roots == 1 ? $root : \@roots),
-				$root_name,
-				FILTER => $FilterDump,
-				INDENTATION => ($PBS::Output::indentation x 2),
-				@extra_options
-				)
+	PrintInfo DumpTree
+			(
+			(@roots == 1 ? $root : \@roots),
+			$root_name,
+			FILTER => $FilterDump,
+			INDENTATION => $PBS::Output::indentation,
+			@extra_options
+			)
 		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
 	}
 	

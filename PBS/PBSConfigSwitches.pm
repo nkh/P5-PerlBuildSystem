@@ -131,6 +131,7 @@ $pbs_config->{PLUGIN_PATH} ||= [] ;
 $pbs_config->{LIB_PATH} ||= [] ;
 $pbs_config->{DISPLAY_BUILD_INFO} ||= [] ;
 $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX} ||= [] ;
+$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT} ||= [] ;
 $pbs_config->{DISPLAY_NODE_INFO} ||= [] ;
 $pbs_config->{DISPLAY_NODE_ENVIRONMENT} ||= [] ;
 $pbs_config->{NODE_ENVIRONMENT_REGEX} ||= [] ;
@@ -1328,6 +1329,10 @@ EOT
 
 	'bnir|build_and_display_node_information_regex=s' => $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
 		'Only display information for matching nodes.',
+		'',
+
+	'bnirn|build_and_display_node_information_regex_not=s' => $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT},
+		"Don't  display information for matching nodes.",
 		'',
 
 	'bni_result' => \$pbs_config->{BUILD_DISPLAY_RESULT},

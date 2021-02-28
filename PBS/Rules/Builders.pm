@@ -70,7 +70,7 @@ for (@$shell_commands)
 		next ;
 		}
 		
-	die ERROR "Rule: invalid command type for '$name' @ '$file_name:$line', mut be string or code reference.\n" ;
+	die ERROR("Rule: invalid command type for '$name' @ '$file_name:$line', mut be string or code reference.") . "\n" ;
 	}
 
 my $generated_builder = sub { BuilderFromStringOrArray($shell_commands, $shell, $package, $name, $file_name, $line, @_) } ;
@@ -125,30 +125,34 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 	$command_number++ ;
 	print STDERR "\n" if $command_number > 1 ;
 
-	my $command_information = '' ;
-	$command_information = "Build: command $command_number of " . scalar(@$shell_commands) . "\n" if @$shell_commands > 1 ;
+	my $command_information = @$shell_commands > 1
+					? "Build: command $command_number of " . scalar(@$shell_commands) . "\n"
+					: '' ;
 	
 	if('CODE' eq ref $shell_command)
 		{
 		my ($perl_sub_name, $file, $line) = (sub_name($shell_command), get_code_location($shell_command)) ;
 
-		if ($perl_sub_name =~/^BuildOk|TouchOk/)
+		$file =~ s/'//g ;
+		$file = GetRunRelativePath($tree->{__PBS_CONFIG}, $file) ;
+
+		if($display_command_information)
 			{
-			PrintInfo3 $command_information . "Build: $perl_sub_name\n" ;
+			if ($perl_sub_name =~/^BuildOk|TouchOk/)
+				{
+				PrintInfo3 "${command_information}Build: $perl_sub_name\n"
+				}
+			elsif ($perl_sub_name =~ /__ANON__/) 
+				{
+				PrintInfo3 "${command_information}Build: sub:$file:$line\n"
+				}
+			else
+				{
+				PrintInfo3 "${command_information}Build: sub: $perl_sub_name $file:$line\n"
+				}
 			}
-		else
-			{
-			PrintInfo3 $command_information . "Build: sub: $perl_sub_name $file:$line\n" ;
-			}
-		
-		my @result = $shell->RunPerlSub($shell_command, @_) ;
-		
-		if($result[0] == 0)
-			{
-			# command failed
-			return(@result) ;
-			}
-			
+
+		return $shell->RunPerlSub($shell_command, @_) ;
 		}
 	else
 		{
