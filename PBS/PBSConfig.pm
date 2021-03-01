@@ -226,14 +226,7 @@ $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}++ if $pbs_config->{DISPLAY_PROGRESS_B
 
 $pbs_config->{DISPLAY_BUILD_RESULT}++ if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 
-if($pbs_config->{NO_WARP})
-	{
-	$pbs_config->{WARP} = 0 ;
-	}
-else
-	{
-	$pbs_config->{WARP} = 1.5 unless defined $pbs_config->{WARP} ;
-	}
+$pbs_config->{WARP} = 1.5 unless defined $pbs_config->{WARP} ;
 
 for my $actions (grep { '' eq ref $_ } @{$pbs_config->{NODE_BUILD_ACTIONS}})
 	{

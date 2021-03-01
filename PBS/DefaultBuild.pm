@@ -262,11 +262,11 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
+	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
 	}
 else
 	{
-	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes,  warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
+	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
 my ($build_node, @build_sequence, %trigged_nodes) ;

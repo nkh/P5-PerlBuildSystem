@@ -97,12 +97,6 @@ elsif ($run_in_warp_mode == RUN_IN_WARP_MODE)
 		eval "use PBS::PBS" ;
 		die $@ if $@ ;
 		
-		unless($pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS})
-			{
-			$pbs_config->{NO_LINK_INFO} = 1 ;
-			$pbs_config->{NO_LOCAL_MATCHING_RULES_INFO} = 1 ;
-			}
-			
 		# much of the "normal" node attributes are stripped in warp nodes
 		# let the rest of the system know about this (ex graph generator)
 		$pbs_config->{IN_WARP} = 1 ;

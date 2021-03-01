@@ -242,10 +242,15 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 			}
 		else
 			{
+			my $cache = $inserted_nodes->{$_}{__WARP_NODE} && $pbs_config->{NODE_CACHE_INFORMATION} ? _INFO2_('ᶜ') : '' ;
+
 			$current_node_info .= "${tab}${tab}"
-						. ( $inserted_nodes->{$_}{__WARP_NODE} 
-							? _WARNING3_($_) . "\n"
-							: (NodeIsSource($inserted_nodes->{$_}) ? _WARNING_($_) : _INFO3_($_)) . "\n"
+						. 	(
+							exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
+								? _ERROR_ $_ . $cache . "\n"
+								: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
+									? _WARNING_ $_ . $cache . "\n"
+									: _INFO3_   $_ . $cache . "\n"
 							)
 						 if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
 			}
@@ -301,14 +306,13 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 				. join( ' ', 
 					map 	
 						{
+						my $cache = $inserted_nodes->{$_}{__WARP_NODE} && $pbs_config->{NODE_CACHE_INFORMATION} ? _INFO2_('ᶜ') : '' ;
+ 
 						exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
-							? _ERROR_ $_
-							: ( $inserted_nodes->{$_}{__WARP_NODE} 
-								? _WARNING3_($_) 
-								: NodeIsSource($inserted_nodes->{$_}) 
-									? _WARNING_ $_
-									: _INFO3_   $_
-								)
+							? _ERROR_ $_ . $cache
+							: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
+								? _WARNING_ $_ . $cache
+								: _INFO3_   $_ . $cache
 						if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
 						}
 						map { $_->{NAME} } @{$rule->{DEPENDENCIES}})

@@ -825,7 +825,11 @@ sub NodeIsGenerated
 {
 my($node) = @_ ;
 
-if(exists $node->{__LOAD_PACKAGE})
+if(exists $node->{__WARP_NODE})
+	{
+	! $node->{__NODE_IS_SOURCE} ;
+	}
+else
 	{
 	unless(exists $node->{__NODE_IS_GENERATED})
 		{
@@ -846,11 +850,6 @@ if(exists $node->{__LOAD_PACKAGE})
 		}
 
 	$node->{__NODE_IS_GENERATED} ;
-	}
-else
-	{
-	# warp node
-	$node->{__NODE_IS_SOURCE} ;
 	}
 }
 

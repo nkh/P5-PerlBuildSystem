@@ -193,11 +193,6 @@ if($run_in_warp_mode)
 
 	if($number_of_removed_nodes)
 		{
-		unless($pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS})
-			{
-			$pbs_config->{NO_WARP_NODE_LINK_INFO} = 1 ;
-			}
-			
 		# we can't  generate a warp file while warping.
 		# The warp configuration (pbsfiles md5) would be truncated
 		# to the files used during the warp
@@ -530,9 +525,10 @@ my (@trigger_nodes, @nodes_triggered, %nodes_triggered) ;
 
 for my $node (@$nodes_to_check)
 	{
-	PrintInfo "\e[KWarp: verified nodes: $level$node_verified\r"
-		if ! $pbs_config->{QUIET}
-		   && ($node_verified + $number_of_removed_nodes) % 30 ;
+	my $colorizer = $pbs_config->{QUIET} ? \&PrintInfo2 : \&PrintInfo ; 
+
+	$colorizer->("\e[KWarp: verified nodes: $level$node_verified\r")
+		   if $node_verified + $number_of_removed_nodes % 30 ;
 		
 	$node_verified++ ;
 	
@@ -642,7 +638,7 @@ unless($pbs_config->{DO_BUILD})
 
 my $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config) ;
 
-PrintInfo("\e[KWarp: generation.$warp_message\n") unless $pbs_config->{QUIET} ;
+PrintInfo("\e[KWarp: generation ... $warp_message\n") unless $pbs_config->{QUIET} ;
 my $t0_warp_generate =  [gettimeofday] ;
 
 my ($warp_signature, $warp_signature_source) = PBS::Warp::GetWarpSignature($targets, $pbs_config) ;

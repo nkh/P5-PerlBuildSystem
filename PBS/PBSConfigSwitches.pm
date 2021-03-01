@@ -482,10 +482,6 @@ EOT
 		'Hide depend counter',
 		'',
 
-	'no_external_link'                => \$pbs_config->{NO_EXTERNAL_LINK},
-		'Dependencies Linking from other Pbsfile stops the build if any local rule can match.',
-		'',
-
 	'dsi|display_subpbs_info'         => \$pbs_config->{DISPLAY_SUBPBS_INFO},
 		'Display extra information for nodes matching a subpbs rule.',
 		'',
@@ -494,18 +490,24 @@ EOT
 		'PBS won\'t display any warning if a virtual node matches a directory name.',
 		'',
 		
-	'nli|no_link_info'                => \$pbs_config->{NO_LINK_INFO},
+	'link_no_external'                => \$pbs_config->{NO_EXTERNAL_LINK},
+		'Dependencies Linking from other Pbsfile stops the build if any local rule can match.',
+		'',
+
+	'lni|link_no_info'                => \$pbs_config->{NO_LINK_INFO},
 		'PBS won\'t display which dependency node are linked instead for generated.',
 		'',
-	'nlli|no_local_link_info'                => \$pbs_config->{NO_LOCAL_LINK_INFO},
+
+	'lnli|link_no_local_info'                => \$pbs_config->{NO_LOCAL_LINK_INFO},
 		'PBS won\'t display linking to local nodes.',
 		'',
-	'nwmwzd|no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
-		'PBS won\'t warn if a node has no dependencies but a matching rule.',
-		'',
-		
+
 	'nlmi|no_local_match_info'        => \$pbs_config->{NO_LOCAL_MATCHING_RULES_INFO},
 		'PBS won\'t display a warning message if a linked node matches local rules.',
+		'',
+		
+	'nwmwzd|no_warning_matching_with_zero_dependencies' => \$pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
+		'PBS won\'t warn if a node has no dependencies but a matching rule.',
 		'',
 		
 	'display_no_dependencies_ok'        => \$pbs_config->{DISPLAY_NO_DEPENDENCIES_OK},
@@ -546,12 +548,28 @@ EOT
 		'Display information about the node matching the given regex before the build.',
 		'',
 	
+	'nnr|no_node_build_rule'              => \$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES},
+		'Rules used to depend a node are not displayed',
+		'',
+
+	'ndpbmm|display_no_progress_bar_minimum_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
+		"Frankly less verbose build mode.",
+		'',
+
+	'nnp|no_node_parents'            => \$pbs_config->{DISPLAY_NO_NODE_PARENTS},
+		"Don't display the node's parents.",
+		'',
+
 	'nonil|no_node_info_links'  => \$pbs_config->{NO_NODE_INFO_LINKS},
 		'Pbs inserts node_info files links in info_files and logs, disable it',
 		'',
 	
-	'lni|log_node_information=s'      => $pbs_config->{LOG_NODE_INFO},
+	'nli|log_node_information=s'      => $pbs_config->{LOG_NODE_INFO},
 		'Log information about nodes matching the given regex before the build.',
+		'',
+		
+	'nci|node_cache_information'        => \$pbs_config->{NODE_CACHE_INFORMATION},
+		'Display if the node is from the cache.',
 		'',
 		
 	'nbn|node_build_name'             => \$pbs_config->{DISPLAY_NODE_BUILD_NAME},
@@ -564,10 +582,6 @@ EOT
 		
 	'np|node_parents'            => \$pbs_config->{DISPLAY_NODE_PARENTS},
 		"Display the node's parents.",
-		'',
-		
-	'nnp|no_node_parents'            => \$pbs_config->{DISPLAY_NO_NODE_PARENTS},
-		"Don't display the node's parents.",
 		'',
 		
 	'nd|node_dependencies'            => \$pbs_config->{DISPLAY_NODE_DEPENDENCIES},
@@ -588,10 +602,6 @@ EOT
 		
 	'nr|node_build_rule'              => \$pbs_config->{DISPLAY_NODE_BUILD_RULES},
 		'Display the rules used to depend a node (rule defining a builder ar tagged with [B].',
-		'',
-		
-	'nnr|no_node_build_rule'              => \$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES},
-		'Rules used to depend a node are not displayed',
 		'',
 		
 	'nb|node_builder'                  => \$pbs_config->{DISPLAY_NODE_BUILDER},
@@ -1327,10 +1337,6 @@ EOT
 		"Slightly less verbose build mode.",
 		'',
 		
-	'ndpbmm|display_no_progress_bar_minimum_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
-		"Frankly less verbose build mode.",
-		'',
-		
 	'bre|display_build_result'       => \$pbs_config->{DISPLAY_BUILD_RESULT},
 		'Shows the result returned by the builder.',
 		'',
@@ -1452,14 +1458,6 @@ EOT
 		
 	'no_post_build_warp'             => \$pbs_config->{NO_POST_BUILD_WARP},
 		"no post-build warp will be generated.",
-		'',
-		
-	'no_warp'             => \$pbs_config->{NO_WARP},
-		"no warp will be used.",
-		'',
-		
-	'dww|display_warp_generated_warnings'  => \$pbs_config->{DISPLAY_WARP_GENERATED_WARNINGS},
-		"When doing a warp build, linking info and local rule match info are disable. this switch re-enables them.",
 		'',
 		
 	'display_warp_checked_nodes'  => \$pbs_config->{DISPLAY_WARP_CHECKED_NODES},
@@ -1742,7 +1740,6 @@ if($word_to_complete !~ /^\s?$/)
 		}
 	else
 		{
-
 		if($word_to_complete =~ /\?$/)
 			{
 			my ($word) = $word_to_complete =~ m/^-*(.+)\?$/ ;

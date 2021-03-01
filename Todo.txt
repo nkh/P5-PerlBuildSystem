@@ -1,6 +1,16 @@
 
-example linking to warp nodes
-	are those shown altogether ?
+
+optimizing check with build command
+
+	node trigger if it's commands have changed
+	and sub nodes have not changed
+	...
+
+
+__LOCATION could it be __BUILD_NAME?
+	breaks check_at_build_time
+
+#example linking to warp nodes
 
 control C handler to generate warp
 
