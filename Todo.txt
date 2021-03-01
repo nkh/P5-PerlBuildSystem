@@ -1,4 +1,7 @@
 
+example linking to warp nodes
+	are those shown altogether ?
+
 control C handler to generate warp
 
 #display rule type in rule stats
@@ -6,7 +9,7 @@ control C handler to generate warp
 generate color functions on the fly from color definitions
 	PrintSomeColor display warning if color doesn't exist
 		mean we need to catch error, was there a way with autoload?
-	
+	 
 PBS::Nop
 	to replace pbs rules etc ... when just searching for targets or options
 

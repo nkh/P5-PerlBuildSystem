@@ -584,12 +584,11 @@ my ($node) = @_ ;
 my %node_dependencies = %{GetNodeDigestNoChildren($node)} ;
 
 # add node children to digest
-for my $entry (values %$node)
+for my $dependency (values %$node)
 	{
-	next unless 'HASH' eq ref $entry ;
-	next unless exists $entry->{__NAME} ;
+	next unless 'HASH' eq ref $dependency ;
+	next unless exists $dependency->{__NAME} ;
 
-	my $dependency = $entry ;
 	my $dependency_name = $dependency->{__NAME} ;
 
 	next if $dependency_name =~ /^__/ ;
@@ -1156,7 +1155,7 @@ for my $key (@$order)
 		 	{
 			if( my $trigger_regex = first { $key =~ $_ } @{$pbs_config->{TRIGGER}} )
 				{
-				PrintUser "Trigger (digest_md5): $key =~ '$trigger_regex'\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				#PrintUser "Trigger: $key matches '$trigger_regex' (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 
 				push @digest_different_text, "$key [--trigger] " ;
 			
@@ -1366,8 +1365,8 @@ PrintDebug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unl
 
 my $package_digest = GetPackageDigest($node->{__LOAD_PACKAGE}) ;
 my $node_digest = GetNodeDigest($node) ;
-my $node_md5 = GetFileMD5($node->{__BUILD_NAME}) ;
 
+my $node_md5 = GetFileMD5($node->{__BUILD_NAME}) ;
 my $d = { %$package_digest, %$node_digest, $node->{__NAME} => $node_md5, __DEPENDING_PBSFILE =>  $node->{__DEPENDING_PBSFILE}, } ;
 
 $generate_digest_get += tv_interval($t0_generate_digest_get, [gettimeofday]) ;

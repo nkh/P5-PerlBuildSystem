@@ -141,7 +141,8 @@ do
 	
 	unless(GetOptions(@flags))
 		{
-		return(0, "PBS: Try perl pbs.pl -h.\n", $pbs_config, @ARGV) unless $ignore_error;
+		return 0, "PBS: Try perl pbs.pl -h.\n", $pbs_config, @ARGV
+			unless $ignore_error;
 		}
 	}
 while($contains_switch) ;
@@ -151,7 +152,7 @@ PBS::Output::SetDefaultColors(\%cc) ;
 
 $pbs_config->{TARGETS} = \@targets ;
  
-return(1, $success_message, $pbs_config) ;
+return 1, $success_message, $pbs_config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -169,7 +170,7 @@ elsif(defined $ENV{USERNAME} && $ENV{USERNAME} ne '')
 	$user = $ENV{USERNAME} ;
 	}
 	
-return($user) ;
+return $user ;
 }
 
 #-------------------------------------------------------------------------------
@@ -187,7 +188,7 @@ $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROC
 	
 
 # check the options
-if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
+if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	undef $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
@@ -195,24 +196,25 @@ if(defined $pbs_config->{DISPLAY_NO_STEP_HEADER})
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
 
-if(defined $pbs_config->{DEPEND_FULL_LOG})
+if($pbs_config->{DEPEND_FULL_LOG})
 	{
 	undef $pbs_config->{DEPEND_LOG} ;
 	}
 
-if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
+if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
 	{
 	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
 	}
 	
-if(defined $pbs_config->{DISPLAY_PROGRESS_BAR})
+if($pbs_config->{DISPLAY_PROGRESS_BAR})
 	{
 	$PBS::Shell::silent_commands++ ;
 	$PBS::Shell::silent_commands_output++ ;
 	$pbs_config->{DISPLAY_NO_BUILD_HEADER}++ ;
 	}
 
-if(defined $pbs_config->{QUIET})
+if($pbs_config->{QUIET})
 	{
 	$PBS::Shell::silent_commands++ ;
 	$PBS::Shell::silent_commands_output++ ;
@@ -224,16 +226,13 @@ $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}++ if $pbs_config->{DISPLAY_PROGRESS_B
 
 $pbs_config->{DISPLAY_BUILD_RESULT}++ if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 
-if(defined $pbs_config->{NO_WARP})
+if($pbs_config->{NO_WARP})
 	{
 	$pbs_config->{WARP} = 0 ;
 	}
 else
 	{
-	unless(defined $pbs_config->{WARP})
-		{
-		$pbs_config->{WARP} = 1.5 ;
-		}
+	$pbs_config->{WARP} = 1.5 unless defined $pbs_config->{WARP} ;
 	}
 
 for my $actions (grep { '' eq ref $_ } @{$pbs_config->{NODE_BUILD_ACTIONS}})
@@ -248,7 +247,7 @@ $pbs_config->{DISPLAY_WARP_CHECKED_NODES}++ if $pbs_config->{DISPLAY_WARP_CHECKE
 
 $pbs_config->{DISPLAY_MINIMUM_TIME} //= 0.5 ;
 
-if(defined $pbs_config->{DISPLAY_PBS_TIME})
+if($pbs_config->{DISPLAY_PBS_TIME})
 	{
 	$pbs_config->{DISPLAY_PBS_TOTAL_TIME}++ ;
 	$pbs_config->{DISPLAY_TOTAL_BUILD_TIME}++ ;
@@ -267,24 +266,26 @@ if($pbs_config->{TIME_BUILDERS})
 	$pbs_config->{DISPLAY_TOTAL_BUILD_TIME}++ ;
 	}
 
-$pbs_config->{DISPLAY_PBSUSE_TIME}++ if(defined $pbs_config->{DISPLAY_PBSUSE_TIME_ALL}) ;
+$pbs_config->{DISPLAY_PBSUSE_TIME}++ if $pbs_config->{DISPLAY_PBSUSE_TIME_ALL} ;
 
-$pbs_config->{DISPLAY_HELP}++ if defined $pbs_config->{DISPLAY_HELP_NARROW_DISPLAY} ;
+$pbs_config->{DISPLAY_HELP}++ if $pbs_config->{DISPLAY_HELP_NARROW_DISPLAY} ;
 
-$pbs_config->{DEBUG_DISPLAY_RULES}++ if defined $pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION} ;
+$pbs_config->{DEBUG_DISPLAY_RULES}++ if $pbs_config->{DEBUG_DISPLAY_RULE_DEFINITION} ;
 
-$pbs_config->{DISPLAY_USED_RULES}++ if defined $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY} ;
+$pbs_config->{DISPLAY_USED_RULES}++ if $pbs_config->{DISPLAY_USED_RULES_NAME_ONLY} ;
 
-$pbs_config->{DISPLAY_RULES_ORDER}++ if defined $pbs_config->{DISPLAY_RULES_ORDERING} ;
+$pbs_config->{DISPLAY_RULES_ORDER}++ if $pbs_config->{DISPLAY_RULES_ORDERING} ;
 
 $pbs_config->{MAXIMUM_RULE_RECURSION} //= 15 ;
 $pbs_config->{RULE_RECURSION_WARNING} //= 5 ;
 
 $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '…' ;
 
-$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
-$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
-$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;
+$pbs_config->{DEBUG_DISPLAY_TRIGGER}++ if $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+
+$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
+$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
+$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;
 
 if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	{
@@ -298,19 +299,20 @@ else
 push @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}}, '.'
 	unless @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
 
-$pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} = undef if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}) ;
+undef $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
 
-$pbs_config->{DISPLAY_DIGEST}++ if defined $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
+$pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
-$pbs_config->{DISPLAY_SEARCH_INFO}++ if defined $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
+$pbs_config->{DISPLAY_SEARCH_INFO}++ if $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
 
-if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
+if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
-	undef $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} if (@{$pbs_config->{DISPLAY_BUILD_INFO}}) ;
-	
+	$pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
+
+	undef $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} if @{$pbs_config->{DISPLAY_BUILD_INFO}} ;
 	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
-	unless ($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM})
+	unless ($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
 		{
 		$pbs_config->{DISPLAY_NODE_ORIGIN}++ ;
 		$pbs_config->{DISPLAY_NODE_PARENTS}++ ;
@@ -318,27 +320,34 @@ if(defined $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DIS
 		$pbs_config->{DISPLAY_NODE_BUILD_CAUSE}++ ;
 		$pbs_config->{DISPLAY_NODE_BUILD_RULES}++ ;
 		$pbs_config->{DISPLAY_NODE_CONFIG}++ ;
-		#$pbs_config->{DISPLAY_NODE_BUILDER}++ ;
+		}
+
+
+	if($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
+		{
+		$pbs_config->{DISPLAY_NODE_ORIGIN} = 0 ;
+		$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES}++ ;
+		$pbs_config->{DISPLAY_NODE_BUILD_NAME} = 0 ;
 		}
 
 	$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
 	}
 	
-$pbs_config->{DISPLAY_NODE_ORIGIN}++ if defined $pbs_config->{DISPLAY_NODE_PARENTS} ;
+$pbs_config->{DISPLAY_NODE_ORIGIN}++ if $pbs_config->{DISPLAY_NODE_PARENTS} ;
 
 push @{$pbs_config->{NODE_ENVIRONMENT_REGEX}}, '.'
 	if @{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}} && ! @{$pbs_config->{NODE_ENVIRONMENT_REGEX} } ;
 
 # ------------------------------------------------------------------------------
 
-$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_ROOT_BUILD_DIRECTORY} = undef if(defined $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY}) ;
+$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_ROOT_BUILD_DIRECTORY} = undef if $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY} ;
 
-$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG}++ if(defined $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE}) ;
-$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG}++ if(defined $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG_EDGE}) ;
+$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG}++ if $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE} ;
+$pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG}++ if $pbs_config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG_EDGE} ;
 
 for my $cluster_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}})
 	{
-	$cluster_node_regex = './' . $cluster_node_regex unless ($cluster_node_regex =~ /^\.|\//) ;
+	$cluster_node_regex = './' . $cluster_node_regex unless $cluster_node_regex =~ /^\.|\// ;
 	$cluster_node_regex =~ s/\./\\./g ;
 	$cluster_node_regex =~ s/\*/.*/g ;
 	$cluster_node_regex = '^' . $cluster_node_regex . '$' ;
@@ -354,7 +363,7 @@ if(defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
 		}
 	else
 		{
- 		die ERROR( "Graph: cluster list '$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}' not found"), "\n" ;
+ 		die ERROR("Graph: cluster list '$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}' not found"), "\n" ;
 		}
 	}
 
@@ -374,16 +383,16 @@ for my $include_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_INCLUDE}})
 
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
-$Data::Dumper::Maxdepth = $pbs_config->{MAX_DEPTH} if defined $pbs_config->{MAX_DEPTH} ;
-$Data::Dumper::Indent   = $pbs_config->{INDENT_STYLE} if defined $pbs_config->{INDENT_STYLE} ;
+$Data::Dumper::Maxdepth = $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
+$Data::Dumper::Indent   = $pbs_config->{INDENT_STYLE} if $pbs_config->{INDENT_STYLE} ;
 
-if(defined $pbs_config->{DISTRIBUTE})
+if($pbs_config->{DISTRIBUTE})
 	{
-	$pbs_config->{JOBS} = 0 unless defined $pbs_config->{JOBS} ; # let distributor determine how many jobs
+	$pbs_config->{JOBS} = 0 unless $pbs_config->{JOBS} ; # let distributor determine how many jobs
 	}
 else
 	{
-	if(!defined $pbs_config->{JOBS} || $pbs_config->{JOBS} < 0)
+	if(! $pbs_config->{JOBS} || $pbs_config->{JOBS} < 0)
 		{
 		$pbs_config->{JOBS} = 8 ; 
 		}
@@ -407,7 +416,7 @@ if($pbs_config->{DEBUG_TRIGGER_NONE} && $pbs_config->{DEBUG_TRIGGER_ALL})
 	delete $pbs_config->{DEBUG_TRIGGER_NONE} ;
 	}
 
-if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
+if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	{
 	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ ;
 	}
@@ -423,7 +432,7 @@ else
 
 $pbs_config->{DISPLAY_TEXT_TREE_USE_ASCII} //= 0 ;
 
-$pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless defined $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
+$pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} = -1 unless $pbs_config->{DISPLAY_TEXT_TREE_MAX_DEPTH} ;
 $pbs_config->{DISPLAY_TEXT_TREE_MAX_MATCH} //= 3 ;
 
 #-------------------------------------------------------------------------------
@@ -484,9 +493,9 @@ for my $plugin_path (@{$pbs_config->{PLUGIN_PATH}})
 	$plugin_path = CollapsePath($plugin_path ) ;
 	}
 	
-unless(defined $pbs_config->{BUILD_DIRECTORY})
+unless($pbs_config->{BUILD_DIRECTORY})
 	{
-	if(defined $pbs_config->{MANDATORY_BUILD_DIRECTORY})
+	if($pbs_config->{MANDATORY_BUILD_DIRECTORY})
 		{
 		return(0, "No Build directory given and --mandatory_build_directory set.\n") ;
 		}
@@ -513,7 +522,7 @@ CheckPackageDirectories($pbs_config) ;
 
 #----------------------------------------- Log -----------------------------------------
 
-if(defined $pbs_config->{CREATE_LOG_HTML})
+if($pbs_config->{CREATE_LOG_HTML})
 	{
 	$pbs_config->{CREATE_LOG}++ ;
 	}
@@ -523,7 +532,7 @@ PBS::Log::CreatePbsLog($pbs_config) if defined $pbs_config->{CREATE_LOG} ;
 #----------------------------------------- HOSTNAME  -----------------------------------------
 $ENV{HOSTNAME} //= qx"hostname" // 'no_host' ;
 
-return(1, $success_message) ;
+return 1, $success_message ;
 }
 
 #-------------------------------------------------------------------------------
@@ -606,7 +615,7 @@ my $pbs_config = shift ;
 my $pbsfile ;
 my $error_message = '' ;
 
-if(defined $pbs_config->{PBSFILE})
+if($pbs_config->{PBSFILE})
 	{
 	$pbsfile = $pbs_config->{PBSFILE} ;
 	
@@ -744,8 +753,8 @@ if(defined $pbs_config->{SOURCE_DIRECTORIES})
 		}
 	}
 	
-if(defined $pbs_config->{BUILD_DIRECTORY})
-{
+if($pbs_config->{BUILD_DIRECTORY})
+	{
 	unless(file_name_is_absolute($pbs_config->{BUILD_DIRECTORY}))
 		{
 		$pbs_config->{BUILD_DIRECTORY} = catdir($cwd, $pbs_config->{BUILD_DIRECTORY}) ;

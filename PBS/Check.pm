@@ -28,7 +28,7 @@ use PBS::Node ;
 #-------------------------------------------------------------------------------
 
 my $checked_dependency_tree = 0 ;
-my @traversal ;
+my @cyclic_trail ;
 
 sub CheckDependencyTree
 {
@@ -56,7 +56,8 @@ my $triggered = 0 ;
 	
 $tree->{__LEVEL} = $node_level ;
 my $name = $tree->{__NAME} ;
-push @traversal, $tree ;
+
+push @cyclic_trail, $tree ;
 
 if(exists $tree->{__CYCLIC_FLAG})
 	{
@@ -64,7 +65,7 @@ if(exists $tree->{__CYCLIC_FLAG})
 	
 	if(NodeIsGenerated($tree))
 		{
-		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@traversal) ; 
+		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@cyclic_trail) ; 
 		PrintError "\e[KCheck: cyclic dependencies detected:\n$cycles", 1 ;
 
 		die "cyclic dependencies detected\n" ;
@@ -152,7 +153,10 @@ if (NodeIsGenerated($tree))
 		}
 	}
 
-my($full_name, $is_alternative_source, $alternative_index) = 
+my ($full_name, $is_alternative_source, $alternative_index) = ('', 0, 0) ;
+my $is_virtual = exists $tree->{__VIRTUAL} ;
+
+($full_name, $is_alternative_source, $alternative_index) = 
 		LocateSource
 			(
 			$name,
@@ -172,19 +176,14 @@ else
 	}
 
 $full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
-
-my $is_virtual = exists $tree->{__VIRTUAL} ;
-
 $tree->{__BUILD_NAME} = $full_name ;
 
-if($pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/)
-	{
-	PrintInfo "Check: " . INFO3($name) 
-			. INFO2($is_alternative_source ? ' -> [R]' : '')
-			. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
-			. "\n" ;
-	}
-	
+PrintInfo "Place: " . INFO3("'$name'") 
+		. INFO2($is_alternative_source ? ' -> [R]' : '')
+		. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> '$full_name'" : '')
+		. "\n" 
+	if $pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/ ;
+
 my @dependency_triggering ;
 
 # IMPORTANT: this also generates child parents links for parallel build
@@ -195,7 +194,59 @@ for my $dependency_name (sort keys %$tree)
 
 	next if $dependency_name =~ /^__/ ; # eliminate private data
 	
-	if(exists $dependency->{__CHECKED})
+	if(DependencyIsSource($tree, $dependency->{__NAME}, $inserted_nodes))
+		{
+		# trigger on our dependencies because they won't trigger themselves if they match 
+		# and are a source node. If a source node triggered, it would need to be rebuild.
+		my $trigger_match = 0 ;
+		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+			{
+			if($dependency_name =~ /$trigger_regex/)
+				{
+				PrintInfo2 "Trigger: source '$dependency_name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				$trigger_match++ ;
+
+				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
+				push @{$dependency->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
+				$triggered++ ;
+
+			$tree->{__CHILDREN_TO_BUILD}++ ;
+				PrintInfo "Count: " . _INFO3_("'$dependency_name' => '$name' [$tree->{__CHILDREN_TO_BUILD}]\n")
+					if $pbs_config->{DISPLAY_JOBS_INFO} ;
+				}
+			}
+
+		PrintInfo2 "Trigger: '$dependency_name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+
+		#source file are not checked but they must be located
+		my ($full_name, $is_alternative_source, $alternative_index) = 
+				LocateSource
+					(
+					$dependency_name,
+					$build_directory,
+					$source_directories,
+					$pbs_config->{DISPLAY_SEARCH_INFO},
+					$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
+					) ;
+
+		if ($is_alternative_source)
+			{
+			$tree->{$dependency_name}{__ALTERNATE_SOURCE_DIRECTORY} = $source_directories->[$alternative_index] ;
+			}
+		else
+			{
+			$tree->{$dependency_name}{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
+			}
+
+		$full_name = $tree->{$dependency_name}{__FIXED_BUILD_NAME} if(exists $tree->{$dependency_name}{__FIXED_BUILD_NAME}) ;
+
+		$tree->{$dependency_name}{__BUILD_NAME} = $full_name ;
+		$tree->{$dependency_name}{__BUILD_DONE}++ ;
+
+		PrintInfo "Place: " . _INFO3_("'$dependency_name'") . _INFO2_(" -> '$full_name'\n")
+			if $pbs_config->{DISPLAY_FILE_LOCATION} && $dependency_name !~ /^__/ ;
+		}
+	elsif(exists $dependency->{__CHECKED})
 		{
 		if($dependency->{__TRIGGERED})
 			{
@@ -209,18 +260,17 @@ for my $dependency_name (sort keys %$tree)
 			
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
-			push @{$dependency->{__PARENTS}}, $tree ;
 
+			push @{$dependency->{__PARENTS}}, $tree ;
 			push @dependency_triggering, $dependency ;
-			}
-		else
-			{
-			#PrintInfo2 "Check: " . INFO3("'$name'") . INFO2(" NOT triggered by dependency '$dependency_name' [$tree->{__CHILDREN_TO_BUILD}]\n") ;
+
+			PrintInfo "Count: " . _INFO3_("'$dependency_name' => '$name' [$tree->{__CHILDREN_TO_BUILD}]\n")
+				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
 			}
 		}
 	else
 		{
-		my ($subdependency_triggered) = CheckDependencyTree
+		my ($dependency_triggered) = CheckDependencyTree
 							(
 							$dependency,
 							$node_level + 1,
@@ -235,7 +285,7 @@ for my $dependency_name (sort keys %$tree)
 							$source_directories,
 							) ;
 		
-		if($subdependency_triggered)
+		if($dependency_triggered)
 			{
 			my $reason = $dependency->{__TRIGGERED}[0]{NAME} ;
 			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
@@ -247,40 +297,11 @@ for my $dependency_name (sort keys %$tree)
 			# data used to parallelize build
 			$tree->{__CHILDREN_TO_BUILD}++ ;
 			push @{$dependency->{__PARENTS}}, $tree ;
-
 			push @dependency_triggering, $dependency ;
+
+			PrintInfo "Count: " . _INFO3_("'$dependency_name' => '$name' [$tree->{__CHILDREN_TO_BUILD}]\n")
+				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
 			}
-		else
-			{
-			#PrintInfo "Check: " . INFO3("'$name'") . INFO(" dependency [$dependency_name]") . INFO(" will NOT be build [$tree->{__CHILDREN_TO_BUILD}]\n") ;
-			}
-		}
-
-	if(DependencyIsSource($tree, $dependency->{__NAME}, $inserted_nodes))
-		{
-		# trigger on our dependencies because they won't trigger themselves if they match 
-		# and are a source node. If a source node triggered, it would need to be rebuild.
-		my $trigger_match = 0 ;
-		for my $trigger_regex (@{$pbs_config->{TRIGGER}})
-			{
-			if($dependency_name =~ /$trigger_regex/)
-				{
-				PrintUser "Trigger: source '$dependency_name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
-				$trigger_match++ ;
-
-				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
-				push @{$dependency->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
-				$triggered++ ;
-
-				$tree->{__CHILDREN_TO_BUILD}++ ;
-
-				PrintUser "Trigger: " . INFO3("'$name'") . INFO(" dependency [$dependency_name (source)]")
-						 . USER(" added to children to build [$tree->{__CHILDREN_TO_BUILD}]\n")
-							if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
-				}
-			}
-
-		PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 		}
 	}
 
@@ -396,7 +417,9 @@ if(NodeIsGenerated($tree))
 		{
 		if($name =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger: '$name' matches /$trigger_regex/\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			PrintInfo2 "Trigger: '$name' matches /$trigger_regex/\n"
+				 if $pbs_config->{DEBUG_DISPLAY_TRIGGER} && $name !~ /^__PBS/ ;
+
 			$trigger_match++ ;
 
 			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
@@ -404,7 +427,10 @@ if(NodeIsGenerated($tree))
 			}
 		}
 
-	PrintInfo2 "Trigger: '$name' not triggered\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY} ;
+	PrintInfo2 "Trigger: '$name' not triggered\n"
+		 if ! $trigger_match
+			&& $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY}
+			&& $name !~ /^__PBS/ ;
 	}
 
 # node is checked, add it to the build sequence if triggered
@@ -562,7 +588,7 @@ else
 	}
 	
 delete($tree->{__CYCLIC_FLAG}) ;
-pop @traversal ;
+pop @cyclic_trail ;
 
 $tree->{__CHECKED}++ ;
 
@@ -593,7 +619,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	PrintInfo "Locate: file:" . _INFO3_(" '$unlocated_file':\n") if $display_search_info ;
+	PrintInfo2 "Place: target:" . _INFO3_(" '$unlocated_file':\n") if $display_search_info ;
 	
 	if(-e $located_file)
 		{
@@ -604,12 +630,12 @@ unless(file_name_is_absolute($file))
 		$year += 1900 ;
 		$month++ ;
 		
-		PrintInfo "Locate: found in build directory:" . _INFO2_(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n")
+		PrintInfo2 "Place: in build directory:" . _INFO2_(" '$build_directory'. s: $file_size t: $month_day-$month-$year $hour:$min:$sec\n")
 			if $display_search_info ;
 		}
 	else
 		{
-		PrintInfo "Locate: not found in build directory:" . _INFO2_(" '$build_directory'.\n") if($display_search_info) ;
+		PrintInfo2 "Place: not in build directory:" . _INFO2_(" '$build_directory'.\n") if($display_search_info) ;
 		}
 		
 	if((! $file_found) || $display_all_alternates)
@@ -631,8 +657,8 @@ unless(file_name_is_absolute($file))
 					
 					if($file_found)
 						{
-						PrintWarning
-							"Locate: also located as "
+						PrintWarning3
+							"Place:: also located as "
 							. " '$searched_file'"
 							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 								if $display_search_info ;
@@ -640,8 +666,8 @@ unless(file_name_is_absolute($file))
 					else
 						{
 						$file_found++ ;
-						PrintInfo
-							"Locate: found:"
+						PrintInfo2
+							"Place: found:"
 							. " '$searched_file'"
 							. ", size: $file_size, time: $month_day-$month-$year $hour:$min:$sec\n", 
 								if $display_search_info ;
@@ -653,7 +679,7 @@ unless(file_name_is_absolute($file))
 					}
 				else
 					{
-					PrintInfo "Locate: not located as:" . _INFO2_(" '$searched_file'\n") if $display_search_info ;
+					#PrintInfo "Locate: not located as:" . _INFO2_(" '$searched_file'\n") if $display_search_info ;
 					}
 				}
 			else
@@ -665,45 +691,12 @@ unless(file_name_is_absolute($file))
 	}
 else
 	{
-	PrintInfo "Locate: absolute pathy:" . _INFO2_(" $located_file\n") if $display_search_info ;
+	PrintInfo2 "Place: absolute path:" . _INFO2_(" $located_file\n") if $display_search_info ;
 	}
 
-PrintInfo "Locate: chosing: $located_file [$alternative_source, $other_source_index]\n" if $display_search_info ;
+PrintInfo2 "Place: => '$located_file'\n" if $display_search_info ;
 
 return $located_file, $alternative_source, $other_source_index ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub CheckTimeStamp
-{
-my $dependent_tree  = shift ;
-my $dependent       = shift ;
-my $dependency_tree = shift ;
-my $dependency      = shift ;
-
-if(-e $dependent)
-	{
-	if((stat($dependency))[9] > (stat($dependent))[9])
-		{
-		return 1, "$dependency newer than $dependent" ;
-		}
-	else
-		{
-		return 0, "Time stamp OK" ;
-		}
-	}
-else
-	{
-	if(-e $dependency)
-		{
-		return 0, "'$dependent' doesn't exist" ;
-		}
-	else
-		{
-		die ERROR("Can't Check time stamp on non existing nodes!") . "\n"  ;
-		}
-	}
 }
 
 #-------------------------------------------------------------------------------
@@ -736,7 +729,6 @@ PBS::Check  -
 	sub GetUserCheckSub
 	sub CheckDependencyTree: checks a tree and generates a build sequence
 	sub LocateSource: find a file in the build directory or source directories
-	sub CheckTimeStamp: check 2 nodes time stamps with each other
 
 =head2 EXPORT
 

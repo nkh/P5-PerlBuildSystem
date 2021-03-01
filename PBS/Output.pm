@@ -33,6 +33,7 @@ require Exporter;
 		COLOR PrintColor PrintNoColor PrintVerbatim
 
 		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
+		SayError SayWarning SayWarning2 SayWarning3 SayWarning4 SayInfo SayInfo2 SayInfo3 SayInfo4 SayInfo5 SayUser SayShell SayDebug
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -214,6 +215,20 @@ sub PrintInfo5   {_print(\*STDERR, \&INFO5, @_)}
 sub PrintUser    {_print(\*STDERR, \&USER, @_)}
 sub PrintShell   {_print(\*STDERR, \&SHELL, @_)}
 sub PrintDebug   {_print(\*STDERR, \&DEBUG, @_)}
+
+sub SayError   {_print(\*STDERR, \&ERROR, (shift . "\n"), @_)}
+sub SayWarning {_print(\*STDERR, \&WARNING, (shift . "\n"), @_)}
+sub SayWarning2{_print(\*STDERR, \&WARNING2, (shift . "\n"), @_)}
+sub SayWarning3{_print(\*STDERR, \&WARNING3, (shift . "\n"), @_)}
+sub SayWarning4{_print(\*STDERR, \&WARNING4, (shift . "\n"), @_)}
+sub SayInfo    {_print(\*STDERR, \&INFO, (shift . "\n"), @_ )}
+sub SayInfo2   {_print(\*STDERR, \&INFO2, (shift . "\n"), @_)}
+sub SayInfo3   {_print(\*STDERR, \&INFO3, (shift . "\n"), @_)}
+sub SayInfo4   {_print(\*STDERR, \&INFO4, (shift . "\n"), @_)}
+sub SayInfo5   {_print(\*STDERR, \&INFO5, (shift . "\n"), @_)}
+sub SayUser    {_print(\*STDERR, \&USER, (shift . "\n"), @_)}
+sub SayShell   {_print(\*STDERR, \&SHELL, (shift . "\n"), @_)}
+sub SayDebug   {_print(\*STDERR, \&DEBUG, (shift . "\n"), @_)}
 
 #-------------------------------------------------------------------------------
 

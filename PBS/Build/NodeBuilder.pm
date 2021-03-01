@@ -21,6 +21,8 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Path qw(make_path) ;
 use List::Util qw (any) ;
 
+use Data::TreeDumper ;
+
 use PBS::Config ;
 use PBS::Depend ;
 use PBS::Check ;
@@ -37,7 +39,7 @@ sub NodeNeedsRebuild
 my ($node, $inserted_nodes) = @_ ;
 
 # virtual node have no digests so we can't check it
-return(0) if exists $node->{__VIRTUAL} ;
+return 0 if exists $node->{__VIRTUAL} ;
 
 local $PBS::Output::indentation_depth ;
 $PBS::Output::indentation_depth += 2 ;
@@ -73,10 +75,8 @@ if($rebuild)
 	}
 else
 	{
-	if(! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME})
-		{
-		PrintWarning "No dependencie change (see --cdabt).\n" ;
-		}
+	PrintWarning "No dependencie change (see --cdabt).\n"
+		if ! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME} ;
 		
 	# remember that we are using the previously generated digest.
 	# the digest is in a file but this node is in memory
@@ -144,13 +144,13 @@ local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output 
 if
 	(
 	$display_node
-	&&  ( defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
-		|| defined $pbs_config->{DISPLAY_BUILD_INFO}
-		|| defined $pbs_config->{CREATE_LOG}
+	&&  ( $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
+		|| $pbs_config->{DISPLAY_BUILD_INFO}
+		|| $pbs_config->{CREATE_LOG}
 		)
 	)
 	{
-	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, 1, $inserted_nodes) ;
+	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, $pbs_config->{CREATE_LOG}, $inserted_nodes) ;
 	}
 else
 	{
@@ -203,7 +203,7 @@ if($node_needs_rebuild)
 			}
 		else
 			{
-			if(exists $file_tree->{__BUILD_DONE})
+			if($file_tree->{__BUILD_DONE})
 				{
 				PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
 				}
@@ -237,22 +237,10 @@ if($node_needs_rebuild)
 		}
 	else
 		{
-		my $reason ; 
-		
-		if(@{$file_tree->{__MATCHING_RULES}})
-			{
-			$reason .= "\tmatching rules have no builder\n" ; 
-			}
-		else
-			{
-			$reason .= "\tno matching rule\n"  ;
-			}
+		my $reason .= @{$file_tree->{__MATCHING_RULES}} ? "\tmatching rules have no builder\n" : "\tno matching rule\n"  ;
 		
 		# show why the node was to be build
-		for my $triggered_dependency_data (@{$file_tree->{__TRIGGERED}})
-			{
-			$reason.= "\t$triggered_dependency_data->{NAME} ($triggered_dependency_data->{REASON})\n" ;
-			}
+		$reason.= "\t$_->{NAME} ($_->{REASON})\n" for @{$file_tree->{__TRIGGERED}} ;
 			
 		$file_tree->{__BUILD_FAILED} = $reason ;
 		
@@ -272,8 +260,8 @@ if($node_needs_rebuild)
 		
 			if(-e $build_name)
 				{
-				PrintWarning2("Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n") 
-					unless (-d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
+				PrintWarning2 "Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
+					unless -d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY} ;
 				}
 			}
 		else
@@ -323,48 +311,34 @@ if($pbs_config->{TIME_BUILDERS} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
 	print STDERR $c->(sprintf("Build: time: %0.3f s.\n", $build_time)) ;
 	}
 
-return($build_result, $build_message) ;
+return $build_result, $build_message ;
 }
 
 #-------------------------------------------------------------------------------------------------------
 
 sub GetNodeRepositories
 {
-my $tree = shift ;
+my ($tree) = @_ ;
 
-my @repository_paths ;
-
-if($tree->{__NAME} =~ /^\./)
-	{
-	my $target_path = (File::Basename::fileparse($tree->{__NAME}))[1] ;
-	$target_path =~ s~/$~~ ;
+my $target_path = ((File::Basename::fileparse($tree->{__NAME}))[1]) =~ s~/$~~r ;
 	
-	for my $repository (@{$tree->{__PBS_CONFIG}->{SOURCE_DIRECTORIES}})
-		{
-		push @repository_paths, CollapsePath("$repository/$target_path") ;
-		}
-	}
-	
-return(@repository_paths) ;
+$tree->{__NAME} =~ /^\./
+	? map {  CollapsePath("$_/$target_path") } @{$tree->{__PBS_CONFIG}->{SOURCE_DIRECTORIES}}
+	: ()
 }
 
 #-------------------------------------------------------------------------------------------------------
 
 sub GetNodeDependencies
 {
-my $file_tree = shift ;
+my ($file_tree) = @_ ;
 
 my @dependencies ;
 for my $dependency (grep { $_ !~ /^__/ ;}(keys %$file_tree))
 	{
-	if(exists $file_tree->{$dependency}{__BUILD_NAME})
-		{
-		push @dependencies, $file_tree->{$dependency}{__BUILD_NAME};
-		}
-	else
-		{
-		push @dependencies, $dependency ;
-		}
+	push @dependencies, exists $file_tree->{$dependency}{__BUILD_NAME}
+				? $file_tree->{$dependency}{__BUILD_NAME}
+				: $dependency ;
 	}
 	
 my (@triggered_dependencies, %triggered_dependencies_build_names) ;
@@ -376,10 +350,8 @@ for my $triggering_dependency (@{$file_tree->{__TRIGGERED}})
 	
 	next if $dependency_name =~ /^__/ ; #__SELF is triggering but is not a real dependency
 	
-	if(exists $triggering_dependency->{__BUILD_NAME})
-		{
-		$dependency_name = $triggering_dependency->{__BUILD_NAME};
-		}
+	$dependency_name = $triggering_dependency->{__BUILD_NAME}
+		if exists $triggering_dependency->{__BUILD_NAME} ;
 		
 	if(! exists $triggered_dependencies_build_names{$dependency_name})
 		{
@@ -388,7 +360,7 @@ for my $triggering_dependency (@{$file_tree->{__TRIGGERED}})
 		}
 	}
 	
-return(\@dependencies, \@triggered_dependencies) ;
+return \@dependencies, \@triggered_dependencies ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -437,6 +409,13 @@ eval # rules might throw an exception
 			}
 		}
 
+=pod
+	$ENV{$_} = $file_tree->{__CONFIG}{$_} for
+		grep { my $k = $_ ; any { $k =~ $_ } @{$file_tree->{__EXPORT_CONFIG} // []} }
+			 keys %{$file_tree->{__CONFIG}} ;
+
+	$ENV{$_} = $config{$_} for grep { $a = $_ ; any { $a =~ $_ } @regexes } keys %config ;
+=cut
 	# get all the config variables from the node's package
 	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
 
@@ -454,12 +433,14 @@ eval # rules might throw an exception
 	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE})
 		{
 		my $accessed = PBS::Config::GetConfigAccess($file_tree->{__NAME}) ;
-		my @not_accessed = 
-			$pbs_config->{DISPLAY_TARGET_PATH_USAGE}
-				? sort grep { ! exists $accessed->{$_} } keys %{$file_tree->{__CONFIG}}
-				: sort grep { ! exists $accessed->{$_} && $_ ne 'TARGET_PATH'} keys %{$file_tree->{__CONFIG}} ;
 
-		use Data::TreeDumper ;
+		my @not_accessed = grep 
+					{
+					! exists $accessed->{$_}
+					&& ($pbs_config->{DISPLAY_TARGET_PATH_USAGE} || $_ ne 'TARGET_PATH')
+					}
+					sort keys %{$file_tree->{__CONFIG}} ;
+
 		PrintInfo DumpTree { Accessed => $accessed, 'Not accessed' => \@not_accessed},
 			 "\nConfig: variable usage for '$file_tree->{__NAME}:", DISPLAY_ADDRESS => 0 ;
 		}
@@ -469,8 +450,8 @@ eval # rules might throw an exception
 		$build_result = BUILD_FAILED ;
 		
 		my $rule_info = "'" . $rule_used_to_build->{DEFINITION}{NAME} . "' at '"
-			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
-			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
+					. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
+					. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 			
 		$build_message = "Builder $rule_info didn't return a valid build result!" ;
 		}
@@ -487,21 +468,17 @@ if($@)
 
 	if('' ne ref $@ && $@->isa('PBS::Shell'))
 		{
-		$build_message =
-			ERROR(
-			  "\tCommand: $@->{command}\n"
-			. "\tType: $@->{error} \n"
-			. "\tErrno: $@->{errno}, $@->{errno_string}\n"
-			) ;
+		$build_message = ERROR "\tCommand: $@->{command}\n"
+					. "\tType: $@->{error} \n"
+					. "\tErrno: $@->{errno}, $@->{errno_string}\n" ;
 		}
 	else
 		{
-		my $rule_info = 
-			"'" . $rule_used_to_build->{DEFINITION}{NAME} . "' at '"
-			. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
-			. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
+		my $rule_info = "'" . $rule_used_to_build->{DEFINITION}{NAME} . "' @ '"
+				. $rule_used_to_build->{DEFINITION}{FILE}  . ":"
+				. $rule_used_to_build->{DEFINITION}{LINE}  . "'" ;
 		
-		$build_message = ERROR("\texception: $@\n\tbuild name: $build_name\n") ;
+		$build_message = ERROR "\texception: $@\n\tbuild name: $build_name\n" ;
 		}
 	}
 
@@ -513,11 +490,12 @@ if($build_result == BUILD_FAILED)
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
 			
-	$build_message .= ERROR "\tbuilder: #$rule_used_to_build->{INDEX} '$rule_info'.\n" ;
+	$build_message .= ERROR "\tbuilder: #$rule_used_to_build->{INDEX} '$rule_info'. \n" ;
+
 	$file_tree->{__BUILD_FAILED} = $build_message ;
 	}
 
-return($build_result, $build_message) ;
+return $build_result, $build_message ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -544,7 +522,7 @@ for my $rule (@{$file_tree->{__MATCHING_RULES}})
 		if defined $builder ;
 	}
 	
-return(\@rules_with_builders) ;
+return \@rules_with_builders ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -556,7 +534,9 @@ my ($node_build_result, $node_build_message, $pbs_config, $file_tree, $dependenc
 my $build_name = $file_tree->{__BUILD_NAME} ;
 my $name       = $file_tree->{__NAME} ;
 
-my ($build_result, $build_message) = (BUILD_SUCCESS, '') ;
+return $node_build_result, $node_build_message unless exists $file_tree->{__POST_BUILD_COMMANDS} ;
+
+my ($build_result, $build_message) = (BUILD_FAILED, 'default post build message') ;
 
 for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 	{
@@ -614,7 +594,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 	if($pbs_config->{DISPLAY_POST_BUILD_RESULT})
 		{
-		PrintInfo("Post build result for '$rule_info' on '$name': $build_result : $build_message\n") ;
+		PrintInfo "Post build result for '$rule_info' on '$name': $build_result : $build_message\n" ;
 		}
 		
 	if($build_result == BUILD_FAILED)
@@ -625,7 +605,7 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		}
 	}
 
-return $build_result, "Build: $node_build_message" .($build_message ne q{} ? "Post build: $build_message\n" : '') ;
+return $build_result, "Post build: $build_message\n" ;
 }
 
 #-------------------------------------------------------------------------------------------------------

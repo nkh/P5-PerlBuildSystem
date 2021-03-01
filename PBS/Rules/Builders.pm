@@ -97,8 +97,8 @@ if(exists $tree->{__SHELL_OVERRIDE})
 		}
 	else
 		{
-		Carp::carp ERROR("Node defined shell override for node '$tree->{__NAME}' exists but is not defined!\n") ;
-		die ;
+		PrintError "Node defined shell override for node '$tree->{__NAME}' exists but is not defined!\n" ;
+		die "\n" ;
 		}
 	}
 	
@@ -140,15 +140,15 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 			{
 			if ($perl_sub_name =~/^BuildOk|TouchOk/)
 				{
-				PrintInfo3 "${command_information}Build: $perl_sub_name\n"
+				PrintInfo2 "${command_information}Build: $perl_sub_name\n"
 				}
 			elsif ($perl_sub_name =~ /__ANON__/) 
 				{
-				PrintInfo3 "${command_information}Build: sub:$file:$line\n"
+				PrintInfo2 "${command_information}Build: sub:$file:$line\n"
 				}
 			else
 				{
-				PrintInfo3 "${command_information}Build: sub: $perl_sub_name $file:$line\n"
+				PrintInfo2 "${command_information}Build: sub: $perl_sub_name $file:$line\n"
 				}
 			}
 

@@ -109,7 +109,7 @@ for my $shell_command (@_)
 	{
 	if('' eq ref $shell_command)
 		{
-		PrintUser("Build: shell command: $shell_command \n") unless $PBS::Shell::silent_commands ;
+		PrintShell "$shell_command\n" unless $PBS::Shell::silent_commands ;
 	
 		if($PBS::Shell::silent_commands_output)
 			{
@@ -150,7 +150,6 @@ for my $shell_command (@_)
 	}
 	
 1 ;
-
 }
 
 #-------------------------------------------------------------------------------
@@ -172,7 +171,6 @@ for my $shell_command (@_)
 	}
 
 1 ;
-
 }
 
 #-------------------------------------------------------------------------------

@@ -47,17 +47,8 @@ if($file_tree->{__VIRTUAL} || $file_tree->{__FORCED} || $file_tree->{__WARP_NODE
 	$type .= '] ' ;
 	}
 	
-if($pbs_config->{DISPLAY_BUILDER_INFORMATION})
-	{
-	if(PBS::Build::NodeBuilderUsesPerlSubs($file_tree))
-		{
-		$type .= '<P> ' ;
-		}
-	else
-		{
-		$type .= '<S> ' ;
-		}
-	}
+$type .= PBS::Build::NodeBuilderUsesPerlSubs($file_tree) ? '<P> ' : '<S> '
+	if $pbs_config->{DISPLAY_BUILDER_INFORMATION} ;
 
 my $tab = $PBS::Output::indentation ;
 	
@@ -67,14 +58,9 @@ my $terminal_width = chars() || 10_000 ;
 
 my $node_header = '' ;
 
-if(defined $pbs_config->{DISPLAY_NODE_BUILD_NAME})
-	{
-	$node_header .= INFO3("Node: $type'$name':", 0) . INFO2(" $build_name", 0) . "\n" ;
-	}
-else
-	{
-	$node_header .= INFO3("Node: $type'$name':", 0) . "\n" ;
-	}
+$node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
+			? _INFO3_("Node: $type'$name':") . _INFO2_(" $build_name\n")
+			: _INFO3_ "Node: $type'$name':\n" ;
 	
 return $node_header, $type, $tab ;
 }
@@ -87,7 +73,7 @@ my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
 my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
 my ($node_header, $type, $tab) = GetNodeHeader($file_tree, $pbs_config) ;
 
-my $no_output = defined $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
+my $no_output = $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
 $node_info .= $node_header unless $no_output ;
 $log_node_info .= $node_header ;
@@ -105,7 +91,7 @@ if(NodeIsSource($file_tree))
 #----------------------
 # insertion origin
 #----------------------
-if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
+if ($generate_for_log || $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
 	$current_node_info = '' ;
 
@@ -113,7 +99,7 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
 		{
 		my $inserted = $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} ;
 		my $origin = "${tab}Originated at rule: " 
-				. (defined $pbs_config->{ADD_ORIGIN} 
+				. ($pbs_config->{ADD_ORIGIN} 
 					? $inserted->{INSERTION_RULE} 
 					: "$inserted->{INSERTION_RULE_NAME}:$inserted->{INSERTION_FILE}"
 						. ($inserted->{INSERTION_RULE_NAME} eq '__ROOT'
@@ -125,7 +111,7 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
 		}
 
 	my $inserted = "${tab}Inserted at rule: "
-			. (defined $pbs_config->{ADD_ORIGIN} 
+			. ($pbs_config->{ADD_ORIGIN} 
 
 				? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}"
 
@@ -147,7 +133,7 @@ if ($generate_for_log ||  $pbs_config->{DISPLAY_NODE_ORIGIN})
 #----------------------
 # parents
 #----------------------
-if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN})
+if ($generate_for_log || (($pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN}) && ! $pbs_config->{DISPLAY_NO_NODE_PARENTS}))
 	{
 	#$current_node_info = INFO "\tDependents:" . join(', ',  GetParentsNames($file_tree)) . "\n" ;
 
@@ -167,7 +153,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 									? "$inserted_nodes->{$link}{__BUILD_NAME}.pbs_log"
 									: '' ;
 
-							my $file_link = INFO2("node info: $file") ;
+							my $file_link = INFO2 "node info: $file" ;
 							
 							# set children node info links
 							$tree->{$_}{$file_link} = [] ;
@@ -177,18 +163,14 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DI
 					return ('HASH', undef, sort { $b =~ /node info:/ } grep { ! /node info/ unless $depth} grep { ! /^__/} keys %$tree) ;
 					}
 				
-				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+				return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
 				} ;
 
-	$current_node_info =
-		INFO
-			DumpTree
-				(
-				$file_tree->{__DEPENDENCY_TO},
-				"Dependents:",
-				FILTER => $parent_tree,
-				DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1, NO_NO_ELEMENTS => 1,
-				) ;
+	$current_node_info = INFO DumpTree
+					$file_tree->{__DEPENDENCY_TO},
+					"Dependents:",
+					FILTER => $parent_tree,
+					DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1, NO_NO_ELEMENTS => 1 ;
 
 	$log_node_info .= $current_node_info . "\n" ;
 	$node_info     .= $current_node_info . "\n" if $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN} ;
@@ -226,11 +208,9 @@ for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
 
 	if($name =~ /$node_env_regex/)
 		{
-		$current_node_info = INFO( DumpTree( \%ENV, "ENV:", FILTER => $matching_env, DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1) ) ;
+		$current_node_info = INFO DumpTree( \%ENV, "ENV:", FILTER => $matching_env, DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1) ;
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;
-		
-		last ;
 		}
 	}
 
@@ -249,7 +229,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 			}
 		}
 
-	$current_node_info = INFO("${tab}Dependencies:\n") ;
+	$current_node_info = INFO "${tab}Dependencies:\n" ;
 
 	for (sort keys %$file_tree)
 		{
@@ -262,8 +242,12 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 			}
 		else
 			{
-			$current_node_info .= "${tab}${tab}" . (NodeIsSource($inserted_nodes->{$_}) ? _WARNING_($_) : _INFO3_($_)) . "\n"
-						 if($pbs_config->{DISPLAY_NODE_DEPENDENCIES}) ;
+			$current_node_info .= "${tab}${tab}"
+						. ( $inserted_nodes->{$_}{__WARP_NODE} 
+							? _WARNING3_($_) . "\n"
+							: (NodeIsSource($inserted_nodes->{$_}) ? _WARNING_($_) : _INFO3_($_)) . "\n"
+							)
+						 if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
 			}
 		
 		if
@@ -273,13 +257,13 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 			&& ! $pbs_config->{NO_NODE_INFO_LINKS}
 			) 
 			{
-			my $file_link = INFO2("node info: $inserted_nodes->{$_}{__BUILD_NAME}.pbs_info") ;
+			my $file_link = INFO2 "node info: $inserted_nodes->{$_}{__BUILD_NAME}.pbs_info" ;
 			$current_node_info .= "${tab}${tab}$file_link\n" ;
 			}
 		}
 
 	# remaining triggers
-	$current_node_info .= ERROR("${tab}${tab}$_: $triggered_dependencies{$_}\n") 
+	$current_node_info .= ERROR "${tab}${tab}$_: $triggered_dependencies{$_}\n" 
 		for sort keys %triggered_dependencies ;
 		
 	$log_node_info .= $current_node_info ;
@@ -292,7 +276,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 my @rules_with_builders ;
 my $builder = 0 ;
 
-if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
+if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_config->{DISPLAY_NO_NODE_BUILD_RULES} )
 	{
 	my @matching_rules = @{$file_tree->{__MATCHING_RULES}} ;
 
@@ -306,45 +290,50 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES})
 		$builder = $rule_definition->{BUILDER} ;
 		
 		push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $rule_definition }
-			if(defined $builder) ;
+			if defined $builder ;
 			
 		my $rule_dependencies ;
 					
 		if(@{$rule->{DEPENDENCIES}})
 			{
-			$rule_dependencies = join ' ', 
-				map 	
-					{
-					exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
-						 ? _ERROR_($_)
-						 : NodeIsSource($inserted_nodes->{$_}) 
-							? _WARNING_($_)
-							: _INFO3_($_)
-					}
-					map { $_->{NAME} } @{$rule->{DEPENDENCIES}} ;
+			$rule_dependencies = 
+				"\n${tab}${tab}=> "
+				. join( ' ', 
+					map 	
+						{
+						exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
+							? _ERROR_ $_
+							: ( $inserted_nodes->{$_}{__WARP_NODE} 
+								? _WARNING3_($_) 
+								: NodeIsSource($inserted_nodes->{$_}) 
+									? _WARNING_ $_
+									: _INFO3_   $_
+								)
+						if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
+						}
+						map { $_->{NAME} } @{$rule->{DEPENDENCIES}})
+				. "\n" ;
 			}
 		else
 			{
-			$rule_dependencies = 'no dependencies' ;
+			$rule_dependencies = " => no dependencies\n" ;
 			}
 
 		my $rule_tag = GetRuleTypes($rule_definition) ;
-		$rule_tag = _WARNING_($rule_tag) if $rule_tag =~ 'BO' ;
+		$rule_tag = _WARNING_ $rule_tag if $rule_tag =~ 'BO' ;
 		
 		my $rule_info = $rule_definition->{NAME}
-					. (defined $pbs_config->{ADD_ORIGIN} 
+					. ($pbs_config->{ADD_ORIGIN} 
 						? $rule_definition->{ORIGIN}
 
 						: ':' . $rule_definition->{FILE}
 						  .':' . $rule_definition->{LINE}
 					  ) ;
 							
-		my $rule_index = @matching_rules > 1 ? " #$rule_number" : '' ;
+		my $rule_index = @matching_rules > 1 ? "#$rule_number" : '' ;
 
-		$current_node_info = INFO "${tab}${rule_index}Rule:$rule_tag "
-					. _INFO_(GetRunRelativePath($pbs_config, "'$rule_info'\n")) ;
-
-		$current_node_info .= INFO2 "${tab}${tab}=> $rule_dependencies\n" ;
+		$current_node_info =  INFO "${tab}${rule_index}Rule:$rule_tag " . _INFO_(GetRunRelativePath($pbs_config, "'$rule_info'")) ;
+		$current_node_info .= INFO2 $rule_dependencies ;
 		
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;
@@ -382,7 +371,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILDER})
 					: ":" . $rule_used_to_build->{DEFINITION}{FILE}
 					  . ":" . $rule_used_to_build->{DEFINITION}{LINE} ) ;
 							
-		$current_node_info = INFO ("${tab}Using builder from rule:$rule_info\n") ;
+		$current_node_info = INFO "${tab}Using builder from rule:$rule_info\n" ;
 		
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info if @rules_with_builders > 1 || $pbs_config->{DISPLAY_NODE_BUILDER} ;
@@ -396,6 +385,8 @@ if(@rules_with_builders)
 	{
 	for my $rule (@rules_with_builders)
 		{
+		$builder = $rules_with_builders[-1]{DEFINITION}{BUILDER} ;
+
 		# display override information
 		
 		my $rule_info = $rule->{DEFINITION}{NAME} . ':' .  GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':' . $rule->{DEFINITION}{LINE} ;
@@ -410,14 +401,14 @@ if(@rules_with_builders)
 				$builder = $rule->{DEFINITION}{BUILDER} ;
 
 				$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
-				$current_node_info .= WARNING ("${tab}Build: using override builder, rule: #$rule->{INDEX} '$rule_info'\n") ;
+				$current_node_info .= WARNING "${tab}Build: using override builder, rule: #$rule->{INDEX} '$rule_info'\n" ;
 				}
 			else
 				{
-				$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
-				$current_node_info .= INFO ("${tab}Build: ignoring builder, rule: #$rule->{INDEX} '$rule_info'\n") ;
+				$current_node_info = $node_header if $no_output ;
+				$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: #$rule->{INDEX} '$rule_info'\n" ;
 				}
-
+				
 			}
 			
 		$log_node_info .= $current_node_info ;
@@ -430,7 +421,7 @@ if(@rules_with_builders)
 #----------------------
 if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
-	my $config = INFO(DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1)) ;
+	my $config = INFO DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1) ;
 
 	$log_node_info .= $config ;
 	$node_info .= $config if $pbs_config->{DISPLAY_NODE_CONFIG} ;
@@ -449,15 +440,15 @@ if(exists $pbs_config->{DISPLAY_BUILD_INFO} && @{$pbs_config->{DISPLAY_BUILD_INF
 #----------------------
 if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS})
 	{
-	if(defined $file_tree->{__POST_BUILD_COMMANDS})
+	if($file_tree->{__POST_BUILD_COMMANDS})
 		{
-		$current_node_info = INFO ("${tab}Post Build Commands:\n") ;
+		$current_node_info = INFO "${tab}Post Build Commands:\n" ;
 		
 		for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 			{
-			my $rule_info = $post_build_command->{NAME}
-								. $post_build_command->{ORIGIN} ;
-			$current_node_info .= INFO ("${tab}${tab}$rule_info\n") ;
+			my $rule_info = $post_build_command->{NAME} . $post_build_command->{ORIGIN} ;
+
+			$current_node_info .= INFO "${tab}${tab}$rule_info\n" ;
 			}
 			
 		$log_node_info .= $current_node_info ;
@@ -472,7 +463,7 @@ sub DisplayNodeInformation
 {
 my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 
-if(defined $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || defined $pbs_config->{BUILD_NODE_INFO} || defined $pbs_config->{DISPLAY_BUILD_INFO})
+if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || $pbs_config->{BUILD_NODE_INFO} || $pbs_config->{DISPLAY_BUILD_INFO})
 	{
 	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
 	PrintNoColor "$node_info\n" ;

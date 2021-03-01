@@ -190,7 +190,6 @@ elsif($run_in_warp_mode == RUN_IN_NORMAL_MODE)
 			$inserted_nodes,
 			$pbs_config,
 			undef, #warp config
-			'[pre-build]',
 			) ;
 		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
 		

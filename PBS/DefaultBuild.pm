@@ -428,7 +428,6 @@ if($pbs_config->{DO_BUILD})
 	{
 	($build_result, $build_message) 
 		= PBS::Build::BuildSequence($pbs_config, \@build_sequence, $inserted_nodes) ;
-
 	PrintError("Build: failed\n") unless $build_result == BUILD_SUCCESS ;
 	
 	# run a global post build

@@ -68,13 +68,15 @@ return
 	256 => 
 		{
 		debug     => color('rgb314'),
+		on_error  => color('on_rgb100'),
 		error     => color('rgb300'),
 		info      => color('rgb020'),
 		info_2    => color('rgb013'),
 		info_3    => color('rgb023'), 
 		info_4    => color('rgb030'),
 		info_5    => color('rgb012'),
-		shell     => color('rgb023'),
+		#shell     => color('rgb023'),
+		shell     => color('grey7'),
 		user      => color('rgb034'),
 		warning   => color('rgb320'),
 		warning_2 => color('bright_yellow'),
@@ -83,11 +85,11 @@ return
 
 		no_match  => color('rgb200'),
 
-		box_1_1   => color('on_grey1'),
-		box_1_2   => color('on_grey1'),
+		box_1_1   => color('on_grey4'),
+		box_1_2   => color('on_grey4'),
 
-		box_2_1   => color('on_grey3'),
-		box_2_2   => color('on_grey3'),
+		box_2_1   => color(''),
+		box_2_2   => color(''),
 
 		test_bg   => color('rgb220 on_rgb101'),
 		ignoring_local_rule  => color('rgb220 on_rgb101'),
@@ -103,13 +105,15 @@ return
 	night => 
 		{
 		debug     => color('rgb314'),
+		on_error  => color('on_rgb100'),
 		error     => color('rgb200'),
 		info      => color('rgb020'),
 		info_2    => color('rgb013'),
 		info_3    => color('rgb023'), 
 		info_4    => color('rgb030'),
 		info_5    => color('rgb010'),
-		shell     => color('rgb023'),
+		#shell     => color('rgb023'),
+		shell     => color('grey7'),
 		user      => color('rgb034'),
 		warning   => color('rgb320'),
 		warning_2 => color('rgb440'),
@@ -118,11 +122,11 @@ return
 
 		no_match  => color('rgb200'),
 
-		box_1_1   => color('on_grey1'),
-		box_1_2   => color('on_grey1'),
+		box_1_1   => color('on_grey2'),
+		box_1_2   => color('on_grey2'),
 
-		box_2_1   => color('on_grey3'),
-		box_2_2   => color('on_grey3'),
+		box_2_1   => color(''),
+		box_2_2   => color(''),
 
 		ignoring_local_rule  => color('rgb220 on_rgb101'),
 

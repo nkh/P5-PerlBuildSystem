@@ -175,6 +175,8 @@ if($run_in_warp_mode)
 	write_file $pbs_config->{TRIGGERS_FILE}, "[ # warp triggers\n" . $trigger_log . "],\n" unless $trigger_log eq '' ;
 
 
+	PrintInfo "\r\e[K" ;
+
 	if($pbs_config->{DISPLAY_WARP_TIME} && (!$pbs_config->{QUIET} || $number_of_removed_nodes))
 		{
 		my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
@@ -294,8 +296,9 @@ else
 			$dependency_tree,
 			$inserted_nodes,
 			$pbs_config,
-			' [pre-build]',
 			) ;
+			
+		PrintInfo "\e[K" ;
 		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
 		
 	my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
@@ -666,9 +669,7 @@ local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;
 local $Data::Dumper::Sortkeys = 1 ; 
 
-my $js = $pbs_config->{WARP_HUMAN_FORMAT} 
-		? JSON::XS->new->pretty(1)->canonical(1)
-		: JSON::XS->new ;
+my $js = $pbs_config->{WARP_HUMAN_FORMAT} ? JSON::XS->new->pretty(1) : JSON::XS->new ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
 print WARP '$nodes = decode_json qq{' . $js->encode( $nodes ) . "} ;\n\n" ;

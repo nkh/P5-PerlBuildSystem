@@ -30,7 +30,7 @@ use List::PriorityQueue ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
 use Term::ANSIColor qw( :constants color) ;
-use Text::ANSI::Util qw( ta_highlight );
+use Text::ANSI::Util qw( ta_highlight ta_length);
 use File::Slurp qw(append_file write_file);
 
 $|++ ;
@@ -42,10 +42,6 @@ sub Build
 my $t0 = [gettimeofday];
 
 my ($pbs_config, $build_sequence, $inserted_nodes)  = @_ ;
-
-#always have the node name in the log
-$pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
-undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
 my ($build_queue, $number_of_terminal_nodes, $level_statistics) = EnqueuTerminalNodes($build_sequence, $pbs_config) ;
 
@@ -724,12 +720,13 @@ else
 				last if /__PBS_FORKED_BUILDER__/ ;
 				next if $no_output ;
 
-				#$bg_color ^= 1 if /Running command/ ; # change color for each sub command
-
 				chomp ;
 				$_ = $PBS::Output::indentation if ($_ eq '' || $_ eq "\t") ;
 
-				my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
+				my $length = length($PBS::Output::indentation) || 4 ;
+				my $o = $pbs_config->{BOX_NODE}
+						? ta_highlight((ta_length($_) < $length ? (' ' x $length) : $_) , qr/.{$length}/, GetColor($bg_colors[$bg_color])) 
+						: $_ ;
 
 				PrintVerbatim "$o\n" unless $no_output ;
 
@@ -752,7 +749,9 @@ else
 			chomp ;
 			$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
 			
-			my $o = $pbs_config->{BOX_NODE} ? ta_highlight($_, qr/.{3}/, GetColor($bg_colors[$bg_color])) : $_ ;
+			my $o = $pbs_config->{BOX_NODE}
+					? ta_highlight((ta_length($_) < 1 ? ' ' : $_) , qr/./, GetColor('on_error')) 
+					: $_ ;
 
 			$error_output .= $o . "\n" ;
 			}

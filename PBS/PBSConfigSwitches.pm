@@ -566,6 +566,10 @@ EOT
 		"Display the node's parents.",
 		'',
 		
+	'nnp|no_node_parents'            => \$pbs_config->{DISPLAY_NO_NODE_PARENTS},
+		"Don't display the node's parents.",
+		'',
+		
 	'nd|node_dependencies'            => \$pbs_config->{DISPLAY_NODE_DEPENDENCIES},
 		'Display the dependencies for a node.',
 		'',
@@ -584,6 +588,10 @@ EOT
 		
 	'nr|node_build_rule'              => \$pbs_config->{DISPLAY_NODE_BUILD_RULES},
 		'Display the rules used to depend a node (rule defining a builder ar tagged with [B].',
+		'',
+		
+	'nnr|no_node_build_rule'              => \$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES},
+		'Rules used to depend a node are not displayed',
 		'',
 		
 	'nb|node_builder'                  => \$pbs_config->{DISPLAY_NODE_BUILDER},
@@ -1317,6 +1325,10 @@ EOT
 		
 	'ndpbm|display_no_progress_bar_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
 		"Slightly less verbose build mode.",
+		'',
+		
+	'ndpbmm|display_no_progress_bar_minimum_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
+		"Frankly less verbose build mode.",
 		'',
 		
 	'bre|display_build_result'       => \$pbs_config->{DISPLAY_BUILD_RESULT},
