@@ -15,11 +15,11 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 
-our $VERSION = '0.02' ;
+our $VERSION = '0.03' ;
 
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use File::Path qw(make_path) ;
-use List::Util qw (any) ;
+use List::Util qw(any) ;
 
 use Data::TreeDumper ;
 
@@ -44,47 +44,25 @@ return 0 if exists $node->{__VIRTUAL} ;
 local $PBS::Output::indentation_depth ;
 $PBS::Output::indentation_depth += 2 ;
 
-my ($rebuild, $reason, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
+return 1, "\t\t__SELF\n", ["\t\t__SELF\n"], 1 if any { $_->{NAME} eq '__SELF'} @{$node->{__TRIGGERED}} ;
 
-for my $trigger (@{ $node->{__TRIGGERED} })
+my ($rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
+
+my $why = "\t\tdigest OK" ;
+   $why = "\t\tdigest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $rebuild ;
+
+unless($rebuild)
 	{
-	return(1, '__SELF') if $trigger->{NAME} eq '__SELF' ;
-	}
-
-#todo: with a well build digest, if the only difference is the pbsfile itself, and all other variables 
-# identical, we can skip the build
-# otherwise all the nodes in a pbsfile get rebuild even if the change has no impact on it
-# note that rebuilding the graph still has to be done! The changes to the pbsfiles may not 
-# have an impact on the node to build but it may have on its position in the graph
-
-my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
-
-for my $triggered_dependency (@$triggered_dependencies)
-	{
-	# triggered source dependencies always trigger even if they have the same md5
-	if (NodeIsGenerate($node->{$triggered_dependency}))
-		{
-		$rebuild++ ;
-		last ;
-		}
-	}
+	# node exists on disk, sub dependencies exist and have the same signature
 	
-if($rebuild)
-	{
-	# build normally
-	}
-else
-	{
-	PrintWarning "No dependencie change (see --cdabt).\n"
-		if ! $PBS::Shell::silent_commands && ! $node->{__PBS_CONFIG}{CHECK_DEPENDENCIES_AT_BUILD_TIME} ;
-		
-	# remember that we are using the previously generated digest.
-	# the digest is in a file but this node is in memory
-	# if this node is newly created (not linked from a warp tree)
-	# it doesn't have an MD5 which is used in the parent node
-	
-	# if we don't need to be rebuild, the previous md5 is still valid
-	
+	# our pbsfile may have change, we need to check the impact
+
+	# if node uses shell commands only
+	#	generate the commands now and compare with previous commands
+	#	environment variables too!
+	#
+	# if node uses subs, did the pbsfile and its config change ... or any module that the sub uses!
+
 	if(exists $node->{__VIRTUAL})
 		{
 		$node->{__MD5} = 'VIRTUAL' ;
@@ -107,20 +85,18 @@ else
 					{
 					#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
 					$node->{__MD5} = 'Error: File not found!' ; 
+					$why .= "\t" . $node->{__MD5} . "\n" ;
 					}
 				}
 			}
 		}
 	}
 
-return($rebuild) ;
+return $rebuild, $why, $reasons, $number_of_differences ;
 
 # test when one of the dependencies is virtual, all dependencies are virtual
 # test when the pbsfile has changed
-# test when a pbs module has changed
 # test when config has changed
-# o dependency caches are build but have no digest
-# what if the builder is a perl sub that has changed?
 }
 
 #-------------------------------------------------------------------------------
@@ -160,80 +136,142 @@ else
 	$PBS::Shell::silent_commands_output = 1 ;
 	}
 
-my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successfuly built.") ;	
+my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
 my $node_needs_rebuild = 1 ;
 
-if($pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
+my $rule_used_to_build ;
+my $rules_with_builders = ExtractRulesWithBuilder($file_tree) ;
+
+if(@$rules_with_builders)
 	{
-	#todo: md5 for the shell commands and perl subs should be saved in the digest
-	#todo: Need to regenerate the digest with the new pbsfile
-	# nothing to do
+	$rule_used_to_build = $rules_with_builders->[-1] ;
 
-	($node_needs_rebuild, my $why) = NodeNeedsRebuild($file_tree, $inserted_nodes) ;
-
-	unless ($node_needs_rebuild)
+	for my $rule (@$rules_with_builders)
 		{
-		PrintWarning3 "Skipping node build, no dependency change\n" ;
+		$rule_used_to_build = $rule 
+			if $rule->{DEFINITION}{BUILDER} != $rule_used_to_build
+				&& any { BUILDER_OVERRIDE eq $_ }  @{$rule->{DEFINITION}{TYPE}} ;
+		}
+	}
+
+if($file_tree->{__BUILD_DONE})
+	{
+	PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
+	$node_needs_rebuild = 0 ;
+	}
+
+if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
+	{
+	($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
+	$node_needs_rebuild = 0 ;
+	}
+
+if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
+	{
+	my ($rebuild, $why, $reasons, $number_of_differences)
+		= NodeNeedsRebuild($file_tree, $inserted_nodes) ;
+
+	$node_needs_rebuild = $rebuild ;
+
+	if(1 == $number_of_differences && $reasons->[0] =~ /__DEPENDING_PBSFILE/)
+		{
+		my (@evaluated_commands) 
+			= RunRuleBuilder
+				(
+				0, # Get what would be run
+				$pbs_config,
+				$rule_used_to_build,
+				$file_tree,
+				$dependencies,
+				$triggered_dependencies,
+				$inserted_nodes,
+				) ;
 		
-		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No dependency change.") ;	
+		#compare with previous run commands
+		my $digest_file_name = PBS::Digest::GetDigestFileName($file_tree) ;
+
+		if(-e $digest_file_name)
+			{
+			my ($digest, $sources, $run_commands, $pbs_digest) ;
+
+			($digest, $sources, $run_commands, $pbs_digest) = do $digest_file_name ;
+			
+			#SDT [$run_commands, \@evaluated_commands] ;
+				
+			if('ARRAY' eq ref $run_commands)
+				{
+				$why = "\t\t pbsfile and commands mismatch" ;
+
+				if(@evaluated_commands == @$run_commands)
+					{
+					my $found_mismatch = 0 ;
+
+					while(@evaluated_commands)
+						{
+						my ($ec, $rc)  = (shift @evaluated_commands, shift @$run_commands) ;
+
+						# code could use modules that have changed, we don't know about those dependencies
+						if($ec->[0] =~ /CODE\(Ox/ || $rc->[0] =~ /CODE\(0x/)
+							{
+							$found_mismatch++ ;
+							SayDebug "$ec->[0], $rc->[0]" ;
+							}
+							
+						if($ec->[0] ne $rc->[0])
+							{
+							$found_mismatch++ ;
+							SayDebug "$ec->[0]\n\n $rc->[0]" ;
+							}
+						} ;
+					
+					$node_needs_rebuild = $found_mismatch ;
+					}
+				}
+			}
+		}
+
+	if ($node_needs_rebuild)
+		{
+		PrintWarning "\tBuild:\n$why\n" ;
+		}
+	else
+		{
+		PrintWarning "\tBuild: skipping\n" ;
+		
+		($build_result, $build_message) = (BUILD_SUCCESS, "\t\t'$build_name' No change.") ;	
 		}
 	}
 
 if($node_needs_rebuild)
 	{
-	my $rules_with_builders = ExtractRulesWithBuilder($file_tree) ;
-	
-	if(@$rules_with_builders)
+	if($rule_used_to_build)
 		{
-		# choose builder
-		my $rule_used_to_build = $rules_with_builders->[-1] ;
-
-		for my $rule (@$rules_with_builders)
+		unless ($file_tree->{__VIRTUAL})
 			{
-			$rule_used_to_build = $rule 
-				if $rule->{DEFINITION}{BUILDER} != $rule_used_to_build
-					&& any { BUILDER_OVERRIDE eq $_ }  @{$rule->{DEFINITION}{TYPE}} ;
-			}
-
-		if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
-			{
-			($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
-			}
-		else
-			{
-			if($file_tree->{__BUILD_DONE})
+			my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
+			make_path($path, { error => \my $make_path_errors}) ;
+			
+			if ($make_path_errors && @$make_path_errors)
 				{
-				PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
-				}
-			else
-				{
-				unless ($file_tree->{__VIRTUAL})
-					{
-					my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
-					make_path($path, { error => \my $make_path_errors}) ;
-					
-					if ($make_path_errors && @$make_path_errors)
-						{
-						my $error = join ', ' , map {my (undef, $message) = %$_; $message} @$make_path_errors ;
-
-						return (BUILD_FAILED, "'$build_name' error: $error.") ;
-						}
-					}
+				my $error = join ', ' , map {my (undef, $message) = %$_; $message} @$make_path_errors ;
 				
-				($build_result, $build_message) 
-					= RunRuleBuilder
-						(
-						$pbs_config,
-						$rule_used_to_build,
-						$file_tree,
-						$dependencies,
-						$triggered_dependencies,
-						$inserted_nodes,
-						) ;
+				return (BUILD_FAILED, "'$build_name' error: $error.") ;
 				}
 			}
+		
+		($build_result, $build_message) 
+			= RunRuleBuilder
+				(
+				1, # do it!
+				$pbs_config,
+				$rule_used_to_build,
+				$file_tree,
+				$dependencies,
+				$triggered_dependencies,
+				$inserted_nodes,
+				) ;
 		}
 	else
 		{
@@ -274,7 +312,7 @@ if($node_needs_rebuild)
 			if( $current_md5 ne "invalid md5")
 				{
 				$file_tree->{__MD5} = $current_md5 ;
-
+				
 				eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
 				($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 				}
@@ -294,7 +332,6 @@ if($build_result == BUILD_SUCCESS)
 	if($pbs_config->{DISPLAY_BUILD_RESULT})
 		{
 		$build_message //= '' ;
-		PrintInfo "Node: " . _INFO3_("'$file_tree->{__NAME}'") . _INFO_(", result: $build_result, message: $build_message\n") ;
 		}
 
 	$file_tree->{__BUILD_DONE} = "BuildNode Done." ;
@@ -367,7 +404,7 @@ return \@dependencies, \@triggered_dependencies ;
 
 sub RunRuleBuilder
 {
-my ($pbs_config, $rule_used_to_build, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
+my ($do_build, $pbs_config, $rule_used_to_build, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
 
 my $builder    = $rule_used_to_build->{DEFINITION}{BUILDER} ;
 my $build_name = $file_tree->{__BUILD_NAME} ;
@@ -379,6 +416,8 @@ my ($build_result, $build_message) = (BUILD_SUCCESS, '') ;
 my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 	
+my @evaluated_commands ;
+
 eval # rules might throw an exception
 	{
 	#DEBUG HOOK (see PBS::Debug)
@@ -419,17 +458,36 @@ eval # rules might throw an exception
 	# get all the config variables from the node's package
 	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
 
-	($build_result, $build_message) = $builder->
-						(
-						$file_tree->{__CONFIG},
-						$build_name,
-						$dependencies,
-						$triggered_dependencies,
-						$file_tree,
-						$inserted_nodes,
-						$rule_used_to_build,
-						) ;
-						
+	if ($do_build)
+		{
+		($build_result, $build_message) = $builder->
+							(
+							$do_build,
+							$file_tree->{__CONFIG},
+							$build_name,
+							$dependencies,
+							$triggered_dependencies,
+							$file_tree,
+							$inserted_nodes,
+							$rule_used_to_build,
+							) ;
+		}
+	else
+		{
+		@evaluated_commands 
+			= $builder->
+				(
+				$do_build,
+				$file_tree->{__CONFIG},
+				$build_name,
+				$dependencies,
+				$triggered_dependencies,
+				$file_tree,
+				$inserted_nodes,
+				$rule_used_to_build,
+				) 
+		}
+
 	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE})
 		{
 		my $accessed = PBS::Config::GetConfigAccess($file_tree->{__NAME}) ;
@@ -461,6 +519,8 @@ eval # rules might throw an exception
 	#DEBUG HOOK
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message) ;
 	} ;
+
+return @evaluated_commands unless $do_build;
 
 if($@)
 	{

@@ -104,10 +104,11 @@ else
 	@dependencies = @$dependencies ;
 	}
 
+my @dependencies = sort @dependencies ;
 my $dependency_list = join ' ', @dependencies ;
 
 my $build_directory = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
-my $dependency_list_relative_build_directory = join(' ', map({my $copy = $_; $copy =~ s/\Q$build_directory\E[\/|\\]// ; $copy} @dependencies)) ;
+my $dependency_list_relative_build_directory = join ' ', map { s/\Q$build_directory\E[\/|\\]//r} @dependencies ;
 
 my @triggered_dependencies ;
 
@@ -131,7 +132,8 @@ else
 	@triggered_dependencies = @$triggered_dependencies ;
 	}
 	
-my $triggered_dependency_list = join ' ', @triggered_dependencies ;
+my $triggered_dependency_list = join ' ', sort @triggered_dependencies ;
+
 
 my ($basename, $path, $ext) = File::Basename::fileparse($file_to_build, ('\..*')) ;
 $path =~ s/\/$// ;

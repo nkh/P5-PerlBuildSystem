@@ -1,14 +1,13 @@
 
+check environment variables
+	which one does the command use? and sub command ?
 
-optimizing check with build command
+#optimizing check with build command
 
 	node trigger if it's commands have changed
 	and sub nodes have not changed
 	...
 
-
-__LOCATION could it be __BUILD_NAME?
-	breaks check_at_build_time
 
 #example linking to warp nodes
 

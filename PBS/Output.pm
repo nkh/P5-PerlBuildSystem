@@ -34,6 +34,8 @@ require Exporter;
 
 		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 		SayError SayWarning SayWarning2 SayWarning3 SayWarning4 SayInfo SayInfo2 SayInfo3 SayInfo4 SayInfo5 SayUser SayShell SayDebug
+		
+		SDT
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -229,6 +231,8 @@ sub SayInfo5   {_print(\*STDERR, \&INFO5, (shift . "\n"), @_)}
 sub SayUser    {_print(\*STDERR, \&USER, (shift . "\n"), @_)}
 sub SayShell   {_print(\*STDERR, \&SHELL, (shift . "\n"), @_)}
 sub SayDebug   {_print(\*STDERR, \&DEBUG, (shift . "\n"), @_)}
+
+sub SDT {PrintDebug Data::TreeDumper::DumpTree(@_) . "\n"}
 
 #-------------------------------------------------------------------------------
 

@@ -29,7 +29,7 @@ our @EXPORT = qw(
 		NodeIsGenerated NodeIsSource DependencyIsSource
 		) ;
 
-our $VERSION = '0.07' ;
+our $VERSION = '0.10' ;
 our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
@@ -150,7 +150,7 @@ my ($pbs_config, $digest_file, $digest_file_md5) = @_ ;
 
 return (0, ['DEVEL_NO_DISTRIBUTION_CHECK is set'], 0 ) if $pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK} ;
 
-my ($rebuild_because_of_digest, $result_message, $number_of_differences) = (0, ['digest ok'], 0 ) ;
+my ($rebuild_because_of_digest, $reasons, $number_of_differences) = (0, ['digest ok'], 0 ) ;
 
 if(-e $digest_file)
 	{
@@ -182,26 +182,26 @@ if(-e $digest_file)
 					$digest,
 					) ;
 					
-			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, $why, scalar @{$why} ) if $digest_is_different ;
+			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, $why, scalar @{$why} ) if $digest_is_different ;
 			}
 		else
 			{
-			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ['empty pbs distribution digest'], 1) ;
+			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['empty pbs distribution digest'], 1) ;
 			}
 		}
 	else
 		{
-		PrintWarning("Digest: file '$digest_file' different digest.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
-		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ['changes in pbs distribution'], 1) ;
+		PrintWarning "Digest: file '$digest_file' different digest.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
+		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['changes in pbs distribution'], 1) ;
 		}
 	}
 else
 	{
-	PrintWarning("Digest: file '$digest_file' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
-	($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ["pbs distribution digest file '$digest_file' not found"], 1) ;
+	PrintWarning "Digest: file '$digest_file' not found.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
+	($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["pbs distribution digest file '$digest_file' not found"], 1) ;
 	}
 
-return ($rebuild_because_of_digest, $result_message, $number_of_differences) ;
+return $rebuild_because_of_digest, $reasons, $number_of_differences ;
 }
 
 #-------------------------------------------------------------------------------
@@ -302,7 +302,7 @@ else
 		$md5_cache{$file} = $md5 ;
 
 		my $time = tv_interval($t0_md5, [gettimeofday]) ;
-		PrintInfo2(sprintf "Digest: [" . (scalar(keys %md5_cache)) . "] %.6f s., $md5, $file\n", $time) if $display_md5_time ;
+		PrintInfo2 sprintf("Digest: [" . (scalar(keys %md5_cache)) . "] %.6f s., $md5, $file\n", $time) if $display_md5_time ;
 
 		my $md5_time += $time ;
 		}
@@ -351,7 +351,7 @@ if(-f $file_name && $fh->open($file_name))
 	undef $fh ;
 	
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
-	PrintUser(sprintf "Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
+	PrintUser sprintf("Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
 
 	return $md5sum // 'invalid md5' ;
 	}
@@ -379,7 +379,7 @@ if(-f $file_name)
 	my $md5sum = xxhash32_hex($bin, 'PBS_xxHash') ;
 	
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
-	PrintUser(sprintf "Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
+	PrintUser sprintf("Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
 
 	return $md5sum // 'invalid md5' ;
 	}
@@ -406,7 +406,7 @@ if (exists $package_config_variable_dependencies{$package})
 			$pbs_config->{CONFIG_NAMESPACES},
 			) ;
 
-	#~ PrintDebug DumpTree(\%config, "config for package '$package':") ;
+	#~ SDT \%config, "config for package '$package':" ;
 	
 	for my $key (keys %{$package_config_variable_dependencies{$package}})
 		{
@@ -781,11 +781,9 @@ for my $name (keys %exclusion_patterns)
 	if(exists $exclude_from_digest{$package}{$name})
 		{
 		PrintWarning
-			(
 			"Digest: overriding ExcludeFromDigest entry '$name' defined at $exclude_from_digest{$package}{$name}{ORIGIN}:\n"
 			. "\t$exclude_from_digest{$package}{$name}{PATTERN} "
 			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
-			) ;
 		}
 		
 	$exclude_from_digest{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
@@ -806,11 +804,9 @@ for my $name (keys %force_patterns)
 	if(exists $force_digest{$package}{$name})
 		{
 		PrintWarning
-			(
 			"Digest: overriding ForceDigestGeneration entry '$name' defined at $force_digest{$package}{$name}{ORIGIN}:\n"
 			. "\t$force_digest{$package}{$name}{PATTERN} "
 			. "with $force_patterns{$name} defined at $file_name:$line\n"
-			) ;
 		}
 		
 	$force_digest{$package}{$name} = {PATTERN => $force_patterns{$name}, ORIGIN => "$file_name:$line"} ;
@@ -824,6 +820,9 @@ sub NodeIsSource { ! NodeIsGenerated(@_) }
 sub NodeIsGenerated
 {
 my($node) = @_ ;
+
+use Carp ;
+confess unless 'HASH' eq ref $node ;
 
 if(exists $node->{__WARP_NODE})
 	{
@@ -856,7 +855,7 @@ else
 sub DependencyIsSource
 {
 my($dependent, $node_name, $inserted_nodes) = @_ ;
-#PrintDebug DumpTree [$dependent, $inserted_nodes->{$node_name}], $node_name, MAX_DEPTH => 7 ;
+#SDT [$dependent, $inserted_nodes->{$node_name}], $node_name, MAX_DEPTH => 7 ;
 
 my $is_source ;
 if (exists $inserted_nodes->{$node_name})
@@ -912,8 +911,6 @@ $is_source
 sub IsDigestToBeGenerated
 {
 my ($package, $node) = @_ ;
-use Carp ;
-PrintDebug confess() unless defined $package ;
 
 my $node_name  = $node->{__NAME} ;
 my $pbs_config = $node->{__PBS_CONFIG} ;
@@ -927,7 +924,7 @@ for my $name (keys %{$exclude_from_digest{$package}})
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
 			PrintWarning "Digest: '$node_name' no digest, rule: '$name', pattern: '$exclude_from_digest{$package}{$name}{PATTERN}'"
-					. INFO2(", file: $exclude_from_digest{$package}{$name}{ORIGIN}\n", 0)  ;
+					. _INFO2_(", file: $exclude_from_digest{$package}{$name}{ORIGIN}\n")  ;
 			}
 			
 		$generate_digest = 0 ;
@@ -942,7 +939,7 @@ for my $name (keys %{$force_digest{$package}})
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
 			PrintWarning "Digest: '$node_name' forced digest, rule: '$name', pattern: '$force_digest{$package}{$name}{PATTERN}'"
-					. INFO2(", file: $force_digest{$package}{$name}{ORIGIN}\n", 0) ;
+					. _INFO2_(", file: $force_digest{$package}{$name}{ORIGIN}\n") ;
 			}
 			
 		$generate_digest = 1 ;
@@ -975,7 +972,7 @@ my ($node, $inserted_nodes) = @_ ;
 
 my $pbs_config = $node->{__PBS_CONFIG} ;
 
-my ($rebuild_because_of_digest, $result_message, $number_of_differences) = (0, ['digest OK'] , 0) ;
+my ($rebuild_because_of_digest, $reasons, $number_of_differences) = (0, ['digest OK'] , 0) ;
 
 if(NodeIsGenerated($node))
 	{
@@ -983,16 +980,16 @@ if(NodeIsGenerated($node))
 
 	if(-e $digest_file_name)
 		{
-		my ($digest, $sources, $pbs_digest) ;
+		my ($digest, $sources, $run_commands, $pbs_digest) ;
 
-		unless (($digest, $sources, $pbs_digest) = do $digest_file_name) 
+		unless (($digest, $sources, $run_commands, $pbs_digest) = do $digest_file_name) 
 			{
 			PrintWarning "Digest: couldn't parse '$digest_file_name': $@" if $@;
 			}
 			
 		if('HASH' eq ref $digest)
 			{
-			($rebuild_because_of_digest, $result_message, $number_of_differences)
+			($rebuild_because_of_digest, $reasons, $number_of_differences)
 				= RebuildBecauseOfPbsDependency($pbs_config, $pbs_digest) ;
 
 			unless ($rebuild_because_of_digest)
@@ -1006,7 +1003,7 @@ if(NodeIsGenerated($node))
 						sort { -s $inserted_nodes->{$a}{__BUILD_NAME} > -s $inserted_nodes->{$b}{__BUILD_NAME} }
 							(
 							$node->{__NAME},
-							grep { ! defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys,
+							grep { ! defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys
 							)
 						),
 						(
@@ -1022,7 +1019,7 @@ if(NodeIsGenerated($node))
 					__DEPENDING_PBSFILE => $node->{__DEPENDING_PBSFILE},
 					} ;
 				
-				($rebuild_because_of_digest, $result_message, $number_of_differences)
+				($rebuild_because_of_digest, $reasons, $number_of_differences)
 					= CompareDigests
 						(
 						$pbs_config,
@@ -1040,21 +1037,21 @@ if(NodeIsGenerated($node))
 			}
 		else
 			{
-			($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ['empty digest'], 1) ;
+			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['empty digest'], 1) ;
 			}
 		}
 	else
 		{
-		PrintWarning("Digest: file '$digest_file_name' not found.\n") if(defined $pbs_config->{DISPLAY_DIGEST}) ;
-		($rebuild_because_of_digest, $result_message, $number_of_differences) = (1, ["digest file '$digest_file_name' not found"], 1) ;
+		PrintWarning "Digest: file '$digest_file_name' not found.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
+		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["digest file '$digest_file_name' not found"], 1) ;
 		}
 	}
 else
 	{
-	($rebuild_because_of_digest, $result_message) = (0, ['excluded from digest'], 0) ;
+	($rebuild_because_of_digest, $reasons) = (0, ['excluded from digest'], 0) ;
 	}
 	
-return $rebuild_because_of_digest, $result_message, $number_of_differences ;
+return $rebuild_because_of_digest, $reasons, $number_of_differences ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1199,7 +1196,7 @@ for my $key( keys %$digest)
 	
 if($digest_is_different)
 	{
-	PrintWarning("Digest: file: $name differences [$digest_is_different]:\n") if($display_digest) ;
+	PrintWarning "Digest: file: $name differences [$digest_is_different]:\n" if $display_digest ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
@@ -1208,7 +1205,7 @@ if($digest_is_different)
 		my $only_in_file_digest_text = "key '$key' exists only in old digest" ;
 		push @digest_different_text, $only_in_file_digest_text ;
 		
-		PrintWarning("\t$only_in_file_digest_text.\n") if($display_digest) ;
+		PrintWarning "\t$only_in_file_digest_text.\n" if $display_digest ;
 		}
 		
 	for my $key (@different_in_file_digest)
@@ -1219,7 +1216,7 @@ if($digest_is_different)
 		my $different_digest_text = "$key: $digest_value != $expected_digest_value" ;
 		push @digest_different_text, $different_digest_text ;
 		
-		PrintError("\t$different_digest_text\n") if($display_digest) ;
+		PrintError "\t$different_digest_text\n" if $display_digest ;
 		}
 		
 	for my $key (@in_expected_digest_but_not_file_digest)
@@ -1229,7 +1226,7 @@ if($digest_is_different)
 		my $only_in_expected_digest_text = "key '$key' exists only in expected digest" ;
 		push @digest_different_text, $only_in_expected_digest_text ;
 		
-		PrintError("\t$only_in_expected_digest_text\n") if($display_digest) ;
+		PrintError "\t$only_in_expected_digest_text\n"  if $display_digest ;
 		}
 	}
 else
@@ -1237,7 +1234,7 @@ else
 	my $digest_is_identical = "Digest: file '$name' no difference" ;
 	push @digest_different_text, $digest_is_identical ;
 	
-	PrintInfo("$digest_is_identical\n") if($display_digest && ! $display_different_digest_only ) ;
+	PrintInfo "$digest_is_identical\n" if $display_digest && ! $display_different_digest_only ;
 	}
 
 return $digest_is_different, \@digest_different_text, scalar(@digest_different_text)  ;
@@ -1298,20 +1295,12 @@ sub GenerateNodeDigest
 {
 $generate_digest_calls++ ;
 my $t0_generate_digest = [gettimeofday] ;
-my $node = shift ;
+
+my ($node) = @_ ;
 
 my $digest_file_name = GetDigestFileName($node) ;
 
-if(exists $node->{__VIRTUAL} && $node->{__VIRTUAL} == 1)
-	{
-	if(-e $digest_file_name)
-		{
-		#PrintInfo("Digest: removing digest file: '$digest_file_name', node is virtual.\n") ;
-		unlink($digest_file_name) ;
-		}
-		
-	return () ;
-	}
+unlink($digest_file_name) ;
 
 if(NodeIsGenerated($node))
 	{
@@ -1326,6 +1315,8 @@ if(NodeIsGenerated($node))
 
 	$sources .= "\t} ;\n" ;
 
+	my $run_commands = Data::Dumper->Dump([$node->{__RUN_COMMANDS} // []], ['run_commands']) ;
+
 	my (undef, $pbs_digest_for_node) = GetPbsDigest($node->{__PBS_CONFIG}) ;
 
 	WriteDigest
@@ -1336,11 +1327,11 @@ if(NodeIsGenerated($node))
 		. "Pbsfile: $node->{__PBS_CONFIG}{PBSFILE}",
 
 		GetDigest($node),
-		$sources, # caller data to be added to digest
+		$sources . "\n" . $run_commands, # caller data to be added to digest
 		1, # create path
 		
 		# add pbs digest to node's digest
-		$pbs_digest_for_node . 'return $digest, $sources, $pbs_digest;', # postamble
+		$pbs_digest_for_node . 'return $digest, $sources, $run_commands, $pbs_digest;', # postamble
 		1, # add time stamp
 		) ;
 

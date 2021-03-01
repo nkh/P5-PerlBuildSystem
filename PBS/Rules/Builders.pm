@@ -36,7 +36,7 @@ my ($pbs_config, $config, $builder, $package, $name, $file_name, $line) = @_ ;
 
 ! defined $builder and                            return () ;
 ref $builder eq '' || ref $builder eq 'ARRAY' and return GenerateBuilderFromStringOrArray(@_) ;
-ref $builder eq 'CODE' and                        return GenerateBuilderFromSub(@_) ;
+ref $builder eq 'CODE' and                        return GenerateBuilderFromStringOrArray([@_]) ;
 			
 die ERROR ("PBS: invalid builder definition for '$name' @ '$file_name:$line'") . "\n" ;
 }
@@ -73,7 +73,7 @@ for (@$shell_commands)
 	die ERROR("Rule: invalid command type for '$name' @ '$file_name:$line', mut be string or code reference.") . "\n" ;
 	}
 
-my $generated_builder = sub { BuilderFromStringOrArray($shell_commands, $shell, $package, $name, $file_name, $line, @_) } ;
+my $generated_builder = sub { BuilderFromStringOrArray($pbs_config, $shell_commands, $shell, $package, $name, $file_name, $line, @_) } ;
 
 return($generated_builder, [], \%rule_type) ;
 }
@@ -82,7 +82,10 @@ return($generated_builder, [], \%rule_type) ;
 
 sub BuilderFromStringOrArray
 {
-my($shell_commands, $shell, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
+my ($pbs_config, $shell_commands, $shell, $package, $name, $file_name, $line) = splice(@_, 0, 7) ;
+
+my $do_run = shift ;
+my @evaluated_commands ;
 
 my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
 
@@ -103,7 +106,7 @@ if(exists $tree->{__SHELL_OVERRIDE})
 	}
 	
 $tree->{__SHELL_INFO} = $shell->GetInfo() ; 
-if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
+if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO} && $do_run)
 	{
 	PrintWarning "Using shell$is_node_local_shell: '$tree->{__SHELL_INFO}' " ;
 	
@@ -118,47 +121,59 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
 my $command_number = 0 ;
 my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} 
 					&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} 
-					&& ! $PBS::Shell::silent_commands ;
+					&& ! $PBS::Shell::silent_commands 
+					&& $do_run ;
 
-for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, perl bug ???
+my ($command_return, $command_message) = (1, '') ;
+
+for my $shell_command (@$shell_commands) # use a copy of @shell_commands, perl bug ???
 	{
 	$command_number++ ;
-	print STDERR "\n" if $command_number > 1 ;
 
 	my $command_information = @$shell_commands > 1
 					? "Build: command $command_number of " . scalar(@$shell_commands) . "\n"
 					: '' ;
 	
+	my $command ;
+
 	if('CODE' eq ref $shell_command)
 		{
 		my ($perl_sub_name, $file, $line) = (sub_name($shell_command), get_code_location($shell_command)) ;
-
+		
 		$file =~ s/'//g ;
 		$file = GetRunRelativePath($tree->{__PBS_CONFIG}, $file) ;
-
-		if($display_command_information)
+		
+		if ($perl_sub_name =~/^BuildOk|TouchOk/)
 			{
-			if ($perl_sub_name =~/^BuildOk|TouchOk/)
-				{
-				PrintInfo2 "${command_information}Build: $perl_sub_name\n"
-				}
-			elsif ($perl_sub_name =~ /__ANON__/) 
-				{
-				PrintInfo2 "${command_information}Build: sub:$file:$line\n"
-				}
-			else
-				{
-				PrintInfo2 "${command_information}Build: sub: $perl_sub_name $file:$line\n"
-				}
+			$command = "${command_information}Build: $perl_sub_name"
 			}
+		elsif ($perl_sub_name =~ /__ANON__/) 
+			{
+			$command = "${command_information}Build: sub:$file:$line"
+			}
+		else
+			{
+			$command = "${command_information}Build: sub: $perl_sub_name $file:$line"
+			}
+		
+		push @evaluated_commands, [$shell_command, "rule '$name' @ '" . GetRunRelativePath($pbs_config, $file_name) . ":$line'"] ;
 
-		return $shell->RunPerlSub($shell_command, @_) ;
+		if($do_run)
+			{
+			PrintInfo2 "Build: $command\n" if $display_command_information ;
+		
+			($command_return, $command_message) = $shell->RunPerlSub($shell_command, @_) ;
+			}
+		else
+			{
+			$command_return++ ;
+			}
 		}
 	else
 		{
 		PrintInfo2 $command_information . "Build: shell command: $shell_command\n" if $display_command_information ;
 
-		my $command = EvaluateShellCommandForNode
+		$command = EvaluateShellCommandForNode
 						(
 						$shell_command,
 						"rule '$name' @ '$file_name:$line'",
@@ -166,79 +181,35 @@ for my $shell_command (@{[@$shell_commands]}) # use a copy of @shell_commands, p
 						$dependencies,
 						$triggering_dependencies,
 						) ;
-						
-		$shell->RunCommand($command) ;
+
+		push @evaluated_commands, [$command, "rule '$name' @ '" . GetRunRelativePath($pbs_config, $file_name) . ":$line'"] ;
+
+		if($do_run)
+			{
+			$command_message = '' ; # shell commands don't return, they die
+			($command_return) = $shell->RunCommand($command) ;
+			}
+		else
+			{
+			$command_return++ ;
+			}
 		}
+	
+	last unless $command_return ;
 	}
 	
-return 1 , "OK" ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub GenerateBuilderFromSub
-{
-my ($pbs_config, $config, $builder, $package, $name, $file_name, $line) = @_ ;
-
-my $shell = new PBS::Shell() ;
- 
-my $generated_builder = sub { return(BuilderFromSub($shell, $builder, $package, $name, $file_name, $line, @_)) ; } ;
-
-my %rule_type ;
-
-return($generated_builder, undef, \%rule_type) ;
-}
-
-#-------------------------------------------------------------------------------
-
-sub BuilderFromSub
-{
-my ($shell, $builder, $package, $name, $file_name, $line) = splice(@_, 0, 6) ;
-
-my ($config, $file_to_build, $dependencies, $triggering_dependencies, $tree, $inserted_nodes) = @_ ;
-
-my $is_node_local_shell = '' ;
-
-if(exists $tree->{__SHELL_OVERRIDE})
+if($do_run)
 	{
-	if(defined $tree->{__SHELL_OVERRIDE})
-		{
-		$shell = $tree->{__SHELL_OVERRIDE} ;
-		$is_node_local_shell = ' [O]'
-		}
-	else
-		{
-		Carp::carp ERROR("Node defined shell for node '$tree->{__NAME}' exists but is not defined!\n") ;
-		die ;
-		}
+	# will be added to digest
+	$tree->{__RUN_COMMANDS} = \@evaluated_commands ;
+
+	return $command_return, $command_message ;
 	}
-	
-$tree->{__SHELL_INFO} = $shell->GetInfo() ; # :-) doesn't help as this might not be in the root process
-	
-if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO})
+else
 	{
-	PrintWarning "Using shell$is_node_local_shell: '$tree->{__SHELL_INFO}' " ;
-	
-	if(exists $tree->{__SHELL_ORIGIN} && $tree->{__PBS_CONFIG}{ADD_ORIGIN})
-		{
-		PrintWarning "set @ $tree->{__SHELL_ORIGIN}" ;
-		}
-		
-	print STDERR "\n" ;
+	return @evaluated_commands ;
 	}
-	
-my $perl_sub_name = sub_name($builder) ;
-
-my ($sub_file, $sub_line) = get_code_location($builder) ;
-$perl_sub_name .= " $sub_file:$sub_line" ;
-
-PrintInfo2 "Build: sub: $perl_sub_name\n"
-		if $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}
-			&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER}
-			&& ! $PBS::Shell::silent_commands ;
-
-shell->RunPerlSub($builder, @_)
-} ;
+}
 
 #-------------------------------------------------------------------------------
 
