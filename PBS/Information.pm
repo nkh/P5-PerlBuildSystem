@@ -354,70 +354,41 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 #----------------------
 # builder
 #----------------------
-if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILDER})
+my $has_bo = 0 ;
+
+for my $rule (@rules_with_builders)
 	{
-	my $more_than_one_builder = 0 ;
+	my $rule_tag = GetRuleTypes($rule->{DEFINITION}) ;
+	$rule_tag .= "[P]" if exists $rule->{DEFINITION}{COMMANDS_RUN_CODE} ;
 
-	# choose last builder if multiple Builders
-	if(@rules_with_builders)
+	my $rule_info = $rule->{DEFINITION}{NAME} . ':' .  GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':' . $rule->{DEFINITION}{LINE} ;
+	
+	# display if the rule generated a  builder override and had builder in its definition.
+	my $current_node_info = '' ;
+	
+	my $is_bo = any { BUILDER_OVERRIDE eq $_ } @{$rule->{DEFINITION}{TYPE}} ;
+
+	if($is_bo)
 		{
-		my $rule_used_to_build = $rules_with_builders[-1] ;
-		   $builder            = $rule_used_to_build->{DEFINITION}{BUILDER} ;
-		
-		my $rule_tag = GetRuleTypes($rule_used_to_build->{DEFINITION}) ;
-		$rule_tag .= "[P]" if exists $rule_used_to_build->{DEFINITION}{COMMANDS_RUN_CODE} ;
-		
-		my $rule_info = (@rules_with_builders > 1 ? " #$rule_used_to_build->{INDEX}" : '')
-				. $rule_tag . ' '
-				. $rule_used_to_build->{DEFINITION}{NAME}
-				. ( $pbs_config->{ADD_ORIGIN}
-					? $rule_used_to_build->{DEFINITION}{ORIGIN}
-					: ":" . $rule_used_to_build->{DEFINITION}{FILE}
-					  . ":" . $rule_used_to_build->{DEFINITION}{LINE} ) ;
-							
-		$current_node_info = INFO "${tab}Using builder from rule:$rule_info\n" ;
-		
-		$log_node_info .= $current_node_info ;
-		$node_info     .= $current_node_info if @rules_with_builders > 1 || $pbs_config->{DISPLAY_NODE_BUILDER} ;
-		}
-	}
+		$builder = $rule->{DEFINITION}{BUILDER} ;
+		$has_bo++ ;
 
-#-------------------------------
-# display override information 
-#-------------------------------
-if(@rules_with_builders)
-	{
-	for my $rule (@rules_with_builders)
+		$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
+		$current_node_info .= WARNING "${tab}Build: using override builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
+		}
+	elsif($has_bo)
 		{
-		$builder = $rules_with_builders[-1]{DEFINITION}{BUILDER} ;
-
-		# display override information
-		
-		my $rule_info = $rule->{DEFINITION}{NAME} . ':' .  GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':' . $rule->{DEFINITION}{LINE} ;
-		
-		# display if the rule generated a  builder override and had builder in its definition.
-		my $current_node_info = '' ;
-		
-		if($rule->{DEFINITION}{BUILDER} != $builder)
-			{
-			if(any { BUILDER_OVERRIDE eq $_ } @{$rule->{DEFINITION}{TYPE}})
-				{
-				$builder = $rule->{DEFINITION}{BUILDER} ;
-
-				$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
-				$current_node_info .= WARNING "${tab}Build: using override builder, rule: #$rule->{INDEX} '$rule_info'\n" ;
-				}
-			else
-				{
-				$current_node_info = $node_header if $no_output ;
-				$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: #$rule->{INDEX} '$rule_info'\n" ;
-				}
-				
-			}
-			
-		$log_node_info .= $current_node_info ;
-		$node_info     .= $current_node_info ;
+		$current_node_info = $node_header if $no_output ;
+		$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
 		}
+	else
+		{
+		$current_node_info .= INFO "${tab}Build: using builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
+		$builder = $rule->{DEFINITION}{BUILDER} ;
+		}
+
+	$log_node_info .= $current_node_info ;
+	$node_info     .= $current_node_info ;
 	}
 
 #----------------------

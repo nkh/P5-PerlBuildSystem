@@ -48,8 +48,8 @@ return 1, "\t\t__SELF\n", ["\t\t__SELF\n"], 1 if any { $_->{NAME} eq '__SELF'} @
 
 my ($rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
 
-my $why = "\t\tdigest OK" ;
-   $why = "\t\tdigest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $rebuild ;
+my $why = " digest OK" ;
+   $why = "\n\t\tdigest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $rebuild ;
 
 unless($rebuild)
 	{
@@ -85,7 +85,7 @@ unless($rebuild)
 					{
 					#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
 					$node->{__MD5} = 'Error: File not found!' ; 
-					$why .= "\t" . $node->{__MD5} . "\n" ;
+					$why .= "\n\t\t" . $node->{__MD5} . "\n" ;
 					}
 				}
 			}
@@ -111,31 +111,6 @@ my $node_build_sequencer_info = shift ;
 
 my $t0 = [gettimeofday];
 
-my $display_node = any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
-$display_node = 0 if any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT}} ;
-
-local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
-local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
-
-if
-	(
-	$display_node
-	&&  ( $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
-		|| $pbs_config->{DISPLAY_BUILD_INFO}
-		|| $pbs_config->{CREATE_LOG}
-		)
-	)
-	{
-	PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, $pbs_config->{CREATE_LOG}, $inserted_nodes) ;
-	}
-else
-	{
-	PrintNoColor PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
-
-	$PBS::Shell::silent_commands = 1 ;
-	$PBS::Shell::silent_commands_output = 1 ;
-	}
-
 my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
@@ -158,7 +133,7 @@ if(@$rules_with_builders)
 
 if($file_tree->{__BUILD_DONE})
 	{
-	PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
+	#PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
 	$node_needs_rebuild = 0 ;
 	}
 
@@ -167,6 +142,8 @@ if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 	($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
 	$node_needs_rebuild = 0 ;
 	}
+
+my $skip_build_text = '' ;
 
 if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 	{
@@ -202,7 +179,7 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 				
 			if('ARRAY' eq ref $run_commands)
 				{
-				$why = "\t\t pbsfile and commands mismatch" ;
+				$why = " pbsfile and commands mismatch" ;
 
 				if(@evaluated_commands == @$run_commands)
 					{
@@ -213,17 +190,9 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 						my ($ec, $rc)  = (shift @evaluated_commands, shift @$run_commands) ;
 
 						# code could use modules that have changed, we don't know about those dependencies
-						if($ec->[0] =~ /CODE\(Ox/ || $rc->[0] =~ /CODE\(0x/)
-							{
-							$found_mismatch++ ;
-							SayDebug "$ec->[0], $rc->[0]" ;
-							}
+						$found_mismatch++ if $ec->[0] =~ /sub \{/ || $rc->[0] =~ /sub\{/ ;
 							
-						if($ec->[0] ne $rc->[0])
-							{
-							$found_mismatch++ ;
-							SayDebug "$ec->[0]\n\n $rc->[0]" ;
-							}
+						$found_mismatch++ if $ec->[0] ne $rc->[0] ;
 						} ;
 					
 					$node_needs_rebuild = $found_mismatch ;
@@ -231,17 +200,46 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 				}
 			}
 		}
-
+	
 	if ($node_needs_rebuild)
 		{
-		PrintWarning "\tBuild:\n$why\n" ;
+		$skip_build_text = "\tBuild:$why\n" ;
 		}
 	else
 		{
-		PrintWarning "\tBuild: skipping\n" ;
-		
-		($build_result, $build_message) = (BUILD_SUCCESS, "\t\t'$build_name' No change.") ;	
+		$skip_build_text = "\tBuild: skipping\n" ;
+		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No change.") ;
 		}
+	}
+
+my $display_node =   any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
+   $display_node = ! any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT}} ;
+
+local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
+local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
+
+if($node_needs_rebuild || !$pbs_config->{HIDE_SKIPPED_BUILDS})
+	{
+	if
+		(
+		$display_node
+		&&  ( $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
+			|| $pbs_config->{DISPLAY_BUILD_INFO}
+			|| $pbs_config->{CREATE_LOG}
+			)
+		)
+		{
+		PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, $pbs_config->{CREATE_LOG}, $inserted_nodes) ;
+		}
+	else
+		{
+		PrintNoColor PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
+
+		$PBS::Shell::silent_commands = 1 ;
+		$PBS::Shell::silent_commands_output = 1 ;
+		}
+
+	PrintWarning $skip_build_text if $skip_build_text ne q{} ;
 	}
 
 if($node_needs_rebuild)

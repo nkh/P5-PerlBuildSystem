@@ -3,9 +3,9 @@ sources 'source' ;
 rule          'all',        [all => qw/ big1 big2 big3 source/], 'echo hi', 'cat %DEPENDENCIES > %TARGET' ;
 rule [MULTI], 'big',        [qr/big/], 'dd if=/dev/zero of=%TARGET bs=10M count=1' ;
 rule [BO],    'big_source', [qr/big1/ => 'source'], 'touch %TARGET';
-rule          'big_nop',    [qr/big1/] ;
+rule [BO],    'big_nop',    [qr/big1/] ,'echo hi', 'cat %DEPENDENCIES > %TARGET' ;
 
-rule [BO, MULTI], 'big3', [qr/big3/], 
+rule [BO, MULTI], 'big3', [qr/big3/],
 	[
 		'echo hi from ' . __FILE__,
 		sub

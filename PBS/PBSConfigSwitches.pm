@@ -450,6 +450,10 @@ EOT
 		'Skipps the node build if no dependencies have changed or where rebuild to the same state.',
 		'',
 
+	'hsb|hide_skipped_builds' => \$pbs_config->{HIDE_SKIPPED_BUILDS},
+		'Builds skipped due to -check_dependencies_at_build_time are not displayed.',
+		'',
+
 	'check_only_terminal_nodes' => \$pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES},
 		'Skipps the checking of generated artefacts.',
 		'',
