@@ -32,7 +32,7 @@ our @EXPORT = qw(
 			ConfigVariableEmpty
 			ConfigVariableNotDefinedOrEmpty
 
-		Config
+		Config config
 		) ;
 					
 our $VERSION = '0.04' ;
@@ -445,6 +445,8 @@ elsif(@_ == 1)
 		)
 	}
 }
+
+*config=\&Config ;
 
 sub AddConfig
 {

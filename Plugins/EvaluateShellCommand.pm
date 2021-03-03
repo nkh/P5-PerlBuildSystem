@@ -76,7 +76,7 @@ while($$shell_command_ref =~ /([^\s]+)?\%PBS_REPOSITORIES/g)
 	my $replacement = '';
 	for my $repository_path (@repository_paths)
 		{
-		PrintInfo2 "Config: PBS_REPOSITORIES => $repository_path @ '" . __FILE__ . "'\n"
+		PrintInfo2 "Config: PBS_REPOSITORIES => $repository_path\n"
 			if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 			
 		$replacement .= "$prefix$repository_path ";
@@ -104,7 +104,7 @@ else
 	@dependencies = @$dependencies ;
 	}
 
-my @dependencies = sort @dependencies ;
+@dependencies = sort @dependencies ;
 my $dependency_list = join ' ', @dependencies ;
 
 my $build_directory = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
@@ -164,61 +164,27 @@ for
 	{
 	if($$shell_command_ref =~ m/\%$_->[0]/)
 		{
-		PrintInfo2 "Config:: $_->[0] => $_->[1] @ " . __FILE__ . "'\n"
+		PrintInfo2 "Config: $_->[0] => $_->[1]\n"
 			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
 		}
 	}
 
-my (@attributes, %attributes) ;
-
-for(grep { ! /^__/ } keys %$tree)
+for( grep {  ! /^__/ && defined $tree->{$_}{__USER_ATTRIBUTE} } keys %$tree)
 	{
-	if(defined $tree->{$_}{__USER_ATTRIBUTE})
+	my ($user_attribute, $build_name) = ($tree->{$_}{__USER_ATTRIBUTE}, $tree->{$_}{__BUILD_NAME}) ;
+
+	my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
+	$path =~ s/\/$// ;
+
+	if($$shell_command_ref =~ m/\%$user_attribute/)
 		{
-		my $user_attribute = $tree->{$_}{__USER_ATTRIBUTE} ;
-		my $attribute ;
+		$$shell_command_ref =~ s/\%${user_attribute}_PATH/$path/g ;
+		$$shell_command_ref =~ s/\%$user_attribute/$build_name/g ;
 
-		if(defined $attributes{$user_attribute . '_PATH'})
-			{
-			$attribute = $attributes{$user_attribute . '_PATH'} ;
-			}
-		else
-			{
-			$attribute = $attributes{$user_attribute . '_PATH'} = [ $user_attribute . '_PATH' ] ;
-			push @attributes, $attribute ;
-			}
-
-		my ($basename, $path, $ext) = File::Basename::fileparse($tree->{$_}{__BUILD_NAME}, ('\..*')) ;
-		$path =~ s/\/$// ;
-
-		$attribute->[1] .= ' ' . $path ; 
-
-		if(defined $attributes{$user_attribute})
-			{
-			$attribute = $attributes{$user_attribute}  ;
-			}
-		else
-			{
-			$attribute = $attributes{$user_attribute}  = [ $user_attribute ] ;
-			push @attributes, $attribute ;
-			}
-
-		$attribute->[1] .= ' ' . $tree->{$_}{__BUILD_NAME} ; 
-		}
-	}
-
-for(@attributes)
-	{
-	my ($attribute, $value) = @$_ ;
-
-	if($$shell_command_ref =~ m/\%$attribute/)
-		{
-		PrintInfo2 "Config: $attribute => $value @ " . __FILE__ . "'\n"
+		PrintInfo2 "Config: $user_attribute => $build_name\n"
 			 if $tree->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
-	
-		$$shell_command_ref =~ s/\%$attribute/$value/g ;
 		}
 	}
 }

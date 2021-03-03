@@ -75,14 +75,6 @@ if(-e $warp_file)
 
 	$t0_warp_check = [gettimeofday];
 	
-	PrintInfo "Warp: checking $number_of_nodes_in_the_dependency_tree nodes.\n" unless $pbs_config->{QUIET} ;
-	
-	if(! defined $version || $version != $VERSION)
-		{
-		PrintWarning("Warp: version mismatch.\n") ;
-		$run_in_warp_mode = 0 ;
-		}
-
 	$run_in_warp_mode = 0  unless $number_of_nodes_in_the_dependency_tree ;
 
 	# check distribution
@@ -92,6 +84,15 @@ if(-e $warp_file)
 		{
 		PrintWarning "Warp: changes in pbs distribution.\n" ;
 		$run_in_warp_mode = 0 ;
+		}
+	elsif(! defined $version || $version != $VERSION)
+		{
+		PrintWarning("Warp: version mismatch.\n") ;
+		$run_in_warp_mode = 0 ;
+		}
+	else
+		{
+		PrintInfo "Warp: checking $number_of_nodes_in_the_dependency_tree nodes.\n" unless $pbs_config->{QUIET} ;
 		}
 	}
 else

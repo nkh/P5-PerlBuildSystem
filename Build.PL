@@ -302,7 +302,7 @@ my $build = $class->new
 		{
 		'Module::Build'       => '0.2611',
 		'Module::Util'       => '0.2611',
-		'Data::TreeDumper'    => '0.35',
+		'Data::TreeDumper'    => '0.39',
 		'Getopt::Long'        => '2.32',
 		'Cwd'                 => '2.06',
 		'Data::Dumper'        => '2.12',

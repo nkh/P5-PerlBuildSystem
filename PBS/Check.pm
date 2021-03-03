@@ -332,7 +332,7 @@ if(exists $tree->{__FORCED})
 	{
 	push @{$tree->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
 	
-	Print Warning "Check: '$name' FORCED.\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+	PrintWarning "Check: '$name' FORCED.\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 	$triggered++ ;
 	}
 	

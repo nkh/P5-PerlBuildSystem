@@ -188,14 +188,14 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
 		my $matched = scalar(@{$rule->{STATS}{MATCHED} // []}) ;
-		$matched = $matched ? sprintf("%7d", $matched) : _ERROR_(sprintf("%7s", 0)) ;
+		$matched = $matched ? sprintf("%7d", $matched) : _ERROR_ sprintf("%7s", 0) ;
 
 		my $stat = sprintf "%${rule_name_max_length}s %6d  %7d %s %-${rule_type_max_length}s",
 					"$rule->{NAME}:",
 					($rule->{STATS}{CALLS} // 0),
 					($rule->{STATS}{SKIPPED} // 0),
 					$matched,
-					$types{$rule->{NAME}} ;
+					_INFO_ $types{$rule->{NAME}} ;
 
 		PrintInfo "\t\t$stat\n" ;
 		}

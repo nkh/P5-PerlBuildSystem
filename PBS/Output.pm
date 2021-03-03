@@ -27,7 +27,8 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		ERROR WARNING WARNING2 WARNING3 WARNING4 INFO INFO2 INFO3 INFO4 USER SHELL DEBUG
+		Error Warning Warning2 Warning3 Warning4 Info Info2 Info3 Info4 Info5 User Shell Debug
+		ERROR WARNING WARNING2 WARNING3 WARNING4 INFO INFO2 INFO3 INFO4 INFO5 USER SHELL DEBUG
 		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _WARNING4_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_
 
 		COLOR PrintColor PrintNoColor PrintVerbatim
@@ -35,7 +36,7 @@ require Exporter;
 		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 		SayError SayWarning SayWarning2 SayWarning3 SayWarning4 SayInfo SayInfo2 SayInfo3 SayInfo4 SayInfo5 SayUser SayShell SayDebug
 		
-		SDT
+		SDT Say
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -44,6 +45,8 @@ require Exporter;
 		) ;
 		
 $VERSION = '0.06' ;
+
+use subs qw/ Error Warning Warning2 Warning3 Warning4 Info Info2 Info3 Info4 Info5 User Shell Debug / ;
 
 #-------------------------------------------------------------------------------
 
@@ -149,22 +152,35 @@ $string =~ s/\n(.)/\n$indentation2$1/g ;
 return $indentation . $color . $string . $reset ;
 }
 
-sub ERROR { return COLOR('error', @_) }           sub _ERROR_ { return COLOR('error', @_, 0) }
+sub ERROR    { return COLOR('error', @_) }        sub _ERROR_    { return COLOR('error', @_, 0) }
 sub WARNING  { return COLOR('warning', @_) }      sub _WARNING_  { return COLOR('warning', @_, 0) }
 sub WARNING2 { return COLOR('warning_2', @_) }    sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
 sub WARNING3 { return COLOR('warning_3', @_) }    sub _WARNING3_ { return COLOR('warning_3', @_, 0) }
 sub WARNING4 { return COLOR('warning_4', @_) }    sub _WARNING4_ { return COLOR('warning_4', @_, 0) }
-sub INFO { return COLOR('info', @_) }             sub _INFO_ { return COLOR('info', @_, 0) }
-sub INFO2 { return COLOR('info_2', @_) }          sub _INFO2_ { return COLOR('info_2', @_, 0) }
-sub INFO3 { return COLOR('info_3', @_) }          sub _INFO3_ { return COLOR('info_3', @_, 0) }
-sub INFO4 { return COLOR('info_4', @_) }          sub _INFO4_ { return COLOR('info_4', @_, 0) }
-sub INFO5 { return COLOR('info_5', @_) }          sub _INFO5_ { return COLOR('info_5', @_, 0) }
-sub USER { return COLOR('user', @_) }             sub _USER_ { return COLOR('user', @_, 0) }
-sub SHELL { return COLOR('shell', @_) }           sub _SHELL_ { return COLOR('shell', @_, 0) }
-sub DEBUG { return COLOR('debug', @_) }           sub _DEBUG_ { return COLOR('debug', @_, 0) }
+sub INFO     { return COLOR('info', @_) }         sub _INFO_     { return COLOR('info', @_, 0) }
+sub INFO2    { return COLOR('info_2', @_) }       sub _INFO2_    { return COLOR('info_2', @_, 0) }
+sub INFO3    { return COLOR('info_3', @_) }       sub _INFO3_    { return COLOR('info_3', @_, 0) }
+sub INFO4    { return COLOR('info_4', @_) }       sub _INFO4_    { return COLOR('info_4', @_, 0) }
+sub INFO5    { return COLOR('info_5', @_) }       sub _INFO5_    { return COLOR('info_5', @_, 0) }
+sub USER     { return COLOR('user', @_) }         sub _USER_     { return COLOR('user', @_, 0) }
+sub SHELL    { return COLOR('shell', @_) }        sub _SHELL_    { return COLOR('shell', @_, 0) }
+sub DEBUG    { return COLOR('debug', @_) }        sub _DEBUG_    { return COLOR('debug', @_, 0) }
 
 sub NO_COLOR{ return COLOR('reset', @_) }
 
+*Error=\&ERROR ;
+*Warning=\&WARNING ;
+*Warning2=\&WARNING2 ;
+*Warning3=\&WARNING3 ;
+*Warning4=\&WARNING4 ;
+*Info=\&INFO ;
+*Info2=\&INFO2 ;
+*Info3=\&INFO3 ;
+*Info4=\&INFO4 ;
+*Info5=\&INFO5 ;
+*User=\&USER ;
+*Shell=\&SHELL ;
+*Debug=\&DEBUG ;
 
 #-------------------------------------------------------------------------------
 
@@ -200,9 +216,9 @@ sub PrintStdErr {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintStdOutColor {_print(\*STDOUT, @_)} # pass a color handler as first argument
 sub PrintStdErrColor {_print(\*STDERR, @_)} # pass a color handler as first argument
 
-sub PrintNoColor {_print(\*STDERR, \&NO_COLOR, @_)}
+sub PrintNoColor  {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
-sub PrintColor {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
+sub PrintColor    {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 
 sub PrintError   {_print(\*STDERR, \&ERROR, @_)}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_)}
@@ -218,21 +234,36 @@ sub PrintUser    {_print(\*STDERR, \&USER, @_)}
 sub PrintShell   {_print(\*STDERR, \&SHELL, @_)}
 sub PrintDebug   {_print(\*STDERR, \&DEBUG, @_)}
 
-sub SayError   {_print(\*STDERR, \&ERROR, (shift . "\n"), @_)}
-sub SayWarning {_print(\*STDERR, \&WARNING, (shift . "\n"), @_)}
+sub Say        {_print(\*STDERR, \&NO_COLOR, (shift . "\n"), @_)}
+
+sub SayError   {_print(\*STDERR, \&ERROR,    (shift . "\n"), @_)}
+sub SayWarning {_print(\*STDERR, \&WARNING,  (shift . "\n"), @_)}
 sub SayWarning2{_print(\*STDERR, \&WARNING2, (shift . "\n"), @_)}
 sub SayWarning3{_print(\*STDERR, \&WARNING3, (shift . "\n"), @_)}
 sub SayWarning4{_print(\*STDERR, \&WARNING4, (shift . "\n"), @_)}
-sub SayInfo    {_print(\*STDERR, \&INFO, (shift . "\n"), @_ )}
-sub SayInfo2   {_print(\*STDERR, \&INFO2, (shift . "\n"), @_)}
-sub SayInfo3   {_print(\*STDERR, \&INFO3, (shift . "\n"), @_)}
-sub SayInfo4   {_print(\*STDERR, \&INFO4, (shift . "\n"), @_)}
-sub SayInfo5   {_print(\*STDERR, \&INFO5, (shift . "\n"), @_)}
-sub SayUser    {_print(\*STDERR, \&USER, (shift . "\n"), @_)}
-sub SayShell   {_print(\*STDERR, \&SHELL, (shift . "\n"), @_)}
-sub SayDebug   {_print(\*STDERR, \&DEBUG, (shift . "\n"), @_)}
+sub SayInfo    {_print(\*STDERR, \&INFO,     (shift . "\n"), @_)}
+sub SayInfo2   {_print(\*STDERR, \&INFO2,    (shift . "\n"), @_)}
+sub SayInfo3   {_print(\*STDERR, \&INFO3,    (shift . "\n"), @_)}
+sub SayInfo4   {_print(\*STDERR, \&INFO4,    (shift . "\n"), @_)}
+sub SayInfo5   {_print(\*STDERR, \&INFO5,    (shift . "\n"), @_)}
+sub SayUser    {_print(\*STDERR, \&USER,     (shift . "\n"), @_)}
+sub SayShell   {_print(\*STDERR, \&SHELL,    (shift . "\n"), @_)}
+sub SayDebug   {_print(\*STDERR, \&DEBUG,    (shift . "\n"), @_)}
 
-sub SDT {PrintDebug Data::TreeDumper::DumpTree(@_) . "\n"}
+sub SDT 
+{
+my ($p, $f, $l) = caller (0) ;
+$f = GetRunRelativePath({TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'}, $f) ;
+
+eval
+	{
+	if (@_ == 0) {}
+	if (@_ == 1) { PrintDebug Data::TreeDumper::DumpTree(@_, '', DUMPER_NAME => "SDT $f:$l") }
+	    else     { PrintDebug Data::TreeDumper::DumpTree(@_, DUMPER_NAME => "SDT $f:$l") }
+	} ;
+
+Say Error "SDT: error: Odd number of arguments @ $f:$l" if $@ ;
+}
 
 #-------------------------------------------------------------------------------
 
@@ -399,7 +430,6 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 
 	$file =~ s/$_/PBS_LIB\//g for (@{$pbs_config->{LIB_PATH}}) ;
 	}
-
 $file
 }
 

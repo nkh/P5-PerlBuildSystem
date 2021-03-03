@@ -39,12 +39,12 @@ sub NodeNeedsRebuild
 my ($node, $inserted_nodes) = @_ ;
 
 # virtual node have no digests so we can't check it
-return 0 if exists $node->{__VIRTUAL} ;
+return 1, " VIRTUAL\n", ["__VIRTUAL\n"], 1 if exists $node->{__VIRTUAL} ;
 
 local $PBS::Output::indentation_depth ;
 $PBS::Output::indentation_depth += 2 ;
 
-return 1, "\t\t__SELF\n", ["\t\t__SELF\n"], 1 if any { $_->{NAME} eq '__SELF'} @{$node->{__TRIGGERED}} ;
+return 1, " SELF\n", ["__SELF\n"], 1 if any { $_->{NAME} eq '__SELF'} @{$node->{__TRIGGERED}} ;
 
 my ($rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
 
@@ -171,9 +171,9 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 
 		if(-e $digest_file_name)
 			{
-			my ($digest, $sources, $run_commands, $pbs_digest) ;
+			my ($digest, $sources, $ENV, $run_commands, $pbs_digest) ;
 
-			($digest, $sources, $run_commands, $pbs_digest) = do $digest_file_name ;
+			($digest, $sources, $ENV, $run_commands, $pbs_digest) = do $digest_file_name ;
 			
 			#SDT [$run_commands, \@evaluated_commands] ;
 				
@@ -291,7 +291,7 @@ if($node_needs_rebuild)
 		if(exists $file_tree->{__VIRTUAL})
 			{
 			$file_tree->{__MD5} = 'VIRTUAL' ;
-			eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
+			#eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
 			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 		
 			if(-e $build_name)
@@ -445,6 +445,8 @@ eval # rules might throw an exception
 				}
 			}
 		}
+
+	$file_tree->{__ENV} = \%ENV ;
 
 =pod
 	$ENV{$_} = $file_tree->{__CONFIG}{$_} for

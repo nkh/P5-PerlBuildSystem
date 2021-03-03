@@ -29,7 +29,7 @@ our @EXPORT = qw(
 		NodeIsGenerated NodeIsSource DependencyIsSource
 		) ;
 
-our $VERSION = '0.10' ;
+our $VERSION = '0.11' ;
 our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
@@ -826,7 +826,7 @@ confess unless 'HASH' eq ref $node ;
 
 if(exists $node->{__WARP_NODE})
 	{
-	! $node->{__NODE_IS_SOURCE} ;
+	! $node->{__IS_SOURCE} ;
 	}
 else
 	{
@@ -980,9 +980,9 @@ if(NodeIsGenerated($node))
 
 	if(-e $digest_file_name)
 		{
-		my ($digest, $sources, $run_commands, $pbs_digest) ;
+		my ($digest, $sources, $ENV, $run_commands, $pbs_digest) ;
 
-		unless (($digest, $sources, $run_commands, $pbs_digest) = do $digest_file_name) 
+		unless (($digest, $sources, $ENV, $run_commands, $pbs_digest) = do $digest_file_name) 
 			{
 			PrintWarning "Digest: couldn't parse '$digest_file_name': $@" if $@;
 			}
@@ -1316,6 +1316,7 @@ if(NodeIsGenerated($node))
 	$sources .= "\t} ;\n" ;
 
 	my $run_commands = Data::Dumper->Dump([$node->{__RUN_COMMANDS} // []], ['run_commands']) ;
+	my $ENV = Data::Dumper->Dump([$node->{__ENV} // {}], ['ENV']) ;
 
 	my (undef, $pbs_digest_for_node) = GetPbsDigest($node->{__PBS_CONFIG}) ;
 
@@ -1327,11 +1328,11 @@ if(NodeIsGenerated($node))
 		. "Pbsfile: $node->{__PBS_CONFIG}{PBSFILE}",
 
 		GetDigest($node),
-		$sources . "\n" . $run_commands, # caller data to be added to digest
+		$sources . "\n" . $ENV . "\n" . $run_commands, # caller data to be added to digest
 		1, # create path
 		
 		# add pbs digest to node's digest
-		$pbs_digest_for_node . 'return $digest, $sources, $run_commands, $pbs_digest;', # postamble
+		$pbs_digest_for_node . 'return $digest, $sources, $ENV, $run_commands, $pbs_digest;', # postamble
 		1, # add time stamp
 		) ;
 

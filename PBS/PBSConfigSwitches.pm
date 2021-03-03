@@ -430,8 +430,8 @@ EOT
 		'PBS will save the config, used in each PBS run, in the build directory',
 		"Before a subpbs is run, its start config will be saved in a file. PBS will display the filename so you "
 		  . "can load it later with '--load_config'. When working with a hirarchical build with configuration "
-		  . "defined at the top level, it may happend that you want to run pbs at lower levels but without configuration, "
-		  . "PBS will probably fail. Run you system from the top level with '--save_config', then run from the subpbs " 
+		  . "defined at the top level, it may happend that you want to run pbs at lower levels but have no configuration, "
+		  . "your build will probably fail. Run pbs from the top level with '--save_config', then run the subpbs " 
 		  . "with the the saved config as argument to the '--load_config' option.",
 		
 	'load_config=s'                   => $load_config_closure,
@@ -1765,7 +1765,8 @@ if($word_to_complete !~ /^\s?$/)
 			}
 		else
 			{
-			my $word = $word_to_complete =~ s/^-*//r ;
+			my $word =  $word_to_complete =~ s/^-*//r ;
+
 			@matches = grep { /$word/ } sort @$options ;
 
 			print join("\n", map { "--$_" } @matches) . "\n" ;

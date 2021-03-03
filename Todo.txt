@@ -1,19 +1,9 @@
-
 check environment variables
 	which one does the command use? and sub command ?
 
-#optimizing check with build command
-
-	node trigger if it's commands have changed
-	and sub nodes have not changed
-	...
-
-
-#example linking to warp nodes
+	we can check the exported ones and display a warning when we override  for a command
 
 control C handler to generate warp
-
-#display rule type in rule stats
 
 generate color functions on the fly from color definitions
 	PrintSomeColor display warning if color doesn't exist
@@ -26,7 +16,6 @@ colors in DumpTree and width!
 	pass option when colors are not used or global option
 
 	wrapping errors from module
-
 
 document all breakpoints
 
@@ -500,15 +489,26 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
 
+#log %ENV in digest
 
-# optimize digest checking
+#optimizing check with build command
+
+	node trigger if it's commands have changed
+	and sub nodes have not changed
+	...
+
+
+#example linking to warp nodes
+
+#display rule type in rule stats
+
+#optimize digest checking
 	sort md5 per file size and check the small ones first
 
 	stop as soon as there is a mismatch
 		compute md5 on the fly
 
 		pass current digest empty and let the checker fill it
-
 
 #--node_build_actions ' thenode/name/hahah : prio 1 : message %node is build : ! make sound : stop'
 	+ verbose

@@ -146,13 +146,17 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				{
 				if(! /^__/ && 'HASH' eq ref $tree->{$_})
 					{
+					my $cache = _INFO2_ ('ᶜ') if exists $inserted_nodes->{$_}{__WARP_NODE} ;
+					my $rules = ! @{$tree->{$_}{__MATCHING_RULES} // []} && NodeIsGenerated($tree->{$_})
+							? _ERROR_(' ∅ ')
+							: '' ;
 					my $tag ;
 					
 					$tag  = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
 					$tag  = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
 					$tag  = NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
 					$tag .= _WARNING_(' ⋂') if $tree->{$_}{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ;
-					$tag .= _ERROR_(' ∅ ') if ! @{$tree->{$_}{__MATCHING_RULES} // []} && NodeIsGenerated($tree->{$_}) ;
+					$tag .= $cache // $rules ;
  					$tag .= GetColor('info_2')  ;
 					
 					

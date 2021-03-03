@@ -1,5 +1,7 @@
 sources 'source' ;
 
+rule [V], 'x', [x => 'all'], BuildOk ;
+
 rule          'all',        [all => qw/ big1 big2 big3 source/], 'echo hi', 'cat %DEPENDENCIES > %TARGET' ;
 rule [MULTI], 'big',        [qr/big/], 'dd if=/dev/zero of=%TARGET bs=10M count=1' ;
 rule [BO],    'big_source', [qr/big1/ => 'source'], 'touch %TARGET';

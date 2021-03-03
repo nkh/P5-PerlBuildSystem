@@ -141,6 +141,9 @@ if (@traces)
 
 #-------------------------------------------------------------------------------
 
+my @unicode_numbers = qw / ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ /;
+push @unicode_numbers, ('+') x 100 ; 
+
 my %trigger_rules ;
 
 sub CreateDependencyTree
@@ -428,9 +431,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					if(/(.*)::(.*)$/)
 						{
-						# handle node user attribute
-						
-						# return a hash
+							# node user attribute
 							{
 							NAME => $1,
 							RULE_INDEX => $rule_index,
@@ -439,7 +440,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						}
 					else
 						{
-						# return a hash
 							{
 							NAME => $_,
 							RULE_INDEX => $rule_index,
@@ -448,7 +448,6 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					# return a hash
 						{
 						NAME => $_,
 						RULE_INDEX => $rule_index,
@@ -495,8 +494,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				$rule_type .= '[S]'  if(defined $rule->{NODE_SUBS}) ;
 				$rule_type = " $rule_type" unless $rule_type eq '' ;
 
-				my @dependency_names = map {$_->{NAME} ;} grep {'' eq ref $_->{NAME}} @dependencies ;
-				
+				my @dependency_names = map {$_->{NAME}} grep {'' eq ref $_->{NAME}} @dependencies ;
 				
 				my $forced_trigger = '' ;
 				if(grep {$_->{NAME} =~ '__PBS_FORCE_TRIGGER' } @dependencies)
@@ -506,7 +504,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				
 				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
-				my $node_matches = $rules_matching > 1 ? _INFO2_(" ($rules_matching*)") : '' ;
+				my $node_matches = $rules_matching > 1 ? _INFO2_($unicode_numbers[$rules_matching]) : '' ;
 
 				my $node_insertion_rule = $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE}
 								? _INFO2_(
@@ -566,7 +564,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				else
 					{
 					PrintNoColor 
-						_INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}"
+						_INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}$node_matches"
 					
 						.  _INFO_
 							(
@@ -939,10 +937,11 @@ for my $triggered_node_data (@triggered_nodes)
 	}
 # handle node triggers finished
 
-for my $dependency (@dependencies)
+for my $dependency_defintion (@dependencies)
 	{
-	my $dependency_name = $dependency->{NAME} ;
-	my $rule_index      = $dependency->{RULE_INDEX} ;
+	my $dependency_name = $dependency_defintion->{NAME} ;
+	my $rule_index      = $dependency_defintion->{RULE_INDEX} ;
+	my $user_attribute  = $dependency_defintion->{USER_ATTRIBUTE} ;
 	my $rule            = $dependency_rules->[$rule_index] ;
 	
 	$has_dependencies++ ;
@@ -993,7 +992,7 @@ for my $dependency (@dependencies)
 		$dependency->{__MATCHING_RULES}  = [] ;
 		$dependency->{__CONFIG}          = $config ;
 		$dependency->{__NAME}            = $dependency_name ;
-		$dependency->{__USER_ATTRIBUTE}  = $dependency->{USER_ATTRIBUTE} if exists $dependency->{USER_ATTRIBUTE} ;
+		$dependency->{__USER_ATTRIBUTE}  = $user_attribute if defined $user_attribute ;
 		
 		$dependency->{__PACKAGE}         = $package_alias ;
 		$dependency->{__LOAD_PACKAGE}    = $load_package ;
@@ -1553,6 +1552,7 @@ $link_indent .= $indent if $pbs_config->{DISPLAY_DEPEND_INDENTED} && ! $pbs_conf
 my $short_dependency_name = GetTargetRelativePath($pbs_config, $dependency_name) ;
 
 #  ⁻ · ⁽ ⁾ ⁺ ⁻ ⁼ 
+# ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹
 #ᴬ ᴮ ᶜ ᴰ ᴱ ᶠ ᴳ ᴴ ᴵ ᴶ ᴷ ᴸ ᴹ ᴺ ᴼ ᴾ ᵠ ᴿ ˢ ᵀ ᵁ ⱽ ᵂ ˣ ʸ ᶻ > 
 #ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ᵠ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ 
 # • ■ ○ dkmdklf
