@@ -612,11 +612,14 @@ if(defined $global_flags)
 # Get the config and extract what we need from it
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 
+#my $header_text = "Config: merging to configuration: '${package}::${original_type}::$original_class' @ '$origin'\n" ;
+my $header_text = "Config: merging to configuration: '${package}' @ '$origin'\n" ;
+
 my $header_displayed = 0 ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
-	PrintInfo "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" ;
+	PrintInfo $header_text ;
 	$header_displayed++ ;
 	}
 
@@ -775,9 +778,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		if($config_to_merge_to->{$type}{$class}{$key}{LOCKED} && (! $force))
 			{
-			PrintError "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
+			PrintWarning3 $header_text unless $header_displayed++ ;
 			PrintError
 				(
 				<<EOH .
@@ -825,35 +826,29 @@ EOH
 				if($force && $config_to_merge_to->{$type}{$class}{$key}{LOCKED})
 					{
 					$locked_message = 'locked ' ;
-					$warn_sub = \&PrintWarning2 ;
+					$warn_sub = \&PrintWarning3 ;
 					}
 				else
 					{
 					$warn_sub = \&PrintWarning ;
 					}
 				
-				$warn_sub->("Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n") unless $header_displayed;
-				$header_displayed++ ;
-
-				$warn_sub ->
-					(
-					<<EOH .
-	Overriding a ${locked_message}configuration variable
-		key: '$key'
+				PrintWarning3 $header_text unless $header_displayed++ ;
+				PrintWarning3 <<EOH
+		variable:  '$key', Overriding ${locked_message}
 		new value: '$value'
-		package: '$package'
 EOH
 #other possible data to display
+#package: '$package'
 #class '$class'
 #type: '$type'
 
-					DumpTree
+					. DumpTree
 						(
 						$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},
 						'history',
 						INDENTATION => "\t\t",
 						)
-					) 
 				}
 				
 			# now remember the origin and the value
@@ -894,10 +889,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
-			PrintWarning2
+			PrintWarning3 $header_text unless $header_displayed++ ;
+			PrintWarning3
 				(
 				<<EOH,
 	Configuration variable will be ignored as type 'PARENT' has higher precedence
@@ -917,10 +910,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
-			PrintWarning2
+			PrintWarning3 $header_text unless $header_displayed++ ;
+			PrintWarning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -943,10 +934,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
-			PrintWarning2
+			PrintWarning3 $header_text unless $header_displayed++ ;
+			PrintWarning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -969,10 +958,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
-			PrintWarning2
+			PrintWarning3 $header_text unless $header_displayed++ ;
+			PrintWarning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -992,10 +979,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning2 "Config: merging to configuration: '${package}::${original_type}::$original_class' from '$origin'\n" unless $header_displayed;
-			$header_displayed++ ;
-
-			PrintWarning2
+			PrintWarning3 $header_text unless $header_displayed++ ;
+			PrintWarning3
 				(
 				<<EOH
 	Configuration variable of type 'LOCAL' has higher precedence than 'PARENT'
