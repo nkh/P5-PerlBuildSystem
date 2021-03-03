@@ -592,7 +592,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 						. _INFO2_ $node_matching_rule . $node_insertion_rule ;
 
-					SayInfo '' ;
+					Say Info '' ;
 					}
 					
 				DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
@@ -1565,9 +1565,9 @@ if($dependency_is_source)
 	$linked_node_info  = _WARNING_ "$link_indent" . "'$short_dependency_name'" ;
 	$linked_node_info .= _WARNING_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 
-	push @link_type, " ᴸᴵᴺᴷᴵᴺᴳ" ;
+	push @link_type, " ᴸᴵᴺᴷ" ;
 	push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
-	push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
+	#push @link_type, 'ˢᵒᵘʳᶜᵉ' ;
 
 	push @link_type, 'ᴰᴱᴾᴱᴺᴰᴱᴰ' if exists $dependency->{__DEPENDED} ;
 	push @link_type, _WARNING_ 'ᴴᴬˢ ᴰᴱᴾᴱᴺᴰᴱᴺᶜᴵᴱˢ' if scalar ( grep { ! /^__/ } keys %$dependency ) ;
@@ -1577,7 +1577,7 @@ else
 	$linked_node_info  = _INFO3_ "$link_indent" . "'$short_dependency_name'" ;
 	$linked_node_info .= _INFO3_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
 
-	push @link_type, " ᴸᴵᴺᴷᴵᴺᴳ" ;
+	push @link_type, " ᴸᴵᴺᴷ" ;
 	push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
 	push @link_type, exists $dependency->{__DEPENDED}
 				? scalar ( grep { ! /^__/ } keys %$dependency )

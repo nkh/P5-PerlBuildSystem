@@ -181,6 +181,8 @@ my $pbs_config = shift ;
 
 my $success_message = '' ;
 
+$pbs_config->{DISPLAY_ENVIRONMENT}++ if $pbs_config->{DISPLAY_ENVIRONMENT_KEPT} ;
+
 #force options
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ ;
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;

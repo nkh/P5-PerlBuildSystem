@@ -183,7 +183,7 @@ for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
 	{
 	my $matching_env = sub
 				{
-				my $tree = shift ;
+				my ($tree) = @_ ;
 				
 				if('HASH' eq ref $tree)
 					{
@@ -192,18 +192,13 @@ for my $node_env_regex (@{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}})
 						'HASH', undef, 
 						sort grep 
 							{
-							my $match = 0 ;
-							for my $env_regex (@{$pbs_config->{NODE_ENVIRONMENT_REGEX}})
-								{
-								do { $match++ ; last }  if /$env_regex/
-								}
-								
-							$match ;
+							my $key = $_ ;
+							any { $key =~ /$_/ } @{$pbs_config->{NODE_ENVIRONMENT_REGEX}} ;
 							} keys %$tree
 						) ;
 					}
 				
-				return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+				return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
 				} ;
 
 	if($name =~ /$node_env_regex/)

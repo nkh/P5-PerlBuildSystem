@@ -1408,20 +1408,20 @@ EOT
 		'Command line definitions.',
 		'',
 
-	'ke|keep_environment=s'           => $pbs_config->{KEEP_ENVIRONMENT},
+	'ek|keep_environment=s'           => $pbs_config->{KEEP_ENVIRONMENT},
 		"Pbs empties %ENV, user --ke 'regex' to keep specific variables.",
 		'',
 
-	'display_environment_info'       => \$pbs_config->{DISPLAY_ENVIRONMENT_INFO},
-		"Display a statistics about environment variables",
-		'',
-
-	'display_environment'            => \$pbs_config->{DISPLAY_ENVIRONMENT},
+	'ed|display_environment'            => \$pbs_config->{DISPLAY_ENVIRONMENT},
 		"Display which environment variables are kept and discarded",
 		'',
 
-	'display_environment_kept'       => \$pbs_config->{DISPLAY_ENVIRONMENT_KEPT},
+	'edk|display_environment_kept'       => \$pbs_config->{DISPLAY_ENVIRONMENT_KEPT},
 		"Only display the evironment variables kept",
+		'',
+
+	'es|display_environment_statistic'       => \$pbs_config->{DISPLAY_ENVIRONMENT_STAT},
+		"Display a statistics about environment variables",
 		'',
 
 	#----------------------------------------------------------------------------------

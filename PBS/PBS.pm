@@ -155,32 +155,31 @@ my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 my $target_names       = join ', ', @$targets ;
 
+# ENV
 my $original_ENV_size = scalar(keys %ENV) ;
 
-for my $env (sort keys %ENV)
+my $display_env = $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+
+PrintWarning3 "ENV: removing all variable except those matching: " . join( ', ', map { "'$_'" } @{$pbs_config->{KEEP_ENVIRONMENT}}) . "\n"
+	if $pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $display_env ;
+
+for my $variable (sort keys %ENV)
 	{
-	my $keep = any { $env =~ $_ } @{$pbs_config->{KEEP_ENVIRONMENT}} ;
-	if($keep)
+	if(any { $variable =~ $_ } @{$pbs_config->{KEEP_ENVIRONMENT}})
 		{
-		PrintInfo3 "ENV: keeping  '$env' => " . INFO2("'$ENV{$env}'\n") if $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
+		PrintInfo2 "ENV: keeping '$variable' => '$ENV{$variable}'\n" if  $display_env ;
 		}
 	else
 		{ 
-		PrintWarning "ENV: removing '$env' => '$ENV{$_}'\n" if $pbs_config->{DISPLAY_ENVIRONMENT} && !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $pbs_runs == 1 ;
-		delete $ENV{$env} ;
+		PrintWarning3 "ENV: removing '$variable' => '$ENV{$variable}'\n" if !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $display_env ;
+		delete $ENV{$variable} ;
 		}
 	}
 
 my $ENV_size = scalar(keys %ENV) ;
 my $ENV_removed = $original_ENV_size - $ENV_size ;
 
-PrintInfo "ENV: kept: $ENV_size, removed: $ENV_removed\n" if $pbs_config->{DISPLAY_ENVIRONMENT_INFO} && $pbs_runs == 1 ;	
-
-unless('' eq ref $package && '' ne $package)
-	{
-	PrintError("Invalid 'PACKAGE' at $Pbsfile\n") ;
-	die ;
-	}
+PrintInfo2 "ENV: kept: $ENV_size, removed: $ENV_removed\n" if $pbs_config->{DISPLAY_ENVIRONMENT_STAT} && $pbs_runs == 1 ;	
 
 if(defined $pbs_config->{SAVE_CONFIG})
 	{

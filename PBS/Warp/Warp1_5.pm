@@ -82,12 +82,12 @@ if(-e $warp_file)
 
 	if ($rebuild_because_of_digest)
 		{
-		PrintWarning "Warp: changes in pbs distribution.\n" ;
+		PrintInfo2 "Warp: changes in pbs distribution.\n" ;
 		$run_in_warp_mode = 0 ;
 		}
 	elsif(! defined $version || $version != $VERSION)
 		{
-		PrintWarning("Warp: version mismatch.\n") ;
+		PrintInfo2("Warp: version mismatch.\n") ;
 		$run_in_warp_mode = 0 ;
 		}
 	else

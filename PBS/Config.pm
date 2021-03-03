@@ -841,10 +841,12 @@ EOH
 	Overriding a ${locked_message}configuration variable
 		key: '$key'
 		new value: '$value'
-		class '$class'
-		type: '$type'
 		package: '$package'
 EOH
+#other possible data to display
+#class '$class'
+#type: '$type'
+
 					DumpTree
 						(
 						$config_to_merge_to->{$type}{$class}{$key}{ORIGIN},

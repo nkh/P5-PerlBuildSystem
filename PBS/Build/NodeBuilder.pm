@@ -441,7 +441,14 @@ eval # rules might throw an exception
 			{
 			for my $config_key (keys %{$file_tree->{__CONFIG}})
 				{
-				$ENV{$config_key} = $file_tree->{__CONFIG}{$config_key} if $config_key =~ $regex ;
+				if($config_key =~ $regex)
+					{
+					my ($new, $old) = ($file_tree->{__CONFIG}{$config_key}, $ENV{$config_key} // 'not defined') ;
+
+					Say Warning3 "ENV: setting '$config_key' to '$new' was '$old'" if $new ne $old ;
+
+					$ENV{$config_key} = $new ;
+					}
 				}
 			}
 		}
