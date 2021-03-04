@@ -13,7 +13,13 @@ require Exporter ;
 our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk GetRuleTypes) ;
+our @EXPORT = qw(
+		AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules 
+		ReplaceRule ReplaceRuleTo RemoveRule
+		BuildOk build_ok TouchOk touch_ok
+		GetRuleTypes
+		) ;
+
 our $VERSION = '0.09' ;
 
 use File::Basename ;
@@ -562,6 +568,7 @@ return subname BuildOk => sub
 	return(1, $message // 'BuildOk: no message') ;
 	} ;
 }
+*build_ok=\&BuildOk ;
 
 sub TouchOk
 {
@@ -575,6 +582,7 @@ subname TouchOk => sub
 	RunShellCommands "touch $file_to_build" ;
 	} ;
 }
+*touch_ok=\&TouchOk ;
 
 #-------------------------------------------------------------------------------
 

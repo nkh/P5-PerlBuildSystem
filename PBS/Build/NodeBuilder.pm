@@ -34,73 +34,6 @@ use PBS::PBSConfig ;
 
 #-------------------------------------------------------------------------------
 
-sub NodeNeedsRebuild
-{
-my ($node, $inserted_nodes) = @_ ;
-
-# virtual node have no digests so we can't check it
-return 1, " VIRTUAL\n", ["__VIRTUAL\n"], 1 if exists $node->{__VIRTUAL} ;
-
-local $PBS::Output::indentation_depth ;
-$PBS::Output::indentation_depth += 2 ;
-
-return 1, " SELF\n", ["__SELF\n"], 1 if any { $_->{NAME} eq '__SELF'} @{$node->{__TRIGGERED}} ;
-
-my ($rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
-
-my $why = " digest OK" ;
-   $why = "\n\t\tdigest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $rebuild ;
-
-unless($rebuild)
-	{
-	# node exists on disk, sub dependencies exist and have the same signature
-	
-	# our pbsfile may have change, we need to check the impact
-
-	# if node uses shell commands only
-	#	generate the commands now and compare with previous commands
-	#	environment variables too!
-	#
-	# if node uses subs, did the pbsfile and its config change ... or any module that the sub uses!
-
-	if(exists $node->{__VIRTUAL})
-		{
-		$node->{__MD5} = 'VIRTUAL' ;
-		}
-	else
-		{
-		if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
-			{
-			$node->{__MD5} = $current_md5 ;
-			}
-		else
-			{
-			if ( NodeIsSource($node) )
-				{
-				if(defined (my $current_md5 = GetFileMD5($node->{__BUILD_NAME})))
-					{
-					$node->{__MD5} = $current_md5 ;
-					}
-				else
-					{
-					#PrintError("Can't open '$node' to compute MD5 digest: $!") ;
-					$node->{__MD5} = 'Error: File not found!' ; 
-					$why .= "\n\t\t" . $node->{__MD5} . "\n" ;
-					}
-				}
-			}
-		}
-	}
-
-return $rebuild, $why, $reasons, $number_of_differences ;
-
-# test when one of the dependencies is virtual, all dependencies are virtual
-# test when the pbsfile has changed
-# test when config has changed
-}
-
-#-------------------------------------------------------------------------------
-
 sub BuildNode
 {
 my $file_tree      = shift ;
@@ -115,6 +48,18 @@ my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful b
 my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
 
 my $node_needs_rebuild = 1 ;
+
+if($file_tree->{__BUILD_DONE})
+	{
+	#PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
+	$node_needs_rebuild = 0 ;
+	}
+
+if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
+	{
+	($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
+	$node_needs_rebuild = 0 ;
+	}
 
 my $rule_used_to_build ;
 my $rules_with_builders = ExtractRulesWithBuilder($file_tree) ;
@@ -131,30 +76,34 @@ if(@$rules_with_builders)
 		}
 	}
 
-if($file_tree->{__BUILD_DONE})
-	{
-	#PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
-	$node_needs_rebuild = 0 ;
-	}
-
-if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
-	{
-	($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
-	$node_needs_rebuild = 0 ;
-	}
-
+my (@node_commands, %node_ENV) ; # update digest if we skip build ; 
 my $skip_build_text = '' ;
 
 if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 	{
-	my ($rebuild, $why, $reasons, $number_of_differences)
-		= NodeNeedsRebuild($file_tree, $inserted_nodes) ;
+	my($why, $reasons, $number_of_differences) ;
 
-	$node_needs_rebuild = $rebuild ;
-
-	if(1 == $number_of_differences && $reasons->[0] =~ /__DEPENDING_PBSFILE/)
+	if (exists $file_tree->{__VIRTUAL})
 		{
-		my (@evaluated_commands) 
+		# virtual node have no digests so we can't check it
+		($node_needs_rebuild, $why, $reasons, $number_of_differences) = (1, "\t\tVIRTUAL\n", ["__VIRTUAL\n"], 1)
+		}
+	elsif (any { $_->{NAME} eq '__SELF'} @{$file_tree->{__TRIGGERED}})
+		{
+		($node_needs_rebuild, $why, $reasons, $number_of_differences) = (1, "\t\tSELF\n", ["__SELF\n"], 1) 
+		}
+	else
+		{
+		($node_needs_rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($file_tree, $inserted_nodes) ;
+
+		$why = "\t\tCheck: digest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $node_needs_rebuild ;
+		}
+
+	if(1 == $number_of_differences && ($reasons->[0] =~ /__DEPENDING_PBSFILE/ || $reasons->[0] =~ /__VIRTUAL/))
+		{
+		$node_needs_rebuild = 0 ;
+
+		my @evaluated_commands 
 			= RunRuleBuilder
 				(
 				0, # Get what would be run
@@ -166,48 +115,78 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 				$inserted_nodes,
 				) ;
 		
-		#compare with previous run commands
+		@node_commands = @evaluated_commands ;
+		
+		# compare with previous run commands
 		my $digest_file_name = PBS::Digest::GetDigestFileName($file_tree) ;
 
 		if(-e $digest_file_name)
 			{
-			my ($digest, $sources, $ENV, $run_commands, $pbs_digest) ;
+			my ($digest, $sources, $build_ENV, $run_commands, $pbs_digest) ;
 
-			($digest, $sources, $ENV, $run_commands, $pbs_digest) = do $digest_file_name ;
+			($digest, $sources, $build_ENV, $run_commands, $pbs_digest) = do $digest_file_name ;
 			
-			#SDT [$run_commands, \@evaluated_commands] ;
-				
 			if('ARRAY' eq ref $run_commands)
 				{
-				$why = " pbsfile and commands mismatch" ;
-
 				if(@evaluated_commands == @$run_commands)
 					{
-					my $found_mismatch = 0 ;
-
 					while(@evaluated_commands)
 						{
 						my ($ec, $rc)  = (shift @evaluated_commands, shift @$run_commands) ;
-
+						
 						# code could use modules that have changed, we don't know about those dependencies
-						$found_mismatch++ if $ec->[0] =~ /sub \{/ || $rc->[0] =~ /sub\{/ ;
-							
-						$found_mismatch++ if $ec->[0] ne $rc->[0] ;
-						} ;
+						$node_needs_rebuild++ if $ec->[0] =~ /sub \{/ || $rc->[0] =~ /sub\{/ ;
+						#SDT [ $ec->[0] , $rc->[0] ]
+						#	if $ec->[0] =~ /sub \{/ || $rc->[0] =~ /sub\{/ ;
+						
+						$node_needs_rebuild++ if $ec->[0] ne $rc->[0] ;
+						#SDT [ $ec->[0] , $rc->[0] ]
+						#	 if $ec->[0] ne $rc->[0] ;
+						}
 					
-					$node_needs_rebuild = $found_mismatch ;
+					$why = "\t\tpbsfile and commands mismatch\n" 
+						if $node_needs_rebuild ;
+					}
+				else
+					{
+					$why = "\t\tpbsfile and different number of commands\n" ;
+					$node_needs_rebuild++ ;
+					}
+					
+				unless($node_needs_rebuild)
+					{
+					# compare ENV
+					my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($file_tree) ;
+					%node_ENV = %$node_ENV ;
+					
+					my @diffs = grep { ! exists $node_ENV->{$_} || $node_ENV->{$_} ne $build_ENV->{$_} } keys %$build_ENV ;
+					
+					my $env_diff = scalar(keys %$node_ENV) != scalar(keys %$build_ENV) ;
+					
+					$why = "\t\tENV: different number of exported variables\n" if $env_diff ;
+					
+					$why .= "\t\tENV: variable '$_' is '" 
+							. ($node_ENV->{$_} // 'not defined')
+							. "', previous build: '$build_ENV->{$_}'\n" for @diffs ;
+					
+					$node_needs_rebuild += @diffs + $env_diff ;
 					}
 				}
 			}
+		else
+			{
+			$node_needs_rebuild = 1 ;
+			$why = "\t\tNo digest to check\n" ;
+			} 
 		}
 	
 	if ($node_needs_rebuild)
 		{
-		$skip_build_text = "\tBuild:$why\n" ;
+		$skip_build_text = "\tRuntime check:\n$why\n" ;
 		}
 	else
 		{
-		$skip_build_text = "\tBuild: skipping\n" ;
+		$skip_build_text = "\tRuntine check: skipping\n" ;
 		($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' No change.") ;
 		}
 	}
@@ -282,47 +261,54 @@ if($node_needs_rebuild)
 		
 		($build_result, $build_message) = (BUILD_FAILED, $reason) ;
 		}
-	
-	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
 
-	if($build_result == BUILD_SUCCESS)
+	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
+	}
+else
+	{
+	# skipped build, these must ends up in digest
+	$file_tree->{__RUN_COMMANDS} = \@node_commands ;
+	$file_tree->{__ENV} = \%node_ENV ;
+	}
+
+
+if($build_result == BUILD_SUCCESS)
+	{
+	# record MD5 while the file is still fresh in the OS file cache
+	if(exists $file_tree->{__VIRTUAL})
 		{
-		# record MD5 while the file is still fresh in the OS file cache
-		if(exists $file_tree->{__VIRTUAL})
+		$file_tree->{__MD5} = 'VIRTUAL' ;
+		#eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
+		($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
+	
+		if(-e $build_name)
 			{
-			$file_tree->{__MD5} = 'VIRTUAL' ;
-			#eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
+			PrintWarning2 "Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
+				unless -d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY} ;
+			}
+		}
+	else
+		{
+		PBS::Digest::FlushMd5Cache($build_name) ;
+		my $current_md5 = GetFileMD5($build_name) ;
+
+		$file_tree->{__MD5} = $current_md5 ;
+
+		if( $current_md5 ne "invalid md5")
+			{
+			$file_tree->{__MD5} = $current_md5 ;
+			
+			eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
 			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
-		
-			if(-e $build_name)
-				{
-				PrintWarning2 "Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
-					unless -d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY} ;
-				}
 			}
 		else
 			{
-			PBS::Digest::FlushMd5Cache($build_name) ;
-			my $current_md5 = GetFileMD5($build_name) ;
-
-			$file_tree->{__MD5} = $current_md5 ;
-
-			if( $current_md5 ne "invalid md5")
-				{
-				$file_tree->{__MD5} = $current_md5 ;
-				
-				eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
-				($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
-				}
-			else
-				{
-				PBS::Digest::RemoveNodeDigest($file_tree) ;
-				($build_result, $build_message) = (BUILD_FAILED, "Build: error generating MD5 for '$build_name', $!.") ;
-				}
+			PBS::Digest::RemoveNodeDigest($file_tree) ;
+			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating MD5 for '$build_name', $!.") ;
 			}
 		}
 	}
-	
+
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
 
 if($build_result == BUILD_SUCCESS)
@@ -433,35 +419,18 @@ eval # rules might throw an exception
 	#DEBUG HOOK, jump into perl debugger if so asked
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1) ;
 	
-	local %ENV = %ENV ;
+	my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($file_tree) ;
 
-	if(exists $file_tree->{__EXPORT_CONFIG})
+	local %ENV = (%ENV, %$node_ENV) ;
+
+	if ($do_build)
 		{
-		for my $regex ( @{ $file_tree->{__EXPORT_CONFIG} } )
-			{
-			for my $config_key (keys %{$file_tree->{__CONFIG}})
-				{
-				if($config_key =~ $regex)
-					{
-					my ($new, $old) = ($file_tree->{__CONFIG}{$config_key}, $ENV{$config_key} // 'not defined') ;
-
-					Say Warning3 "ENV: setting '$config_key' to '$new' was '$old'" if $new ne $old ;
-
-					$ENV{$config_key} = $new ;
-					}
-				}
-			}
+		Say Warning3 $_ for @$warnings ;
+		Say Warning "ENV: exported variables: $regex_matches, expected minimum: $regex_number" if $regex_matches < $regex_number ;
 		}
 
-	$file_tree->{__ENV} = \%ENV ;
+	$file_tree->{__ENV} = $node_ENV ; # ends up in digest
 
-=pod
-	$ENV{$_} = $file_tree->{__CONFIG}{$_} for
-		grep { my $k = $_ ; any { $k =~ $_ } @{$file_tree->{__EXPORT_CONFIG} // []} }
-			 keys %{$file_tree->{__CONFIG}} ;
-
-	$ENV{$_} = $config{$_} for grep { $a = $_ ; any { $a =~ $_ } @regexes } keys %config ;
-=cut
 	# get all the config variables from the node's package
 	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
 
@@ -495,7 +464,7 @@ eval # rules might throw an exception
 				) 
 		}
 
-	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE})
+	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE} && $do_build)
 		{
 		my $accessed = PBS::Config::GetConfigAccess($file_tree->{__NAME}) ;
 
@@ -565,6 +534,32 @@ if($build_result == BUILD_FAILED)
 return $build_result, $build_message ;
 }
 
+sub GetNodeENV
+{
+my ($node) = @_ ;
+
+my (%node_ENV, @warnings) ;
+my ($regex_number, $regex_matches) = (0, 0) ;
+
+for my $regex ( @{ $node->{__EXPORT_CONFIG} // [] } )
+	{
+	$regex_number++ ;
+
+	for my $key (grep { $_ =~ $regex } keys %{$node->{__CONFIG}})
+		{
+		$regex_matches++ ;
+
+		my $node_value = $node->{__CONFIG}{$key} ;
+		my $shell_value = exists $ENV{$key} ? "'$ENV{$key}'" : 'not found' ;
+
+		push @warnings, "ENV: setting '$key' to '$node_value' was $shell_value" if $node_value ne $shell_value ;
+
+		$node_ENV{$key} = $node_value ;
+		}
+	}
+
+\%node_ENV, \@warnings, $regex_matches, $regex_number
+}
 #-------------------------------------------------------------------------------------------------------
 
 sub ExtractRulesWithBuilder

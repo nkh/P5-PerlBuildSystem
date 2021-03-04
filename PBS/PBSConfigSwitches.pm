@@ -322,7 +322,7 @@ EOT
 		'',
 		
 	'q|quiet'                         => \$pbs_config->{QUIET},
-		'Reduce the output from the command. See --ndpb, --so, --sco.',
+		'Reduce the output from the command. See --bdn, --so, --sco.',
 		'',
 		
 	'naprf|no_anonymous_pbs_response_file'     => \$pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
@@ -554,10 +554,6 @@ EOT
 	
 	'nnr|no_node_build_rule'              => \$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES},
 		'Rules used to depend a node are not displayed',
-		'',
-
-	'ndpbmm|display_no_progress_bar_minimum_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
-		"Frankly less verbose build mode.",
 		'',
 
 	'nnp|no_node_parents'            => \$pbs_config->{DISPLAY_NO_NODE_PARENTS},
@@ -1317,35 +1313,39 @@ EOT
 		"Don't display the name of the node to be build.",
 		'',
 		
-	'dpb0|display_nop_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR_NOP},
+	'bpb0|display_nop_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR_NOP},
 		"Force silent build mode and displays an empty progress bar.",
 		'',
 
-	'dpb1|display_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR},
-		"Force silent build mode and displays a progress bar. This is Pbs default, see --ndpb.",
+	'bpb1|display_progress_bar'        => \$pbs_config->{DISPLAY_PROGRESS_BAR},
+		"Force silent build mode and displays a progress bar. This is Pbs default, see --build_verbose.",
 		'',
 
-	'dpb2|display_progress_bar_file'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_FILE},
+	'bpb2|display_progress_bar_file'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_FILE},
 		"Built node names are displayed above the progress bar",
 		'',
 
-	'dpb3|display_progress_bar_process'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS},
+	'bpb3|display_progress_bar_process'  => \$pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS},
 		"A progress per build process is displayed above the progress bar",
 		'',
 
-	'ndpb|display_no_progress_bar'    => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR},
+	'bv|build_verbose'    => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR},
 		"Verbose build mode.",
 		'',
 		
-	'ndpbm|display_no_progress_bar_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
+	'bvm|display_no_progress_bar_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
 		"Slightly less verbose build mode.",
 		'',
 		
+	'bvnmm|display_no_progress_bar_minimum_minimum'  => \$pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
+		"Frankly less verbose build mode.",
+		'',
+
 	'bre|display_build_result'       => \$pbs_config->{DISPLAY_BUILD_RESULT},
 		'Shows the result returned by the builder.',
 		'',
 		
-	'box_node' => \$pbs_config->{BOX_NODE},
+	'bn|box_node' => \$pbs_config->{BOX_NODE},
 		'Display a colored margin for each node display.',
 		'',
 
@@ -1362,7 +1362,7 @@ EOT
 		'',
 
 	'bni|build_and_display_node_information' => \$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO},
-		'Display information about the node to be build; see also --bn|build_node_information.',
+		'Display information about the node to be build.',
 		<<EOT,
 these switches are turned on:
 	'no|node_origin'

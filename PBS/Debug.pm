@@ -406,7 +406,7 @@ sub CheckBreakpoint
 my $pbs_config = shift ;
 my %point = @_ ;
 
-return(0) unless $debug_enabled ;
+return 0 unless $debug_enabled ;
 
 my $use_debugger = 0 ;
 

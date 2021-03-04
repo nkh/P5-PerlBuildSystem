@@ -999,6 +999,7 @@ EOH
 
 #-------------------------------------------------------------------------------
 
+#$shell_command = PBS::Config::EvalConfig($shell_command, $tree->{__CONFIG}, $shell_command_info, $tree->{__LOAD_PACKAGE}, $tree->{__PBS_CONFIG}) ;
 sub EvalConfig 
 {
 my ($entry, $config, $origin, $package, $pbs_config, $no_warnings) = @_ ;
@@ -1038,9 +1039,6 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 return($entry) if $undefined_config ;
 
 $entry =~ s|\\|\\\\|g ;
-$entry =~ s/"/\x100/g ;
-$entry = eval "\"$entry\";" ;
-$entry =~ s/\x100/"/g ;
 
 # replace uppercase words by their values within the config
 while($entry =~ /\%([_a-zA-Z0-9]+)/g)

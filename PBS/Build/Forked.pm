@@ -725,7 +725,7 @@ else
 
 				my $length = length($PBS::Output::indentation) || 4 ;
 				my $o = $pbs_config->{BOX_NODE}
-						? ta_highlight((ta_length($_) < $length ? (' ' x $length) : $_) , qr/.{$length}/, GetColor($bg_colors[$bg_color])) 
+						? ta_highlight((ta_length($_) == 0 ? (' ' x $length) : $_) , qr/.{$length}/, GetColor($bg_colors[$bg_color])) 
 						: $_ ;
 
 				PrintVerbatim "$o\n" unless $no_output ;
@@ -750,7 +750,7 @@ else
 			$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
 			
 			my $o = $pbs_config->{BOX_NODE}
-					? ta_highlight((ta_length($_) < 1 ? ' ' : $_) , qr/./, GetColor('on_error')) 
+					? ta_highlight((ta_length($_) == 0 ? ' ' : $_) , qr/./, GetColor('on_error')) 
 					: $_ ;
 
 			$error_output .= $o . "\n" ;

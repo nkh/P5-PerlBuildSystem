@@ -1,8 +1,10 @@
-check environment variables
-	which one does the command use? and sub command ?
 
-	we can check the exported ones and display a warning when we override  for a command
-
+virtual node digest
+	do vitual nodes trigger other nodes?  virtual and  not virtual dependents
+	BuildOk should run a shell command
+		if we run a command we can as well not have a virtual node and generate something
+	
+	
 control C handler to generate warp
 
 generate color functions on the fly from color definitions
@@ -18,6 +20,9 @@ colors in DumpTree and width!
 	wrapping errors from module
 
 document all breakpoints
+	debug breakpoint could display an informative message about what it is doing
+	and what is available for poking
+		tree with limited depth?
 
 install and where to find tools
 	find and check tools
@@ -480,14 +485,16 @@ project generation script can generate project which doesn't require compilation
 		- replace the .o depender
 		- build the .o by touching them
 			
-debug breakpoint could display an informative message about what it is doing
-and what is available for poking
-
 install pbs on linux and pbs.pl on windows
 
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#check environment variables
+	which one does the command use? and sub command ?
+
+	#display a warning when we override  for a command
 
 #log %ENV in digest
 
