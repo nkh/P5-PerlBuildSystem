@@ -98,11 +98,9 @@ my ($unchecked_subpbs_options, $command_line_arguments) = PBS::Config::Subpbs::R
 
 my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($options, $pbs_config, $command_line_arguments) ;
 
-
 # two phase parsing of subpbs options to allow for plugin options loading
 my ($switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $subpbs_options)
 	= PBS::Config::Subpbs::ParseSubpbsOptions($unchecked_subpbs_options, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
-
 
 # update the options list
 ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ;
@@ -110,7 +108,7 @@ PBS::PBSConfig::ParseSwitches($options, $pbs_config, $command_line_arguments) ;
 
 $pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
 
-for ( @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($_) }
+for ( uniq @{$pbs_config->{BREAKPOINTS}} ) { EnableDebugger($pbs_config, $_) }
   
 if($pbs_config->{DISPLAY_LIB_PATH})
 	{

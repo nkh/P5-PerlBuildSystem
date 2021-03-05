@@ -1,10 +1,18 @@
+#Say Info indents like Print Info and not like PrintInfo
 
-dfl doesn't take the extra switches
+#dfl doesn't take the extra switches
+
+stack reducer
+	object goes out of scope
 
 debugger
 	insertion breakpoint locally changes options to display the depending of a specific node
 		already have an options ?
-	
+
+	breakpoint at pbs file load and finish, with list of added nodes
+
+	#user breakpoint in node builder
+
 virtual node digest
 	do vitual nodes trigger other nodes?  virtual and  not virtual dependents
 	BuildOk should run a shell command or it will always trigger

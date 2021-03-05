@@ -728,7 +728,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		push @{$rule->{STATS}{NOT_MATCHED}}, $tree ;
 
 		my $depender_message = $dependencies[0] // 'No match' ;
-		PrintColor('no_match', "$PBS::Output::indentation$depender_message, $rule_info\n") if(defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+		PrintColor 'no_match', "$PBS::Output::indentation$depender_message, $rule_info\n" if defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT} ;
 		}
 	}
 
@@ -1170,7 +1170,7 @@ if(@has_matching_non_subpbs_rules)
 				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($matched) ;
 				}
 				
-			PrintColor('ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules") if $ignored_rules ne '' ;
+			PrintColor 'ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules" if $ignored_rules ne '' ;
 			}
 	
 		if (! exists $tree->{$dependency}{__DEPENDED} && ! DependencyIsSource($tree, $dependency, $inserted_nodes) ) 

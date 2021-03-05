@@ -16,6 +16,8 @@ return
 	256 => 
 		{
 		debug     => color('rgb314'),
+		debug_2    => color('rgb304'),
+		debug_3    => color('rgb102'),
 		on_error  => color('on_rgb100'),
 		error     => color('rgb300'),
 		info      => color('rgb020'),
@@ -52,6 +54,8 @@ return
 	night => 
 		{
 		debug     => color('rgb314'),
+		debug_2    => color('rgb304'),
+		debug_3    => color('rgb203'),
 		on_error  => color('on_rgb100'),
 		error     => color('rgb200'),
 		info      => color('rgb020'),
@@ -87,6 +91,8 @@ return
 	16 => 
 		{
 		debug     => color('magenta'),
+		debug_2    => color('magenta'),
+		debug_3    => color('magenta'),
 		error     => color('red'),
 		info      => color('green'),
 		info_2    => color('bright_blue'),
@@ -112,6 +118,9 @@ return
 		},
 	2 => 
 		{
+		debug     => '',
+		debug_2   => '',
+		debug_3   => '',
 		error     => '',
 		warning   => '',
 		warning_2 => '',
@@ -124,7 +133,6 @@ return
 		info_5    => '',
 		user      => '',
 		shell     => '',
-		debug     => '',
 
 		no_match  => '',
 

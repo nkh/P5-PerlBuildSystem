@@ -1333,7 +1333,7 @@ EOT
 		"Slightly less verbose build mode.",
 		'',
 		
-	'bvnmm|display_no_progress_bar_minimum_minimum'  => \$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
+	'bvmm|display_no_progress_bar_minimum_minimum'  => \$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
 		"Frankly less verbose build mode.",
 		'',
 
@@ -1422,11 +1422,11 @@ EOT
 
 	#----------------------------------------------------------------------------------
 	
-	'debug:s'                         => $config->{BREAKPOINTS},
+	'bp|debug:s'                         => $config->{BREAKPOINTS},
 		'Enable debug support A startup file defining breakpoints can be given.',
 		'',
 
-	'debug_display_breakpoint_header' => \$config->{DISPLAY_BREAKPOINT_HEADER},
+	'bph|debug_display_breakpoint_header' => \$config->{DISPLAY_BREAKPOINT_HEADER},
 		'Display a message when a breakpoint is run.',
 		'',
 

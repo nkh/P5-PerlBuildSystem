@@ -77,7 +77,7 @@ $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
-my $target_string = join ', ', map {"'$_'"} @$targets ; 
+my $target_string = $em->( join ', ', map {"'$_'"} @$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
@@ -231,8 +231,11 @@ if($pbs_config->{DISPLAY_CONFIG_USAGE})
 
 PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
-RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $dependency_tree, $inserted_nodes, [], $dependency_tree)
-	if $pbs_config->{DEBUG_VISUALIZE_AFTER_SUPBS} ;
+for my $target (@$targets)
+	{ 
+	RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $inserted_nodes->{$target}, $inserted_nodes, [], $inserted_nodes->{$target})
+		if $pbs_config->{DEBUG_VISUALIZE_AFTER_SUPBS} ;
+	}
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -394,8 +397,11 @@ if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 my $check_failed = $@ ;
 
 # ie: -tt options
-RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node)
-	unless $pbs_config->{DEBUG_VISUALIZE_AFTER_SUPBS} ;
+for my $target (@$targets)
+	{ 
+	RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $inserted_nodes->{$target}, $inserted_nodes, \@build_sequence, $build_node)
+		unless $pbs_config->{DEBUG_VISUALIZE_AFTER_SUPBS} ;
+	}
 
 if($check_failed !~ /^DEPENDENCY_CYCLE_DETECTED/ && defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->{INTERMEDIATE_WARP_WRITE})
 	{

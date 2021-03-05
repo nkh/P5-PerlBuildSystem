@@ -42,11 +42,6 @@ use List::Util qw(any) ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'tnto',
-	'DISPLAY_ONLY_TRIGGERING_NODES',
-	"Display only triggering nodes.",
-	'',
-	
 	'tnonh',
 	'NO_HEADER_FILES_DISPLAY',
 	"Do not display header files in the tree dump.",

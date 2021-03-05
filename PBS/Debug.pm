@@ -42,28 +42,35 @@ use PBS::Information ;
 #-------------------------------------------------------------------------------
 
 our $debug_enabled = 0 ;
+my $pbs_config_context ;
 
 #-------------------------------------------------------------------------------
 
 sub EnableDebugger
 {
-my ($file) = @_ ; # file can contains breakpoint definitions
+my ($pbs_config, $file) = @_ ; # file contains breakpoint definitions
+
+$pbs_config_context = $pbs_config ;
 
 if($file ne '')
 	{
 	$file = "./$file" unless $file =~ m ~^\.//~ ;
 
-	Say Debug "Debug: loading '$file'" ;
+	my $pad = ' ' x ((20 - length($file)) / 2) ;
+
+	Say Debug3 'BP: --------- ' . _DEBUG2_("$pad'$file'$pad") . _DEBUG3_(' ----------') if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
 
 	unless ( my $return = do $file ) 
 		{
-		die ERROR("couldn't parse '$file ': $@") . "\n" if $@ ;
-		die ERROR("couldn't do '$file': $!") ."\n"     unless defined $return ;
-		die ERROR("couldn't run '$file'") . "\n"       unless $return ;
+		die ERROR("\tcouldn't parse '$file ': $@") . "\n" if $@ ;
+		die ERROR("\tcouldn't do '$file': $!") ."\n"     unless defined $return ;
+		die ERROR("\tcouldn't run '$file'") . "\n"       unless $return ;
 		}
 	
 	$debug_enabled = 1 ;
 	}
+
+undef $pbs_config_context ;
 }
 
 #-------------------------------------------------------------------------------
@@ -157,7 +164,7 @@ else
 
 	if(defined $possible_nodes)
 		{
-		Say Debug "Debug:pbs_list is expecting a reference to \$inserted_nodes. Using the one found in your stack." ;
+		Say Debug "Debug: pbs_list is expecting a reference to \$inserted_nodes. Using the one found in your stack." ;
 
 		if(defined $nodes)
 			{
@@ -281,17 +288,48 @@ while(1)
 
 my %breakpoints ;
 
+sub GetBpContext
+{
+my $breakpoint_name = shift ;
+
+my $config ;
+
+if('HASH' eq ref $breakpoint_name)
+	{
+	$config = $breakpoint_name ;
+	$breakpoint_name = shift ;
+	}
+elsif (defined $pbs_config_context) 
+	{
+	$config = $pbs_config_context ;
+	}
+else
+	{
+	my $stack = PBS::Stack::GetPbsStack() ;
+	SDT $stack, 'stack' ;
+	#unshift @pbs_stack, {PACKAGE => $package, SUB => $subroutine, FILE => $filename, LINE => $line} if $seen_pbs_run ;
+	$config = PBS::PBSConfig::GetPbsConfig($stack->[0]{PACKAGE}) ;
+	}
+
+$breakpoint_name, $config, @_ ;
+}
+
 sub AddBreakpoint
 {
 my ($package, $file_name, $line) = caller() ;
 
-my $breakpoint_name = shift ;
+my ($breakpoint_name, $config, @bp) = GetBpContext(@_) ;
 
-Say Debug "Debug: adding breakpoint: '$breakpoint_name'" ;
+if(exists $breakpoints{$breakpoint_name})
+	{
+	Say Warning3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _WARNING3_(" already defined @ '$file_name:$line'")
+	}
+else
+	{
+	Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") if $config->{DISPLAY_BREAKPOINT_HEADER}
+	}
 
-Say Warning "Debug: redefining breakpoint '$breakpoint_name' @ '$file_name:$line'." if exists $breakpoints{$breakpoint_name} ;
-
-$breakpoints{$breakpoint_name} = {ORIGIN => "$file_name:$line", @_} ;
+$breakpoints{$breakpoint_name} = {ORIGIN => "$file_name:$line", @bp} ;
 }
 
 #----------------------------------------------------------------------
@@ -306,7 +344,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 	
 	delete $breakpoints{$breakpoint_name} ;
 
-	Say Debug "Breakpoint '$breakpoint_name' removed" ;
+	Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(' removed') ;
 	}
 }
 
@@ -326,7 +364,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 	SDT $breakpoints{$breakpoint_name}, "$breakpoint_name:" ;
 	}
 
-Say Debug "pbs_list_breakpoints: No Breakpoint matching regex '$breakpoint_regex'" unless $found_breakpoint ;
+Say Debug "pbs_list_breakpoints: No BP matching regex '$breakpoint_regex'" unless $found_breakpoint ;
 }
 
 #----------------------------------------------------------------------
@@ -335,6 +373,8 @@ sub ActivateBreakpoints
 {
 my @breakpoint_regexes = @_ ;
 
+my(undef, $config) = GetBpContext('name') ;
+
 for my $breakpoint_name (sort keys %breakpoints)
 	{
 	for my $breakpoint_regex (@breakpoint_regexes)
@@ -342,7 +382,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{ACTIVE} = 1 ;
-		Say Debug "Breakpoint '$breakpoint_name' activated" ;
+		Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(' activated') if $config->{DISPLAY_BREAKPOINT_HEADER} ;
 		}
 	}
 }
@@ -353,6 +393,8 @@ sub DeactivateBreakpoints
 {
 my @breakpoint_regexes = @_ ;
 
+my(undef, $config) = GetBpContext('name') ;
+
 for my $breakpoint_name (sort keys %breakpoints)
 	{
 	for my $breakpoint_regex (@breakpoint_regexes)
@@ -360,7 +402,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{ACTIVE} = 0 ;
-		Say Debug "Breakpoint '$breakpoint_name' deactivated" ;
+		Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(' deactivated') if $config->{DISPLAY_BREAKPOINT_HEADER} ;
 		}
 	}
 }
@@ -378,7 +420,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{USE_DEBUGGER} = 1 ;
-		Say Debug "Breakpoint '$breakpoint_name' will activate the perl debugger" ;
+		Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(' will activate the debugger') ;
 		}
 	}
 }
@@ -396,7 +438,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{USE_DEBUGGER} = 0 ;
-		Say Debug "Breakpoint '$breakpoint_name' will NOT activate the perl debugger" ;
+		Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(' will not activate the debugger') ;
 		}
 	}
 }
@@ -405,10 +447,12 @@ for my $breakpoint_name (sort keys %breakpoints)
 
 sub CheckBreakpoint
 {
-my $pbs_config = shift ;
-my %point = @_ ;
+my ($pbs_config, %point) = @_ ;
 
 return 0 unless $debug_enabled ;
+
+my (undef, $file, $line) = caller() ;
+my $called_at = GetRunRelativePath($pbs_config, $file) . ":" . $line ;
 
 my $use_debugger = 0 ;
 
@@ -416,86 +460,30 @@ for my $breakpoint_name (keys %breakpoints)
 	{
 	my $breakpoint = $breakpoints{$breakpoint_name} ;
 	
-	next unless $breakpoint->{ACTIVE} ;
+	next unless      $breakpoint->{ACTIVE} ;
 	
-	if(uc $breakpoint->{TYPE} eq 'BUILD')
-		{
-		next unless $point{TYPE} eq 'BUILD' ;
-		}
+	next if exists   $breakpoint->{TYPE}           && uc($breakpoint->{TYPE}) ne uc($point{TYPE}) ;
+	next if defined  $breakpoint->{RULE_REGEX}     && $point{RULE_NAME} !~ /$breakpoint->{RULE_REGEX}/ ;
+	next if defined  $breakpoint->{NODE_REGEX}     && $point{NODE_NAME} !~ /$breakpoint->{NODE_REGEX}/ ;
+	next if defined  $breakpoint->{PACKAGE_REGEX}  && $point{PACKAGE_NAME} !~ /$breakpoint->{PACKAGE_REGEX}/ ;
+	next if defined  $breakpoint->{PBSFILE_REGEX}  && $point{PBSFILE} !~ /$breakpoint->{PBSFILE_REGEX}/ ;
+	next if          $breakpoint->{PRE}            && ! $point{PRE} ;
+	next if          $breakpoint->{POST}           && ! $point{POST} ;
+	next if          $breakpoint->{TRIGGERED}      && ! $point{TRIGGERED} ;
 		
-	if(uc $breakpoint->{TYPE} eq 'POST_BUILD')
-		{
-		next unless $point{TYPE} eq 'POST_BUILD' ;
-		}
-		
-	if(uc $breakpoint->{TYPE} eq 'TREE')
-		{
-		next unless $point{TYPE} eq 'TREE' ;
-		}
-	
-	if(uc $breakpoint->{TYPE} eq 'INSERT')
-		{
-		next unless $point{TYPE} eq 'INSERT' ;
-		}
-	
-	if(uc $breakpoint->{TYPE} eq 'VARIABLE')
-		{
-		next unless $point{TYPE} eq 'VARIABLE' ;
-		}
-	
-	if(uc $breakpoint->{TYPE} eq 'DEPEND')
-		{
-		next unless $point{TYPE} eq 'DEPEND' ;
-		}
-		
-	if(defined $breakpoint->{RULE_REGEX})
-		{
-		next unless $point{RULE_NAME} =~ /$breakpoint->{RULE_REGEX}/ ;
-		}
-	
-	if(defined $breakpoint->{NODE_REGEX})
-		{
-		next unless $point{NODE_NAME} =~ /$breakpoint->{NODE_REGEX}/ ;
-		}
-		
-	if(defined $breakpoint->{PACKAGE_REGEX})
-		{
-		next unless $point{PACKAGE_NAME} =~ /$breakpoint->{PACKAGE_REGEX}/ ;
-		}
-	
-	if(defined $breakpoint->{PBSFILE_REGEX})
-		{
-		next unless $point{PBSFILE} =~ /$breakpoint->{PBSFILE_REGEX}/ ;
-		}
-		
-	if($point{PRE})
-		{
-		next unless $breakpoint->{PRE} ;
-		}
-		
-	if($point{POST})
-		{
-		next unless $breakpoint->{POST} ;
-		}
-		
-	if($breakpoint->{TRIGGERED})
-		{
-		next unless $point{TRIGGERED} ;
-		}
 
 	for my $action (@{$breakpoint->{ACTIONS}})
 		{
-		Say Debug "Debug: running '$breakpoint_name' from $breakpoint->{ORIGIN}" if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
+		Say Debug3 'BP: ' . _DEBUG2_("'$breakpoint_name'") . _DEBUG3_(" run @ $called_at [$breakpoint->{ORIGIN}]") if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
+
 		$action->(%point, BREAKPOINT_NAME => $breakpoint_name) ;
+		1 ;
 		}
 		
-	if($breakpoint->{USE_DEBUGGER})
-		{
-		$use_debugger++  ;
-		}
+	$use_debugger++ if $breakpoint->{USE_DEBUGGER} ;
 	}
 	
-return($use_debugger) ;
+return $use_debugger ;
 }
 
 #----------------------------------------------------------------------

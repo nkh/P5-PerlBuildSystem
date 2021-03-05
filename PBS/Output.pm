@@ -27,15 +27,15 @@ require Exporter;
 @ISA     = qw(Exporter) ;
 @EXPORT  = qw
 		(
-		Error Warning Warning2 Warning3 Warning4 Info Info2 Info3 Info4 Info5 User Shell Debug
-		ERROR WARNING WARNING2 WARNING3 WARNING4 INFO INFO2 INFO3 INFO4 INFO5 USER SHELL DEBUG
-		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _WARNING4_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_
+		NoColor Error Warning Warning2 Warning3 Warning4 Info Info2 Info3 Info4 Info5 User Shell Debug Debug2 Debug3
+		ERROR WARNING WARNING2 WARNING3 WARNING4 INFO INFO2 INFO3 INFO4 INFO5 USER SHELL DEBUG DEBUG2 DEBUG3
+		_ERROR_ _WARNING_ _WARNING2_ _WARNING3_ _WARNING4_ _INFO_ _INFO2_ _INFO3_ _INFO4_ _INFO5_ _USER_ _SHELL_ _DEBUG_ _DEBUG2_ _DEBUG3_
 
-		COLOR PrintColor PrintNoColor PrintVerbatim
+		COLOR Color PrintColor PrintNoColor PrintVerbatim
 
 		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 		
-		SET SWT SW2T SW3T SIT SI2T SI3T SI4T SI5T SUT SST SDT Say Print
+		SET SWT SW2T SW3T SIT SI2T SI3T SI4T SI5T SUT SST SDT SD2T SD3T Say Print
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -74,6 +74,7 @@ our $no_indentation = 0 ;
 
 my $cd = 256 ; # color_depth
 my %cc ;
+my %user_cc ; 
 
 #-------------------------------------------------------------------------------
 
@@ -85,11 +86,14 @@ sub SetDefaultColors
 {
 my ($default_colors) = @_ ;
 $default_colors //= {} ;
+	
+$cc{$_} = { %{$default_colors->{$_} // {}}, %{$cc{$_} // {}} } for keys %$default_colors ;
 
-for my $depth (keys %$default_colors)
-	{
-	$cc{$depth} = { %{$default_colors->{$depth} // {}}, %{$cc{$depth} // {}} } ;
-	}
+# colors defined on the command line
+$cc{$cd}{$_} = $user_cc{$cd}{$_} for keys %{$user_cc{$cd}} ;
+
+#use Data::TreeDumper ;
+#print Data::TreeDumper::DumpTree $cc{256} ;
 }
 
 sub GetColor
@@ -117,7 +121,7 @@ if($@)
 	}
 else
 	{
-	$cc{$cd}{$color_name} = $escape_code ; 
+	$user_cc{$cd}{$color_name} = $escape_code ; 
 	}
 }
 
@@ -150,36 +154,41 @@ $string =~ s/\n(.)/\n$indentation2$1/g ;
 
 return $indentation . $color . $string . $reset ;
 }
+*Color=\&COLOR ;
 
-sub ERROR    { return COLOR('error', @_) }        sub _ERROR_    { return COLOR('error', @_, 0) }
-sub WARNING  { return COLOR('warning', @_) }      sub _WARNING_  { return COLOR('warning', @_, 0) }
-sub WARNING2 { return COLOR('warning_2', @_) }    sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
-sub WARNING3 { return COLOR('warning_3', @_) }    sub _WARNING3_ { return COLOR('warning_3', @_, 0) }
-sub WARNING4 { return COLOR('warning_4', @_) }    sub _WARNING4_ { return COLOR('warning_4', @_, 0) }
-sub INFO     { return COLOR('info', @_) }         sub _INFO_     { return COLOR('info', @_, 0) }
-sub INFO2    { return COLOR('info_2', @_) }       sub _INFO2_    { return COLOR('info_2', @_, 0) }
-sub INFO3    { return COLOR('info_3', @_) }       sub _INFO3_    { return COLOR('info_3', @_, 0) }
-sub INFO4    { return COLOR('info_4', @_) }       sub _INFO4_    { return COLOR('info_4', @_, 0) }
-sub INFO5    { return COLOR('info_5', @_) }       sub _INFO5_    { return COLOR('info_5', @_, 0) }
-sub USER     { return COLOR('user', @_) }         sub _USER_     { return COLOR('user', @_, 0) }
-sub SHELL    { return COLOR('shell', @_) }        sub _SHELL_    { return COLOR('shell', @_, 0) }
-sub DEBUG    { return COLOR('debug', @_) }        sub _DEBUG_    { return COLOR('debug', @_, 0) }
+sub NO_COLOR { return COLOR('reset',     @_) }       sub _NO_COLOR_ { return COLOR('reset',     @_, 0) }
+sub ERROR    { return COLOR('error',     @_) }       sub _ERROR_    { return COLOR('error',     @_, 0) }
+sub WARNING  { return COLOR('warning',   @_) }       sub _WARNING_  { return COLOR('warning',   @_, 0) }
+sub WARNING2 { return COLOR('warning_2', @_) }       sub _WARNING2_ { return COLOR('warning_2', @_, 0) }
+sub WARNING3 { return COLOR('warning_3', @_) }       sub _WARNING3_ { return COLOR('warning_3', @_, 0) }
+sub WARNING4 { return COLOR('warning_4', @_) }       sub _WARNING4_ { return COLOR('warning_4', @_, 0) }
+sub INFO     { return COLOR('info',      @_) }       sub _INFO_     { return COLOR('info',      @_, 0) }
+sub INFO2    { return COLOR('info_2',    @_) }       sub _INFO2_    { return COLOR('info_2',    @_, 0) }
+sub INFO3    { return COLOR('info_3',    @_) }       sub _INFO3_    { return COLOR('info_3',    @_, 0) }
+sub INFO4    { return COLOR('info_4',    @_) }       sub _INFO4_    { return COLOR('info_4',    @_, 0) }
+sub INFO5    { return COLOR('info_5',    @_) }       sub _INFO5_    { return COLOR('info_5',    @_, 0) }
+sub USER     { return COLOR('user',      @_) }       sub _USER_     { return COLOR('user',      @_, 0) }
+sub SHELL    { return COLOR('shell',     @_) }       sub _SHELL_    { return COLOR('shell',     @_, 0) }
+sub DEBUG    { return COLOR('debug',     @_) }       sub _DEBUG_    { return COLOR('debug',     @_, 0) }
+sub DEBUG2   { return COLOR('debug_2',   @_) }       sub _DEBUG2_   { return COLOR('debug_2',   @_, 0) }
+sub DEBUG3   { return COLOR('debug_3',   @_) }       sub _DEBUG3_   { return COLOR('debug_3',   @_, 0) }
 
-sub NO_COLOR{ return COLOR('reset', @_) }
-
-*Error=\&ERROR ;
-*Warning=\&WARNING ;
-*Warning2=\&WARNING2 ;
-*Warning3=\&WARNING3 ;
-*Warning4=\&WARNING4 ;
-*Info=\&INFO ;
-*Info2=\&INFO2 ;
-*Info3=\&INFO3 ;
-*Info4=\&INFO4 ;
-*Info5=\&INFO5 ;
-*User=\&USER ;
-*Shell=\&SHELL ;
-*Debug=\&DEBUG ;
+*NoColor  =\&NO_COLOR ;
+*Error    =\&ERROR ;
+*Warning  =\&WARNING ;
+*Warning2 =\&WARNING2 ;
+*Warning3 =\&WARNING3 ;
+*Warning4 =\&WARNING4 ;
+*Info     =\&INFO ;
+*Info2    =\&INFO2 ;
+*Info3    =\&INFO3 ;
+*Info4    =\&INFO4 ;
+*Info5    =\&INFO5 ;
+*User     =\&USER ;
+*Shell    =\&SHELL ;
+*Debug    =\&DEBUG ;
+*Debug2   =\&DEBUG2 ;
+*Debug3   =\&DEBUG3 ;
 
 #-------------------------------------------------------------------------------
 
@@ -201,7 +210,14 @@ $ends_with_newline //= '' ;
 my $lines =  join
 		(
 		"\n$output_info_label",
-		map { $_ ne "\e[K\e[K" ? $color_and_depth->($_, $indent, $color_indent) : q{} }
+		map 	
+			{ 
+			$_ ne "\e[K\e[K" 
+				? $color_and_depth
+					? $color_and_depth->($_, $indent, $color_indent)
+					: $_
+				: q{} 
+			}
 			split /\n(?:\Q$reset\E)?/, $data
 		)
 		. $ends_with_newline ;
@@ -215,9 +231,9 @@ sub PrintStdErr {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintStdOutColor {_print(\*STDOUT, @_)} # pass a color handler as first argument
 sub PrintStdErrColor {_print(\*STDERR, @_)} # pass a color handler as first argument
 
+sub PrintColor    {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 sub PrintNoColor  {_print(\*STDERR, \&NO_COLOR, @_)}
 sub PrintVerbatim {print STDERR  @_} # used to print build process output which already has used _print 
-sub PrintColor    {my $color = shift; _print(\*STDERR, sub {COLOR($color, @_)}, @_)}
 
 sub PrintError   {_print(\*STDERR, \&ERROR, @_)}
 sub PrintWarning {_print(\*STDERR, \&WARNING, @_)}
@@ -233,8 +249,8 @@ sub PrintUser    {_print(\*STDERR, \&USER, @_)}
 sub PrintShell   {_print(\*STDERR, \&SHELL, @_)}
 sub PrintDebug   {_print(\*STDERR, \&DEBUG, @_)}
 
-sub Print      {_print(\*STDERR, \&NO_COLOR, @_)}
-sub Say        {_print(\*STDERR, \&NO_COLOR, (shift . "\n"), @_)}
+sub Print        {_print(\*STDERR, undef, @_)}
+sub Say          {_print(\*STDERR, undef, (shift . "\n"), @_)}
 
 sub _ST 
 {
@@ -266,6 +282,8 @@ sub SI5T { _ST \&Info5,    [caller(0)], @_ }
 sub SUT  { _ST \&User,     [caller(0)], @_ }
 sub SST  { _ST \&Shell,    [caller(0)], @_ }
 sub SDT  { _ST \&Debug,    [caller(0)], @_ }
+sub SD2T { _ST \&Debug2,    [caller(0)], @_ }
+sub SD3T { _ST \&Debug3,    [caller(0)], @_ }
 
 #-------------------------------------------------------------------------------
 
