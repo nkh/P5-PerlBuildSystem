@@ -35,7 +35,7 @@ require Exporter;
 
 		PrintError PrintWarning PrintWarning2 PrintWarning3 PrintWarning4 PrintInfo PrintInfo2 PrintInfo3 PrintInfo4 PrintInfo5 PrintUser PrintShell PrintDebug
 		
-		SDT Say Print
+		SET SWT SW2T SW3T SIT SI2T SI3T SI4T SI5T SUT SST SDT Say Print
 
 		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 		GetColor
@@ -236,20 +236,36 @@ sub PrintDebug   {_print(\*STDERR, \&DEBUG, @_)}
 sub Print      {_print(\*STDERR, \&NO_COLOR, @_)}
 sub Say        {_print(\*STDERR, \&NO_COLOR, (shift . "\n"), @_)}
 
-sub SDT 
+sub _ST 
 {
-my ($p, $f, $l) = caller (0) ;
-$f = GetRunRelativePath({TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'}, $f) ;
+my ($color, $caller) = splice @_, 0, 2 ;
+
+my ($f, $l) = @{$caller}[1, 2] ;
+
+$f = GetRunRelativePath({TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'}, $f, 1) ;
 
 eval
 	{
 	if (@_ == 0) {}
-	if (@_ == 1) { PrintDebug Data::TreeDumper::DumpTree(@_, '', DUMPER_NAME => "SDT $f:$l") }
-	    else     { PrintDebug Data::TreeDumper::DumpTree(@_, DUMPER_NAME => "SDT $f:$l") }
+	if (@_ == 1) { print STDERR $color->(Data::TreeDumper::DumpTree(@_, '', DUMPER_NAME => "SDT $f:$l")) }
+	    else     { print STDERR $color->(Data::TreeDumper::DumpTree(@_, DUMPER_NAME => "SDT $f:$l")) }
 	} ;
 
-Say Error "SDT: error: Odd number of arguments @ $f:$l" if $@ ;
+Say Error "SxT: error: Odd number of arguments @ $f:$l" if $@ ;
 }
+
+sub SET  { _ST \&Error,    [caller(0)], @_ }
+sub SWT  { _ST \&Warning,  [caller(0)], @_ }
+sub SW2T { _ST \&Warning2, [caller(0)], @_ }
+sub SW3T { _ST \&Warning3, [caller(0)], @_ }
+sub SIT  { _ST \&Info,     [caller(0)], @_ }
+sub SI2T { _ST \&Info2,    [caller(0)], @_ }
+sub SI3T { _ST \&Info3,    [caller(0)], @_ }
+sub SI4T { _ST \&Info4,    [caller(0)], @_ }
+sub SI5T { _ST \&Info5,    [caller(0)], @_ }
+sub SUT  { _ST \&User,     [caller(0)], @_ }
+sub SST  { _ST \&Shell,    [caller(0)], @_ }
+sub SDT  { _ST \&Debug,    [caller(0)], @_ }
 
 #-------------------------------------------------------------------------------
 

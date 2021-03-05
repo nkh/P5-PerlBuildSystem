@@ -43,6 +43,7 @@ PBS/Check/ForkedCheck.pm
 PBS/Check.pm
 PBS/Cyclic.pm
 PBS/Config.pm
+PBS/Config/Subpbs.pm
 PBS/Constants.pm
 PBS/DefaultBuild.pm
 PBS/Debug.pm
@@ -56,6 +57,7 @@ PBS/Graph/Html.pm
 PBS/Graph/Snapshots.pm
 PBS/GraphViz.pm
 PBS/Log/Html.pm
+PBS/Log/Full.pm
 PBS/Node.pm
 PBS/Nop.pm
 PBS/Output.pm

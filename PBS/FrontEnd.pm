@@ -4,6 +4,7 @@ package PBS::FrontEnd ;
 use 5.006 ;
 use strict ;
 use warnings ;
+
 use Data::Dumper ;
 use Data::TreeDumper ;
 use Carp ;
@@ -12,6 +13,7 @@ use Module::Util qw(find_installed) ;
 use File::Spec::Functions qw(:ALL) ;
 use File::Slurp ;
 use File::HomeDir;
+use List::Util qw(uniq) ;
 
 require Exporter ;
 
@@ -19,11 +21,14 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.47' ;
+our $VERSION = '0.48' ;
 
+use PBS::Debug ;
 use PBS::Config ;
+use PBS::Config::Subpbs ;
 use PBS::PBSConfig ;
 use PBS::PBS ;
+use PBS::Log::Full ;
 use PBS::Output ;
 use PBS::Constants ;
 use PBS::Documentation ;
@@ -32,212 +37,37 @@ use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
 
-sub RemoveSubpbsOptions
+sub AliasOptions
 {
-# remove subppbs_options from the command line
+use File::Slurp ;
 
-my ($command_line_arguments) = @_ ;
+my ($arguments) = @_ ;
 
-my @unchecked_subpbs_options ;
-my @new_argv ;
-my @options ;
-my $in_options = 0;
-my $options_qr ;
-my $local_option = 1 ;
+my $alias_file = 'pbs_option_aliases' ;
+my %aliases ;
 
-for my $arg (@$command_line_arguments)
+if (-e $alias_file)
 	{
-	if ($arg =~ /^--?pbs_options_end$/)
-		{
-		push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option} if $in_options > 2 ;
-		@options = () ;
-		$in_options = 0 ;
-		}
-	elsif ($arg =~ /^--?pbs_options(_local)?$/)
-		{
-		push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option} if $in_options > 2 ;
-
-		@options = () ;
-		$in_options = 1 ;
-		$local_option = defined $1 ;
-		}
-	elsif ($in_options)
-		{
-		$options_qr = $arg if $in_options == 1 ;
-		push @options, $arg if $in_options > 1;
-
-		$in_options++
-		}
-	else
-		{
-		push @new_argv, $arg ;
-		}
-	}
-
-push @unchecked_subpbs_options, {QR => $options_qr, OPTIONS => [@options], LOCAL => $local_option } if $in_options > 2 ;
-
-\@unchecked_subpbs_options, \@new_argv
-}
-
-sub ParseSubpbsOptions
-{
-# extract pbs_options from the command line, parse them
-
-my ($unchecked_subpbs_options, $new_argv) = @_ ;
-
-#PrintDebug DumpTree [$new_argv, $unchecked_subpbs_options] ; 
-
-my @subpbs_options ;
-my $counter = 0 ;
-my $package = "SUBPBS_$counter" ;
-
-my ($subpbs_switch_parse_ok, $subpbs_parse_message) = (1, '') ;
-
-for my $subpbs_option (@$unchecked_subpbs_options)
-	{
-	$counter++ ;
-
-	PBS::PBSConfig::RegisterPbsConfig($package) ;
-	my $pbs_config = GetPbsConfig($package) ;
-
-	$pbs_config->{PBSFILE} = $package ;
-
-	my $pbs_config_no_options = {%$pbs_config} ;
-	my ($switch_parse_ok_no_options, $parse_message_no_options) = PBS::PBSConfig::ParseSwitches($pbs_config_no_options, $new_argv) ;
-	PBS::PBSConfig::CheckPbsConfig($pbs_config_no_options) ;
-
-	unless ($switch_parse_ok_no_options)
-		{
-		$subpbs_switch_parse_ok = 0 ;
-		$subpbs_parse_message = $parse_message_no_options ;
-		last ;
-		}
-
-	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches($pbs_config, [@$new_argv, @{$subpbs_option->{OPTIONS}}]) ;
-	PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
-
-	unless ($switch_parse_ok)
-		{
-		$subpbs_switch_parse_ok = 0 ;
-		$subpbs_parse_message = $parse_message ;
-		last ;
-		}
-
-	delete $pbs_config->{NO_BUILD} ;
-	delete $pbs_config->{DO_BUILD} ;
-	delete $pbs_config->{TARGETS} ;
-
-	# keep added or modified options
-	use Data::Compare;
-	for my $config_key (sort keys %$pbs_config)
-		{
-		delete $pbs_config->{$config_key} if Compare($pbs_config->{$config_key}, $pbs_config_no_options->{$config_key}) ;
-		}
-
-	push @subpbs_options, {QR => $subpbs_option->{QR}, OPTIONS => $pbs_config, LOCAL => $subpbs_option->{LOCAL}} ;
-	}
-
-$subpbs_switch_parse_ok, $subpbs_parse_message,  \@subpbs_options ;
-}
-
-sub GenerateDependFullLog
-{
-my ($pbs_config, $command_line_arguments) = @_ ;
-
-return if $pbs_config->{IN_DFL} ;
-
-my $pbs_config_extra_options = {} ;
-
-$pbs_config_extra_options->{$_}++
-	for( qw(
-		DEBUG_DISPLAY_DEPENDENCIES 
-		DEBUG_DISPLAY_DEPENDENCIES_LONG 
-		DISPLAY_DEPENDENCY_MATCHING_RULE 
-		DISPLAY_DEPENDENCY_INSERTION_RULE 
-		DISPLAY_LINK_MATCHING_RULE
-		IN_DFL 
-		)) ;
-
-my @full_log_options ;
-my $options_file ;
-if($pbs_config->{DEPEND_FULL_LOG_OPTIONS})
-	{
-	$options_file = $pbs_config->{DEPEND_FULL_LOG_OPTIONS} unless $pbs_config->{DEPEND_FULL_LOG_OPTIONS} eq {} ;
-	}
-elsif( -e 'depend_full_log_options')
-	{
-	$options_file = 'depend_full_log_options' ;
-	}
-
-if(defined $options_file)
-	{
-	unless (-e $options_file)
-		{
-		PrintWarning "Depend: not generating full depend log, option file '$options_file' not found.\n" ;
-		return ;
-		}
-
-	for my $line (read_file $options_file)
+	for my $line (read_file $alias_file)
 		{
 		next if $line =~ /^\s*#/ ;
 		next if $line =~ /^$/ ;
-
-		my ($option, $argument) = split /\s+/, $line, 2 ;
-
-		push @full_log_options, $option ;
-		if (defined $argument && $argument ne q{})
-			{
-			$argument =~ s/\s+$// ;
-			
-			push @full_log_options, $argument ;
-			}
-		}
-
-	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches({}, \@full_log_options) ;
-
-	unless ($switch_parse_ok)
-		{
-		PrintWarning "Depend: not generating full depend log, option file: '$options_file'\n" ;
-
-		return ;
-		}
-
-	#PrintDebug DumpTree \@full_log_options, 'full log options:' ;
-	}
-
-#PrintInfo "Depend: creating depend full log.\n" ;
-
-my $pid = fork() ;
-if($pid)
-	{
-	}
-else
-	{
-	# new process if $pid defined
-	
-	# couldn't fork
-	return unless(defined $pid) ;
+		$line =~ s/^\s*// ;
 		
-	open STDOUT,  ">/dev/null"  or die "Can't redirect STDOUT to dev/null: $!" ;
-	STDOUT->autoflush(1) ;
+		my ($alias, @rest) = split /\s+/, $line ;
+		$alias =~ s/^-+// ;
 
-	open STDERR, '>>&STDOUT' or die "Can't redirect STDERR: $!";
+		$aliases{$alias} = \@rest if @rest ;
+		}
+	}
 
-	Pbs
-		(
-		COMMAND_LINE_ARGUMENTS => 
-			[
-			'--depend_log', '--no_indentation', '--no_build',
-			(grep { ! /^--?dfl|depend_full_log$/ } @{$command_line_arguments}),
-			@full_log_options
-			],
+my @aliased = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
 
-		 PBS_CONFIG => $pbs_config_extra_options
-		) ;
+@{$arguments} = @aliased ; 
 
-	exit 0 ;
-	} ;
+return \%aliases ;
 }
+
 
 sub Pbs
 {
@@ -246,23 +76,37 @@ my (%pbs_arguments) = @_ ;
 
 if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--get_bash_completion')
 	{
-	ParseSwitchesAndLoadPlugins({}, []) ; #load plugins
-	PBS::PBSConfigSwitches::GetCompletion() ;
-	return(1) ;
+	my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
+
+	ParseSwitchesAndLoadPlugins($options, $pbs_config, []) ; #load plugins options
+	
+	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options
+	PBS::PBSConfigSwitches::GetCompletion($options) ;
+
+	return 1 ;
 	}
 
-PBS::PBSConfig::RegisterPbsConfig('PBS') ;
-my $pbs_config = GetPbsConfig('PBS') ; # a reference to the PBS namespace config
+AliasOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+
+my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
+PBS::PBSConfig::RegisterPbsConfig('PBS', $pbs_config, $options) ;
+
 $pbs_config->{ORIGINAL_ARGV} = join(' ', @ARGV) ;
 
 # two phase parsing of subpbs options to allow for plugin options loading
-my ($unchecked_subpbs_options, $command_line_arguments) = RemoveSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+my ($unchecked_subpbs_options, $command_line_arguments) = PBS::Config::Subpbs::RemoveSubpbsOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
 
-my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($pbs_config, $command_line_arguments) ;
+my ($switch_parse_ok, $parse_message) = ParseSwitchesAndLoadPlugins($options, $pbs_config, $command_line_arguments) ;
+
 
 # two phase parsing of subpbs options to allow for plugin options loading
-my ( $switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $subpbs_options)
-	= ParseSubpbsOptions($unchecked_subpbs_options, $command_line_arguments) ;
+my ($switch_parse_ok_subpbs_options, $parse_message_subpbs_options, $subpbs_options)
+	= PBS::Config::Subpbs::ParseSubpbsOptions($unchecked_subpbs_options, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
+
+
+# update the options list
+($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ;
+PBS::PBSConfig::ParseSwitches($options, $pbs_config, $command_line_arguments) ;
 
 $pbs_config->{PBS_QR_OPTIONS} = $subpbs_options ;
 
@@ -387,7 +231,7 @@ unless(@$targets)
 					LIB_PATH => $pbs_config->{LIB_PATH},
 					PLUGIN_PATH => $pbs_config->{PLUGIN_PATH},
 					CONFIG_NAMESPACES => ['BuiltIn', 'User'],
-				}
+				},
 				) ;
 	eval 
 		{
@@ -416,20 +260,23 @@ unless(@$targets)
 
 		die "$@\n" if $@ ;
 		
-		$targets = $targets_pbs_config->{TARGETS} // [] ;
+		$targets = [ uniq @{$targets_pbs_config->{TARGETS} // []} ] ;
 		
 		for (sort keys %$targets_pbs_config)
 			{
 			$pbs_config->{$_} = $targets_pbs_config->{$_} if defined $targets_pbs_config->{$_} ;
 			}
-		
+
+		# CheckPbsConfig would override this on second run
+		local $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} = [];
+
 		PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
-		}
+		} ;
 	}
 
 $targets =
 	[
-	map
+	uniq map
 		{
 		my $target = $_ ;
 		
@@ -586,16 +433,14 @@ sub ParseSwitchesAndLoadPlugins
 # We load the pbs config twice. Once to handle the paths and the switches pertinent to plugin loading
 # and once to "really" load the config. We also loade the global config pbs.prf
 
-my ($pbs_config, $command_line_arguments) = @_ ;
+my ($options, $pbs_config, $command_line_arguments) = @_ ;
 my $parse_message = '' ;
-
-$pbs_config->{PLUGIN_PATH} = [] ;
-$pbs_config->{LIB_PATH} = [] ;
 
 # get the PBS_PLUGIN_PATH and PBS_LIB_PATH from the command line or the prf
 # handle -plp and -ppp on the command line (get a separate config)
-(my $command_line_switch_parse_ok, my $command_line_parse_message, my $command_line_config, my $command_line_targets)
-	= PBS::PBSConfig::ParseSwitches(undef, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
+
+my ($command_line_switch_parse_ok, $command_line_parse_message, $command_line_config)
+	= PBS::PBSConfig::ParseSwitches(undef, undef, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
 
 $pbs_config->{PLUGIN_PATH}              = $command_line_config->{PLUGIN_PATH} if @{$command_line_config->{PLUGIN_PATH}} ;
 $pbs_config->{DISPLAY_PLUGIN_RUNS}      = $command_line_config->{DISPLAY_PLUGIN_RUNS};
@@ -615,66 +460,43 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 				(
 				$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
 				$command_line_config->{PBS_RESPONSE_FILE},
-				undef, # run prf in separate namespace
 				PARSE_PRF_SWITCHES_IGNORE_ERROR,
 				) ;
 				
-		$prf_config->{PLUGIN_PATH} ||= [] ;
-		$prf_config->{LIB_PATH} ||= [] ;
-		
-		push @{$pbs_config->{PLUGIN_PATH}}, @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
-		$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $prf_config->{DISPLAY_PLUGIN_RUNS};
+		push @{$pbs_config->{PLUGIN_PATH}},       @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
+		$pbs_config->{DISPLAY_PLUGIN_RUNS}++      if $prf_config->{DISPLAY_PLUGIN_RUNS};
 		$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-		$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
+		$pbs_config->{NO_DEFAULT_PATH_WARNING}++  if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
 		
-		push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
+		push @{$pbs_config->{LIB_PATH}},          @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
 		}
 
 	my $dist_data = File::HomeDir->my_dist_data( 'PBS' ) ;
+	my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
 
-	if(defined $dist_data)
+	if(-e $dist_data && -e $pbs_response_file)
 		{
-		my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
-		my $prf_config ; 
-
-		if( -e $pbs_response_file)
-			{
-			($pbs_response_file, $prf_config) 
-				= PBS::PBSConfig::ParsePrfSwitches
-					(
-					$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
-					$pbs_response_file,
-					undef, # run prf in separate namespace
-					PARSE_PRF_SWITCHES_IGNORE_ERROR,
-					) ;
-					
-			$prf_config->{PLUGIN_PATH} ||= [] ;
-			$prf_config->{LIB_PATH} ||= [] ;
-			
-			push @{$pbs_config->{PLUGIN_PATH}}, @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
-			$pbs_config->{DISPLAY_PLUGIN_RUNS}++ if $prf_config->{DISPLAY_PLUGIN_RUNS};
-			$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-			$pbs_config->{NO_DEFAULT_PATH_WARNING}++ if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
-			
-			push @{$pbs_config->{LIB_PATH}}, @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
-			}
-		else
-			{
-			$pbs_response_file = File::HomeDir->my_dist_data( 'PBS', { create => 1 } ) . "/pbs.prf" ;
-
-			PrintInfo "PBS: creating empty default config '$pbs_response_file'\n" ; 
-			write_file $pbs_response_file, "# pbs default config\n#pbsconfig qw/ --dd -j 12 / ;\n\n1 ;\n"
-			}
+		($pbs_response_file, my $prf_config) 
+			= PBS::PBSConfig::ParsePrfSwitches
+				(
+				$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+				$pbs_response_file,
+				PARSE_PRF_SWITCHES_IGNORE_ERROR,
+				) ;
+				
+		push @{$pbs_config->{PLUGIN_PATH}},       @{$prf_config->{PLUGIN_PATH}} unless (@{$pbs_config->{PLUGIN_PATH}}) ;
+		$pbs_config->{DISPLAY_PLUGIN_RUNS}++      if $prf_config->{DISPLAY_PLUGIN_RUNS};
+		$pbs_config->{DISPLAY_PLUGIN_LOAD_INFO}++ if $prf_config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+		$pbs_config->{NO_DEFAULT_PATH_WARNING}++  if $prf_config->{NO_DEFAULT_PATH_WARNING} ;
+		
+		push @{$pbs_config->{LIB_PATH}},          @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
 		}
 	else
 		{
-		my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS', { create => 1 } ) . "/pbs.prf" ;
-
 		PrintInfo "PBS: creating empty default config '$pbs_response_file'\n" ; 
 		write_file $pbs_response_file, "# pbs default config\n#pbsconfig qw/ --dd -j 12 / ;\n\n1 ;\n"
 		}
 	}
-
 # nothing defined on the command line and in a prf, last resort, use the distribution files
 my $plugin_path_is_default ;
 
@@ -685,11 +507,6 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 	{
 	if(-e $distribution_plugin_path)
 		{
-		#unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
-		#	{
-		#	$parse_message .= "PBS: using plugins from distribution: $distribution_plugin_path, see --ppp.\n" ;
-		#	}
-			
 		$pbs_config->{PLUGIN_PATH} = [$distribution_plugin_path] ;
 		$plugin_path_is_default++ ;
 		}
@@ -701,8 +518,8 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 else
 	{
 	push @{$pbs_config->{PLUGIN_PATH}}, $distribution_plugin_path ;
-	my $paths = join ', ', @{$pbs_config->{PLUGIN_PATH}} ;
-	$parse_message .= "PBS: using plugins from: $paths\n" ;
+
+	$parse_message .= "PBS: using plugins from: " . (join ', ', @{$pbs_config->{PLUGIN_PATH}}) . "\n" ;
 	}
 
 my $lib_path_is_default ;
@@ -712,11 +529,6 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 	{
 	if(-e $distribution_library_path )
 		{
-		#unless($pbs_config->{NO_DEFAULT_PATH_WARNING})
-		#	{
-		#	$parse_message .= "PBS: using libs from distribution: $distribution_library_path, see --plp.\n" ;
-		#	}
-			
 		$pbs_config->{LIB_PATH} = [$distribution_library_path] ;
 		$lib_path_is_default++ ;
 		}
@@ -728,22 +540,22 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 else
 	{
 	push @{$pbs_config->{LIB_PATH}}, $distribution_library_path ;
-	my $paths = join ', ', @{$pbs_config->{LIB_PATH}} ;
-	$parse_message .= "PBS: using libs from: $paths\n" ;
+
+	$parse_message .= "PBS: using libs from: " . (join ', ', @{$pbs_config->{LIB_PATH}}) . "\n" ;
 	}
 	
 # load the plugins
 PBS::Plugin::ScanForPlugins($pbs_config, $pbs_config->{PLUGIN_PATH}) ; # plugins might add switches
 
+($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options
+
 # reparse the command line switches merging to PBS config
 $pbs_config->{PLUGIN_PATH} = [] unless $plugin_path_is_default ;
 $pbs_config->{LIB_PATH} = [] unless $lib_path_is_default ;
 
-(my $switch_parse_ok, my $parse_switches_message) = PBS::PBSConfig::ParseSwitches($pbs_config, $command_line_arguments) ;
+my ($switch_parse_ok, $parse_switches_message) = PBS::PBSConfig::ParseSwitches($options, $pbs_config, $command_line_arguments, PARSE_SWITCHES_IGNORE_ERROR) ;
 $parse_message .= $parse_switches_message ;
-
 # testing of parse result is handled by caller
-
 # reparse the prf 
 unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 	{
@@ -752,7 +564,6 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 			(
 			$pbs_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
 			$pbs_config->{PBS_RESPONSE_FILE},
-			undef, # package to run prf in
 			0,
 			$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 			) ;
@@ -791,7 +602,6 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 			(
 			$command_line_config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
 			$pbs_response_file,
-			undef, # run prf in separate namespace
 			0,
 			$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 			) ;

@@ -5,6 +5,7 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
+
 use Data::Dumper ;
 use Data::TreeDumper ;
 use Carp ;
@@ -50,13 +51,15 @@ my ($file) = @_ ; # file can contains breakpoint definitions
 
 if($file ne '')
 	{
-	PrintDebug "Debug: loading '$file'\n" ;
+	$file = "./$file" unless $file =~ m ~^\.//~ ;
 
-	unless (my $return = do $file ) 
+	Say Debug "Debug: loading '$file'" ;
+
+	unless ( my $return = do $file ) 
 		{
-		die ERROR "couldn't parse '$file ': $@" if $@;
-		die ERROR "couldn't do '$file ': $!"    unless defined $return;
-		die ERROR "couldn't run '$file '"       unless $return;
+		die ERROR("couldn't parse '$file ': $@") . "\n" if $@ ;
+		die ERROR("couldn't do '$file': $!") ."\n"     unless defined $return ;
+		die ERROR("couldn't run '$file'") . "\n"       unless $return ;
 		}
 	
 	$debug_enabled = 1 ;
@@ -67,7 +70,7 @@ if($file ne '')
 
 sub PrintBanner
 {
-PrintDebug "PBS debugger support version $VERSION available. Type 'pbs_help' for help.\n\n" ;
+Say Debug "PBS debugger support version $VERSION available. Type 'pbs_help' for help" ;
 }
 
 #-------------------------------------------------------------------------------
@@ -78,7 +81,7 @@ my ($pbs_config) = @_ ;
 
 return unless *DB::DB{CODE} ;
 
-PrintBanner() ;
+PrintBanner ;
 
 # modify some run time options
 undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
@@ -91,7 +94,7 @@ undef $pbs_config->{DISPLAY_NO_BUILD_HEADER}  ;
 
 sub pbs_help
 {
-PrintDebug <<EOH ;
+Say Debug <<EOH ;
 commands: (no argument starts wizard if exists. RX means commands accepts a regex)
 
 pbs_list_breakpoints or p_L           list breakpoints (RX)
@@ -154,7 +157,8 @@ else
 
 	if(defined $possible_nodes)
 		{
-		PrintDebug "pbs_list is expecting a reference to \$inserted_nodes. Using the one found in your stack!\n" ;
+		Say Debug "Debug:pbs_list is expecting a reference to \$inserted_nodes. Using the one found in your stack." ;
+
 		if(defined $nodes)
 			{
 			NodeChoice(${$possible_nodes}, $nodes) ;
@@ -166,7 +170,7 @@ else
 		}
 	else
 		{
-		PrintDebug "pbs_list is expecting a reference to \$inserted_nodes\n" ;
+		Say Debug "Debug: pbs_list is expecting a reference to \$inserted_nodes" ;
 		}
 	}
 }
@@ -182,14 +186,11 @@ my $indentation = shift || '' ;
 
 unless(ref $tree eq 'HASH')
 	{
-	PrintDebug "pbs_tree is expecting a reference to a tree\n" ;
-	return() ;
+	Say Debug "pbs_tree is expecting a reference to a tree" ;
+	return ;
 	}
 
-PrintDebug
-	(
-	DumpTree($tree, "Tree '$tree->{__NAME}': ", INDENTATION => $indentation	)
-	) ;
+	SDT $tree, "Tree '$tree->{__NAME}': ", INDENTATION => $indentation
 }
 
 *p_t = \&pbs_tree ;
@@ -229,14 +230,14 @@ for(sort keys %{$tree})
 	next if /^__/ ;
 	next unless /$node_regex/ ;
 	
-	PrintDebug "$index/ '$_'\n" ;
+	Say Debug "$index/ '$_'" ;
 	$nodes{$index} = $tree->{$_} ;
 	$index++ ;
 	}
 
 if(0 == $index)
 	{
-	PrintDebug "No node to display.\n" ;
+	Say Debug "No node to display." ;
 	return ;
 	}
 	
@@ -256,7 +257,7 @@ if(1 == $index)
 
 while(1)
 	{
-	PrintDebug "PBS: Choose a node in the above list> " ;
+	PrintDebug "PBS: Choose a node from the above list> " ;
 	my $user_choice = <STDIN> ;
 	chomp $user_choice;
 	
@@ -286,9 +287,9 @@ my ($package, $file_name, $line) = caller() ;
 
 my $breakpoint_name = shift ;
 
-PrintDebug "Debug: adding breakpoint: '$breakpoint_name'\n" ;
+Say Debug "Debug: adding breakpoint: '$breakpoint_name'" ;
 
-PrintWarning("Debug: redefining breakpoint '$breakpoint_name' @ '$file_name:$line'.\n") if(exists $breakpoints{$breakpoint_name}) ;
+Say Warning "Debug: redefining breakpoint '$breakpoint_name' @ '$file_name:$line'." if exists $breakpoints{$breakpoint_name} ;
 
 $breakpoints{$breakpoint_name} = {ORIGIN => "$file_name:$line", @_} ;
 }
@@ -303,8 +304,9 @@ for my $breakpoint_name (sort keys %breakpoints)
 	{
 	next unless $breakpoint_name =~ $breakpoint_regex ;
 	
-	PrintDebug("Breakpoint '$breakpoint_name' removed. \n") ;
 	delete $breakpoints{$breakpoint_name} ;
+
+	Say Debug "Breakpoint '$breakpoint_name' removed" ;
 	}
 }
 
@@ -321,10 +323,10 @@ for my $breakpoint_name (sort keys %breakpoints)
 	next unless $breakpoint_name =~ $breakpoint_regex ;
 	
 	$found_breakpoint++ ;
-	PrintDebug(DumpTree($breakpoints{$breakpoint_name}, "$breakpoint_name:")) ;
+	SDT $breakpoints{$breakpoint_name}, "$breakpoint_name:" ;
 	}
 
-PrintDebug "pbs_list_breakpoints: No Breakpoint matching regex '$breakpoint_regex'.\n" unless $found_breakpoint ;
+Say Debug "pbs_list_breakpoints: No Breakpoint matching regex '$breakpoint_regex'" unless $found_breakpoint ;
 }
 
 #----------------------------------------------------------------------
@@ -340,7 +342,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{ACTIVE} = 1 ;
-		PrintDebug("Breakpoint '$breakpoint_name' activated. \n") ;
+		Say Debug "Breakpoint '$breakpoint_name' activated" ;
 		}
 	}
 }
@@ -358,7 +360,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{ACTIVE} = 0 ;
-		PrintDebug("Breakpoint '$breakpoint_name' deactivated. \n") ;
+		Say Debug "Breakpoint '$breakpoint_name' deactivated" ;
 		}
 	}
 }
@@ -376,7 +378,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{USE_DEBUGGER} = 1 ;
-		PrintDebug("Breakpoint '$breakpoint_name' will activate the perl debugger. \n") ;
+		Say Debug "Breakpoint '$breakpoint_name' will activate the perl debugger" ;
 		}
 	}
 }
@@ -394,7 +396,7 @@ for my $breakpoint_name (sort keys %breakpoints)
 		next unless $breakpoint_name =~ $breakpoint_regex ;
 		
 		$breakpoints{$breakpoint_name}{USE_DEBUGGER} = 0 ;
-		PrintDebug("Breakpoint '$breakpoint_name' will NOT activate the perl debugger. \n") ;
+		Say Debug "Breakpoint '$breakpoint_name' will NOT activate the perl debugger" ;
 		}
 	}
 }
@@ -483,7 +485,7 @@ for my $breakpoint_name (keys %breakpoints)
 
 	for my $action (@{$breakpoint->{ACTIONS}})
 		{
-		PrintDebug "Debug: running '$breakpoint_name' from $breakpoint->{ORIGIN}\n" if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
+		Say Debug "Debug: running '$breakpoint_name' from $breakpoint->{ORIGIN}" if $pbs_config->{DISPLAY_BREAKPOINT_HEADER} ;
 		$action->(%point, BREAKPOINT_NAME => $breakpoint_name) ;
 		}
 		

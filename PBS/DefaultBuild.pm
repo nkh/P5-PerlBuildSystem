@@ -77,8 +77,7 @@ $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
-my $target_string = '' ; 
-$target_string .= $em->($_) for (@$targets) ; 
+my $target_string = join ', ', map {"'$_'"} @$targets ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
@@ -91,17 +90,17 @@ else
 	{
 	if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 		{
-		PrintInfo  "Depend: " . INFO3("'$target_string'\n", 0) ;
-		PrintInfo2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]\n" ;
+		Say Info  "Depend: " . _INFO3_("$target_string") ;
+		Say Info2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
 		}
 	elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPENDENCY_PBSFILE})
 		{
-		PrintInfo "Depend: " . _INFO3_("'$target_string'\n") 
-				. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]\n"
+		Say Info "Depend: " . _INFO3_("$target_string\n") 
+				. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]"
 		}
 	else
 		{
-		PrintInfo "Depend: " . _INFO3_("'$target_string'\n") 
+		Say Info "Depend: " . _INFO3_("$target_string") 
 		}
 	}
 

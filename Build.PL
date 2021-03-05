@@ -16,6 +16,7 @@ PBS/Build/ForkedNodeBuilder.pm
 PBS/Check/ForkedCheck.pm
 PBS/Check.pm
 PBS/Cyclic.pm
+PBS/Config/Subpbs.pm
 PBS/Config.pm
 PBS/Constants.pm
 PBS/DefaultBuild.pm
@@ -28,6 +29,7 @@ PBS/FrontEnd.pm
 PBS/Graph.pm
 PBS/Graph/Html.pm
 PBS/Graph/Snapshots.pm
+PBS/Log/Full.pm
 PBS/Log/Html.pm
 PBS/Log/ForkedLNI.pm
 PBS/GraphViz.pm

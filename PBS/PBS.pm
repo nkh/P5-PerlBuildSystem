@@ -234,22 +234,22 @@ else
 	{
 	for my $regex (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
 		{
-		for my $key ( grep { /$regex/ } keys %{ $pbs_config} )
+		for my $key ( grep { /$regex/ } sort keys %{ $pbs_config} )
 			{
 			if('' eq ref $pbs_config->{$key})
 				{
 				if(defined $pbs_config->{$key})
 					{
-					PrintInfo("$key: " . $pbs_config->{$key} . "\n") ;
+					Say Info "$key: " . $pbs_config->{$key} ;
 					}
 				else
 					{
-					PrintInfo("$key: undef\n") ;
+					Say Info "$key: undef" ;
 					}
 				}
 			else
 				{
-				PrintInfo(DumpTree($pbs_config->{$key}, $key, INDENTATION => '    ')) ;
+				SIT $pbs_config->{$key}, $key ;
 				}
 			}
 		}

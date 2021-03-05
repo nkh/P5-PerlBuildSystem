@@ -1,3 +1,3 @@
-AddRule 'x', [3], BuildOk() ;
+rule '3', [3], build_ok ;
 
 

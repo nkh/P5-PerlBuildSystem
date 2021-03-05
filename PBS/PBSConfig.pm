@@ -32,11 +32,13 @@ use PBS::PBSConfigSwitches ;
 #-------------------------------------------------------------------------------
 
 my %pbs_configuration ;
+my %pbs_configuration_options ;
 
 sub RegisterPbsConfig
 {
-my $package  = shift ;
-my $configuration = shift // {} ;
+my ($package, $configuration, $options) = @_ ;
+
+$configuration //= (PBS::PBSConfigSwitches::GetOptions())[1] ;
 
 if(ref $configuration eq 'HASH')
 	{
@@ -46,6 +48,8 @@ else
 	{
 	PrintError("Config: RegisterPbsConfig: switches must be a hash reference.\n") ;
 	}
+
+$pbs_configuration_options{$package} = $options if defined $options;
 
 $configuration
 }
@@ -58,13 +62,31 @@ my $package  = shift || caller() ;
 
 if(defined $pbs_configuration{$package})
 	{
-	return($pbs_configuration{$package}) ;
+	return $pbs_configuration{$package} ;
 	}
 else
 	{
-	PrintError("Config: GetPbsConfig: no configuration for package '$package'. Returning empty set.\n") ;
+	Say Error "Config: GetPbsConfig: no configuration for package '$package'. Returning empty set." ;
+
 	Carp::confess ;
-	return({}) ;
+	return {} ;
+	}
+}
+
+sub GetPbsConfigAndOptions
+{
+my $package  = shift || caller() ;
+
+if(defined $pbs_configuration{$package})
+	{
+	return $pbs_configuration{$package}, $pbs_configuration_options{$package} ;
+	}
+else
+	{
+	Say Error "Config: GetPbsConfig: no configuration for package '$package'. Returning empty set." ;
+
+	Carp::confess ;
+	return {} ;
 	}
 }
 
@@ -110,49 +132,65 @@ use constant PARSE_SWITCHES_IGNORE_ERROR => 1 ;
 
 sub ParseSwitches
 {
-my ($pbs_config, $switches_to_parse, $ignore_error) = @_ ;
-$pbs_config ||= {} ;
+my ($user_options, $user_config, $switches_to_parse, $ignore_error) = @_ ;
 
-my $success_message = '' ;
+my ($options, $config) = defined $user_options
+				? ($user_options, $user_config)
+				: (PBS::PBSConfigSwitches::GetOptions()) ;
 
-Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
-
-my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($pbs_config) ;
 local @ARGV = @$switches_to_parse ;
-
-# tweak option parsing so we can mix switches with targets
-my $contains_switch ;
-my @targets ;
 
 local $SIG{__WARN__} 
 	= sub 
 		{
-		PrintWarning $_[0] unless $ignore_error ;
+		Print Warning $_[0] unless $ignore_error ;
 		} ;
-			
+
+my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($options) ;
+
+my @targets ; # parse mixed switches and targets
+
+Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order', 'permute', 'pass_through') ;
+
+my $parse_errors = 0 ;
+my $catchall =
+	sub 
+	{
+	#Say Info2 "Pbs: option '$_[0]'" ;
+	if($ignore_error)
+		{
+		#Say Warning "Pbs: invalid option '$_[0]' ignoring ..." if $_[0] =~ /^-/ ;
+		}
+	else
+		{
+		Say Error "Pbs: invalid option '$_[0]'" if $_[0] =~ /^-/ ;
+
+		$parse_errors++ if $_[0] =~ /^-/ ;
+
+		push @targets, $_[0] if $_[0] !~ /^-/ ;
+		}
+	} ;
+
 do
 	{
-	while(@ARGV && $ARGV[0] !~ /^-/)
-		{
-		push @targets, shift @ARGV ;
-		}
+	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ ;
 		
-	$contains_switch = @ARGV ;
-	
-	unless(GetOptions(@flags))
+	unless(GetOptions(@flags, '<>' => $catchall))
 		{
-		return 0, "PBS: Try perl pbs.pl -h.\n", $pbs_config, @ARGV
+		return 0, "PBS: Try perl pbs.pl -h.\n", $config, @ARGV
 			unless $ignore_error;
 		}
 	}
-while($contains_switch) ;
+while(@ARGV) ;
 
 my %cc = RunUniquePluginSub({}, 'GetColorDefinitions') ;
 PBS::Output::SetDefaultColors(\%cc) ;
 
-$pbs_config->{TARGETS} = \@targets ;
+push @{$config->{TARGETS}}, @targets ;
+
+die "\n" if $parse_errors ;
  
-return 1, $success_message, $pbs_config ;
+return 1, '', $config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -294,7 +332,7 @@ else
 push @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}}, '.'
 	unless @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
 
-undef $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} if defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
+undef $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
 
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
@@ -532,28 +570,18 @@ return 1, $success_message ;
 
 #-------------------------------------------------------------------------------
 
-my $parse_prf_switches_run = 0 ; # guaranty we load stuff in the right package
+my $parse_prf_switches_run = 0 ; # guaranty we load stuff in a uniq package
 
 use constant PARSE_PRF_SWITCHES_IGNORE_ERROR => 1 ;
 
 sub ParsePrfSwitches
 {
-my ($no_anonymous_pbs_response_file, $pbs_response_file_to_use, $load_package, $ignore_error, $display_location) = @_ ;
+my ($no_anonymous_pbs_response_file, $pbs_response_file_to_use, $ignore_error, $display_location) = @_ ;
 
 my $package = caller() ;
 my $prf_load_package = 'PBS_PRF_SWITCHES_' . $package . '_' . $parse_prf_switches_run ;
 $parse_prf_switches_run++ ;
 
-if(defined $load_package)
-	{
-	$prf_load_package = $load_package ;
-	}
-else
-	{
-	# we load the prf in its own namespace
-	PBS::PBSConfig::RegisterPbsConfig($prf_load_package, {}) ;
-	}
-	
 my $pbs_response_file ;
 unless($no_anonymous_pbs_response_file)
 	{
@@ -567,8 +595,7 @@ $pbs_response_file =  $pbs_response_file_to_use if defined $pbs_response_file_to
 
 if($pbs_response_file)
 	{
-	PrintInfo "PBS: loading prf '$pbs_response_file'\n"
-		if $display_location ;
+	PrintInfo "PBS: loading prf '$pbs_response_file'\n" if $display_location ;
 
 	unless(-e $pbs_response_file)
 		{
@@ -576,7 +603,11 @@ if($pbs_response_file)
 		die "\n" ;
 		}
 		
-	PBS::PBSConfig::RegisterPbsConfig($prf_load_package, {PRF_IGNORE_ERROR => $ignore_error}) ;
+	# we load the prf in its own namespace
+	my ($options, $config) = PBS::PBSConfigSwitches::GetOptions() ;
+	RegisterPbsConfig($prf_load_package, $config, $options) ;
+
+ 	$config->{PRF_IGNORE_ERROR} = $ignore_error ;
 	
 	use PBS::PBS;
 	PBS::PBS::LoadFileInPackage
@@ -584,16 +615,13 @@ if($pbs_response_file)
 		'Pbsfile', # $type
 		$pbs_response_file,
 		$prf_load_package,
-		{}, #$pbs_config
+		$config,
 		"use PBS::Prf ;\n" #$pre_code
 		 ."use PBS::Output ;\n",
 		'', #$post_code
 		) ;
 
-	my $pbs_config = GetPbsConfig($prf_load_package) ;
-	delete $pbs_config->{PRF_IGNORE_ERROR} ;
-	
-	return $pbs_response_file, $pbs_config ;
+	return $pbs_response_file, $config ;
 	}
 else
 	{

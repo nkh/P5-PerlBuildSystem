@@ -1,23 +1,7 @@
+target 1 ;
 
-=head1 PBSFILE USER HELP
+rule '1>2', [ 1 => '2'] ;
 
-=head2 Top rules
+subpbs '2' => './2.pl' ;
 
-=over 2 
 
-=item * 1
-
-=back
-
-=cut
-
-AddRule '1>2', [ 1 => '2'] ;
-
-AddRule 'subpbs 2',
-	{
-	NODE_REGEX => '2',
-	PBSFILE => './2.pl',
-	PACKAGE => '2',
-	} ;
-	
-	

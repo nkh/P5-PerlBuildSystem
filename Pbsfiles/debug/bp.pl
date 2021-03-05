@@ -1,17 +1,12 @@
 
-# define breakpoint in PBS debugger
-
 use PBS::Debug ;
 
-AddProjectBreakpoints() ; # define our breakpoints
-ActivateBreakpoints('trigger_info', 'hi') ;
+AddProjectBreakpoints() ; 
+ActivateBreakpoints qw/ trigger_info depend / ;
+
 #~ ActivateBreakpoints('insert3') ;
 #~ ActivateBreakpoints('build') ;
 #~ ActivateBreakpoints('snapshot') ;
-
-#-----------------------------------------------------------------------------------------
-
-1 ;
 
 #-----------------------------------------------------------------------------------------
 
@@ -19,40 +14,40 @@ sub AddProjectBreakpoints
 {
 AddBreakpoint
 	(
-	'trigger_info',
-	TYPE => 'DEPEND',
-	TRIGGERED => 1,
-	POST => 1,
+	'post_depend',
+
+	TYPE         => 'DEPEND',
+	TRIGGERED    => 1,
+	POST         => 1,
 	USE_DEBUGGER => 1,
-	#~ ACTIVE => 1,
+	#ACTIVE       => 1,
+
 	ACTIONS =>
 		[
 		sub
 			{
 			my %data = @_ ;
-			use Data::TreeDumper ;
-			
-			PrintDebug("Breakpoint 'trigger_info': rule '$data{RULE_NAME}' on node '$data{NODE_NAME}'.\n") ;
-			#~ PrintDebug(DumpTree(\@_)) ;
+			Say Debug "Debug: 'post_depend', node: '$data{NODE_NAME}', rule: '$data{RULE_NAME}' " ;
+			#SDT {@_}, '', MAX_DEPTH => 1, INDENTATION => "\t" ;
 			},
-		#~ sub
-			#~ {
-			#~ PrintDebug("Breackpoint 1 action 2.\n") ;
-			#~ },
 		],
 	) ;
 
 AddBreakpoint
 	(
-	'hi',
-	TYPE => 'DEPEND',
-	PRE => 1,
-	#~ ACTIVE => 1,
+	'depend',
+
+	TYPE         => 'DEPEND',
+	PRE          => 1,
+	#ACTIVE       => 1,
 	ACTIONS =>
 		[
 		sub
 			{
-			PrintDebug("Breakpoint 'hi'.\n") ;
+			my %data = @_ ;
+
+			Say Debug "Debug: 'depend' => '$data{NODE_NAME}'" ;
+			#SDT {@_}, '', MAX_DEPTH => 1, INDENTATION => "\t" ;
 			},
 		],
 	) ;
@@ -60,23 +55,22 @@ AddBreakpoint
 AddBreakpoint
 	(
 	'insert3',
-	NODE_REGEX => '3',
-	TYPE => 'INSERT',
-	POST => 1,
+
+	NODE_REGEX   => '3',
+	TYPE         => 'INSERT',
+	POST         => 1,
 	USE_DEBUGGER => 1,
-	#~ ACTIVE => 1,
+	#ACTIVE       => 1,
+
 	ACTIONS =>
 		[
 		sub
 			{
-			PrintDebug("Breakpoint 'insert3'.\n") ;
-			
 			my %data = @_ ;
-			use Data::TreeDumper ;
+
+			Say Debug "Debug: 'insert3'." ;
 			
-			local $Data::TreeDumper::maxdepth = 1 ;
-			#~ PrintDebug(DumpTree(\%data)) ;
-			PrintDebug(DumpTree(\$data{NODE_NAME})) ;
+			SDT \%data, '', MAX_DEPTH => 1, INDENTATION => "\t" ;
 			},
 		],
 	) ;
@@ -84,23 +78,18 @@ AddBreakpoint
 AddBreakpoint
 	(
 	'build',
-	TYPE => 'BUILD',
+
+	TYPE         => 'BUILD',
 	USE_DEBUGGER => 1,
-	ACTIVE => 1,
-	PRE => 1,
+	ACTIVE       => 1,
+	PRE          => 1,
 	ACTIONS =>
 		[
 		sub
 			{
-			PrintDebug("Breakpoint 'build'.\n") ;
+			Say Debug "Debug: about to build node '$data{NODE_NAME}'" ;
 			
-			my %data = @_ ;
-			use Data::TreeDumper ;
-			
-			PrintDebug("About to build node '$data{NODE_NAME}'.\n") ;
-			
-			local $Data::TreeDumper::Maxdepth = 1 ;
-			PrintDebug(DumpTree({@_})) ;
+			SDT {@_}, '', MAX_DEPTH => 1, INDENTATION => "\t" ;
 			},
 		],
 	) ;
@@ -108,28 +97,27 @@ AddBreakpoint
 AddBreakpoint
 	(
 	'snapshot',
-	TYPE => 'TREE',
-	POST => 1,
-	#~ USE_DEBUGGER => 1,
+
+	TYPE          => 'TREE',
+	POST          => 1,
+	# USE_DEBUGGER => 1,
+
 	ACTIONS =>,
 		[
 		sub
 			{
-			PrintDebug("Breakpoint 'snapshot'.\n") ;
 			my %data = @_ ;
-			
-			use Data::TreeDumper ;
-			local $Data::TreeDumper::maxdepth = 1 ;
+
+			Say Debug "Debug: 'snapshot'" ;
 			
 			next if $data{TREE}{__NAME} =~ /^__/ ;
 			next if exists $data{TREE}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} ;
 			
-			PrintDebug(DumpTree($data{TREE}, "created tree:'$data{TREE}{__NAME}'.\n")) ;
-			PrintDebug("\n") ;
+			SDT $data{TREE}, "created tree:'$data{TREE}{__NAME}'", INDENTATION => "\t" ;
 			},
 		],
 	) ;
 }
 
-
+1;
 

@@ -1,7 +1,13 @@
 
+dfl doesn't take the extra switches
+
+debugger
+	insertion breakpoint locally changes options to display the depending of a specific node
+		already have an options ?
+	
 virtual node digest
 	do vitual nodes trigger other nodes?  virtual and  not virtual dependents
-	BuildOk should run a shell command
+	BuildOk should run a shell command or it will always trigger
 		if we run a command we can as well not have a virtual node and generate something
 	
 	
