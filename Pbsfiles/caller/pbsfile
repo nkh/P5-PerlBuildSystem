@@ -1,0 +1,7 @@
+sub my_rule { my $cc = CCP ; rule @_ }
+
+my_rule 11, ['all'], 'echo $VARIABLE > %TARGET' ;
+rule     1, ['all'], 'echo $VARIABLE > %TARGET' ;
+
+
+

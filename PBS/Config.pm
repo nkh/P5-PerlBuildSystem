@@ -1,16 +1,13 @@
 
 package PBS::Config ;
 
-use PBS::Debug ;
 use strict ;
 use warnings ;
 
 use 5.006 ;
 
-#~ use Data::Dumper ;
 use Data::TreeDumper ;
 use Data::Compare;
-
 use Carp ;
  
 require Exporter ;
@@ -33,10 +30,13 @@ our @EXPORT = qw(
 			ConfigVariableNotDefinedOrEmpty
 
 		Config config
+
+		ExtractConfig GetPackageConfig
 		) ;
-					
+		
 our $VERSION = '0.04' ;
 
+use PBS::Debug ;
 use PBS::Output ;
 
 our $debug_display_all_configurations ;
@@ -59,7 +59,7 @@ if(defined $package && $package ne '')
 		{
 		if(defined $config)
 			{
-			PrintWarning "Config: overriding '$package' config @ '$file_name:$line'\n" ;
+			Say Warning "Config: overriding '$package' config @ '$file_name:$line'" ;
 
 			$configs{$package} = $config ; 
 			}
@@ -69,7 +69,7 @@ if(defined $package && $package ne '')
 		$configs{$package} = defined $config ? $config : {} ;
 		}
 
-	return($configs{$package}) ;
+	return $configs{$package} ;
 	}
 else
 	{
@@ -90,23 +90,20 @@ my $from = shift ; # namespace
 
 unless(defined $from)
 	{
-	PrintWarning "Config: 'GetConfigFrom' no argument, returning nothing @ '$file_name:$line'\n" ;
+	Say Warning "Config: 'GetConfigFrom' no argument, returning nothing @ '$file_name:$line'" ;
 	#~ PbsDisplayErrorWithContext$pbs_config, $file_name,$line ;
 	return () ;
 	}
 
-my %user_config = ExtractConfig($configs{$package}, [$from], undef) ;
+my %user_config = ExtractConfig($configs{$package}, [$from]) ;
 
-return
+__GetConfig
 	(
-	__GetConfig
-		(
-		$package, $file_name, $line,
-		wantarray,
-		\%user_config,
-		@_,
-		)
-	) ;
+	$package, $file_name, $line,
+	wantarray,
+	\%user_config,
+	@_,
+	)
 }
 
 #-------------------------------------------------------------------------------
@@ -132,7 +129,7 @@ if(exists $configs{$config})
 	}
 else
 	{
-	PrintError "Config: can't clone unexisting '$config' @ $file_name:$line" ;
+	Print Error "Config: can't clone unexisting '$config' @ $file_name:$line" ;
 	die "\n" ;
 	}
 }
@@ -213,19 +210,17 @@ if ($pbs_config->{DEBUG_TRACE_PBS_STACK})
 my @user_config ;
 if(@config_variables == 0)
 	{
-	unless($wantarray)
-		{
-		PrintWarning "Config: 'GetConfig' is returning the whole config but it was not called in list context @ '$file_name:$line'\n" ;
-		}
+	Say Warning "Config: 'GetConfig' is returning the whole config but it was not called in list context @ '$file_name:$line'"
+		unless($wantarray) ;
 		
 	push @{$config_access{$package}{$_}}, $origin for keys %$user_config ;
 
-	return(%$user_config) ;
+	return %$user_config ;
 	}
 	
-if(@config_variables > 1 && (!$wantarray))
+if(@config_variables > 1 && !$wantarray)
 	{
-	PrintWarning "Config: 'GetConfig' is asked for multiple values but it was not called in list context @ '$file_name:$line'\n" ;
+	Say Warning "Config: 'GetConfig' is asked for multiple values but it was not called in list context @ '$file_name:$line'" ;
 	}
 
 for my $config_variable (@config_variables)
@@ -242,7 +237,7 @@ for my $config_variable (@config_variables)
 		{
 		if($pbs_config->{NO_SILENT_OVERRIDE} || ! $silent_not_exists)
 			{
-			PrintWarning "Config: User config variable '$config_variable' doesn't exist @ '$file_name:$line'; returning undef\n" ;
+			Say Warning "Config: User config variable '$config_variable' doesn't exist @ '$file_name:$line'; returning undef" ;
 			}
 			
 		#~ PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
@@ -250,14 +245,7 @@ for my $config_variable (@config_variables)
 		}
 	}
 
-if($wantarray)
-	{
-	return @user_config ;
-	}
-else
-	{
-	return $user_config[0] ;
-	}
+$wantarray ? @user_config : $user_config[0] ;
 }
 
 #-------------------------------------------------------------------------------
@@ -273,12 +261,12 @@ my $from = shift ; # from namespace
 
 unless(defined $from)
 	{
-	PrintWarning "Config: 'GetConfigFromAsList' mandatory argument missing @ '$file_name:$line'\n" ;
+	Say Warning "Config: 'GetConfigFromAsList' mandatory argument missing @ '$file_name:$line'" ;
 	#~ PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
 	return () ;
 	}
 
-my %user_config = ExtractConfig($configs{$package}, [$from], undef) ;
+my %user_config = ExtractConfig($configs{$package}, [$from]) ;
 
 __GetConfigAsList
 	(
@@ -300,7 +288,7 @@ my ($source_package) = @_ ;
 do { $package = $source_package ; shift } if exists $configs{$source_package} ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}, undef) ;
+my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
 __GetConfigAsList
 	(
@@ -328,13 +316,13 @@ my @user_config ;
 
 unless($wantarray)
 	{
-	PrintError "Config: GetConfigAsList: not called in list context $caller_location" ;
+	Print Error "Config: GetConfigAsList: not called in list context $caller_location" ;
 	die "\n" ;
 	}
 
 if(@config_variables == 0)
 	{
-	PrintError "Config: GetConfigAsList: called without arguments $caller_location'" ;
+	Print Error "Config: GetConfigAsList: called without arguments $caller_location'" ;
 	die "\n" ;
 	}
 	
@@ -351,7 +339,9 @@ for my $config_variable (@config_variables)
 				my $array_element_index = 0 ;
 				for my $array_element (@$config_data)
 					{
-					PrintWarning "Config: GetConfigAsList: Element $array_element_index of array '$config_variable', $caller_location, is not defined\n" unless defined $array_element  ;
+					Say Warning "Config: GetConfigAsList: Element $array_element_index of array '$config_variable', $caller_location, is not defined"
+						unless defined $array_element  ;
+
 					$array_element_index++ ;
 					}
 				
@@ -361,38 +351,38 @@ for my $config_variable (@config_variables)
 				
 			'' eq $data_type && do
 				{
-				PrintWarning "Config: GetConfigAsList: '$config_variable', $caller_location, is not defined\n" unless defined $config_data ;
+				Say Warning "Config: GetConfigAsList: '$config_variable', $caller_location, is not defined"
+					unless defined $config_data ;
 				
 				push @user_config, $config_data ;
 				last ;
 				} ;
 				
-			PrintError "Config: GetConfigAsList: Unhandled type '$data_type' for '$config_variable' $caller_location" ;
+			Print Error "Config: GetConfigAsList: Unhandled type '$data_type' for '$config_variable' $caller_location" ;
 			die "\n" ;
 			}
 		
 		}
 	else
 		{
-		PrintWarning("Config: GetConfigAsList:variable '$config_variable' doesn't exist $caller_location; ignoring request\n") ;
+		Say Warning "Config: GetConfigAsList:variable '$config_variable' doesn't exist $caller_location; ignoring request" ;
 		#~ PbsDisplayErrorWithContext $pbs_config, $file_name,$line ;
 		}
 	}
 
-return(@user_config) ;
+@user_config ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub ExtractConfig
 {
-my $config = shift ;
-my $config_class_names = shift ;
+my ($config, $config_class_names, $config_types) = @_ ;
 
-# see documentation about config classes and namespaces
-my $config_types = shift || ['CURRENT', 'PARENT', 'LOCAL', 'COMMAND_LINE', 'PBS_FORCED'] ;
+#SUT $config_class_names, 'namespaces' ;
 
-my %all_configs = () ;
+$config_types //= ['CURRENT', 'PARENT', 'LOCAL', 'COMMAND_LINE', 'PBS_FORCED'] ;
+my %all_configs ;
 
 for my $type (@$config_types)
 	{
@@ -402,7 +392,7 @@ for my $type (@$config_types)
 			{
 			my $current_config = $config->{$type}{$config_class_name} ;
 			
-			for my $key (sort keys %$current_config)
+			for my $key (keys %$current_config)
 				{
 				next if $key =~ /^__/ ;
 				$all_configs{$key} =  $current_config->{$key}{VALUE} ;
@@ -463,7 +453,7 @@ AddConfigEntry($package, 'CURRENT', 'User', "$package:$file_name:$line", @_) ;
 
 sub ConfigVariableNotDefined
 {
-return (! defined $_[1]) ;
+return ! defined $_[1] ;
 }
 
 sub ConfigVariableEmpty
@@ -474,7 +464,7 @@ if(defined $_[1])
 	}
 else
 	{
-	PrintWarning croak "Config: variable '$_[0]' is not defined!\n" ;
+	Say Warning croak "Config: variable '$_[0]' is not defined" ;
 	return 0 ;
 	}
 }
@@ -517,7 +507,7 @@ while(@_)
 	my ($variable, $value, $test) = splice(@_, 0, 3) ;
 	
 	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-	my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}, undef) ;
+	my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 	
 	my $current_value ;
 	$current_value = $user_config{$variable} if exists $user_config{$variable};
@@ -566,7 +556,7 @@ MergeConfig($package, $type, $class, $origin, @_) ;
 
 sub DisplayAllConfigs
 {
-PrintInfo DumpTree(\%configs, 'All configurations:') ;
+SIT \%configs, 'All configurations:' ;
 }
 
 #------------------------------------------------------------------------------------------
@@ -598,13 +588,13 @@ if(defined $global_flags)
 		
 	if($global_attributes{LOCKED} && $global_attributes{UNLOCKED})
 		{
-		PrintError "Config: Global configuration flag defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
+		Print Error "Config: Global configuration flag defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
 		die "\n";
 		}
 		
 	if($global_attributes{OVERRIDE_PARENT} && $global_attributes{LOCAL})
 		{
-		PrintError "Config: Global configuration flag defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
+		Print Error "Config: Global configuration flag defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
 		die "\n";
 		}
 	}
@@ -619,15 +609,12 @@ my $header_displayed = 0 ;
 
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS} || defined $pbs_config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE})
 	{
-	PrintInfo $header_text ;
+	Print Info $header_text ;
 	$header_displayed++ ;
 	}
 
 my $config_to_merge_to = GetPackageConfig($package) ;
-my $config_to_merge_to_cache = {ExtractConfig($config_to_merge_to, [$original_class], undef)} ;
-
-# replace by the above node and kept till we test validity (27/12/2004)
-#my $config_to_merge_to_cache = {ExtractConfig($config_to_merge_to, [$original_class], [$original_type, 'PARENT', 'LOCAL'])} ;
+my $config_to_merge_to_cache = { ExtractConfig($config_to_merge_to, [$original_class]) } ;
 
 # handle the config values and their flags
 for(my $i = 0 ; $i < @_ ; $i += 2)
@@ -663,7 +650,7 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 	
 		if(@found_invalid_attribute)
 			{
-			PrintError
+			Print Error
 				"Config: variable '$key' with attributes '$flags' defined @ '$origin', has invalid attribute: " . join (', ', @found_invalid_attribute) . "\n"
 				. "Valid attributes are: " . join( ', ',  sort keys %valid_attributes) ;
 				
@@ -681,13 +668,13 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		
 		if($locked && $unlocked)
 			{
-			PrintError "Config: variable '$key' defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
+			Print Error "Config: variable '$key' defined @ '$origin', is declared as LOCKED and UNLOCKED" ;
 			die  "\n" ;
 			}
 			
 		if($override_parent && $local)
 			{
-			PrintError "Config: variable '$key' defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
+			Print Error "Config: variable '$key' defined @ '$origin', is declared as OVERRIDE_PARENT and LOCAL" ;
 			die "\n" ;
 			}
 		}
@@ -719,11 +706,11 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 			$attributes{local} = $local if $local ;
 			$attributes{silent_override} = $silent_override if $silent_override ;
 
-			PrintInfo DumpTree \%attributes, "$key => $value", DISPLAY_ADDRESS => 0, INDENTATION => $indent ;
+			SIT \%attributes, "$key => $value", DISPLAY_ADDRESS => 0, INDENTATION => $indent ;
 			}
 		else
 			{
-			PrintInfo "\t$key => $value\n" ;
+			Say Info "\t$key => $value" ;
 			}
 		}
 		
@@ -778,8 +765,8 @@ for(my $i = 0 ; $i < @_ ; $i += 2)
 		{
 		if($config_to_merge_to->{$type}{$class}{$key}{LOCKED} && (! $force))
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintError
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Error
 				(
 				<<EOH .
 	You want to override a locked configuration variable!
@@ -833,8 +820,8 @@ EOH
 					$warn_sub = \&PrintWarning ;
 					}
 				
-				PrintWarning3 $header_text unless $header_displayed++ ;
-				PrintWarning3 <<EOH
+				Print Warning3 $header_text unless $header_displayed++ ;
+				Print Warning3 <<EOH
 		variable:  '$key', Overriding ${locked_message}
 		new value: '$value'
 EOH
@@ -889,8 +876,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintWarning3
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Warning3
 				(
 				<<EOH,
 	Configuration variable will be ignored as type 'PARENT' has higher precedence
@@ -910,8 +897,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintWarning3
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Warning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -934,8 +921,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintWarning3
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Warning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -958,8 +945,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{COMMAND_LINE}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintWarning3
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Warning3
 				(
 				<<EOH
 	Configuration variable will be ignored as type 'COMMAND_LINE' has higher precedence
@@ -979,8 +966,8 @@ EOH
 		&& ! Compare($value, $config_to_merge_to->{PARENT}{__PBS}{$key}{VALUE})
 		)
 			{
-			PrintWarning3 $header_text unless $header_displayed++ ;
-			PrintWarning3
+			Print Warning3 $header_text unless $header_displayed++ ;
+			Print Warning3
 				(
 				<<EOH
 	Configuration variable of type 'LOCAL' has higher precedence than 'PARENT'
@@ -1004,8 +991,8 @@ sub EvalConfig
 {
 my ($entry, $config, $origin, $package, $pbs_config, $no_warnings) = @_ ;
 
-return($entry) unless defined $entry ;
-return($entry) unless $entry =~ /%/ ;
+return $entry unless defined $entry ;
+return $entry unless $entry =~ /%/ ;
 
 my $source_entry = $entry ;
 
@@ -1021,22 +1008,22 @@ while($entry =~ /\$config->\{('*[^}]+)'*}/g)
 
 	unless(exists $config->{$element})
 		{
-		PrintWarning "Config: $config->{$1} doesn't exist @ $origin\n" unless $no_warnings ;
+		Say Warning "Config: $config->{$1} doesn't exist @ $origin" unless $no_warnings ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning" Config: $config->{$1} isn't defined @ $origin\n" unless $no_warnings ;
+		Say Warning" Config: $config->{$1} isn't defined @ $origin" unless $no_warnings ;
 		$undefined_config++ ;
 		}
 
-	PrintInfo2 "Config: $element => " . ($config->{$element} // 'undef') . " @ $origin\n"
+	Say Info2 "Config: $element => " . ($config->{$element} // 'undef') . " @ $origin"
 		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE}
 	}
 
-return($entry) if $undefined_config ;
+return $entry if $undefined_config ;
 
 $entry =~ s|\\|\\\\|g ;
 
@@ -1047,20 +1034,20 @@ while($entry =~ /\%([_a-zA-Z0-9]+)/g)
 	
 	unless(exists $config->{$element})
 		{
-		PrintWarning "Config: config '$element' doesn't exist @ $origin\n" unless $no_warnings ;
+		Say Warning "Config: config '$element' doesn't exist @ $origin" unless $no_warnings ;
 		$undefined_config++ ;
 		next ;
 		}
 		
 	unless(defined $config->{$element})
 		{
-		PrintWarning "Config: config '$element' isn't defined @ $origin\n" unless $no_warnings ;
+		Say Warning "Config: config '$element' isn't defined @ $origin" unless $no_warnings ;
 		$undefined_config++ ;
 		}
 
-	PrintInfo2 "Config: '$element' => "
+	Say Info2 "Config: '$element' => "
 			. (exists $config->{$element} && defined $config->{$element} ? $config->{$element} : 'undef')
-			. " @ $origin\n"
+			. " @ $origin"
 		if $pbs_config->{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 
 	push @{$config_access{$package}{$element}}, "$origin" ;
@@ -1087,7 +1074,7 @@ $entry =~ s/\%([_a-zA-Z0-9]+)/
 	/eg ;
 $entry =~ s/__PBS__PERCENT__/\%/g ;
 
-return $entry ;
+$entry
 }
 
 #-------------------------------------------------------------------------------
@@ -1141,7 +1128,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CO
 	$warning .= " --no_config_inheritance" if $pbs_config->{NO_CONFIG_INHERITANCE} ;
 	$warning .= " for '$sub_node_name' defined @ '$sub_pbs->[0]{RULE}{FILE}:$sub_pbs->[0]{RULE}{LINE}' " ;
 
-	PrintWarning "$warning\n" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
+	Say Warning "$warning" if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION}) ;
 
 	if(defined $sub_pbs_hash->{PACKAGE_CONFIG})
 		{
@@ -1151,7 +1138,7 @@ if(defined $sub_pbs_hash->{PACKAGE_CONFIG_NO_INHERITANCE} || $pbs_config->{NO_CO
 
 		if($pbs_config->{DISPLAY_CONFIGURATION} ||  $pbs_config->{DISPLAY_PACKAGE_CONFIGURATION})
 	        	{
-        		PrintWarning DumpTree($sub_pbs_hash->{PACKAGE_CONFIG}, "$title:") . "\n" ;
+        		SWT $sub_pbs_hash->{PACKAGE_CONFIG}, "$title:" ;
 		        }
 		}
 	}
@@ -1193,7 +1180,7 @@ EOE
 		}
 	}
 
-return \%sub_config ;
+\%sub_config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1217,7 +1204,7 @@ ClonePackageConfig($load_package, $subpbs_package_node_config) ;
 # check the $sub_pbs_package_config for type validity
 if('HASH' ne ref $sub_pbs_package_config)
 	{
-	PrintError 
+	Print Error 
 		DumpTree 
 			$rule->{TEXTUAL_DESCRIPTION},
 			"Config: section PACKAGE_CONFIG in sub pbs definition is not a hash, '$rule->{NAME}:$rule->{FILE}:$rule->{LINE}'" 
@@ -1230,11 +1217,11 @@ my $title = "Config: PACKAGE_CONFIG for '$sub_node_name' defined @ '$sub_pbs->[0
 
 if($pbs_config->{DISPLAY_CONFIGURATION})
 	{
-	PrintWarning DumpTree($sub_pbs_package_config, "$title:") . "\n" ;
+	SWT $sub_pbs_package_config, "$title:" ;
 	}
 else
 	{
-	PrintWarning "$title\n" ;
+	Say Warning "$title" ;
 	}
 
 eval <<"EOE" ;
@@ -1244,13 +1231,12 @@ PBS::Config::AddConfig(%{\$sub_pbs_package_config}) ;
 EOE
 die $@ if $@ ;
 
-return 
-	PBS::Config::ExtractConfig
-		(
-		PBS::Config::GetPackageConfig($subpbs_package_node_config),
-		$config_namespaces,
-		['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
-		) ;
+PBS::Config::ExtractConfig
+	(
+	PBS::Config::GetPackageConfig($subpbs_package_node_config),
+	$config_namespaces,
+	['CURRENT', 'PARENT', 'COMMAND_LINE', 'PBS_FORCED'], # LOCAL REMOVED!
+	) ;
 } ;
 
 #-------------------------------------------------------------------------------

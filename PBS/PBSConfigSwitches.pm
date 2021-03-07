@@ -462,10 +462,6 @@ EOT
 		'do immediate build even if --no_build is set.',
 		'',
 
-	'nub|no_user_build'               => \$config->{NO_USER_BUILD},
-		'User defined Build() is ignored if present.',
-		'',
-
 	'nba|node_build_actions=s'               => $config->{NODE_BUILD_ACTIONS},
 		'actions that are run on a node at build time.',
 		q~example: pbs -ke .  -nba '3::stop' -nba "trigger::priority 4::message '%name'" -trigger '.' -w 0  -fb -dpb0 -j 12 -nh~,

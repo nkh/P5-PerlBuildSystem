@@ -274,7 +274,6 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 # matching rules
 #----------------------
 my @rules_with_builders ;
-my $builder = 0 ;
 
 if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_config->{DISPLAY_NO_NODE_BUILD_RULES} )
 	{
@@ -282,22 +281,18 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 
 	for my $rule (@matching_rules)
 		{
-		my $rule_number = $rule->{RULE}{INDEX} ;
-		my $dependencies_and_build_rules = $rule->{RULE}{DEFINITIONS} ;
-
-		my $rule_definition = $dependencies_and_build_rules->[$rule_number] ;
-		
-		$builder = $rule_definition->{BUILDER} ;
+		my $rule_number     = $rule->{RULE}{INDEX} ;
+		my $rule_definition = $rule->{RULE}{DEFINITIONS}[$rule_number] ;
 		
 		push @rules_with_builders, {INDEX => $rule_number, DEFINITION => $rule_definition }
-			if defined $builder ;
+			if defined $rule_definition->{BUILDER} ;
 			
 		my $rule_dependencies ;
 					
 		if(@{$rule->{DEPENDENCIES}})
 			{
 			$rule_dependencies = 
-				"\n${tab}${tab}=> "
+				"\n${tab}${tab}${tab}=> "
 				. join( ' ', 
 					map 	
 						{
@@ -331,7 +326,7 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 							
 		my $rule_index = @matching_rules > 1 ? "#$rule_number" : '' ;
 
-		$current_node_info =  INFO "${tab}${rule_index}Rule:$rule_tag " . _INFO_(GetRunRelativePath($pbs_config, "'$rule_info'")) ;
+		$current_node_info =  INFO "${tab}${tab}rule: ${rule_index} $rule_tag " . _INFO_(GetRunRelativePath($pbs_config, $rule_info)) ;
 		$current_node_info .= INFO2 $rule_dependencies ;
 		
 		$log_node_info .= $current_node_info ;
@@ -340,7 +335,7 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 
 	unless(@{$file_tree->{__MATCHING_RULES}})
 		{
-		my $current_node_info = INFO("${tab}Matching rules: ") . _WARNING_("no matching rule\n") ;
+		my $current_node_info = _WARNING_("${tab}No matching rule\n") ;
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;
 		}
@@ -349,37 +344,50 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 #----------------------
 # builder
 #----------------------
-my $has_bo = 0 ;
+my ($has_bo, $builder)  = (0) ;
 
 for my $rule (@rules_with_builders)
 	{
 	my $rule_tag = GetRuleTypes($rule->{DEFINITION}) ;
 	$rule_tag .= "[P]" if exists $rule->{DEFINITION}{COMMANDS_RUN_CODE} ;
 
-	my $rule_info = $rule->{DEFINITION}{NAME} . ':' .  GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':' . $rule->{DEFINITION}{LINE} ;
+	my $rule_info = "#$rule->{INDEX}$rule_tag "
+			. $rule->{DEFINITION}{NAME} . ':'
+			. GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':'
+			. $rule->{DEFINITION}{LINE} ;
 	
-	# display if the rule generated a  builder override and had builder in its definition.
+	# display used builder and possible overrides
 	my $current_node_info = '' ;
 	
 	my $is_bo = any { BUILDER_OVERRIDE eq $_ } @{$rule->{DEFINITION}{TYPE}} ;
 
-	if($is_bo)
+	if(! defined $builder)
 		{
+		$has_bo++ if $is_bo ;
+		
 		$builder = $rule->{DEFINITION}{BUILDER} ;
-		$has_bo++ ;
-
-		$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
-		$current_node_info .= WARNING "${tab}Build: using override builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
-		}
-	elsif($has_bo)
-		{
-		$current_node_info = $node_header if $no_output ;
-		$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
+		$current_node_info .= INFO "${tab}Build: using builder, rule: $rule_info\n" ;
 		}
 	else
 		{
-		$current_node_info .= INFO "${tab}Build: using builder, rule: #$rule->{INDEX} $rule_tag'$rule_info'\n" ;
-		$builder = $rule->{DEFINITION}{BUILDER} ;
+		if($is_bo)
+			{
+			$builder = $rule->{DEFINITION}{BUILDER} ;
+			$has_bo++ ;
+
+			$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
+			$current_node_info .= WARNING "${tab}Build: using override builder rule: $rule_info\n" ;
+			}
+		elsif($has_bo)
+			{
+			$current_node_info = $node_header if $no_output ;
+			$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: $rule_info\n" ;
+			}
+		else
+			{
+			$current_node_info .= WARNING "${tab}Build: using later defined builder, rule: $rule_info\n" ;
+			$builder = $rule->{DEFINITION}{BUILDER} ;
+			}
 		}
 
 	$log_node_info .= $current_node_info ;

@@ -39,6 +39,7 @@ PBS/Build/NodeBuilder.pm
 PBS/Build/Threaded.pm
 PBS/Build/Forked.pm
 PBS/Build/ForkedNodeBuilder.pm
+PBS/Caller.pm
 PBS/Check/ForkedCheck.pm
 PBS/Check.pm
 PBS/Cyclic.pm
@@ -77,6 +78,7 @@ PBS/PostBuild.pm
 PBS/Shell.pm
 PBS/Shell/SSH.pm
 PBS/Shell/Telnet.pm
+PBS/Stack.pm
 PBS/Triggers.pm
 PBS/Wizard.pm
 PBS/Information.pm
@@ -90,7 +92,6 @@ PBS/SubpbsResult.pm
 PBS/Watch/Client.pm
 PBS/Watch/Win32Watcher.pm
 PBS/Watch/InotifyWatcher.pm
-PBS/Stack.pm
 
 PBS/Version.pm
 

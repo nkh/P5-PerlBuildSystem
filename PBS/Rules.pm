@@ -26,10 +26,12 @@ use File::Basename ;
 use Time::HiRes qw( gettimeofday tv_interval ) ;
 use List::Util qw( any ) ;
 
+use PBS::PBSConfig ;
 use PBS::Config ;
 use PBS::Output ;
 use PBS::Constants ;
 use PBS::Plugin ;
+use PBS::Caller ;
 use PBS::Stack ;
 use PBS::Shell ;
 
@@ -105,56 +107,39 @@ sub AddRule
 # - the value 1 and a list of dependency names
 
 my ($package, $file_name, $line) = caller() ;
+
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-my $class = 'User' ;
+my $cc = CC 0, [$package, $file_name, $line] ;
 
 my @rule_definition = @_ ;
 
-my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
-my $config = 
-	{
-	PBS::Config::ExtractConfig
-		(
-		PBS::Config::GetPackageConfig($package),
-		$pbs_config->{CONFIG_NAMESPACES},
-		)
-	} ;
+my $pbs_config = GetPbsConfig($package) ;
+my $config     = { ExtractConfig(GetPackageConfig($package),$pbs_config->{CONFIG_NAMESPACES}) } ;
 
 RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
-my $first_argument = shift @rule_definition ;
-my ($name, $rule_type) ;
+my ($type, $name) = (ref $rule_definition[0]) ;
 
-if('ARRAY' eq ref $first_argument)
+if($type eq 'ARRAY' || $type eq '')
 	{
-	$rule_type = $first_argument ;
+	$type = 'ARRAY' eq $type ? shift @rule_definition : [UNTYPED] ;
 	$name = shift @rule_definition ;
 	}
 else
 	{
-	if('' eq ref $first_argument)
-		{
-		$name = $first_argument ;
-		$rule_type = [UNTYPED] ;
-		}
-	else
-		{
-		PrintError "Rules: '$name' invalid rule, expecting a name string, or a list of types, as first argument" ;
-		PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
-		die "\n" ;
-		}
+	PrintError "Rules: '$name' invalid rule, expecting a name string, or a list of types, as first argument" ;
+	PbsDisplayErrorWithContext $pbs_config, $file_name, $line ;
+	die "\n" ;
 	}
 
-my($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
+my ($depender_definition, $builder_definition, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
 	$pbs_config, $config,
-	$file_name, $line,
-	$package, $class,
-	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
+	'User', $type, $name, $depender_definition, $builder_definition, $node_subs
 	) ;
 }
 
@@ -166,8 +151,11 @@ RegisterRule
 sub AddRuleTo
 {
 my ($package, $file_name, $line) = caller() ;
+
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
+
+my $cc = CC 0, [$package, $file_name, $line] ;
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 my $config = 
@@ -214,14 +202,12 @@ else
 		}
 	}
 
-my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
+my ($depender_definition, $builder_definition, $node_subs) = @rule_definition ;
 
 RegisterRule
 	(
 	$pbs_config, $config,
-	$file_name, $line,
-	$package, $class,
-	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
+	$class, $rule_type, $name, $depender_definition, $builder_definition, $node_subs,
 	) ;
 }
 
@@ -230,8 +216,11 @@ RegisterRule
 sub ReplaceRule
 {
 my ($package, $file_name, $line) = caller() ;
+
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
+
+my $cc = CC 0, [$package, $file_name, $line] ;
 
 my $class = 'User' ;
 
@@ -273,16 +262,14 @@ else
 		}
 	}
 
-my($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
+my($depender_definition, $builder_definition, $node_subs) = @rule_definition ;
 
 RemoveRule($package, $class, $name) ;
 
 RegisterRule
 	(
 	$pbs_config, $config,
-	$file_name, $line,
-	$package, $class,
-	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
+	$class, $rule_type, $name, $depender_definition, $builder_definition, $node_subs,
 	) ;
 }
 
@@ -291,8 +278,11 @@ RegisterRule
 sub ReplaceRuleTo
 {
 my ($package, $file_name, $line) = caller() ;
+
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
+
+my $cc = CC 0, [$package, $file_name, $line] ;
 
 my $class = shift ;
 
@@ -340,15 +330,13 @@ else
 		}
 	}
 
-my ($depender_definition, $builder_sub, $node_subs) = @rule_definition ;
+my ($depender_definition, $builder_definition, $node_subs) = @rule_definition ;
 
 RemoveRule($package,$class, $name) ;
 RegisterRule
 	(
 	$pbs_config, $config,
-	$file_name, $line,
-	$package, $class,
-	$rule_type, $name, $depender_definition, $builder_sub, $node_subs,
+	$class, $rule_type, $name, $depender_definition, $builder_definition, $node_subs,
 	) ;
 }
 
@@ -356,13 +344,9 @@ RegisterRule
 
 sub RegisterRule
 {
-my 
-	(
-	$pbs_config, $config,
-	$file_name, $line,
-	$package, $class,
-	$rule_types, $name, $depender_definition, $builder_definition, $node_subs
-	) = @_ ;
+my ($pbs_config, $config, $class, $rule_types, $name, $depender_definition, $builder_definition, $node_subs) = @_ ;
+
+my ($package, $file_name, $line) = caller ;
 
 my %rule_type = map { $_ => 1 } @$rule_types ;
 
@@ -554,17 +538,12 @@ use Sub::Name ;
 
 sub BuildOk
 {
-# Syntactic sugar, this function can be called instead for 
-# defining a closure or giving a sub ref
-
 my $message = shift ;
 my $print   = shift ; 
 
-my ($package, $file_name, $line) = caller() ;
-
 return subname BuildOk => sub
 	{
-	PrintInfo3("BuildOk: $message\n") if defined $message ;
+	PrintInfo3("BuildOk: $message\n") if defined $message && $print ;
 	return(1, $message // 'BuildOk: no message') ;
 	} ;
 }
@@ -604,6 +583,8 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
+my $cc = CC 0, [$package, $file_name, $line] ;
+
 __AddSubpbsRule($package, $file_name, $line, \@_) ;
 }
 
@@ -635,7 +616,6 @@ my ($rule_name, $node_regex, $Pbsfile, $pbs_package, @other_setup_data)
 RegisterRule
 	(
 	$pbs_config, $config,
-	$file_name, $line, $package,
 	'User',
 	[UNTYPED],
 	$rule_name,
@@ -671,8 +651,7 @@ push @rule_types, 'F'  if any { FORCED eq $_ } @{$rule->{TYPE}} ;
 push @rule_types, 'S'  if defined $rule->{NODE_SUBS} ;
 push @rule_types, 'L'  if any { LOCAL eq $_ } @{$rule->{TYPE}} ;
 
-my $rule_type = @rule_types ? ' [' . join(', ', @rule_types) . ']' : '' ;
-
+@rule_types ? '[' . join(', ', @rule_types) . ']' : '' ;
 }
 
 #-------------------------------------------------------------------------------

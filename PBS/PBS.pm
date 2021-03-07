@@ -114,7 +114,6 @@ my
 	$parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build,
 	) = @_ ;
 
-die unless $dependency_tree_name ;
 $pbsfile_chain //= [] ;
 
 #remove local changes from previous level
@@ -160,18 +159,18 @@ my $original_ENV_size = scalar(keys %ENV) ;
 
 my $display_env = $pbs_config->{DISPLAY_ENVIRONMENT} && $pbs_runs == 1 ;
 
-PrintWarning3 "ENV: removing all variable except those matching: " . join( ', ', map { "'$_'" } @{$pbs_config->{KEEP_ENVIRONMENT}}) . "\n"
+Say Warning3 "ENV: removing all variable except those matching: " . join( ', ', map { "'$_'" } @{$pbs_config->{KEEP_ENVIRONMENT}})
 	if $pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $display_env ;
 
 for my $variable (sort keys %ENV)
 	{
 	if(any { $variable =~ $_ } @{$pbs_config->{KEEP_ENVIRONMENT}})
 		{
-		PrintInfo2 "ENV: keeping '$variable' => '$ENV{$variable}'\n" if  $display_env ;
+		Say Info2 "ENV: keeping '$variable' => '$ENV{$variable}'" if  $display_env ;
 		}
 	else
 		{ 
-		PrintWarning3 "ENV: removing '$variable' => '$ENV{$variable}'\n" if !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $display_env ;
+		Say Warning3 "ENV: removing '$variable' => '$ENV{$variable}'" if !$pbs_config->{DISPLAY_ENVIRONMENT_KEPT} && $display_env ;
 		delete $ENV{$variable} ;
 		}
 	}
@@ -179,56 +178,29 @@ for my $variable (sort keys %ENV)
 my $ENV_size = scalar(keys %ENV) ;
 my $ENV_removed = $original_ENV_size - $ENV_size ;
 
-PrintInfo2 "ENV: kept: $ENV_size, removed: $ENV_removed\n" if $pbs_config->{DISPLAY_ENVIRONMENT_STAT} && $pbs_runs == 1 ;	
+Say Info2 "ENV: kept: $ENV_size, removed: $ENV_removed" if $pbs_config->{DISPLAY_ENVIRONMENT_STAT} && $pbs_runs == 1 ;	
 
-if(defined $pbs_config->{SAVE_CONFIG})
-	{
-	SaveConfig($targets, $Pbsfile, $pbs_config, $parent_config) ;
-	}
+SaveConfig($targets, $Pbsfile, $pbs_config, $parent_config) if defined $pbs_config->{SAVE_CONFIG} ;
 
-undef $pbs_config->{TARGETS} ;
-for my $target (@$targets)
-	{
-	if(file_name_is_absolute($target) || $target =~ /^\.\//)
-		{
-		push @{$pbs_config->{TARGETS}}, $target ;
-		}
-	else
-		{
-		push @{$pbs_config->{TARGETS}}, "./$target" ;
-		}
-	}
+$pbs_config->{TARGETS} = [ map { file_name_is_absolute($_) || /^\.\// ? $_ : "./$_" } @$targets ] ;
 
 my (undef, $target_path) = File::Basename::fileparse($targets->[0], ('\..*')) ;
 
-$target_path =~ s/^\.\/// ;
-$target_path =~ s/\/$// ;
+$target_path =~ s/^\.\/// ; $target_path =~ s/\/$// ;
 
 $pbs_config->{TARGET_PATH} = $pbs_config->{SET_PATH_REGEX} || $target_path ;
 
 undef $pbs_config->{SET_PATH_REGEX};
 
-$Pbs_runs{$package} = 1 unless (exists $Pbs_runs{$package}) ;
+$Pbs_runs{$package} //= 1  ;
 
-my $load_package = 'PBS::Runs::' . $package . '_' . $Pbs_runs{$package}++ ;
-$pbs_config->{LOAD_PACKAGE} = $load_package ;
+my $load_package = $pbs_config->{LOAD_PACKAGE} = 'PBS::Runs::' . $package . '_' . $Pbs_runs{$package}++ ;
 
 $inserted_nodes //= {} ;
 
-my $display_all_pbs_config = 0 ;
-
-for (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
+if( any { $_ eq '.' } @{$pbs_config->{DISPLAY_PBS_CONFIGURATION}} )
 	{
-	if('.' eq $_)
-		{
-		$display_all_pbs_config++ ;
-		last ;
-		}
-	}
-
-if($display_all_pbs_config)
-	{
-	PrintInfo DumpTree($pbs_config, "Package '$package:$Pbsfile' config:") ;
+	SIT $pbs_config, "Package '$package:$Pbsfile' config:" ;
 	}
 else
 	{
@@ -290,7 +262,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		{
 		if(/@/ > 1)
 			{
-			PrintError("Invalid composite target definition\n") ;
+			Say Error "PBS: Invalid composite target definition" ;
 			die ;
 			}
 			
@@ -299,29 +271,21 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			if(@$targets == 1)
 				{
 				$build_point = $1 ;
-				$_ = $2 ;
 				}
 			else
 				{
-				PrintError("Only one composite target is supported\n") ;
-				die ;
+				Say Error "PBS: Only one composite target is supported" ;
+				die "\n" ;
 				}
 			}
 		} 
 		
-	unless(@{$pbs_config->{RULE_NAMESPACES}})
-		{
-		push @{$pbs_config->{RULE_NAMESPACES}}, ('BuiltIn', 'User')
-		}
+	push @{$pbs_config->{RULE_NAMESPACES}}, ('BuiltIn', 'User') unless @{$pbs_config->{RULE_NAMESPACES}} ;
+	push @{$pbs_config->{CONFIG_NAMESPACES}}, ('BuiltIn', 'User') unless @{$pbs_config->{CONFIG_NAMESPACES}} ;
+
 	push my @rule_namespaces, @{$pbs_config->{RULE_NAMESPACES}} ;
-		
-	unless(@{$pbs_config->{CONFIG_NAMESPACES}})
-		{
-		push @{$pbs_config->{CONFIG_NAMESPACES}}, ('BuiltIn', 'User') ;
-		}
 	push my @config_namespaces, @{$pbs_config->{CONFIG_NAMESPACES}} ;
 	
-	my $user_build ;
 	PBS::PBSConfig::RegisterPbsConfig($load_package, $pbs_config) ;
 	
 	#Command defines
@@ -334,9 +298,9 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	# merge parent config
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
 	
-	my $config = PBS::Config::ExtractConfig($sub_config) ;
+	my $config = ExtractConfig($sub_config, $pbs_config->{CONFIG_NAMESPACES}) ;
 
-	PrintInfo(DumpTree({$config}, "Config: before running '$Pbsfile' in  package '$package':"))
+	SIT {$config}, "Config: before running '$Pbsfile' in  package '$package':"
 		 if $pbs_config->{DISPLAY_CONFIGURATION_START}  ;
 	
 	my $add_pbsfile_digest = '' ;
@@ -359,7 +323,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			"use strict ;\n"
 			  . "use warnings ;\n"
 			  . "use Data::TreeDumper;\n"
-		  	  . "use PBS::PrfNop ;\n" # add sub AddTargets
+		  	  . "use PBS::PrfNop ;\n" # for sub AddTargets
 			  . "use PBS::Constants ;\n"
 			  . "use PBS::Output ;\n"
 			  . "use PBS::Rules ;\n"
@@ -368,11 +332,9 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			  . "use PBS::PostBuild ;\n"
 			  . "use PBS::Config ;\n"
 			  . "use PBS::PBS ;\n"
+			  . "use PBS::Caller ;\n"
 			  . "use PBS::Digest;\n"
 			  . "use PBS::PBSConfig ;\n"
-			  #. "use PBS::Check ;\n"
-			  #. "use PBS::Shell ;\n"
-			  #. "use PBS::Plugin;\n"
 			  . $add_pbsfile_digest,
 			  
 			"1 ;\n",
@@ -381,115 +343,52 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 
 	die "\n" if $@ ;
 	
+	my @targets = map { file_name_is_absolute($_) || /^\.\// ? $_ : "./$_" } @$targets ;
+
+	{
+	use PBS::Caller ;
+	my $c = CC 0, [$load_package, 'TARGET', '' ] ;
+
 	PBS::Rules::RegisterRule
 		(
 		$pbs_config,
 		$config,
-		$Pbsfile, 0,  #$line,
-		$load_package,
 		'BuiltIn',
 		[VIRTUAL, '__INTERNAL'],
-		'',
-		sub
-			{
-			my $dependent = shift ;
-			
-			if($dependent eq $dependency_tree_name)
-				{
-				my @targets = map 
-						{
-						if(file_name_is_absolute($_) || /^\.\//)
-							{
-							"$_" ;
-							}
-						else
-							{
-							PrintDebug "Found a target without './' $_\n" if $build_point eq '' ;
-							"./$_" ;
-							}
-						} @$targets ;
-				
-				return(1, @targets) ;
-				}
-			else
-				{
-				return(0) ;
-				}
-			},
+		$pbs_runs < 2 ? 'PBS' : 'SUBPBS',
+		sub { $_[0] eq $dependency_tree_name ? (1, @targets) : 0 },
 		) ;
-		
-	{
-	no warnings ;
-	eval "\$user_build = *${load_package}::Build{CODE} ;" ;
 	}
-		
-	my $rules   = PBS::Rules::GetPackageRules($load_package) ; 
-	
-        my $rules_namespaces = join ', ', @rule_namespaces ;
-	my $config_namspaces = join ', ', @config_namespaces ;
-	
-	if($user_build && (! defined $pbs_config->{NO_USER_BUILD}) )
-		{
-                unless($pbs_config->{DISPLAY_NO_STEP_HEADER})
-                	{
-			PrintInfo("User Build(). package: $package, rules $rules_namespaces, config: $config_namspaces.\n") ;
-			}
-											
-		($build_result, $build_message, $build_sequence)
-			= $user_build->
-				(
-				$Pbsfile,
-				$package,
-				$load_package,
-				$pbs_config,
-				\@rule_namespaces,
-				$rules,
-				\@config_namespaces,
-				$sub_config,
-				$targets, # automatically build in rule 'BuiltIn::__ROOT', given as information only
-				$inserted_nodes,
-				$dependency_tree, # rule 0 dependent name is in $dependency_tree ->{__NAME}
-				$build_point,
-				$depend_and_build,
-				) ;
-			
-		}
-	else
-		{
-		($build_result, $build_message, $build_sequence)
-			= PBS::DefaultBuild::DefaultBuild
-				(
-				$pbsfile_chain,
-				$Pbsfile,
-				$package,
-				$load_package,
-				$pbs_config,
-				\@rule_namespaces,
-				$rules,
-				\@config_namespaces,
-				$sub_config,
-				$targets, # automatically build in rule 'BuiltIn::__ROOT', given as information only
-				$inserted_nodes,
-				$dependency_tree,
-				$build_point,
-				$depend_and_build,
-				) ;
-		
-		}
 
+	($build_result, $build_message, $build_sequence)
+		= PBS::DefaultBuild::DefaultBuild
+			(
+			$pbsfile_chain,
+			$Pbsfile,
+			$package,
+			$load_package,
+			$pbs_config,
+			\@rule_namespaces,
+			PBS::Rules::GetPackageRules($load_package),
+			\@config_namespaces,
+			$sub_config,
+			$targets, # automatically build in rule 'BuiltIn::__ROOT', given as information only
+			$inserted_nodes,
+			$dependency_tree,
+			$build_point,
+			$depend_and_build,
+			) ;
+		
 	$PBS::Output::indentation_depth-- ;
 
-		
 	# save meso file here
-
 	}
 else
 	{
 	my $error = "PBS: error: no pbsfile: $Pbsfile" ;
 	$error .= "\n\t@ $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
 
-	PrintError $error ;
-
+	Print Error $error ;
 	die "\n";
 	}
 
@@ -517,7 +416,7 @@ use File::Path ;
 mkpath($pbs_config->{BUILD_DIRECTORY}) unless(-e $pbs_config->{BUILD_DIRECTORY}) ;
 mkpath($path) unless(-e $path) ;
 
-PrintInfo "Config: saved in '$config_file_name'\n" ;
+Say Info "Config: saved in '$config_file_name'" ;
 
 open(CONFIG, ">", $config_file_name) or die qq[Can't open '$config_file_name': $!] ;
 
@@ -569,7 +468,7 @@ $global_package_dependency //= 1 ;
 
 if (! defined $source_name || '' ne ref $source_name)
 	{
-	PrintError "PbsUse: Invalid call @ $file_name:$line.\n"  ;
+	Say Error "PbsUse: Invalid call @ $file_name:$line"  ;
 	die "\n" ;
 	}
 	
@@ -592,7 +491,7 @@ else
 	{
 	unless(defined $pbs_config->{LIB_PATH})
 		{
-		PrintError("PBS: Can't search for '$source_name', PBS lib path is not defined\n") ;
+		Say Error "PBS: Can't search for '$source_name', PBS lib path is not defined" ;
 		die "\n" ;
 		}
 
@@ -618,8 +517,8 @@ unless(defined $located_source_name)
 $pbs_use_level++ ; # indent the PbsUse output to make the hierarchy more visible
 my $indentation = '   ' x $pbs_use_level ;
 
-PrintInfo2("${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'\n") if(defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE}) ;
-PrintInfo2("${indentation}PbsUse: '$source_name'\n") if(defined $pbs_config->{DISPLAY_PBSUSE}) ;
+Say Info2 "${indentation}PbsUse: '$located_source_name' called at '$file_name:$line'" if defined $pbs_config->{DISPLAY_PBSUSE_VERBOSE} ;
+Say Info2 "${indentation}PbsUse: '$source_name'" if defined $pbs_config->{DISPLAY_PBSUSE} ;
 
 if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
 	{
@@ -627,7 +526,7 @@ if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
 	my $previous_load_information = join(':', @{$files_loaded_via_PbsUse{$package}{$located_source_name}}) ;
 
 
-	PrintWarning(sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information.\n")) ;
+	Say Warning sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information") ;
 	}
 else
 	{
@@ -662,13 +561,13 @@ if(defined $pbs_config->{DISPLAY_PBSUSE_TIME})
 	{
 	if(defined $pbs_config->{DISPLAY_PBSUSE_TIME_ALL})
 		{
-		PrintInfo(sprintf("${indentation}Time in PbsUse '$source_name': %0.2f s.\n", $pbsuse_time)) ;
+		Say Info sprintf("${indentation}Time in PbsUse '$source_name': %0.2f s.", $pbsuse_time) ;
 		}
 	else
 		{
 		if(-1 == $pbs_use_level)
 			{
-			PrintInfo(sprintf("${indentation}Time in PbsUse: %0.2f s.\n", $pbsuse_time)) ;
+			Say Info sprintf("${indentation}Time in PbsUse: %0.2f s.\n", $pbsuse_time) ;
 			}
 		}
 	}
@@ -721,18 +620,14 @@ if($type eq 'Pbsfile')
 	my $available = PBS::Output::GetScreenWidth() ;
 	my $em = String::Truncate::elide_with_defaults({ length => ($available - 12 < 3 ? 3 : $available - 12), truncate => 'left' });
 
-	PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
-	PrintInfo2("PBS: loading '" . $em->($file) . "'\n") if (defined $pbs_config->{DISPLAY_PBSFILE_LOADING}) ;
+	Print Info "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+	Say Info2 "PBS: loading '" . $em->($file) if defined $pbs_config->{DISPLAY_PBSFILE_LOADING} ;
 	
-	if(defined $pbs_config->{PBSFILE_CONTENT} && -e $file)
-		{
-		PrintInfo("PBS: using virtual pbsfile\n") unless $pbs_config->{QUIET} ;
-		}
+	Say Warning "PBS: using virtual pbsfile"
+		if defined $pbs_config->{PBSFILE_CONTENT} && -e $file ;
 	
-	if(exists $pbs_config->{PBSFILE_CONTENT})
-		{
-		$file_body = $pbs_config->{PBSFILE_CONTENT} ;
-		}
+	$file_body = $pbs_config->{PBSFILE_CONTENT}
+		if exists $pbs_config->{PBSFILE_CONTENT} ;
 	}
 	
 if($file_body eq '')
@@ -754,7 +649,7 @@ if($file_body eq '')
 $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} //= '' ;
 $pbs_config->{TARGET_PATH} //= '' ;
 
-PrintDebug <<OPF if defined ($pbs_config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE}) ;
+Print Debug <<OPF if defined ($pbs_config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE}) ;
 #>>>>> start of original file '$file'
 $file_body
 #<<<<< end of original file '$file'
@@ -775,7 +670,7 @@ $post_code
 
 EOS
 
-PrintDebug $source if defined ($pbs_config->{DISPLAY_PBSFILE_SOURCE}) ;
+Print Debug $source if defined ($pbs_config->{DISPLAY_PBSFILE_SOURCE}) ;
 
 my @warnings ;
 local $SIG{__WARN__} = sub { push @warnings, $_[0] } ;
@@ -789,14 +684,14 @@ if($@)
 
 	my $indent = $PBS::Output::indentation ;
 
-	PrintError "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file)
+	Print Error "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file)
 			. "\n\n"
 			. (join '', map { s/$file/$short_file/g ;  "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
 			. (join '', map {s/$file/$short_file/g ; "$indent$_\n" } split(/\n/, $@)) ;
 	die "\n";
 	}
 	
-PrintInfo2 sprintf("PBS: load time: %0.4f.s\n", tv_interval ($t0, [gettimeofday]))
+Say Info2 sprintf("PBS: load time: %0.4f.s", tv_interval ($t0, [gettimeofday]))
 	if $pbs_config->{DISPLAY_PBSFILE_LOAD_TIME} && $type eq 'Pbsfile' ;
 
 $type .= ': ' unless $type eq '' ;

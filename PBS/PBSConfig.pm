@@ -66,9 +66,10 @@ if(defined $pbs_configuration{$package})
 	}
 else
 	{
+	#use Carp ;
+	#Say Debug Carp::longmess ;
 	Say Error "Config: GetPbsConfig: no configuration for package '$package'. Returning empty set." ;
 
-	Carp::confess ;
 	return {} ;
 	}
 }
