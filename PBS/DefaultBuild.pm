@@ -81,27 +81,24 @@ my $target_string = $em->( join ', ', map {"'$_'"} @$targets) ;
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
-if($pbs_config->{DISPLAY_NO_STEP_HEADER})
+if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
+	{
+	Say Info  "Depend: " . _INFO3_("$target_string") ;
+	Say Info2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+	}
+elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPENDENCY_PBSFILE})
+	{
+	Say Info "Depend: " . _INFO3_("$target_string\n") 
+			. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]"
+	}
+elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: nodes: $start_nodes [$pbs_runs/$PBS::Output::indentation_depth]", 0))
 		unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 else
 	{
-	if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
-		{
-		Say Info  "Depend: " . _INFO3_("$target_string") ;
-		Say Info2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
-		}
-	elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPENDENCY_PBSFILE})
-		{
-		Say Info "Depend: " . _INFO3_("$target_string\n") 
-				. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]"
-		}
-	else
-		{
-		Say Info "Depend: " . _INFO3_("$target_string") 
-		}
+	Say Info "Depend: " . _INFO3_("$target_string") 
 	}
 
 my $local_time =
@@ -229,7 +226,7 @@ if($pbs_config->{DISPLAY_CONFIG_USAGE})
 	}
 
 
-PrintInfo "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+Say '' if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 for my $target (@$targets)
 	{ 
