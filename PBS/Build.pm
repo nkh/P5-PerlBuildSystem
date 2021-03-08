@@ -1,5 +1,6 @@
 package PBS::Build ;
 
+
 use PBS::Debug ;
 use 5.006 ;
 
@@ -18,15 +19,10 @@ our $VERSION = '0.04' ;
 
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
-use PBS::Config ;
-use PBS::Depend ;
-use PBS::Check ;
 use PBS::Output ;
 use PBS::Constants ;
-use PBS::Digest ;
-use PBS::Information ;
-use PBS::PBSConfig ;
 use PBS::Build::NodeBuilder ;
+use PBS::Build::Forked ;
 
 #-------------------------------------------------------------------------------
 $|++ ;
@@ -124,23 +120,9 @@ else
 		}
 	else
 		{
-		if(defined $pbs_config->{JOBS} && $pbs_config->{JOBS})
-			{
-			eval "use PBS::Build::Forked ;" ;
-			die $@ if $@ ;
-
-			return
-				(
-				PBS::Build::Forked::Build($pbs_config, $build_sequence, $inserted_nodes) 
-				) ;
-			}
-		else
-			{
-			return
-				(
-				SequentialBuild($pbs_config, $build_sequence, $inserted_nodes)
-				) ;
-			}
+		return defined $pbs_config->{JOBS} && $pbs_config->{JOBS}
+			? PBS::Build::Forked::Build($pbs_config, $build_sequence, $inserted_nodes)
+			: SequentialBuild($pbs_config, $build_sequence, $inserted_nodes) ;
 		}
 	}
 }

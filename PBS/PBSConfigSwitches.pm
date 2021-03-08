@@ -967,8 +967,8 @@ EOT
 		'(DF) Display the dependencies for each file processed.',
 		'',
 		
-	'display_dependency_pbsfile'         => \$config->{DISPLAY_DEPENDENCY_PBSFILE},
-		'Displays the pbsfile, automatic if -display_dependencies or --display_dependencies_long is set',
+	'dh|depend_header'                => \$config->{DISPLAY_DEPEND_HEADER},
+		"Show depend header.",
 		'',
 		
 	'ddl|display_dependencies_long'         => \$config->{DEBUG_DISPLAY_DEPENDENCIES_LONG},

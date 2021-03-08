@@ -26,6 +26,7 @@ use PBS::Build ;
 
 use Socket;
 use IO::Select ;
+use List::Util qw(all) ;
 use List::PriorityQueue ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
@@ -53,8 +54,6 @@ my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
 my $number_of_nodes_to_build = scalar(grep {$_->{__NAME} !~ /^__/} @$build_sequence) ; # remove PBS root
-
-#$number_of_nodes_to_build -= $removed_nodes ;
 
 my $node_build_index = 0 ;
 
@@ -275,12 +274,15 @@ for my $parent (@{ $built_node->{__PARENTS} })
 return $excluded ;
 }
 
+my %descendents ; # cache
 
 sub GetDescendents
 {
 my ($node) = @_ ;
 
 #PrintDebug DumpTree [ map { $_->{__NAME} } GetDescendents($node) ], $node->{__NAME} ;
+
+return @{$descendents{$node->{__NAME}}} if exists $descendents{$node->{__NAME}} ;
 
 my @all ;
 
@@ -289,6 +291,8 @@ for my $dependent ( grep { ! /^__/ } keys %$node )
 	push @all, $node->{$dependent} ;
 	push @all, GetDescendents($node->{$dependent}) ;
 	}
+
+$descendents{$node->{__NAME}} = \@all ;
 
 @all ;
 }
@@ -321,26 +325,23 @@ for my $node (reverse @$build_sequence)
 			}
 		}
 
-	if($node->{__LEVEL} != 0) # hide PBS top node
-		{
-		$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ ;
-		}
+	$level_statistics[$node->{__LEVEL} - 1 ]{nodes}++ if $node->{__LEVEL} != 0 ; # hide PBS top node
 
 	my $priority = $node->{__WEIGHT_PRIORITY}  // 8 ; # set by parent or default
-	for my $actions (@{$pbs_config->{NODE_BUILD_ACTIONS}})
+
+	my $inherit_priority ;
+	for my $actions (grep { $node->{__NAME} =~ $_->[0] } @{$pbs_config->{NODE_BUILD_ACTIONS}})
 		{
-		if ($node->{__NAME} =~ $actions->[0])
+		for my $prio (map { m/^\s*priority\s+(\d+)/i ? $1 : () } @$actions)
 			{
-			for my $prio (map { m/^\s*priority\s+(\d+)/i ? $1 : () } @$actions)
-				{
-				PrintWarning "PBS: invalid priority in --node_build_actions, 0 <= prio <= 8, ignoring\n" && next if $prio >= 9 ;
-			
-				$priority = $prio if $prio < $priority ;
-				}
+			PrintWarning "PBS: invalid priority in --node_build_actions, must be 0 <= prio <= 8, ignoring\n" && next if $prio >= 9 ;
+		
+			$priority = $prio if $prio < $priority ;
+			$inherit_priority++ ;
 			}
 		}
 
-	$_->{__WEIGHT_PRIORITY} = $priority for (GetDescendents($node)) ;
+	all { $_->{__WEIGHT_PRIORITY} = $priority if $priority < $_->{__WEIGHT_PRIORITY} ; 1 } GetDescendents($node) if $inherit_priority ;
 
 	$node->{__WEIGHT} = $node->{__LEVEL} << $priority | ($node->{__CHILDREN_TO_BUILD} // 0) ;
 	$node->{__WEIGHT_PRIORITY} = $priority ;

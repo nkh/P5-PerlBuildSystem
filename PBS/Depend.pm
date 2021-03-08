@@ -146,6 +146,38 @@ push @unicode_numbers, ('+') x 100 ;
 
 my %trigger_rules ;
 
+sub StartRemoteDepender
+{
+my ($node) = @_ ;
+
+my $pid = fork() ;
+if($pid)
+	{
+	}
+else
+	{
+	# new process if $pid defined
+	
+	# couldn't fork
+	return unless(defined $pid) ;
+		
+	my ($redirection_path, $redirection_file, $redirection_file_log) = PBS::Build::ForkedNodeBuilder::GetLogFileNames($node) ;
+
+	$redirection_file .= '_fork' ;
+
+	#open(OLDOUT, ">&STDOUT") ;
+	open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
+	STDOUT->autoflush(1) ;
+
+	#open(OLDERR, ">&STDERR") ;
+	open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
+
+
+	exit 0 ;
+	} ;
+
+}
+
 sub CreateDependencyTree
 {
 my 	
@@ -159,6 +191,8 @@ $pbsfile_chain //=  [] ;
 $parent_matching_rules //= {} ;
 
 return if(exists $tree->{__DEPENDED}) ;
+
+#StartRemoteDepender($tree) ;
 
 my ($t0_rules, $rule_time) = ([gettimeofday], 0) ;
 

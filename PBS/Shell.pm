@@ -55,6 +55,7 @@ RunShellCommands($command) ;
 }
 
 #-------------------------------------------------------------------------------
+use  PBS::Constants ;
 
 sub RunPerlSub
 {
@@ -62,27 +63,43 @@ my ($self, $perl_sub, @args) = @_ ;
 
 if($PBS::Shell::silent_commands_output)
 	{
-	my ($out, $err, @r) = ('', '') ; 
+	my ($output, @r) = ('', '') ; 
+
+	my ($OLDOUT, $OLDERR) ;
+	open $OLDOUT, ">&STDOUT" ; 
+	open $OLDERR, ">&STDERR" ;
+
+	local *STDOUT ;
+	local *STDERR ;
 
 	no warnings 'once';
-	open(OLDOUT, ">&STDOUT") ; 
-	open(OLDERR, ">&STDERR") ;
 
-	{
-	close(STDOUT);
-	open STDOUT, '>>', \$out or die "Can't redirect STDOUT to variable: $!";
+	eval
+		{
+		open STDOUT, '>>', \$output or die "Can't redirect STDOUT to variable: $!";
+		STDOUT->autoflush(1) ;
 
-	close(STDERR);
-	open STDERR, '>>', \$out or die "Can't redirect STDERR to variable: $!" ;
+		open STDERR, '>>', \$output or die "Can't redirect STDOUT to variable: $!";
+		STDERR->autoflush(1) ;
 
-	@r = $perl_sub->(@_) ;
-	}
+		@r = $perl_sub->(@args) ;
+		} ;
 
-	open(STDERR, ">&OLDERR");
-	open(STDOUT, ">&OLDOUT");
+	open STDERR, '>&' . fileno($OLDERR) or die "Can't restore STDERR: $!";
+	open STDOUT, '>&' . fileno($OLDOUT) or die "Can't restore STDOUT: $!";
 
-	#print STDOUT $out ;
-	#print STDERR $err ;
+	if ($@)
+		{
+		my $error = $@ ;
+		
+		Say $output . "\n" if $output ne '' ;
+
+		die $error
+		}
+	else
+		{
+		#Say $output . "\n" if $output ne '' ;
+		}
 
 	@r ;
 	}

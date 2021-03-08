@@ -10,7 +10,6 @@ my @split_modules ;
 my @pm_files = qw(
 PBS/Build.pm
 PBS/Build/NodeBuilder.pm
-PBS/Build/Threaded.pm
 PBS/Build/Forked.pm
 PBS/Build/ForkedNodeBuilder.pm
 PBS/Caller.pm

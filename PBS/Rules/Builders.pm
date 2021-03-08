@@ -156,7 +156,7 @@ for my $command (@$commands)
 	
 	last unless $command_returns_ok ;
 	}
-	
+
 if($do_run)
 	{
 	# will be added to digest

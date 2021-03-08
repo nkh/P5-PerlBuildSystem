@@ -20,6 +20,7 @@ our $VERSION = '0.02' ;
 use PBS::Output ;
 
 use Cwd ;
+use Data::Dump qw/ dump / ;
 use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
 
@@ -62,11 +63,11 @@ my $warp_signature_source =
 		
 		. $pbs_config->{PBSFILE}
 		
-		. DumpTree($pbs_config->{COMMAND_LINE_DEFINITIONS}, '', USE_ASCII => 1)
-		. DumpTree($pbs_config->{USER_OPTIONS}, '', USE_ASCII => 1) 
+		. dump($pbs_config->{COMMAND_LINE_DEFINITIONS})
+		. dump($pbs_config->{USER_OPTIONS}) 
 		
 		. $pbs_prf
-		. DumpTree($pbs_lib_path, '', USE_ASCII => 1)
+		. dump($pbs_lib_path)
 		) ;
 
 my $warp_signature = md5_hex($warp_signature_source) ;

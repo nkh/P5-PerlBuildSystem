@@ -155,8 +155,9 @@ my ($redirection_path, $redirection_file, $redirection_file_log) = GetLogFileNam
 my $file_fail = $redirection_file . '_fail' ;
 unlink $file_fail ;
 
+no warnings 'once';
 open(OLDOUT, ">&STDOUT") ;
-open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
+open STDOUT, '>', $redirection_file or die "Can't redirect STDOUT to '$redirection_file': $!";
 STDOUT->autoflush(1) ;
 
 open(OLDERR, ">&STDERR") ;
@@ -215,7 +216,7 @@ if(defined $node)
 				) ;
 		} ;
 
-	close(STDERR) ;
+	#close(STDERR) ;
 
 	if($@)
 		{
@@ -242,7 +243,7 @@ if(defined $node)
 	}
 else
 	{
-	close(STDERR);
+	#close(STDERR);
 	open(STDERR, ">&OLDERR");
 	open(STDOUT, ">&OLDOUT");
 

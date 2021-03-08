@@ -237,7 +237,7 @@ if($node_needs_rebuild)
 				return (BUILD_FAILED, "'$build_name' error: $error.") ;
 				}
 			}
-		
+
 		($build_result, $build_message) 
 			= RunRuleBuilder
 				(
@@ -270,7 +270,6 @@ else
 	$file_tree->{__RUN_COMMANDS} = \@node_commands ;
 	$file_tree->{__ENV} = \%node_ENV ;
 	}
-
 
 if($build_result == BUILD_SUCCESS)
 	{
@@ -400,7 +399,7 @@ my ($build_result, $build_message) = (BUILD_SUCCESS, '') ;
 my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
 mkpath($path) unless(-e $path) ;
 	
-my @evaluated_commands ;
+my @result ;
 
 eval # rules might throw an exception
 	{
@@ -434,35 +433,19 @@ eval # rules might throw an exception
 	# get all the config variables from the node's package
 	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
 
-	if ($do_build)
-		{
-		($build_result, $build_message) = $builder->
-							(
-							$do_build,
-							$file_tree->{__CONFIG},
-							$build_name,
-							$dependencies,
-							$triggered_dependencies,
-							$file_tree,
-							$inserted_nodes,
-							$rule_used_to_build,
-							) ;
-		}
-	else
-		{
-		@evaluated_commands 
-			= $builder->
-				(
-				$do_build,
-				$file_tree->{__CONFIG},
-				$build_name,
-				$dependencies,
-				$triggered_dependencies,
-				$file_tree,
-				$inserted_nodes,
-				$rule_used_to_build,
-				) 
-		}
+	@result = $builder->
+			(
+			$do_build,
+			$file_tree->{__CONFIG},
+			$build_name,
+			$dependencies,
+			$triggered_dependencies,
+			$file_tree,
+			$inserted_nodes,
+			$rule_used_to_build,
+			) ;
+
+	($build_result, $build_message) = @result if $do_build ;
 
 	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE} && $do_build)
 		{
@@ -496,8 +479,6 @@ eval # rules might throw an exception
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message) ;
 	} ;
 
-return @evaluated_commands unless $do_build;
-
 if($@)
 	{
 	$build_result = BUILD_FAILED ;
@@ -517,6 +498,8 @@ if($@)
 		$build_message = ERROR "\texception: $@\n\tbuild name: $build_name\n" ;
 		}
 	}
+
+return @result unless $do_build;
 
 if($build_result == BUILD_FAILED)
 	{

@@ -47,8 +47,6 @@ use PBS::SubpbsResult ;
 
 sub CreateObjectsFile
 {
-#~ use Data::TreeDumper ;
-#~ PrintInfo DumpTree \@_ ;
 my ($config, $file_to_build, $dependencies) = @_ ;
 my $object_files = '';
 

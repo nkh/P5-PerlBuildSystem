@@ -100,8 +100,7 @@ return sub
 	#set the arguments expected by our special builder
 	$tree->{__VERY_SPECIAL_BUILDER_ARGUMENTS} = [@definition_time_arguments] ;
 	
-	use Data::TreeDumper ;
-	PrintDebug DumpTree($tree, "configuration for $tree->{__NAME}", MAX_DEPTH => 2 ) ;
+	SDT $tree->{__CONFIG}{CPP}, "configuration for $tree->{__NAME}:" ;
 	}
 }
 
@@ -115,7 +114,7 @@ $tree,
 $inserted_nodes,
 ) = @_ ;
 
-PrintWarning2 "ChangeConfig is Obsolete, use Node/Config.pm for a proper implementation\n\tthe examples are still good for node_subs" ;
+Say Warning2 "ChangeConfig is Obsolete, use Node/Config.pm for a proper implementation\n\tthe examples are still good for node_subs" ;
 
 $tree->{__CONFIG} = {%{$tree->{__CONFIG}}} ; # config is share get our own copy (note! this is not deep)
 
@@ -142,8 +141,7 @@ $tree,
 $inserted_nodes,
 ) = @_ ;
 
-use Data::TreeDumper ;
-PrintDebug DumpTree $tree->{__CONFIG} ;
+Say User 'Checking config' ;
 }
 
 

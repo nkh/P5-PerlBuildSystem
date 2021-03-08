@@ -2,8 +2,29 @@
 
 #dfl doesn't take the extra switches
 
-stack reducer
+#stack reducer
 	object goes out of scope
+
+# long enqueuing time
+
+# -q breaks the build
+
+parallel depend + http interface (and reasons why)
+
+
+node digest bypassed by warp on distro change!
+
+	change distro
+	build -> dstro digest trigger
+	^C
+
+	build -> build OK !
+
+	=> warp triggers and writes a new warp file with the new digest
+		^C
+
+	=> warp verifies the digest -> OK, warp verifies the nodes md5 NOT THEIR DIGEST
+
 
 debugger
 	insertion breakpoint locally changes options to display the depending of a specific node

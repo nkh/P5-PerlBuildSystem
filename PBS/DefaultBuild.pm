@@ -86,7 +86,7 @@ if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 	Say Info  "Depend: " . _INFO3_("$target_string") ;
 	Say Info2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
 	}
-elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPENDENCY_PBSFILE})
+elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPEND_HEADER})
 	{
 	Say Info "Depend: " . _INFO3_("$target_string\n") 
 			. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]"
