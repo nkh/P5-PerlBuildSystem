@@ -226,14 +226,8 @@ $pbs_config->{DISPLAY_ENVIRONMENT}++ if $pbs_config->{DISPLAY_ENVIRONMENT_KEPT} 
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ ;
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_FILE} ;
 $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROCESS} ;
-	
 
 # check the options
-if($pbs_config->{DISPLAY_NO_STEP_HEADER})
-	{
-	undef $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
-	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
-	}
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
 
@@ -320,6 +314,15 @@ $pbs_config->{DEBUG_DISPLAY_TRIGGER}++ if $pbs_config->{DEBUG_DISPLAY_TRIGGER_MA
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;
+
+$pbs_config->{DISPLAY_NO_STEP_HEADER} = 0 if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
+
+if($pbs_config->{DISPLAY_NO_STEP_HEADER})
+	{
+	undef $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
+	}
+
 
 if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	{

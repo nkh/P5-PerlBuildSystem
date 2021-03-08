@@ -480,7 +480,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					push @node_type, map { $_ eq 'TRIGGER_INSERTED' ? 'T' : $_ } ($type =~ s/^__//r) if exists $tree->{$type} ;
 					}
 
-				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . '] ' : '' ;
+				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . ']' : '' ;
 				
 				my $rule_info =  $rule->{NAME}
 						. (defined $pbs_config->{ADD_ORIGIN} 
@@ -496,24 +496,25 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 				my @dependency_names = map {$_->{NAME}} grep {'' eq ref $_->{NAME}} @dependencies ;
 				
-				my $forced_trigger = '' ;
-				if(grep {$_->{NAME} =~ '__PBS_FORCE_TRIGGER' } @dependencies)
-					{
-					$forced_trigger = ' FORCED_TRIGGER!' ;
-					}
+				my $forced_trigger = (any { $_->{NAME} =~ '__PBS_FORCE_TRIGGER' } @dependencies) ? ' FORCED_TRIGGER' : '' ;
 				
 				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
-				my $node_matches = $rules_matching > 1 ? _INFO2_($unicode_numbers[$rules_matching]) : '' ;
+				my $node_matches = $rules_matching > 1 
+							? _INFO2_($unicode_numbers[$rules_matching])
+							: $rule_type eq ''
+								? ' '
+								: ''  ;
 
 				my $node_insertion_rule = $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE}
 								? _INFO2_(
-									", inserted at: "
+									", ⬂ "
 									. GetRunRelativePath
 										(
 										$pbs_config,
 										GetInsertionRule($tree) ,
 										)
+									. ' '
 									)
 								: '' ;
 
@@ -521,21 +522,23 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				$node_insertion_rule = '' if $node_insertion_rule =~ /PBS:Subpbs/ ;
 
 				my $node_matching_rule = $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
-								? _INFO2_(" $rule_index:$rule_info$rule_type")
+								? _INFO2_(" $rule_info$rule_type")
 								: '' ;
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
+					$node_matching_rule = _INFO2_(',') . $node_matching_rule unless @dependency_names || $node_matching_rule eq '' ;
 					PrintInfo3
 						(
-						$em->("$indent'$short_node_name'${node_type}${forced_trigger}")
-						. "$node_matches$node_matching_rule$node_insertion_rule\n"
+						$em->("$indent'$short_node_name'$node_matches${node_type}${forced_trigger}")
+						. ( @dependency_names ? '' : _INFO2_" => ∅ " )
+						. $node_matching_rule . $node_insertion_rule . "\n"
 						) ;
 
 					if(@dependency_names)
 						{
 						PrintInfo
-							 $indent . $indent
+							$indent . $indent
 							. join
 								(
 								"\n$indent$indent",
@@ -556,40 +559,41 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 								)
 							. "\n" ;
 						}
-					else
-						{
-						#PrintInfo2 "$indent${indent}-\n" ;
-						}
 					}
 				else
 					{
+					$node_matching_rule = ',' . $node_matching_rule unless $node_matching_rule eq '' ;
+					
 					PrintNoColor 
 						_INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}$node_matches"
 					
-						.  _INFO_
-							(
-							' => [ '
-							. join
+						. (
+							 @dependency_names
+							?  _INFO_
 								(
-								' ',
-								map 
-									{
-									my $r_name = GetTargetRelativePath($pbs_config, $_) ;
-									my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
-											&& exists $inserted_nodes->{$_}
-											&& exists $inserted_nodes->{$_}{__WARP_NODE}
-												? _INFO2_ ('ᶜ')
-												: '' ;
+								' => '
+								. join
+									(
+									' ',
+									map 
+										{
+										my $r_name = GetTargetRelativePath($pbs_config, $_) ;
+										my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
+												&& exists $inserted_nodes->{$_}
+												&& exists $inserted_nodes->{$_}{__WARP_NODE}
+													? _INFO2_ ('ᶜ')
+													: '' ;
 
-									DependencyIsSource($tree, $_, $inserted_nodes)
-										? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
-										: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
-									} 
-									@dependency_names
+										DependencyIsSource($tree, $_, $inserted_nodes)
+											? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
+											: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
+										} 
+										@dependency_names
+									)
 								)
-							. _INFO_ ' ]'
-							)
-
+							: _INFO2_(" => ∅ ")
+						),
+						
 						. _INFO2_ $node_matching_rule . $node_insertion_rule ;
 
 					Say Info '' ;

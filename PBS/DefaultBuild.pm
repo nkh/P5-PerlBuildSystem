@@ -226,7 +226,7 @@ if($pbs_config->{DISPLAY_CONFIG_USAGE})
 	}
 
 
-Say '' if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+Print Info "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 for my $target (@$targets)
 	{ 

@@ -95,7 +95,7 @@ AddRule [MULTI], 'o_global_dependency_merge', ['*/*.o'],
 		my ($node_name, $config, $tree, $inserted_nodes) = @_ ;
 
 		# merge dependencies in main process graph, end up in the warp file
-		$tree->{__PBS_POST_BUILD} =  \&InsertDependencyNodes ;
+		$tree->{__PBS_POST_BUILD} = \&InsertDependencyNodes ;
 		
 		return 'setting __POST_PBS_BUILD to insert dependencies in the graph'
 		}
