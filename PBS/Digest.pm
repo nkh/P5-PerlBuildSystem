@@ -60,7 +60,64 @@ my %node_config_variable_dependencies ;
 my %exclude_from_digest ;
 my %force_digest ;
 
-#sub AddPbsAsDependency ;
+my %has_no_dependencies ;
+
+#-----------------------------------------------------------------------------------------
+
+sub HasNoDependencies
+{
+my ($package, $file_name, $line) = caller() ;
+
+die ERROR "Invalid 'HasNoDependencies' arguments at $file_name:$line\n" if @_ % 2 ;
+
+_HasNoDependencies($package, $file_name, $line, @_) ;
+}
+
+sub _HasNoDependencies
+{
+my ($package, $file_name, $line, %exclusion_patterns) = @_ ;
+ 
+for my $name (keys %exclusion_patterns)
+	{
+	if(exists $has_no_dependencies{$package}{$name})
+		{
+		PrintWarning
+			(
+			"Depend: overriding HasNoDependencies entry '$name' defined at $has_no_dependencies{$package}{$name}{ORIGIN}:\n"
+			. "\t$has_no_dependencies{$package}{$name}{PATTERN} "
+			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
+			) ;
+		}
+		
+	$has_no_dependencies{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
+	}
+}
+
+sub OkNoDependencies
+{
+my ($package, $node) = @_ ;
+my ($ok, $node_name, $pbs_config)  = (0, $node->{__NAME}, $node->{__PBS_CONFIG}) ;
+
+for my $name (keys %{$has_no_dependencies{$package}})
+	{
+	if($node_name =~ $has_no_dependencies{$package}{$name}{PATTERN})
+		{
+		PrintWarning
+			(
+			"Depend: '$node_name' OK no dependencies,  rule: '$name' [$has_no_dependencies{$package}{$name}{PATTERN}]"
+			. (defined $pbs_config->{ADD_ORIGIN} ? " @ $has_no_dependencies{$package}{$name}{ORIGIN}" : '')
+			.".\n"
+			) if(defined $pbs_config->{DISPLAY_NO_DEPENDENCIES_OK}) ;
+			
+		$ok++ ;
+		last ;
+		}
+	}
+
+$ok ;
+}
+
+#-----------------------------------------------------------------------------------------
 
 { # computed once
 my ($PBS_DIGEST, $PBS_DIGEST_FOR_NODE) ;

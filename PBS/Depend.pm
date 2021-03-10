@@ -23,6 +23,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(CreateDependencyTree) ;
 our $VERSION = '0.08' ;
 
+use PBS::Depend::Forked ;
 use PBS::PBS ;
 use PBS::Output ;
 use PBS::Constants ;
@@ -32,63 +33,7 @@ use PBS::Plugin;
 use PBS::Information ;
 use PBS::Digest ;
 use PBS::Node ;
-
-#-----------------------------------------------------------------------------------------
-
-my %has_no_dependencies ;
-
-sub HasNoDependencies
-{
-my ($package, $file_name, $line) = caller() ;
-
-die ERROR "Invalid 'HasNoDependencies' arguments at $file_name:$line\n" if @_ % 2 ;
-
-_HasNoDependencies($package, $file_name, $line, @_) ;
-}
-
-sub _HasNoDependencies
-{
-my ($package, $file_name, $line, %exclusion_patterns) = @_ ;
- 
-for my $name (keys %exclusion_patterns)
-	{
-	if(exists $has_no_dependencies{$package}{$name})
-		{
-		PrintWarning
-			(
-			"Depend: overriding HasNoDependencies entry '$name' defined at $has_no_dependencies{$package}{$name}{ORIGIN}:\n"
-			. "\t$has_no_dependencies{$package}{$name}{PATTERN} "
-			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
-			) ;
-		}
-		
-	$has_no_dependencies{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
-	}
-}
-
-sub OkNoDependencies
-{
-my ($package, $node) = @_ ;
-my ($ok, $node_name, $pbs_config)  = (0, $node->{__NAME}, $node->{__PBS_CONFIG}) ;
-
-for my $name (keys %{$has_no_dependencies{$package}})
-	{
-	if($node_name =~ $has_no_dependencies{$package}{$name}{PATTERN})
-		{
-		PrintWarning
-			(
-			"Depend: '$node_name' OK no dependencies,  rule: '$name' [$has_no_dependencies{$package}{$name}{PATTERN}]"
-			. (defined $pbs_config->{ADD_ORIGIN} ? " @ $has_no_dependencies{$package}{$name}{ORIGIN}" : '')
-			.".\n"
-			) if(defined $pbs_config->{DISPLAY_NO_DEPENDENCIES_OK}) ;
-			
-		$ok++ ;
-		last ;
-		}
-	}
-
-$ok ;
-}
+use PBS::Net ;
 
 #-------------------------------------------------------------------------------
 
@@ -97,86 +42,11 @@ sub GetNodesPerPbsRun { \%nodes_per_pbs_run  }
 
 #-------------------------------------------------------------------------------
 
-sub GetRuleTrace
-{
-my ($pbs_config, $rule, $all) = @_ ;
-my @rule_traces ;
-
-unless 
-	(
-	# stack of 1 level, displayed and equivalent
-	1 == @{$rule->{PBS_STACK}}
-	&& $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
-	&& $rule->{FILE} eq $rule->{PBS_STACK}[0]{FILE}
-	&& $rule->{LINE} eq $rule->{PBS_STACK}[0]{LINE}
-	&& ! $all
-	)
-	{
-	for my $trace (@{$rule->{PBS_STACK}})
-		{
-		push @rule_traces, "$trace->{SUB} @ ". GetRunRelativePath($pbs_config, $trace->{FILE}) . ":$trace->{LINE}" ;
-		}
-	}
-
-@rule_traces
-}
-
-sub DisplayRuleTrace
-{
-my ($pbs_config, $rule) = @_ ;
-
-my @traces = GetRuleTrace($pbs_config, $rule) ;
-
-if (@traces)
-	{
-	my $indent = $PBS::Output::indentation ;
-
-	PrintInfo2 "${indent}${indent}rule '$rule->{NAME}':\n" ;
-	for my $trace (@traces)
-		{
-		PrintInfo2 "${indent}$indent$indent$trace\n" ;
-		}
-	}
-}
-
-#-------------------------------------------------------------------------------
-
 my @unicode_numbers = qw / ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ /;
 push @unicode_numbers, ('+') x 100 ; 
 
 my %trigger_rules ;
 
-sub StartRemoteDepender
-{
-my ($node) = @_ ;
-
-my $pid = fork() ;
-if($pid)
-	{
-	}
-else
-	{
-	# new process if $pid defined
-	
-	# couldn't fork
-	return unless(defined $pid) ;
-		
-	my ($redirection_path, $redirection_file, $redirection_file_log) = PBS::Build::ForkedNodeBuilder::GetLogFileNames($node) ;
-
-	$redirection_file .= '_fork' ;
-
-	#open(OLDOUT, ">&STDOUT") ;
-	open STDOUT, '>', "$redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
-	STDOUT->autoflush(1) ;
-
-	#open(OLDERR, ">&STDERR") ;
-	open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
-
-
-	exit 0 ;
-	} ;
-
-}
 
 sub CreateDependencyTree
 {
@@ -191,8 +61,6 @@ $pbsfile_chain //=  [] ;
 $parent_matching_rules //= {} ;
 
 return if(exists $tree->{__DEPENDED}) ;
-
-#StartRemoteDepender($tree) ;
 
 my ($t0_rules, $rule_time) = ([gettimeofday], 0) ;
 
@@ -447,7 +315,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						) ;
 					}
 
-				DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
+				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 				}
 				
 			next ;
@@ -633,7 +501,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					Say Info '' ;
 					}
 					
-				DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
+				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 
 				if($pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION})
 					{
@@ -1093,11 +961,11 @@ if(@has_matching_non_subpbs_rules)
 		{
 		if (DependencyIsSource($tree, $dependency, $inserted_nodes))
 			{
-			push @non_subpbs_dependencies, $dependency ;
+			push @non_subpbs_dependencies, [$dependency, 'non subpbs'] ;
 			next ;
 			}
 
-		my $matched = 0 ;
+		my ($matched, $matched_subpbs) = (0, 0) ;
 
 		$sort_tree->{__NAME} = $dependency ;
 
@@ -1137,25 +1005,39 @@ if(@has_matching_non_subpbs_rules)
 				{
 				if(@dependencies && 'HASH' eq ref $dependencies[0])
 					{
-					push @subpbs_dependencies, $dependency ;
+					$matched_subpbs++ ;
 					}
 				else
 					{
-					push @non_subpbs_dependencies, $dependency ;
+					$matched++ ;
 					}
-
-				$matched++ ;
-				last ;
 				}
 			}
 		
-		push @non_matching, $dependency unless $matched ;
+		if($matched)
+			{
+			# dependency may match both subpbs and non subpbs rules
+			# we put it in the non subpbs so the error is handled in this process
+			push @non_subpbs_dependencies, [$dependency, 'non subpbs'] ;
+			}
+		elsif($matched_subpbs)
+			{
+			push @subpbs_dependencies, [$dependency, 'subpbs'] ;
+			}
+		else
+			{
+			push @non_matching, [$dependency, 'non matching'] ;
+			}
 		}
 
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
-	for my $dependency (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies)
+	my $turntable_request = 1 ;
+
+	for (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies)
 		{
+		my ($dependency, $type) = @$_ ;
+
 		# keep parent relationship
 		my $key_name = $node_name . ': ' ;
 		
@@ -1174,9 +1056,8 @@ if(@has_matching_non_subpbs_rules)
 			&& $tree->{$dependency}{__DEPENDED_AT} ne $Pbsfile
 			)
 			{
-
 			my @depending_rules ;
-
+			
 			for my $matching_rule (@{$tree->{$dependency}{__MATCHING_RULES}})
 				{
 				my $index = $matching_rule->{RULE}{INDEX} ;
@@ -1184,9 +1065,9 @@ if(@has_matching_non_subpbs_rules)
 			
 				push @depending_rules, "'$index:$rule->{NAME}:$rule->{LINE}'" ;
 				}
-
+			
 			my $depending_rules = join ', ', @depending_rules ;
-
+			
 			PrintWarning
 				(
 				  "Depend: '$node_name' has dependency '$dependency' which was inserted at rule: "
@@ -1200,11 +1081,11 @@ if(@has_matching_non_subpbs_rules)
 			for(my $matching_rule_index = 0 ; $matching_rule_index < @$dependency_rules ; $matching_rule_index++)
 				{
 				local $tree->{$dependency}{DEBUG_DISPLAY_DEPENDENCY_REGEX} = 0 ; # temporarily disable message
-
+				
 				my $rule = $dependency_rules->[$matching_rule_index] ;
-
+				
 				my ($matched) = $rule->{DEPENDER}->($dependency, $config, $tree->{$dependency}, $inserted_nodes, $rule) ;
-
+				
 				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($matched) ;
 				}
 				
@@ -1230,20 +1111,22 @@ if(@has_matching_non_subpbs_rules)
 			PrintInfo2 $PBS::Output::indentation . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
 				if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
 
-			my $local_time = 
-				CreateDependencyTree
-				(
-				$pbsfile_chain,
-				$Pbsfile,
-				$package_alias,
-				$load_package,
-				$pbs_config,
-				$tree->{$dependency},
-				$config,
-				$inserted_nodes,
-				$pbs_config->{RULE_RUN_ONCE} ? \@sub_dependency_rules : $dependency_rules,
-				\%sum_matching_rules,
-				) ;
+			my $local_time = PBS::Depend::Forked::CreateDependencyTree 
+						(
+						$pbs_config, $tree->{$dependency}, $type , \$turntable_request, scalar(@subpbs_dependencies),
+						[
+							$pbsfile_chain,
+							$Pbsfile,
+							$package_alias,
+							$load_package,
+							$pbs_config,
+							$tree->{$dependency},
+							$config,
+							$inserted_nodes,
+							$pbs_config->{RULE_RUN_ONCE} ? \@sub_dependency_rules : $dependency_rules,
+							\%sum_matching_rules,
+						],
+						) ;
 
 			$PBS::Output::indentation_depth-- if $pbs_config->{DISPLAY_DEPEND_INDENTED} && $node_name !~ /^__PBS/ ;
 
@@ -1293,6 +1176,8 @@ elsif(@sub_pbs)
 	my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
 	$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
 	$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
+
+	#$sub_pbs_config->{DEPEND_ONLY}++ ;
 	
 	my $sub_node_name = $node_name ;
 	$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
@@ -1639,9 +1524,9 @@ if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->
 
 	my $trace_separator = $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ? "\n$link_indent" : ', trace: ' ;
 
-	if ($pbs_config->{DEBUG_TRACE_PBS_STACK} && GetRuleTrace($pbs_config, $dependency->{__INSERTED_AT}{INSERTION_RULE_DEFINITION}))
+	if ($pbs_config->{DEBUG_TRACE_PBS_STACK} && PBS::Rules::GetRuleTrace($pbs_config, $dependency->{__INSERTED_AT}{INSERTION_RULE_DEFINITION}))
 		{
-		for my $trace (GetRuleTrace($pbs_config, $dependency->{__INSERTED_AT}{INSERTION_RULE_DEFINITION}, 1))
+		for my $trace (PBS::Rules::GetRuleTrace($pbs_config, $dependency->{__INSERTED_AT}{INSERTION_RULE_DEFINITION}, 1))
 			{
 			$linked_node_info .= INFO2 "$trace_separator$trace"
 			}
@@ -1782,7 +1667,6 @@ return($sub_pbs_name) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
-
 1 ;
 
 __END__
@@ -1798,4 +1682,7 @@ PBS::Depend  -
 
 =head1 DESCRIPTION
 
-Given a node and a set of rules, B<CreateDependencyTree> will recursively build the entire dependency tree, inserting 
+Given a node and a set of rules, B<CreateDependencyTree> will recursively build the entire dependency tree 
+
+=cut
+

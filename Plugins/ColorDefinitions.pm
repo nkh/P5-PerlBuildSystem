@@ -42,6 +42,9 @@ return
 		box_2_2   => color(''),
 
 		test_bg   => color('rgb220 on_rgb101'),
+		test_bg2  => color('rgb220 on_rgb003'),
+		dark      => color('rgb000'),
+
 		ignoring_local_rule  => color('rgb220 on_rgb101'),
 
 		ttcl_1    => color('rgb010'),

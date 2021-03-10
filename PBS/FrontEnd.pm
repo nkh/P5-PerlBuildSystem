@@ -5,9 +5,9 @@ use 5.006 ;
 use strict ;
 use warnings ;
 
-use Data::Dumper ;
+#use Data::Dumper ;
 use Data::TreeDumper ;
-use Carp ;
+#use Carp ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 use Module::Util qw(find_installed) ;
 use File::Spec::Functions qw(:ALL) ;
@@ -21,9 +21,9 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.48' ;
+our $VERSION = '0.49' ;
 
-use PBS::Debug ;
+#use PBS::Debug ;
 use PBS::Config ;
 use PBS::Config::Subpbs ;
 use PBS::PBSConfig ;
@@ -36,38 +36,6 @@ use PBS::Plugin ;
 use PBS::Warp ;
 
 #-------------------------------------------------------------------------------
-
-sub AliasOptions
-{
-use File::Slurp ;
-
-my ($arguments) = @_ ;
-
-my $alias_file = 'pbs_option_aliases' ;
-my %aliases ;
-
-if (-e $alias_file)
-	{
-	for my $line (read_file $alias_file)
-		{
-		next if $line =~ /^\s*#/ ;
-		next if $line =~ /^$/ ;
-		$line =~ s/^\s*// ;
-		
-		my ($alias, @rest) = split /\s+/, $line ;
-		$alias =~ s/^-+// ;
-
-		$aliases{$alias} = \@rest if @rest ;
-		}
-	}
-
-my @aliased = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
-
-@{$arguments} = @aliased ; 
-
-return \%aliases ;
-}
-
 
 sub Pbs
 {
@@ -86,7 +54,7 @@ if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--get_bash_completion'
 	return 1 ;
 	}
 
-AliasOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+PBS::PBSConfigSwitches::AliasOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
 
 my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 PBS::PBSConfig::RegisterPbsConfig('PBS', $pbs_config, $options) ;
@@ -310,7 +278,15 @@ if(@$targets)
 	{
 	PBS::Debug::setup_debugger_run($pbs_config) ;
 	$DB::single = 1 ;
-	
+
+	if($pbs_config->{DEPEND_JOBS})
+		{
+		eval { use PBS::Net  } ;
+		die $@ if $@ ;
+
+		$pbs_config->{RESOURCE_SERVER} = PBS::Net::StartResourceServer($pbs_config) ;
+		} 
+
 	eval
 		{
 		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)

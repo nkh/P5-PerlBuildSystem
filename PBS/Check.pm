@@ -129,7 +129,7 @@ if (NodeIsGenerated($tree))
 			. "\n"
 		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ;
 
-	if( 0 == @dependencies && ! PBS::Depend::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
+	if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
 		PrintInfo "Check: "
 			. _INFO3_("'$name'")

@@ -17,7 +17,7 @@ our @EXPORT = qw(DefaultBuild) ;
 our $VERSION = '0.04' ;
 
 use Data::TreeDumper;
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
 use List::Util qw(any) ;
@@ -48,7 +48,7 @@ my
 	$config_snapshot,
 	$targets,
 	$inserted_nodes,
-	$dependency_tree,
+	$tree,
 	$build_point,
 	$build_type,
 	) = @_ ;
@@ -65,7 +65,6 @@ my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 
 my ($package, $file_name, $line) = caller() ;
 
-
 my $config           = { PBS::Config::ExtractConfig($config_snapshot, $config_namespaces) } ;
 my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, @$rules_namespaces)];
 
@@ -81,24 +80,30 @@ my $target_string = $em->( join ', ', map {"'$_'"} @$targets) ;
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
+my $pid = $pbs_config->{DEPEND_JOBS} ? _INFO2_(", pid: $$") . GetColor('info') : '' ;
+my $tag = $tree->{__REMOTE_DEPEND} ? _INFO2__(' [R]' . $pid) . GetColor('info')  : $pid . GetColor('info')  ;
+
+my $header_file    = "pbsfile: $short_pbsfile" ;
+my $header_no_file = "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+my $header         = "$header_file, $header_no_file" ;
+
 if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 	{
-	Say Info  "Depend: " . _INFO3_("$target_string") ;
-	Say Info2 "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+	Say Info  "Depend: " . _INFO3_("$target_string") . $tag ;
+	Say Info2 "${indent}$header" ;
 	}
 elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPEND_HEADER})
 	{
-	Say Info "Depend: " . _INFO3_("$target_string\n") 
-			. _INFO2_ "${indent}pbsfile: $short_pbsfile, total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]"
+	Say Info "Depend: " . _INFO3_("$target_string$tag\n") . _INFO2_ "${indent}$header"
 	}
 elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Depend: nodes: $start_nodes [$pbs_runs/$PBS::Output::indentation_depth]", 0))
+	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Dependg: $header_no_file$tag", 0))
 		unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 else
 	{
-	Say Info "Depend: " . _INFO3_("$target_string") 
+	Say Info "Depend$tag: " . _INFO3_("$target_string") 
 	}
 
 my $local_time =
@@ -109,7 +114,7 @@ my $local_time =
 		$package_alias,
 		$load_package,
 		$pbs_config,
-		$dependency_tree,
+		$tree,
 		$config,
 		$inserted_nodes,
 		$dependency_rules,
@@ -124,7 +129,7 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	PrintInfo "Depend: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
+	PrintInfo "Depend$tag: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
 			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
 	}
 
@@ -212,7 +217,6 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 		}
 	}
 
-
 if($pbs_config->{DISPLAY_CONFIG_USAGE})
 	{
 	my $accessed = PBS::Config::GetConfigAccess($load_package) ;
@@ -237,10 +241,8 @@ for my $target (@$targets)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-if(DEPEND_ONLY == $build_type || $pbs_config->{DEPEND_ONLY})
-	{
-	return(BUILD_SUCCESS, 'Dependended successfuly', []) 
-	}
+return (BUILD_SUCCESS, 'Dependended successfuly', [])
+	if DEPEND_ONLY == $build_type || $pbs_config->{DEPEND_ONLY} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -268,11 +270,41 @@ else
 	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
+if($pbs_config->{DEPEND_JOBS})
+	{
+	my $available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_resource_status', {}, $$) // 0 ;
+	
+	my $wait_counter = 0 ;
+	while ($available_resources ne $pbs_config->{DEPEND_JOBS})
+		{
+		my $processes_left = ($pbs_config->{DEPEND_JOBS} - $available_resources) ;
+		my $wait_time = 0.01 * $wait_counter ;
+		
+		Say Warning3 "Depend: remaining processes: $processes_left, elapsed time: $wait_time s."
+			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
+		
+		usleep 10_000 ;
+		$available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_resource_status', {}, $$) // 0 ;
+		}
+
+	# handle all the forked dependers
+
+	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
+	} 
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+return (BUILD_SUCCESS, 'Dependended successfuly', []) if $pbs_config->{NO_CHECK} ;
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
 my ($build_node, @build_sequence, %trigged_nodes) ;
 
 if($build_point eq '')
 	{
-	$build_node = $dependency_tree ;
+	$build_node = $tree ;
 	}
 else
 	{
@@ -402,7 +434,7 @@ for my $target (@$targets)
 
 if($check_failed !~ /^DEPENDENCY_CYCLE_DETECTED/ && defined $pbs_config->{INTERMEDIATE_WARP_WRITE} && 'CODE' eq ref $pbs_config->{INTERMEDIATE_WARP_WRITE})
 	{
-	$pbs_config->{INTERMEDIATE_WARP_WRITE}->($dependency_tree, $inserted_nodes) ;
+	$pbs_config->{INTERMEDIATE_WARP_WRITE}->($tree, $inserted_nodes) ;
 	}
 
 if ($check_failed)
@@ -414,7 +446,7 @@ if ($check_failed)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-$dependency_tree->{__BUILD_SEQUENCE} = \@build_sequence ;
+$tree->{__BUILD_SEQUENCE} = \@build_sequence ;
 
 if(DEPEND_AND_CHECK == $build_type || $pbs_config->{DEPEND_AND_CHECK})
 	{
@@ -477,8 +509,8 @@ else
 	($build_result, $build_message) = (0, 'No build flags') ;
 	}
 
-RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
-RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $dependency_tree, $inserted_nodes, \@build_sequence, $build_node) ;
+RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $build_node) ;
+RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $build_node) ;
 
 return $build_result, $build_message, \@build_sequence ;
 }

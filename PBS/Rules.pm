@@ -26,18 +26,17 @@ use File::Basename ;
 use Time::HiRes qw( gettimeofday tv_interval ) ;
 use List::Util qw( any ) ;
 
+use PBS::Constants ;
+use PBS::Plugin ;
 use PBS::PBSConfig ;
 use PBS::Config ;
 use PBS::Output ;
-use PBS::Constants ;
-use PBS::Plugin ;
 use PBS::Caller ;
 use PBS::Stack ;
 use PBS::Shell ;
 
 use PBS::Rules::Dependers ;
 use PBS::Rules::Builders ;
-
 use PBS::Rules::Order ;
 use PBS::Rules::Scope ;
 
@@ -116,7 +115,7 @@ my $cc = CC 0, [$package, $file_name, $line] ;
 my @rule_definition = @_ ;
 
 my $pbs_config = GetPbsConfig($package) ;
-my $config     = { ExtractConfig(GetPackageConfig($package),$pbs_config->{CONFIG_NAMESPACES}) } ;
+my $config     = { PBS::Config::ExtractConfig(PBS::Config::GetPackageConfig($package), $pbs_config->{CONFIG_NAMESPACES}) } ;
 
 RunUniquePluginSub($pbs_config, 'AddRule', $package, $config, $file_name, $line, \@rule_definition) ;
 
@@ -652,6 +651,50 @@ push @rule_types, 'S'  if defined $rule->{NODE_SUBS} ;
 push @rule_types, 'L'  if any { LOCAL eq $_ } @{$rule->{TYPE}} ;
 
 @rule_types ? '[' . join(', ', @rule_types) . ']' : '' ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetRuleTrace
+{
+my ($pbs_config, $rule, $all) = @_ ;
+my @rule_traces ;
+
+unless 
+	(
+	# stack of 1 level, displayed and equivalent
+	1 == @{$rule->{PBS_STACK}}
+	&& $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
+	&& $rule->{FILE} eq $rule->{PBS_STACK}[0]{FILE}
+	&& $rule->{LINE} eq $rule->{PBS_STACK}[0]{LINE}
+	&& ! $all
+	)
+	{
+	for my $trace (@{$rule->{PBS_STACK}})
+		{
+		push @rule_traces, "$trace->{SUB} @ ". GetRunRelativePath($pbs_config, $trace->{FILE}) . ":$trace->{LINE}" ;
+		}
+	}
+
+@rule_traces
+}
+
+sub DisplayRuleTrace
+{
+my ($pbs_config, $rule) = @_ ;
+
+my @traces = GetRuleTrace($pbs_config, $rule) ;
+
+if (@traces)
+	{
+	my $indent = $PBS::Output::indentation ;
+
+	PrintInfo2 "${indent}${indent}rule '$rule->{NAME}':\n" ;
+	for my $trace (@traces)
+		{
+		PrintInfo2 "${indent}$indent$indent$trace\n" ;
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------

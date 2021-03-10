@@ -22,6 +22,7 @@ PBS/Constants.pm
 PBS/DefaultBuild.pm
 PBS/Debug.pm
 PBS/Depend.pm
+PBS/Depend/Forked.pm
 PBS/Digest.pm
 PBS/Distributor.pm
 PBS/Documentation.pm
@@ -33,6 +34,7 @@ PBS/Log/Full.pm
 PBS/Log/Html.pm
 PBS/Log/ForkedLNI.pm
 PBS/GraphViz.pm
+PBS/Net.pm
 PBS/Node.pm
 PBS/Nop.pm
 PBS/Output.pm

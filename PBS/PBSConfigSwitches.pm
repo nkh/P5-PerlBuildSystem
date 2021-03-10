@@ -114,6 +114,8 @@ my $config = shift // {} ;
 $config->{DO_BUILD} = 1 ;
 $config->{TRIGGER} = [] ;
 
+$config->{SHORT_DEPENDENCY_PATH_STRING} = '…' ;
+
 $config->{JOBS_DIE_ON_ERROR} = 0 ;
 
 $config->{GENERATE_TREE_GRAPH_GROUP_MODE} = GRAPH_GROUP_NONE ;
@@ -454,6 +456,10 @@ EOT
 		'Skipps the checking of generated artefacts.',
 		'',
 
+	'no_check'                     => \$config->{NO_CHECK},
+		'Cancel the check and build pass. Only the dependency pass is run.',
+		'',
+
 	'no_build'                     => \$config->{NO_BUILD},
 		'Cancel the build pass. Only the dependency and check passes are run.',
 		'',
@@ -631,15 +637,14 @@ EOT
 		'0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.',
 		'',
 		
+	'dj|depend_jobs=i'                        => \$config->{DEPEND_JOBS},
+		'Maximum number of dependers run in parallel.',
+		'',
+		
 	'cj|check_jobs=i'                      => \$config->{CHECK_JOBS},
 		'Maximum number of checker run in parallel.',
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
 
-	'ubs|use_build_server=s'   => \$config->{LIGHT_WEIGHT_FORK},
-		'If set, Pbs will connect to a build server for all the nodes that use shell commands to build'
-			. "\n this expects the address of the build server. ex : localhost:12_000 ",
-		'Forking a full Pbs is expensive, the build server is light weight.',
-		
 	'distribute=s'                   => \$config->{DISTRIBUTE},
 		'Define where to distribute the build.',
 		'The file should return a list of hosts in the format defined by the default distributor '
@@ -771,10 +776,30 @@ EOT
 		'Display when a depend ends.',
 		'',
 		
+	'log_parallel_depend' =>\$config->{LOG_PARALLEL_DEPEND},
+		'Creates a log of the parallel depend.',
+		'',
+
+	'dpds|display_parallel_depend_start' =>\$config->{DISPLAY_PARALLEL_DEPEND_START},
+		'Display a message when a parallel depend starts.',
+		'',
+
+	'dpde|display_parallel_depend_end' =>\$config->{DISPLAY_PARALLEL_DEPEND_END},
+		'Display a message when a parallel depend end.',
+		'',
+
+	'dpdnr|display_parallel_depend_no_resource' =>\$config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
+		'Display a message when a parallel depend could be done but no resource is available.',
+		'',
+
+	'ddrp|display_depend_remaining_processes' =>\$config->{DISPLAY_DEPEND_REMAINING_PROCESSES},
+		'Display how many depend processes are running after the main depend process ended.',
+		'',
+
 	'display_too_many_nodes_warning=i'        => \$config->{DISPLAY_TOO_MANY_NODE_WARNING},
 		'Display a warning when a pbsfile adds too many nodes.',
-
 		'',
+
 	'display_rule_to_order'          => \$config->{DISPLAY_RULES_TO_ORDER},
 		'Display that there are rules order.',
 		'',
@@ -1417,6 +1442,24 @@ EOT
 		'',
 
 	#----------------------------------------------------------------------------------
+
+	'hdp|http_display_post' => \$config->{HTTP_DISPLAY_POST},
+		'Display a message when a POST is issued.',
+		'',
+
+	'hdg|http_display_get' => \$config->{HTTP_DISPLAY_GET},
+		'Display a message when a GET is issued.',
+		'',
+
+	'hdss|http_display_server_start' => \$config->{HTTP_DISPLAY_SERVER_START},
+		'Display a message when a server is started.',
+		'',
+
+	'hdr|http_display_request' => \$config->{HTTP_DISPLAY_REQUEST},
+		'Display a message when a Request is received.',
+		'',
+
+	#----------------------------------------------------------------------------------
 	
 	'bp|debug:s'                         => $config->{BREAKPOINTS},
 		'Enable debug support A startup file defining breakpoints can be given.',
@@ -1501,6 +1544,39 @@ while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
 
 
 \@options, $config ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub AliasOptions
+{
+use File::Slurp ;
+
+my ($arguments) = @_ ;
+
+my $alias_file = 'pbs_option_aliases' ;
+my %aliases ;
+
+if (-e $alias_file)
+	{
+	for my $line (read_file $alias_file)
+		{
+		next if $line =~ /^\s*#/ ;
+		next if $line =~ /^$/ ;
+		$line =~ s/^\s*// ;
+		
+		my ($alias, @rest) = split /\s+/, $line ;
+		$alias =~ s/^-+// ;
+
+		$aliases{$alias} = \@rest if @rest ;
+		}
+	}
+
+my @aliased = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
+
+@{$arguments} = @aliased ; 
+
+return \%aliases ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1688,6 +1764,8 @@ Say Info                                "# Bash completion script '$file_name' g
 PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_completion' pbs\n" ;
 }
 
+#-------------------------------------------------------------------------------
+
 sub GetCompletion
 {
 my ($options) = @_ ;
@@ -1702,7 +1780,7 @@ if($word_to_complete !~ /^\s?$/)
 
 	my $names = Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
 
-	my $aliases = PBS::FrontEnd::AliasOptions([]) ;
+	my $aliases = AliasOptions([]) ;
 	push @$names, keys %$aliases ;
 
 	use Tree::Trie ;
@@ -1748,6 +1826,8 @@ if($word_to_complete !~ /^\s?$/)
 	}
 }
 
+#-------------------------------------------------------------------------------
+
 sub GetOptionsList
 {
 my ($options) = GetOptions() ;
@@ -1759,10 +1839,7 @@ print join( "\n", map { ("-" . $_) } @{ Term::Bash::Completion::Generator::de_ge
 }
 
 #-------------------------------------------------------------------------------
-
 1 ;
-
-#-------------------------------------------------------------------------------
 
 __END__
 =head1 NAME

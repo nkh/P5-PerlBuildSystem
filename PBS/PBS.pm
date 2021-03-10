@@ -21,9 +21,9 @@ our @EXPORT = qw(PbsUse pbsuse Use) ;
 our $VERSION = '0.03' ;
 
 use PBS::PBSConfig ;
+use PBS::Config ;
 use PBS::Output ;
 use PBS::DefaultBuild ;
-use PBS::Config ;
 use PBS::Constants ;
 
 use Digest::MD5 qw(md5_hex) ;
@@ -298,7 +298,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	# merge parent config
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
 	
-	my $config = ExtractConfig($sub_config, $pbs_config->{CONFIG_NAMESPACES}) ;
+	my $config = PBS::Config::ExtractConfig($sub_config, $pbs_config->{CONFIG_NAMESPACES}) ;
 
 	SIT {$config}, "Config: before running '$Pbsfile' in  package '$package':"
 		 if $pbs_config->{DISPLAY_CONFIGURATION_START}  ;
@@ -642,7 +642,7 @@ if($file_body eq '')
 		}
 	else
 		{
-		die  ERROR("LoadFileInPackage: no file name") . "\n" ;
+		die  ERROR("PBS: LoadFileInPackage: no file name") . "\n" ;
 		}
 	}
 
@@ -681,11 +681,9 @@ if($@)
 	{
 	# recompile with short name to get a more compact display
 	my $short_file = GetRunRelativePath($pbs_config, $file) ;
-
 	my $indent = $PBS::Output::indentation ;
 
-	Print Error "\nPBS: error loading '" . GetRunRelativePath($pbs_config, $file)
-			. "\n\n"
+	Print Error "\nPBS: error loading '" . $short_file. "'\n\n"
 			. (join '', map { s/$file/$short_file/g ;  "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
 			. (join '', map {s/$file/$short_file/g ; "$indent$_\n" } split(/\n/, $@)) ;
 	die "\n";

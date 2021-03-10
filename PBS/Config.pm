@@ -6,10 +6,6 @@ use warnings ;
 
 use 5.006 ;
 
-use Data::TreeDumper ;
-use Data::Compare;
-use Carp ;
- 
 require Exporter ;
 
 our @ISA = qw(Exporter) ;
@@ -30,12 +26,14 @@ our @EXPORT = qw(
 			ConfigVariableNotDefinedOrEmpty
 
 		Config config
-
-		ExtractConfig GetPackageConfig
 		) ;
 		
 our $VERSION = '0.04' ;
 
+use Data::TreeDumper ;
+use Data::Compare;
+use Carp ;
+ 
 use PBS::Debug ;
 use PBS::Output ;
 
