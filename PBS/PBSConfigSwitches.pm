@@ -8,7 +8,7 @@ use strict ;
 use warnings ;
 use Data::Dumper ;
 use Carp ;
-use List::Util qw(max);
+use List::Util qw(max any);
 
 require Exporter ;
 
@@ -1609,28 +1609,88 @@ else
 
 #-------------------------------------------------------------------------------
 
+sub DisplayHelp
+{
+my ($narrow_display) = @_ ;
+
+_DisplayHelp($narrow_display, 0, GetOptionsElements()) ;
+}                    
+
 sub DisplaySwitchHelp
 {
 my ($switch) = @_ ;
+
+my (@t, @matches) = (GetOptionsElements()) ;
+
+HELP:
+for my $option (@t)
+	{
+	my $name = $option->[0] ;
+	
+	for my $element (split /\|/, $name)
+		{
+		if( $element =~ /^$switch\s*(=*.)*$/ )
+			{
+			push @matches, $option ;
+			last HELP ;
+			}
+		}
+	}
+
+_DisplayHelp(0, 1, @matches) ;
+}
+
+sub DisplaySwitchesHelp
+{
+my (@switches) = @_ ;
+
+my (@t, @matches) = (GetOptionsElements()) ;
+
+for my $option (@t)
+	{
+	my $name = $option->[0] ;
+	
+	for my $element (split /\|/, $name)
+		{
+		if( any { $element =~ /$_\s*(=*.)*$/ } @switches )
+			{
+			push @matches, $option ;
+			last ;
+			}
+		}
+	}
+
+_DisplayHelp(0, 0, @matches) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetOptionsElements
+{
 my ($options, $config, @t) = GetOptions() ;
 
 push @t, [splice @$options, 0, 4 ] while @$options ;
 
-HELP:
-for (@t)
+@t 
+}
+
+sub _DisplayHelp
+{
+my ($narrow_display, $display_long_help, @matches) = @_ ;
+
+my $max_length = $narrow_display ? 0 : max map { length $_->[0] } @matches ;
+
+my $lht = $->[3] eq '' ? '' : '*' ;
+
+for (@matches)
 	{
 	my ($name, $help, $long_help) = @{$_}[0, 2, 3] ;
-	
-	for (split /\|/, $name)
-		{
-		if(/^$switch\s*=*.*$/)
-			{
-			Say Error "$name: " . _INFO_($help) ;
-			Say Info  "\n$long_help" unless $long_help eq '' ;
-			
-			last HELP ;
-			}
-		}
+
+	Say Info3 (sprintf "%-${max_length}s$lht: ", $name)
+			. ($narrow_display ? "\n  " : ' ')
+			. _INFO_($help) ;
+
+	Say Info  "$long_help" if $display_long_help && $long_help ne '' ;
 	}
 }
 
@@ -1707,24 +1767,6 @@ else
 
 #-------------------------------------------------------------------------------
 
-sub DisplayHelp
-{
-my ($narrow_display) = @_ ;
-
-my ($options, $config, @t) = GetOptions() ;
-
-push @t, [splice @$options, 0, 4 ] while @$options ;
-
-my $max_length = $narrow_display ? 0 : max map { length $_->[0] } @t ;
-my $lh = $->[3] eq '' ? '' : '*' ;
-
-print STDOUT Error(sprintf("--%-${max_length}s$lh:", $_->[0])
-		. ($narrow_display ? "\n  " : ' ') . _INFO_( $_->[2] )) . "\n"
-			for @t ;
-}                    
-
-#-------------------------------------------------------------------------------
-
 use Term::Bash::Completion::Generator ;
 
 sub GenerateBashCompletionScript
@@ -1795,7 +1837,33 @@ if($word_to_complete !~ /^\s?$/)
 		}
 	else
 		{
-		if($word_to_complete =~ /\?$/)
+		if($word_to_complete =~ /\?\?$/)
+			{
+			my ($word) = $word_to_complete =~ m/^-*(.+)\?\?$/ ;
+
+			if($word_to_complete =~ m/^-/)
+				{
+				@matches = grep { /^$word/ } @$names ;
+				}
+			else
+				{
+				@matches = grep { /$word/ } @$names ;
+				}
+
+			if(@matches)
+				{
+				Print Info "\n\n";
+				DisplaySwitchesHelp(@matches) ;
+				
+				@matches = map { "--$_" } grep { /$word/ } @$names ;
+				print @matches > 1 ? join("\n", @matches) . "\n" : "\n.\n" ;
+				}
+			else
+				{
+				print join("\n", map { "--$_" } grep { /$word/ } @$names) . "\n" ;
+				}
+			}
+		elsif($word_to_complete =~ /\?$/)
 			{
 			my ($word) = $word_to_complete =~ m/^-*(.+)\?$/ ;
 

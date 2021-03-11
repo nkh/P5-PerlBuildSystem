@@ -76,34 +76,39 @@ $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
-my $target_string = $em->( join ', ', map {"'$_'"} @$targets) ; 
+my $short_target = $em->( join ', ', map {"'$_'"} @$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
 my $pid = $pbs_config->{DEPEND_JOBS} ? _INFO2_(", pid: $$") . GetColor('info') : '' ;
 my $tag = $tree->{__REMOTE_DEPEND} ? _INFO2__(' [R]' . $pid) . GetColor('info')  : $pid . GetColor('info')  ;
 
-my $header_file    = "pbsfile: $short_pbsfile" ;
-my $header_no_file = "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
-my $header         = "$header_file, $header_no_file" ;
+my $target = _INFO3_ "$short_target$tag" ;
+
+my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
+my $pbsfile_nodes = "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
 
 if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 	{
-	Say Info  "Depend: " . _INFO3_("$target_string") . $tag ;
-	Say Info2 "${indent}$header" ;
+	Say Info  "Depend: $target" ;
+	Say Info2 "${indent}$pbsfile_info" ;
 	}
-elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DISPLAY_DEPEND_HEADER})
+elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
 	{
-	Say Info "Depend: " . _INFO3_("$target_string$tag\n") . _INFO2_ "${indent}$header"
+	Say Info "Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
+	}
+elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
+	{
+	Say Info "Depend: $target"
 	}
 elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	PrintInfo("\r\e[K" . $PBS::Output::output_info_label . INFO("Dependg: $header_no_file$tag", 0))
-		unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	Print Info "\r\e[KDepend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 else
 	{
-	Say Info "Depend$tag: " . _INFO3_("$target_string") 
+	Say Info "Depend: $target" 
 	}
 
 my $local_time =
@@ -129,8 +134,8 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	PrintInfo "Depend$tag: " . INFO3("'$target_string'", 0) . INFO(' done', 0)
-			. INFO2(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n", 0) ;
+	PrintInfo "Depend: $target, done"
+			. _INFO2_(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n") ;
 	}
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
@@ -201,7 +206,6 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		PrintInfo "\t\t$stat\n" ;
 		}
 	}
-
 elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 	{
 	for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
@@ -212,7 +216,7 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 			{
 			my $info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
 
-			PrintWarning3 "Depend: '$info' @ $target_string didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
+			PrintWarning3 "Depend: '$info' @ $short_target didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
 			}
 		}
 	}
