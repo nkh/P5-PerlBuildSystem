@@ -73,20 +73,20 @@ RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_sna
 my $start_nodes = scalar(keys %$inserted_nodes) ;
 $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
 
-my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 35 + length($PBS::Output::output_info_label)) ;
+my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
 my $short_target = $em->( join ', ', map {"'$_'"} @$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
-my $pid = $pbs_config->{DEPEND_JOBS} ? _INFO2_(", pid: $$") . GetColor('info') : '' ;
-my $tag = $tree->{__REMOTE_DEPEND} ? _INFO2__(' [R]' . $pid) . GetColor('info')  : $pid . GetColor('info')  ;
+my $pid = $pbs_config->{DEPEND_JOBS} ? _INFO2_(", pid: $$") . GetColor('info') : '' . GetColor('info') ;
+my $tag = $tree->{__PARALLEL_DEPEND} ? _INFO2__(' [//]' . $pid) . GetColor('info')  : $pid . GetColor('info')  ;
 
 my $target = _INFO3_ "$short_target$tag" ;
 
 my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
-my $pbsfile_nodes = "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
 my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
 
 if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})

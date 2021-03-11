@@ -47,7 +47,7 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 		{
 		$forked_depends++ ;
 		
-		$node->{__REMOTE_DEPEND}++ ;
+		$node->{__PARALLEL_DEPEND}++ ;
 		$$turntable_request++ ;
 		$available_resources-- ;
 		
@@ -62,14 +62,12 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				}
 			else
 				{
-				return 0 unless defined $pid ;
-				
 				# if fork ok depend in other process otherwise depend in this process
 				
 				Say Color 'test_bg',  "Depend: parallel start, node: $node->{__NAME}, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
 
 				my $log_file = GetRedirectionFile($pbs_config, $node) ;
-				my $redirection = RedirectOutput($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
+				my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
 
 				my $result = PBS::Depend::CreateDependencyTree(@_) ;
 				
@@ -119,7 +117,7 @@ mkpath($path) unless(-e $path) ;
 $redirection_file = $path . '.' . $basename . $ext . ".pbs_depend_log" ;
 }
 
-sub RedirectOutput
+sub RedirectOutputToFile
 {
 my ($pbs_config, $redirection_file) = @_ ;
 

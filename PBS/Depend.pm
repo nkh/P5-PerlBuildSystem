@@ -1177,8 +1177,6 @@ elsif(@sub_pbs)
 	$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
 	$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
 
-	#$sub_pbs_config->{DEPEND_ONLY}++ ;
-	
 	my $sub_node_name = $node_name ;
 	$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
 	
