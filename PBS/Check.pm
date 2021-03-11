@@ -127,7 +127,7 @@ if (NodeIsGenerated($tree))
 			. _INFO2_(", inserted: $inserted_at")
 			. _INFO2_(", depended: $depended_at")
 			. "\n"
-		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ;
+		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{__MATCHED_SUBPBS};
 
 	if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
@@ -386,7 +386,7 @@ else
 	# the dependencies have been checked recursively ; the only thing a digest check could trigger with
 	# is package or node dependencies like pbsfile, variables, etc..
 	
-	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} || $triggered)
+	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} || $triggered || ! -e $full_name)
 		{
 		# check digest
 		my $t0 = [gettimeofday];

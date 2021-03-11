@@ -69,12 +69,12 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				my $log_file = GetRedirectionFile($pbs_config, $node) ;
 				my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
 
-				my $result = PBS::Depend::CreateDependencyTree(@_) ;
+				PBS::Depend::CreateDependencyTree(@_) ;
 				
 				if(defined $pid)
 					{
 					RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-
+					
 					Say Color 'test_bg2',  "Depend: parallel end, node: $node->{__NAME}, pid:$$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
 					
 					my $r = PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'return_resource', {amount => 1}, $$) // 0 ;
@@ -85,7 +85,7 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				else
 					{
 					RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-					return $result ;
+					return 0 ;
 					}
 				} ;
 				

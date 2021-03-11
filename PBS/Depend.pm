@@ -1136,53 +1136,41 @@ if(@has_matching_non_subpbs_rules)
 	}
 elsif(@sub_pbs)
 	{
-	if(@sub_pbs != 1)
+	$tree->{__MATCHED_SUBPBS} = @sub_pbs ;
+
+	SET \@sub_pbs, "Depend: error '$node_name' @ pbsfile '$Pbsfile'  matches multiple subpbs" && die "\n"
+		if @sub_pbs != 1 ;
+
+	my $subpbs_definition = $sub_pbs[0]{SUBPBS} ;
+
+	my $subpbs_name = $subpbs_definition->{PBSFILE_LOCATED} =
+		 LocatePbsfile
+			(
+			$pbs_config,
+			$Pbsfile,
+			$subpbs_definition->{PBSFILE},
+			$sub_pbs[0]{RULE}
+			) ;
+	
+	SIT $subpbs_definition, "subpbs:" if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
+	
+	# override pbs_config with subpbs pbs_config
+	my $subpbs_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$subpbs_definition, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
+	
+	$subpbs_pbs_config->{PBS_COMMAND} = DEPEND_ONLY ;
+	$subpbs_pbs_config->{PARENT_PACKAGE} = $package_alias ;
+
+	my $sub_node_name = $node_name;
+
+	if(defined $subpbs_definition->{ALIAS})
 		{
-		PrintError "Depend: in pbsfile : $Pbsfile, $node_name has multiple subpbs defined:\n" ;
-		PrintError(DumpTree(\@sub_pbs, "subpbs definitions:")) ;
-		Carp::croak  ;
+		$sub_node_name = $subpbs_definition->{ALIAS} ;
+		$inserted_nodes->{$sub_node_name} = $tree ;
 		}
 
-	$tree->{__MATCHED_SUBPBS}++ ;
-	my $sub_pbs_hash = $sub_pbs[0]{SUBPBS} ;
-
-	my $unlocated_sub_pbs_name = my $sub_pbs_name = $sub_pbs_hash->{PBSFILE} ;
-	my $sub_pbs_package = $sub_pbs_hash->{PACKAGE} ;
-	
-	my $alias_message = '' ;
-	$alias_message = "aliased as '$sub_pbs_hash->{ALIAS}'" if(defined $sub_pbs_hash->{ALIAS}) ;
-	
-	$sub_pbs_name = LocatePbsfile($pbs_config, $Pbsfile, $sub_pbs_name, $sub_pbs[0]{RULE}) ;
-	$sub_pbs_hash->{PBSFILE_LOCATED} = $sub_pbs_name ;
-	
-	#-------------------------------------------------------------
-	# run subpbs
-	#-------------------------------------------------------------
-	my $node_is_trigger_inserted = exists $tree->{__TRIGGER_INSERTED} ;
-	PrintInfo3("${indent}Subpbs: '$node_name' [T]\n") if $node_is_trigger_inserted ; 
-
-	# temporarily eliminate ourself from the existing nodes list
-	# this means that any extra information in the node will not be available to subpbs, eg: we display the trigger insert info before the subps
-	delete $inserted_nodes->{$node_name} ;
-	
-	my $tree_name = "sub_pbs$sub_pbs_name" ;
-	$tree_name =~ s~^\./~_~ ;
-	$tree_name =~ s~/~_~g ;
-	
-	PrintInfo(DumpTree($sub_pbs_hash, "subpbs:")) if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
-		
-	# Synchronize with elements from the subpbs definition, specially build and source dirs 
-	# we override elements
-	my $sub_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$sub_pbs_hash, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
-	$sub_pbs_config->{PARENT_PACKAGE} = $package_alias ;
-	$sub_pbs_config->{PBS_COMMAND} ||= DEPEND_ONLY ;
-
-	my $sub_node_name = $node_name ;
-	$sub_node_name    = $sub_pbs_hash->{ALIAS} if(defined $sub_pbs_hash->{ALIAS}) ;
-	
-	my $sub_config = PBS::Config::get_subps_configuration
+	my $subpbs_config = PBS::Config::get_subps_configuration
 				(
-				$sub_pbs_hash,
+				$subpbs_definition,
 				\@sub_pbs,
 				$tree,
 				$sub_node_name,
@@ -1190,75 +1178,38 @@ elsif(@sub_pbs)
 				$load_package,
 				) ;
 	
-	PrintInfo(DumpTree($sub_config, "subpbs config:")) if defined $pbs_config->{DISPLAY_SUB_PBS_CONFIG} ;
+	SIT $subpbs_config, "subpbs config:" if defined $pbs_config->{DISPLAY_SUB_PBS_CONFIG} ;
 
-	my $already_inserted_nodes = $inserted_nodes ;
-	$already_inserted_nodes    = {} if(defined $sub_pbs_hash->{LOCAL_NODES}) ;
-	
-	my %inserted_nodes_snapshot ;
-	%inserted_nodes_snapshot = %$inserted_nodes if $node_is_trigger_inserted ;
-
-	my $inserted_at = GetInsertionRule($tree) ;
-
-	$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
+	my %inserted_nodes_snapshot = exists $tree->{__TRIGGER_INSERTED} ? %$inserted_nodes : () ;
 
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
-	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $sub_pbs_load_package)
+	# un-depend ourself for subpbs to match
+	delete $tree->{__DEPENDED} ;
+	$tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
+
+	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
 		= PBS::PBS::Pbs
 			(
-			[@$pbsfile_chain, $sub_pbs_name],
-			$inserted_at,
-			$sub_pbs_name,
+			[@$pbsfile_chain, $subpbs_name],
+			GetRunRelativePath($pbs_config, GetInsertionRule($tree)), # inserted_at
+			$subpbs_name,
 			$load_package,
-			$sub_pbs_config,
-			$sub_config,
+			$subpbs_pbs_config,
+			$subpbs_config,
 			[$sub_node_name],
-			$already_inserted_nodes,
-			$tree_name,
-			$sub_pbs_config->{PBS_COMMAND},
+			$inserted_nodes,
+			("sub_pbs$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
+			DEPEND_ONLY,
 			) ;
 		
-	shift @{$nodes_per_pbs_run{$sub_pbs_load_package}} ; # node existed before subpbs
-
+	shift @{$nodes_per_pbs_run{$subpbs_load_package}} ; # node existed before subpbs
+	
 	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
-
-	if ($node_is_trigger_inserted)
-		{
-		for my $name (keys %$already_inserted_nodes)
-			{
-			unless (exists $inserted_nodes_snapshot{$name})
-				{
-				$already_inserted_nodes->{$name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED}
-					unless exists $already_inserted_nodes->{$name}{__TRIGGER_INSERTED} ;
-				}
-			}
-		} 
-
-	$sub_tree->{$sub_node_name}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED} if $node_is_trigger_inserted ;
-	
-	# keep this node insertion info
-	$sub_tree->{$sub_node_name}{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
-	
-	# keep parent relationship
-	for my $dependency_to_key (keys %{$tree->{__DEPENDENCY_TO}})
-		{
-		$sub_tree->{$sub_node_name}{__DEPENDENCY_TO}{$dependency_to_key} = $tree->{__DEPENDENCY_TO}{$dependency_to_key};
-		}
-		
-	# copy the data generated by subpbs
-	for my $new_key (keys %{$sub_tree->{$sub_node_name}})
-		{
-		# keep attributes defined from the current Pbs
-		next if $new_key =~ /__NAME/ ;
-		next if $new_key =~ /__USER_ATTRIBUTE/ ;
-		next if $new_key =~ /__LINKED/ ;
-		
-		$tree->{$new_key} = $sub_tree->{$sub_node_name}{$new_key} ;
-		}
-		
-	# make ourself the real node again
-	$inserted_nodes->{$node_name} = $tree ;
+	$inserted_nodes->{$_}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED}
+		for grep { ! exists $inserted_nodes_snapshot{$_} }
+			 grep { exists $tree->{__TRIGGER_INSERTED} }
+				keys %$inserted_nodes
 	}
 else
 	{
@@ -1274,7 +1225,6 @@ else
 		my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
 
 		my $inserted_at = GetInsertionRule($tree) ;
-
 		$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 		
 		PrintInfo3 "$PBS::Output::indentation'$short_node_name'"
@@ -1507,8 +1457,7 @@ else
 				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info_2') ;
 	}
 
-PrintInfo2 $link_indent . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
-	if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
+Say Info2 $link_indent . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
 
 $linked_node_info .= _INFO2_ join(' ⁻ ', @link_type) ;
 
@@ -1533,6 +1482,8 @@ if ($error_linking || $pbs_config->{DISPLAY_LINK_MATCHING_RULE} || $pbs_config->
 
 $linked_node_info .= "\n" ;
 
+$display_linked_node_info = 0 if $dependency->{__MATCHED_SUBPBS} ;
+
 PrintNoColor $linked_node_info . $local_rule_info if $display_linked_node_info || $error_linking ;
 
 PrintError "Depend: error linking to non local node\n" if $error_linking ;
@@ -1543,16 +1494,16 @@ die "\n" if $error_linking ;
 
 sub LocatePbsfile
 {
-my ($pbs_config, $Pbsfile, $sub_pbs_name, $rule) = @_ ;
+my ($pbs_config, $Pbsfile, $subpbs_name, $rule) = @_ ;
 
 my $info = $pbs_config->{ADD_ORIGIN} ? "rule '$rule->{NAME}' at '$rule->{FILE}\:$rule->{LINE}'" : '' ;
 
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 my $sub_pbs_name_stem ;
 
-if(file_name_is_absolute($sub_pbs_name))
+if(file_name_is_absolute($subpbs_name))
 	{
-	PrintWarning "Using absolute subpbs: '$sub_pbs_name' $info.\n" ;
+	PrintWarning "Using absolute subpbs: '$subpbs_name' $info.\n" ;
 	}
 else
 	{
@@ -1561,7 +1512,7 @@ else
 	my $found_pbsfile ;
 	for my $source_directory (@$source_directories, $path)
 		{
-		my $searched_pbsfile = PBS::PBSConfig::CollapsePath("$source_directory/$sub_pbs_name") ;
+		my $searched_pbsfile = PBS::PBSConfig::CollapsePath("$source_directory/$subpbs_name") ;
 		
 		if(-e $searched_pbsfile)
 			{
@@ -1569,14 +1520,14 @@ else
 				{
 				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 					{
-					PrintInfo "Locate: ignoring pbsfile '$sub_pbs_name' in '$source_directory' $info.\n" ;
+					PrintInfo "Locate: ignoring pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
 					}
 				}
 			else
 				{
 				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 					{
-					PrintInfo "Locate: located pbsfile '$sub_pbs_name' in '$source_directory' $info.\n" ;
+					PrintInfo "Locate: located pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
 					}
 					
 				$found_pbsfile = $searched_pbsfile ;
@@ -1588,13 +1539,13 @@ else
 			{
 			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 				{
-				PrintInfo "Locate: couldn't find pbsfile '$sub_pbs_name' in '$source_directory' $info.\n" ;
+				PrintInfo "Locate: couldn't find pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
 				}
 			}
 		}
 		
 	my $sub_pbs_name_stem ;
-	$found_pbsfile ||= "$path$sub_pbs_name" ;
+	$found_pbsfile ||= "$path$subpbs_name" ;
 	
 	#check if we can find it somewhere else in the source directories
 	for my $source_directory (@$source_directories)
@@ -1658,10 +1609,10 @@ else
 			}
 		}
 		
-	$sub_pbs_name = $relocated_subpbs || $found_pbsfile || $sub_pbs_name;
+	$subpbs_name = $relocated_subpbs || $found_pbsfile || $subpbs_name;
 	}
 
-return($sub_pbs_name) ;
+return($subpbs_name) ;
 }
 
 #-------------------------------------------------------------------------------------------------------

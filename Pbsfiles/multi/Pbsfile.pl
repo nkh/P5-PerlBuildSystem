@@ -1,4 +1,6 @@
 
+die "LOCAL_NODE is obsolete" ;
+
 my %versions = 
 	(
 	gcc =>
