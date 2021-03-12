@@ -386,7 +386,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 else
 	{
 	my $error = "PBS: error: no pbsfile: $Pbsfile" ;
-	$error .= "\n\t@ $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
+	#$error .= "\n\t@ $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
 
 	Print Error $error ;
 	die "\n";

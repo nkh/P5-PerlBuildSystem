@@ -306,8 +306,14 @@ if($pbs_config->{DEPEND_JOBS})
 	eval $serialized_dependers ;
 	Say Error $@ if $@ ;
 
-	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
-	#kill 'KILL',  $_->{PID}  for values %$dependers ;
+	if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
+		{
+		kill 'KILL',  $_->{PID}  for values %$dependers ;
+		}
+	else
+		{
+		PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
+		}
 
 	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
 

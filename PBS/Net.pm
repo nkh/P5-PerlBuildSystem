@@ -139,6 +139,7 @@ my $counter = 0 ;
 
 my %resources = map { $_ => 1 } 1 .. $pbs_config->{DEPEND_JOBS} ;
 my $allocated = 0 ;
+my $reused = 0 ;
 
 my %parallel_dependers ;
 
@@ -149,8 +150,8 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	Say Debug "Depend∥ : " . $_[0]
 			. _INFO2_
 				  ', dependers: ' . scalar( keys %parallel_dependers)
-				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLING} } values  %parallel_dependers)
-				. ', reused: ' . scalar( grep { exists $_->{ADDRESS} && ! $_->{IDLING} } values  %parallel_dependers)
+				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values  %parallel_dependers)
+				. ', reused: ' . $reused
 				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS}
 				. ', leased: ' . $allocated
 	}
@@ -170,40 +171,45 @@ while (my $c = $d->accept)
 		
 		if ($rq->method eq 'GET')
 			{
-			'/pbs'  eq $path && RESPONSE { TEXT => "PBS: access: $counter" }  ;
+			'/pbs/counter' eq $path && RESPONSE { TEXT => "counter: $counter" }  ;
 			
 			'/pbs/get_depend_resource' eq $path
 				&& do 
 					{
+					my $dependers = keys %parallel_dependers ;
 					my $id = first { $resources{$_} } keys %resources ;
 					
-					RESPONSE { ID => $id } ;
 					
-					if ($id)
+					if ($id && $dependers < $pbs_config->{DEPEND_JOBS} )
 						{
+						RESPONSE { ID => $id } ;
 						$resources{$id} = 0 ;
 						$allocated++ ;
 					
 						$status->("leased, res: $id      ") ;
 						}
+					else
+						{
+						RESPONSE {} ;
+						}
 					} ;
 					
-			'/pbs/get_idling_depender' eq $path
+			'/pbs/get_idle_depender' eq $path
 				&& do 
 					{
 					my $id = first { $resources{$_} } keys %resources ;
-					my $depender = first { exists $_->{ADDRESS} && $_->{IDLING} } values  %parallel_dependers ;
-					
-					if ($id && $depender)
+					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values  %parallel_dependers ;
+			
+					if ($id && $idle_depender)
 						{
 						$resources{$id} = 0 ;
 						$allocated++ ;
+						$reused++ ;
+						$idle_depender->{IDLE} = 0 ;
 						
-						$depender->{IDLING} = 0 ;
+						RESPONSE { ID => $id, PID => $idle_depender->{PID}, ADDRESS => $idle_depender->{ADDRESS} } ;
 						
-						RESPONSE { ID => $id, PID => $depender->{PID}, ADDRESS => $depender->{ADDRESS} } ;
-						
-						$status->("reused, dep: $depender->{PID}") ;
+						$status->("reused, dep: $idle_depender->{PID}, id: $id") ;
 						}
 					else
 						{
@@ -232,7 +238,7 @@ while (my $c = $d->accept)
 			'/pbs/return_depend_resource' eq $path
 				&& do
 					{
-					my $id = $parameters->{handle} ;
+					my $id = $parameters->{id} ;
 					
 					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
@@ -241,10 +247,31 @@ while (my $c = $d->accept)
 					$status->("return, res: $id      ") ;
 					} ;
 			
+			'/pbs/depend_node' eq $path
+				&& do
+					{
+					my ($id, $node, $resource_server) = @{$parameters}{'id', 'node', 'resource_server'} ;
+					
+					# send some id for the current node depend
+					$c->send_status_line ;
+					
+					$status->("depend, pid: $$, node: $node") ;
+					
+					PBS::Depend::Forked::Pbs($data, $parameters) ;
+					
+					Post
+						(
+						$pbs_config, $resource_server,
+						'return_depender',
+						{ id => $id, pid => $$},
+						$$
+						) ;
+					} ;
+			
 			'/pbs/return_depender' eq $path
 				&& do
 					{
-					my ($id, $pid) = @{$parameters}{'handle', 'pid'} ;
+					my ($id, $pid) = @{$parameters}{'id', 'pid'} ;
 					
 					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
@@ -257,7 +284,7 @@ while (my $c = $d->accept)
 					
 					die ERROR("PBS: returned depended, pid: $pid, wasn't allocated") . "\n" unless $depender ;
 					
-					$depender->{IDLING}++ ;
+					$depender->{IDLE}++ ;
 					
 					} ;
 			
@@ -281,7 +308,7 @@ while (my $c = $d->accept)
 					die ERROR("PBS: depender $pid wasn't registered") . "\n" unless exists $parallel_dependers{$pid} ;
 						
 					$c->send_status_line ;
-					$parallel_dependers{$pid}{IDLING}++ ;
+					$parallel_dependers{$pid}{IDLE}++ ;
 					$parallel_dependers{$pid}{ADDRESS} = $address ;
 					$status->("idling, pid: $pid") ;
 					} ;

@@ -1158,7 +1158,7 @@ elsif(@sub_pbs)
 		{
 		%{$tree->{__PBS_CONFIG}},
 		%$subpbs_definition,
-		SUBPBS_HASH => $sub_pbs[0]{RULE}
+		#SUBPBS_HASH => $sub_pbs[0]{RULE}
 		} ;
 	
 	$subpbs_pbs_config->{PBS_COMMAND}    = DEPEND_ONLY ;

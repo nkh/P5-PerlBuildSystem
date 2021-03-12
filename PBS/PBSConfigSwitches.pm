@@ -1467,6 +1467,10 @@ EOT
 		'Display a message on resource events.',
 		'',
 
+	'rqsd|resource_quick_shutdown' => \$config->{RESOURCE_QUICK_SHUTDOWN},
+		'',
+		'',
+
 	#----------------------------------------------------------------------------------
 	
 	'bp|debug:s'                         => $config->{BREAKPOINTS},
