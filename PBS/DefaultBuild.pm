@@ -71,7 +71,7 @@ my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
 my $start_nodes = scalar(keys %$inserted_nodes) ;
-$start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
+   $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
 
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
@@ -80,10 +80,12 @@ my $short_target = $em->( join ', ', map {"'$_'"} @$targets) ;
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
-my $pid = $pbs_config->{DEPEND_JOBS} ? _INFO2_(", pid: $$") . GetColor('info') : '' . GetColor('info') ;
-my $tag = $tree->{__PARALLEL_DEPEND} ? _INFO2__(' [//]' . $pid) . GetColor('info')  : $pid . GetColor('info')  ;
+my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
+my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') . ':' ;
 
-my $target = _INFO3_ "$short_target$tag" ;
+my $target = _INFO3_($short_target)
+		. _INFO2_( $pbs_config->{DEPEND_JOBS} ? ", pid: $$" : '')
+		. GetColor('info')  ;
 
 my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
 my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
@@ -91,24 +93,24 @@ my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
 
 if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 	{
-	Say Info  "Depend: $target" ;
+	Say Info  "$Depend $target" ;
 	Say Info2 "${indent}$pbsfile_info" ;
 	}
 elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
 	{
-	Say Info "Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
+	Say Info "$Depend $target\n" . _INFO2_ "${indent}$pbsfile_info"
 	}
 elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
 	{
-	Say Info "Depend: $target"
+	Say Info "$Depend $target"
 	}
 elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	Print Info "\r\e[KDepend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	Print Info "\r\e[K$Depend $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 else
 	{
-	Say Info "Depend: $target" 
+	Say Info "$Depend $target" 
 	}
 
 my $local_time =
@@ -254,8 +256,8 @@ return (BUILD_SUCCESS, 'Dependended successfuly', [])
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-	PrintInfo "\r\e[K"
-		unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+
+	PrintInfo "\r\e[K" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 
 $pbs_runs = PBS::PBS::GetPbsRuns() ;
@@ -276,7 +278,7 @@ else
 
 if($pbs_config->{DEPEND_JOBS})
 	{
-	my $available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_resource_status', {}, $$) // 0 ;
+	my $available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
 	
 	my $wait_counter = 0 ;
 	while ($available_resources ne $pbs_config->{DEPEND_JOBS})
@@ -288,12 +290,24 @@ if($pbs_config->{DEPEND_JOBS})
 			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
 		
 		usleep 10_000 ;
-		$available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_resource_status', {}, $$) // 0 ;
+		$available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
 		}
 
 	# handle all the forked dependers
+	my $t0_shutdown = [gettimeofday];
+
+	my $serialized_dependers = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
+
+	my $dependers ;
+	eval $serialized_dependers ;
+	Say Error $@ if $@ ;
+
+	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', { }, $$)  for values %$dependers ;
 
 	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
+
+	my $number_of_dependers = scalar keys %$dependers ;
+	PrintInfo sprintf("\nDepend: dependers: $number_of_dependers, shutdown time: %0.2f s.\n", tv_interval ($t0_shutdown, [gettimeofday])) ;
 	} 
 
 #-------------------------------------------------------------------------------

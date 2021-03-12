@@ -1444,19 +1444,27 @@ EOT
 	#----------------------------------------------------------------------------------
 
 	'hdp|http_display_post' => \$config->{HTTP_DISPLAY_POST},
-		'Display a message when a POST is issued.',
+		'Display a message when a POST is send.',
 		'',
 
 	'hdg|http_display_get' => \$config->{HTTP_DISPLAY_GET},
-		'Display a message when a GET is issued.',
+		'Display a message when a GET is send.',
 		'',
 
 	'hdss|http_display_server_start' => \$config->{HTTP_DISPLAY_SERVER_START},
 		'Display a message when a server is started.',
 		'',
 
+	'hdssd|http_display_server_shutdown' => \$config->{HTTP_DISPLAY_SERVER_SHUTDOWN},
+		'Display a message when a server is sshutdown.',
+		'',
+
 	'hdr|http_display_request' => \$config->{HTTP_DISPLAY_REQUEST},
-		'Display a message when a Request is received.',
+		'Display a message when a request is received.',
+		'',
+
+	'rde|resource_display_event' => \$config->{DISPLAY_RESOURCE_EVENT},
+		'Display a message on resource events.',
 		'',
 
 	#----------------------------------------------------------------------------------

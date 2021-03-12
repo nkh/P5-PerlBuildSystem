@@ -21,7 +21,8 @@ use HTTP::Request::Params ;
 use HTTP::Tiny;
 
 use Time::HiRes qw(usleep) ;
-#use Data::Dumper ;
+use Data::Dumper ;
+use List::Util qw(first) ;
  
 use PBS::Output ;
 
@@ -52,11 +53,11 @@ sub Get
 {
 my ($pbs_config, $url, $where, $what, $whom) = @_ ;
 
-SDT $what, "Http: POST to ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_GET} ;
+SDT $what, "Http: POST to ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
 
 my $HT = HTTP::Tiny->new() ;
-my $response = $HT->get("${url}pbs/$where") ;
- 
+my $response = $HT->get("${url}pbs/$where", {content => Dumper $what}) ;
+
 if($response->{success})
 	{
 	#SDT $response, 'response' ;
@@ -67,7 +68,7 @@ if($response->{success})
 	#	Say Info2 "$k: $_" for ref $v eq 'ARRAY' ? @$v : $v ;
 	#	}
 
-	return length $response->{content} ? $response->{content} : undef ;
+	return $response->{content} ;
 	}
 else
 	{
@@ -110,13 +111,6 @@ else
 	}
 }
 
-sub BecomeDependServer
-{
-my ($pbs_config, $data) = @_ ;
-
-BecomeServer($pbs_config, 'depend server', StartHttpDeamon($pbs_config), $data) ;
-}
-
 sub StartHttpDeamon
 {
 my ($pbs_config) = @_ ;
@@ -125,15 +119,19 @@ HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: can't start serv
 
 sub BecomeServer
 {
-my ($pbs_config, $name, $d, $data) = @_ ;
+my ($pbs_config, $server_name, $d, $data) = @_ ;
 
 my $url = $d->url ;
 
-Say Debug "Http: starting $name <$url>" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
+Say Debug "Http: starting $server_name <$url>, pid: $$" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
 
 my $stop ;
 my $counter = 0 ;
-my $available_resources = $pbs_config->{DEPEND_JOBS} // 0 ;
+
+my %resources = map { $_ => 1 } 1 .. $pbs_config->{DEPEND_JOBS} ;
+my $allocations = 0 ;
+
+my %parallel_dependers ;
 
 while (my $c = $d->accept) 
 	{
@@ -143,19 +141,45 @@ while (my $c = $d->accept)
 		{
 		my $path = $rq->uri->path ;
 
-		Say Debug "Http: request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
+		SDT $rq, "Http: request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
 
 		if ($rq->method eq 'GET')
 			{
-			'/pbs'                     eq $path && RESPONSE($c, "PBS: access: $counter") ;
-			'/pbs/get_resource'        eq $path && do 
-								{
-								RESPONSE($c, $available_resources) ;
-								$available_resources-- if $available_resources > 0 ;
-								} ;
+			'/pbs'  eq $path
+				 && RESPONSE($c, "PBS: access: $counter") ;
 
-			'/pbs/get_resource_status' eq $path && RESPONSE($c, $available_resources) ;
-
+			'/pbs/get_depend_resource' eq $path
+				&& do 
+					{
+					my $handle = first { $resources{$_} } keys %resources ;
+					$resources{$handle} = 0 if $handle ;
+					
+					RESPONSE($c, $handle) ;
+					
+					$allocations++ if $handle ;
+					my $allocations_text = ", allocations: $allocations" ;
+					
+					my $status = ', available: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS} ;
+					
+					Say Debug "Resource: allocated depend #$handle$status$allocations_text"
+						if $handle && $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
+					} ;
+					
+			'/pbs/get_depend_resource_status' eq $path
+				&& do
+					{
+					my @available = grep { $_ } values %resources ;
+					
+					RESPONSE($c, scalar(@available)) ;
+					} ;
+					
+			'/pbs/get_parallel_dependers' eq $path
+				&& do
+					{
+					my @available = grep { $_ } values %resources ;
+					RESPONSE($c, Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]));
+					} ;
+			
 			#$c->send_error(RC_FORBIDDEN) ;
 			#$c->send_file_response("/") ;
 			}
@@ -164,10 +188,68 @@ while (my $c = $d->accept)
 			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
 
 			my $parser = HTTP::Request::Params->new({req => $rq}) ;
-
-			'/pbs/return_resource' eq $path && $available_resources++ && $c->send_status_line() ;
-
-			$stop++ if $path eq '/pbs/stop' ;
+			my $parameters = $parser->params() ;
+			
+			'/pbs/stop' eq $path
+				&& do
+					{
+					$stop++ ;
+					#Say Warning "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
+					} ;
+			
+			'/pbs/return_depend_resource' eq $path
+				&& do
+					{
+					my $r = $parameters->{handle} // 0 ;
+					
+					die "PBS: returned resource $r was not leased\n"
+						if $resources{$r} ;
+					
+					$resources{$r} = 1 ;
+					
+					my $status = ', available: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS} ;
+					
+					Say Debug "Resource: return of depend #$r$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
+					}
+				&& $c->send_status_line() ;
+				
+			
+			
+			'/pbs/register_parallel_depend' eq $path
+				&& do
+					{
+					my $id = $parameters->{id} ;
+					
+					die "PBS: parallel depender already registered #$id\n"
+						if exists $parallel_dependers{$id} ;
+				
+					$parallel_dependers{$id} = {} ;
+					
+					my $waiting = ', waiting: ' . scalar( grep { exists $_->{ADDRESS} } values  %parallel_dependers) ;
+					my $registered = ', registered dependers: ' . scalar( keys %parallel_dependers) ;
+					my $status = $registered . $waiting ;
+					
+					Say Debug "Resource: registered depender #$id$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
+					}
+				&& $c->send_status_line() ;
+			
+			'/pbs/parallel_depend_waiting' eq $path
+				&& do
+					{
+					my ($id, $address) = @{$parameters}{'id', 'address'} ;
+					
+					die "PBS: depender $id was not registered\n"
+						unless exists $parallel_dependers{$id} ;
+						
+					$parallel_dependers{$id}{ADDRESS} = $address ;
+				
+					my $waiting = ', waiting: ' . scalar( grep { exists $_->{ADDRESS} } values  %parallel_dependers) ;
+					my $registered = ', registered dependers: ' . scalar( keys %parallel_dependers) ;
+					my $status = $registered . $waiting ;
+					
+					Say Debug "Resource: got address for depender #$id$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
+					}
+				&& $c->send_status_line() ;
 			}
 		
 		$c->force_last_request ;
@@ -177,6 +259,8 @@ while (my $c = $d->accept)
 
 	last if $stop ;
 	}
+
+Say Error "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
 }
 
 #-------------------------------------------------------------------------------

@@ -41,15 +41,14 @@ my $depender = \&PBS::Depend::CreateDependencyTree ;
 
 if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $subpbs_dependencies)
 	{
-	my $available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_resource', {amount => 1}, $$) // 0 ;
+	my $resource_handle = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // 0 ;
 	
-	if($available_resources)
+	if($resource_handle)
 		{
 		$forked_depends++ ;
 		
 		$node->{__PARALLEL_DEPEND}++ ;
 		$$turntable_request++ ;
-		$available_resources-- ;
 		
 		$depender = 
 			sub
@@ -65,10 +64,10 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				# if fork ok depend in other process otherwise depend in this process
 				
 				Say Color 'test_bg',  "Depend: parallel start, node: $node->{__NAME}, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
-
+				
 				my $log_file = GetRedirectionFile($pbs_config, $node) ;
 				my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-
+				
 				PBS::Depend::CreateDependencyTree(@_) ;
 				
 				if(defined $pid)
@@ -77,9 +76,17 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 					
 					Say Color 'test_bg2',  "Depend: parallel end, node: $node->{__NAME}, pid:$$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
 					
-					my $r = PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'return_resource', {amount => 1}, $$) // 0 ;
+					PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { id => $$ }, $$) ;
+					
+					PBS::Net::Post
+						(
+						$pbs_config, $pbs_config->{RESOURCE_SERVER},
+						'return_depend_resource',
+						{ handle => $resource_handle },
+						$$
+						) ;
 	 				
-					PBS::Net::BecomeDependServer($pbs_config, [@_]) ;
+					BecomeDependServer($pbs_config, $pbs_config->{RESOURCE_SERVER}, [@_]) ;
 					exit 0 ;
 					}
 				else
@@ -99,6 +106,19 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 	}
 
 $depender->(@$args) ;
+}
+
+#-------------------------------------------------------------------------------------------------------
+
+sub BecomeDependServer
+{
+my ($pbs_config, $resource_server_url, $data) = @_ ;
+
+my $d = PBS::Net::StartHttpDeamon($pbs_config) ;
+
+PBS::Net::Post($pbs_config, $resource_server_url, 'parallel_depend_waiting', { id => $$ , address => $d->url }, $$) ;
+
+PBS::Net::BecomeServer($pbs_config, 'depender', $d, $data) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
