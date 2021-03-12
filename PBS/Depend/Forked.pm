@@ -32,8 +32,10 @@ my $depender ;
 
 if($pbs_config->{DEPEND_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 	{
-	my $idle_depender = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_idle_depender', {}, $$) // 0 ;
-	
+	my $idle_depender = $pbs_config->{USE_DEPEND_SERVER}
+				? PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_idle_depender', {}, $$)
+				: {} ;
+
 	if(defined $idle_depender->{ADDRESS})
 		{
 		$node->{__PARALLEL_DEPEND} = $idle_depender->{PID} ;

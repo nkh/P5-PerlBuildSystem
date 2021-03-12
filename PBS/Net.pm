@@ -179,8 +179,11 @@ while (my $c = $d->accept)
 					my $dependers = keys %parallel_dependers ;
 					my $id = first { $resources{$_} } keys %resources ;
 					
-					
-					if ($id && $dependers < $pbs_config->{DEPEND_JOBS} )
+					if
+						(
+						   (  $pbs_config->{USE_DEPEND_SERVER} && $id && $dependers < $pbs_config->{DEPEND_JOBS} )
+						|| (! $pbs_config->{USE_DEPEND_SERVER} && $id )
+						)
 						{
 						RESPONSE { ID => $id } ;
 						$resources{$id} = 0 ;

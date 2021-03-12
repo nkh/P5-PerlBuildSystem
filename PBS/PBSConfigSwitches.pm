@@ -1463,6 +1463,10 @@ EOT
 		'Display a message when a request is received.',
 		'',
 
+	'dus|use_depend_server' => \$config->{USE_DEPEND_SERVER},
+		'Display a message on resource events.',
+		'',
+
 	'rde|resource_display_event' => \$config->{DISPLAY_RESOURCE_EVENT},
 		'Display a message on resource events.',
 		'',
