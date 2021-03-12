@@ -68,7 +68,10 @@ if($response->{success})
 	#	Say Info2 "$k: $_" for ref $v eq 'ARRAY' ? @$v : $v ;
 	#	}
 
-	return $response->{content} ;
+	return
+		{ 
+		map { $_ eq 'undef' ? undef : $_ } map { split '=', $_, 2  } split '&', $response->{content}
+		}
 	}
 else
 	{
@@ -78,16 +81,22 @@ else
 
 #-------------------------------------------------------------------------------
 
+{
+my $response_connection ;
+sub RESPONSE_REGISTER { ($response_connection) = @_ }
+
 sub RESPONSE
 {
-my ($c, $response) = @_ ;
+my ($response) = @_ ;
 
 my $r = HTTP::Response->new(RC_ACCEPTED) ;
-$r->content($response) ;
+$r->content
+	(
+	join '&',  map { $_ . '=' . ($response->{$_} // 'undef') } keys %$response
+	) ;
 
-$c->send_response($r) ;
-
-1
+$response_connection->send_response($r) ;
+}
 }
 
 sub StartResourceServer
@@ -129,56 +138,84 @@ my $stop ;
 my $counter = 0 ;
 
 my %resources = map { $_ => 1 } 1 .. $pbs_config->{DEPEND_JOBS} ;
-my $allocations = 0 ;
+my $allocated = 0 ;
 
 my %parallel_dependers ;
 
+my $status = sub
+{
+if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
+	{
+	Say Debug "Depend∥ : " . $_[0]
+			. _INFO2_
+				  ', dependers: ' . scalar( keys %parallel_dependers)
+				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLING} } values  %parallel_dependers)
+				. ', reused: ' . scalar( grep { exists $_->{ADDRESS} && ! $_->{IDLING} } values  %parallel_dependers)
+				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS}
+				. ', leased: ' . $allocated
+	}
+} ; 
+
 while (my $c = $d->accept) 
 	{
-	$counter++ ;
+	RESPONSE_REGISTER $c ;
 
+	$counter++ ;
+	
 	while (my $rq = $c->get_request)
 		{
 		my $path = $rq->uri->path ;
-
+		
 		SDT $rq, "Http: request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
-
+		
 		if ($rq->method eq 'GET')
 			{
-			'/pbs'  eq $path
-				 && RESPONSE($c, "PBS: access: $counter") ;
-
+			'/pbs'  eq $path && RESPONSE { TEXT => "PBS: access: $counter" }  ;
+			
 			'/pbs/get_depend_resource' eq $path
 				&& do 
 					{
-					my $handle = first { $resources{$_} } keys %resources ;
-					$resources{$handle} = 0 if $handle ;
+					my $id = first { $resources{$_} } keys %resources ;
 					
-					RESPONSE($c, $handle) ;
+					RESPONSE { ID => $id } ;
 					
-					$allocations++ if $handle ;
-					my $allocations_text = ", allocations: $allocations" ;
+					if ($id)
+						{
+						$resources{$id} = 0 ;
+						$allocated++ ;
 					
-					my $status = ', available: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS} ;
+						$status->("leased, res: $id      ") ;
+						}
+					} ;
 					
-					Say Debug "Resource: allocated depend #$handle$status$allocations_text"
-						if $handle && $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
+			'/pbs/get_idling_depender' eq $path
+				&& do 
+					{
+					my $id = first { $resources{$_} } keys %resources ;
+					my $depender = first { exists $_->{ADDRESS} && $_->{IDLING} } values  %parallel_dependers ;
+					
+					if ($id && $depender)
+						{
+						$resources{$id} = 0 ;
+						$allocated++ ;
+						
+						$depender->{IDLING} = 0 ;
+						
+						RESPONSE { ID => $id, PID => $depender->{PID}, ADDRESS => $depender->{ADDRESS} } ;
+						
+						$status->("reused, dep: $depender->{PID}") ;
+						}
+					else
+						{
+						RESPONSE {} ;
+						}
 					} ;
 					
 			'/pbs/get_depend_resource_status' eq $path
-				&& do
-					{
-					my @available = grep { $_ } values %resources ;
-					
-					RESPONSE($c, scalar(@available)) ;
-					} ;
+				&& RESPONSE { AVAILABLE_RESOURCES => scalar(grep { $_ } values %resources) } ;
 					
 			'/pbs/get_parallel_dependers' eq $path
-				&& do
-					{
-					my @available = grep { $_ } values %resources ;
-					RESPONSE($c, Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]));
-					} ;
+				&& RESPONSE { SERIALIZED_DEPENDERS => Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]) }  ;
 			
 			#$c->send_error(RC_FORBIDDEN) ;
 			#$c->send_file_response("/") ;
@@ -190,73 +227,70 @@ while (my $c = $d->accept)
 			my $parser = HTTP::Request::Params->new({req => $rq}) ;
 			my $parameters = $parser->params() ;
 			
-			'/pbs/stop' eq $path
-				&& do
-					{
-					$stop++ ;
-					#Say Warning "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
-					} ;
+			'/pbs/stop' eq $path && do { $stop++ } ;
 			
 			'/pbs/return_depend_resource' eq $path
 				&& do
 					{
-					my $r = $parameters->{handle} // 0 ;
+					my $id = $parameters->{handle} ;
 					
-					die "PBS: returned resource $r was not leased\n"
-						if $resources{$r} ;
+					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
-					$resources{$r} = 1 ;
-					
-					my $status = ', available: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS} ;
-					
-					Say Debug "Resource: return of depend #$r$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
-					}
-				&& $c->send_status_line() ;
-				
+					$c->send_status_line ;
+					$resources{$id} = 1 ;
+					$status->("return, res: $id      ") ;
+					} ;
 			
+			'/pbs/return_depender' eq $path
+				&& do
+					{
+					my ($id, $pid) = @{$parameters}{'handle', 'pid'} ;
+					
+					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					
+					$c->send_status_line ;
+					
+					$resources{$id} = 1 ;
+					$status->("return, res: $id      ") ;
+					
+					my $depender = first { $_->{PID} == $pid } values  %parallel_dependers ;
+					
+					die ERROR("PBS: returned depended, pid: $pid, wasn't allocated") . "\n" unless $depender ;
+					
+					$depender->{IDLING}++ ;
+					
+					} ;
 			
 			'/pbs/register_parallel_depend' eq $path
 				&& do
 					{
-					my $id = $parameters->{id} ;
+					my $pid = $parameters->{pid} ;
 					
-					die "PBS: parallel depender already registered #$id\n"
-						if exists $parallel_dependers{$id} ;
-				
-					$parallel_dependers{$id} = {} ;
+					die ERROR("PBS: parallel depender already registered pid: $pid") . "\n" if exists $parallel_dependers{$pid} ;
 					
-					my $waiting = ', waiting: ' . scalar( grep { exists $_->{ADDRESS} } values  %parallel_dependers) ;
-					my $registered = ', registered dependers: ' . scalar( keys %parallel_dependers) ;
-					my $status = $registered . $waiting ;
-					
-					Say Debug "Resource: registered depender #$id$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
-					}
-				&& $c->send_status_line() ;
+					$c->send_status_line ;
+					$parallel_dependers{$pid} = {PID => $pid} ;
+					$status->("active, pid: $pid") ;
+					} ;
 			
-			'/pbs/parallel_depend_waiting' eq $path
+			'/pbs/parallel_depend_idling' eq $path
 				&& do
 					{
-					my ($id, $address) = @{$parameters}{'id', 'address'} ;
+					my ($pid, $address) = @{$parameters}{'pid', 'address'} ;
 					
-					die "PBS: depender $id was not registered\n"
-						unless exists $parallel_dependers{$id} ;
+					die ERROR("PBS: depender $pid wasn't registered") . "\n" unless exists $parallel_dependers{$pid} ;
 						
-					$parallel_dependers{$id}{ADDRESS} = $address ;
-				
-					my $waiting = ', waiting: ' . scalar( grep { exists $_->{ADDRESS} } values  %parallel_dependers) ;
-					my $registered = ', registered dependers: ' . scalar( keys %parallel_dependers) ;
-					my $status = $registered . $waiting ;
-					
-					Say Debug "Resource: got address for depender #$id$status" if $pbs_config->{DISPLAY_RESOURCE_EVENT} ;
-					}
-				&& $c->send_status_line() ;
+					$c->send_status_line ;
+					$parallel_dependers{$pid}{IDLING}++ ;
+					$parallel_dependers{$pid}{ADDRESS} = $address ;
+					$status->("idling, pid: $pid") ;
+					} ;
 			}
 		
 		$c->force_last_request ;
 		}
 
 	$c->close ;
-
 	last if $stop ;
 	}
 

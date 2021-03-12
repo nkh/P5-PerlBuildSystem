@@ -278,7 +278,8 @@ else
 
 if($pbs_config->{DEPEND_JOBS})
 	{
-	my $available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
+	my $data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
+	my $available_resources = $data->{AVAILABLE_RESOURCES} ;
 	
 	my $wait_counter = 0 ;
 	while ($available_resources ne $pbs_config->{DEPEND_JOBS})
@@ -290,19 +291,23 @@ if($pbs_config->{DEPEND_JOBS})
 			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
 		
 		usleep 10_000 ;
-		$available_resources = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
+
+		$data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
+		$available_resources = $data->{AVAILABLE_RESOURCES} ;
 		}
 
 	# handle all the forked dependers
 	my $t0_shutdown = [gettimeofday];
 
-	my $serialized_dependers = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
+	$data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
+	my $serialized_dependers = $data->{SERIALIZED_DEPENDERS} ;
 
 	my $dependers ;
 	eval $serialized_dependers ;
 	Say Error $@ if $@ ;
 
-	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', { }, $$)  for values %$dependers ;
+	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
+	#kill 'KILL',  $_->{PID}  for values %$dependers ;
 
 	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
 

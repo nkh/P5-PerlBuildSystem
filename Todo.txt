@@ -9,7 +9,25 @@
 
 # -q breaks the build
 
-parallel depend + http interface (and reasons why)
+#parallel depend + http interface (and reasons why)
+	depend 3 times faster but all global info gets mangled as parts get distributed
+
+	http is clean but slow to shutdown
+
+IsSource can be cached in the node in depend.pm
+
+parallel depend reuse the same process instead for forking
+	we can reuse the same inserted nodes and config, ...
+	we need to keep track of added nodes only
+
+	parallel depend can check the set of nodes it has depended against each other
+
+	check finds the nodes that are not depended, the ones that need to be linked to another parallel depend
+
+when we fork take a snapshot of inserted nodes to make it easier to find which nodes the fork has added
+
+subpbs node get an attribute to help decide if it should be parallelized
+
 
 
 node digest bypassed by warp on distro change!

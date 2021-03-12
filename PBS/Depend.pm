@@ -304,7 +304,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				else
 					{
 					my $comma = _INFO2_(', ') ;
-
+					
 					PrintInfo3
 						(
 						"${indent}'$short_node_name'"
@@ -314,7 +314,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						. "\n"
 						) ;
 					}
-
+					
 				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
 				}
 				
@@ -917,6 +917,8 @@ for my $dependency_defintion (@dependencies)
 						INSERTION_TIME             => $time,
 						INSERTING_NODE             => $tree->{__NAME},
 						} ;
+						
+		$dependency->{__TRIGGER_INSERTED} = $pbs_config->{ROOT_TRIGGER} if exists $pbs_config->{ROOT_TRIGGER} ;
 								
 		push @{$nodes_per_pbs_run{$load_package}}, "$dependency_name, rule: $rule_name" ; 
 
@@ -1022,6 +1024,8 @@ if(@has_matching_non_subpbs_rules)
 			}
 		elsif($matched_subpbs)
 			{
+			$tree->{$dependency}{__PARALLEL_SCHEDULE}++ ;
+ 
 			push @subpbs_dependencies, [$dependency, 'subpbs'] ;
 			}
 		else
@@ -1030,9 +1034,10 @@ if(@has_matching_non_subpbs_rules)
 			}
 		}
 
-	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
+	# run the last subpbs dependency in this process
+	delete $tree->{$subpbs_dependencies[-1]}{__PARALLEL_SCHEDULE} if @subpbs_dependencies ;
 
-	my $turntable_request = 1 ;
+	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
 	for (@non_matching, @non_subpbs_dependencies, @subpbs_dependencies)
 		{
@@ -1096,10 +1101,7 @@ if(@has_matching_non_subpbs_rules)
 			{
 			my %sum_matching_rules = %{$parent_matching_rules} ;
 			
-			if($node_name !~ /^__/)
-				{
-				push @{$sum_matching_rules{$_}}, $node_name for (@node_matching_rules) ;
-				}
+			map { push @{$sum_matching_rules{$_}}, $node_name } @node_matching_rules if $node_name !~ /^__/ ;
 			
 			# rule run once
 			my @sub_dependency_rules = $pbs_config->{RULE_RUN_ONCE}
@@ -1111,21 +1113,18 @@ if(@has_matching_non_subpbs_rules)
 			PrintInfo2 $PBS::Output::indentation . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
 				if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
 
-			my $local_time = PBS::Depend::Forked::CreateDependencyTree 
+			my $local_time = CreateDependencyTree 
 						(
-						$pbs_config, $tree->{$dependency}, $type , \$turntable_request, scalar(@subpbs_dependencies),
-						[
-							$pbsfile_chain,
-							$Pbsfile,
-							$package_alias,
-							$load_package,
-							$pbs_config,
-							$tree->{$dependency},
-							$config,
-							$inserted_nodes,
-							$pbs_config->{RULE_RUN_ONCE} ? \@sub_dependency_rules : $dependency_rules,
-							\%sum_matching_rules,
-						],
+						$pbsfile_chain,
+						$Pbsfile,
+						$package_alias,
+						$load_package,
+						$pbs_config,
+						$tree->{$dependency},
+						$config,
+						$inserted_nodes,
+						$pbs_config->{RULE_RUN_ONCE} ? \@sub_dependency_rules : $dependency_rules,
+						\%sum_matching_rules,
 						) ;
 
 			$PBS::Output::indentation_depth-- if $pbs_config->{DISPLAY_DEPEND_INDENTED} && $node_name !~ /^__PBS/ ;
@@ -1155,9 +1154,15 @@ elsif(@sub_pbs)
 	SIT $subpbs_definition, "subpbs:" if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
 	
 	# override pbs_config with subpbs pbs_config
-	my $subpbs_pbs_config = {%{$tree->{__PBS_CONFIG}}, %$subpbs_definition, SUBPBS_HASH => $sub_pbs[0]{RULE}} ;
+	my $subpbs_pbs_config =
+		{
+		%{$tree->{__PBS_CONFIG}},
+		%$subpbs_definition,
+		SUBPBS_HASH => $sub_pbs[0]{RULE}
+		} ;
 	
-	$subpbs_pbs_config->{PBS_COMMAND} = DEPEND_ONLY ;
+	$subpbs_pbs_config->{PBS_COMMAND}    = DEPEND_ONLY ;
+	$subpbs_pbs_config->{ROOT_TRIGGER}   = $tree->{__TRIGGER_INSERTED} if exists $tree->{__TRIGGER_INSERTED} ;
 	$subpbs_pbs_config->{PARENT_PACKAGE} = $package_alias ;
 
 	my $sub_node_name = $node_name;
@@ -1180,8 +1185,6 @@ elsif(@sub_pbs)
 	
 	SIT $subpbs_config, "subpbs config:" if defined $pbs_config->{DISPLAY_SUB_PBS_CONFIG} ;
 
-	my %inserted_nodes_snapshot = exists $tree->{__TRIGGER_INSERTED} ? %$inserted_nodes : () ;
-
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
 	# un-depend ourself for subpbs to match
@@ -1189,27 +1192,24 @@ elsif(@sub_pbs)
 	$tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
 
 	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
-		= PBS::PBS::Pbs
+		= PBS::Depend::Forked::Subpbs
 			(
-			[@$pbsfile_chain, $subpbs_name],
-			GetRunRelativePath($pbs_config, GetInsertionRule($tree)), # inserted_at
-			$subpbs_name,
-			$load_package,
-			$subpbs_pbs_config,
-			$subpbs_config,
-			[$sub_node_name],
-			$inserted_nodes,
-			("sub_pbs$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
-			DEPEND_ONLY,
+			$pbs_config, $tree,
+				[
+				[@$pbsfile_chain, $subpbs_name],
+				GetRunRelativePath($pbs_config, GetInsertionRule($tree)), # inserted_at
+				$subpbs_name,
+				$load_package,
+				$subpbs_pbs_config,
+				$subpbs_config,
+				[$sub_node_name],
+				$inserted_nodes,
+				("sub_pbs$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
+				DEPEND_ONLY,
+				],
 			) ;
 		
 	shift @{$nodes_per_pbs_run{$subpbs_load_package}} ; # node existed before subpbs
-	
-	# mark all the nodes from the subpbs run as trigger_inserted if node is trigger inserted
-	$inserted_nodes->{$_}{__TRIGGER_INSERTED} = $tree->{__TRIGGER_INSERTED}
-		for grep { ! exists $inserted_nodes_snapshot{$_} }
-			 grep { exists $tree->{__TRIGGER_INSERTED} }
-				keys %$inserted_nodes
 	}
 else
 	{
@@ -1235,7 +1235,7 @@ else
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 	}
 
-# section below is disabled
+# section below is disabled as it takes too much time, see -dl
 # we could generate the node log info after each node depend but do it after the check step
 # that adds the check status for the dependencies
 # the best solution would be to add information incrementally, generate the node log info during depend (rules  inserting dependencies)

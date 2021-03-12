@@ -31,24 +31,39 @@ use PBS::Net ;
 
 #-------------------------------------------------------------------------------------------------------
 
-my $forked_depends = 0 ;
-
-sub CreateDependencyTree
+sub Subpbs
 {
-my ($pbs_config, $node, $type , $turntable_request, $subpbs_dependencies, $args) = @_ ;
+my ($pbs_config, $node, $args) = @_ ;
 
-my $depender = \&PBS::Depend::CreateDependencyTree ;
+my $depender = \&PBS::PBS::Pbs ;
 
-if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $subpbs_dependencies)
+if($pbs_config->{DEPEND_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 	{
-	my $resource_handle = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // 0 ;
+=pod
+	to reuse an idle depender we need to munge the data a bit
+	
+	[
+	[@$pbsfile_chain, $subpbs_name],
+	GetRunRelativePath($pbs_config, GetInsertionRule($tree)), # inserted_at
+	$subpbs_name,
+	$load_package,
+	$subpbs_pbs_config,
+	$subpbs_config,
+	[$sub_node_name],
+	$inserted_nodes,
+	("sub_pbs$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
+	DEPEND_ONLY,
+	],
+
+=cut
+
+	my $data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // 0 ;
+
+	my $resource_handle = $data->{ID} ;
 	
 	if($resource_handle)
 		{
-		$forked_depends++ ;
-		
 		$node->{__PARALLEL_DEPEND}++ ;
-		$$turntable_request++ ;
 		
 		$depender = 
 			sub
@@ -57,7 +72,8 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 			
 			if($pid)
 				{
-				return 0 ;
+				# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
+				return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
 				}
 			else
 				{
@@ -68,15 +84,16 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				my $log_file = GetRedirectionFile($pbs_config, $node) ;
 				my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
 				
-				PBS::Depend::CreateDependencyTree(@_) ;
+				PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { pid => $$ }, $$) ;
+					
+				my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package) =
+					PBS::PBS::Pbs(@_) ;
 				
 				if(defined $pid)
 					{
 					RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
 					
 					Say Color 'test_bg2',  "Depend: parallel end, node: $node->{__NAME}, pid:$$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
-					
-					PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { id => $$ }, $$) ;
 					
 					PBS::Net::Post
 						(
@@ -92,7 +109,7 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 				else
 					{
 					RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-					return 0 ;
+					return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package ;
 					}
 				} ;
 				
@@ -100,7 +117,7 @@ if($pbs_config->{DEPEND_JOBS} && $type eq 'subpbs' && $$turntable_request < $sub
 		}
 	else
 		{
-		Say Warning3 "Depend: no resource to run depend in parallel, node: parallel start, index: $forked_depends, pid: $$"
+		Say Warning3 "Depend: no resource to run depend in parallel, node: $node->{__NAME}, pid: $$"
 			if $pbs_config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE} ;
 		}
 	}
@@ -116,7 +133,7 @@ my ($pbs_config, $resource_server_url, $data) = @_ ;
 
 my $d = PBS::Net::StartHttpDeamon($pbs_config) ;
 
-PBS::Net::Post($pbs_config, $resource_server_url, 'parallel_depend_waiting', { id => $$ , address => $d->url }, $$) ;
+PBS::Net::Post($pbs_config, $resource_server_url, 'parallel_depend_idling', { pid => $$ , address => $d->url }, $$) ;
 
 PBS::Net::BecomeServer($pbs_config, 'depender', $d, $data) ;
 }
