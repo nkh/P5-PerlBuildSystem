@@ -15,8 +15,8 @@ Say Debug "Debug" ;
 Say Debug2 "Debug2" ;
 Say Debug3 "Debug3" ;
 
-Print Color 'info_2', "Info2\n" ;
-Say Color 'info_2', "Info2" ;
+Print Color 'info2', "Info2\n" ;
+Say Color 'info2', "Info2" ;
 Say NoColor "no color" ;
 
 

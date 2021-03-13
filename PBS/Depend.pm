@@ -1454,7 +1454,7 @@ else
 				? scalar ( grep { ! /^__/ } keys %$dependency )
 					? ()
 					:'ᴺᴼ ᴰᴱᴾᴱᴺᴰᴱᴺᶜᴵᴱˢ' 
-				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info_2') ;
+				: _WARNING3_('ᴺᴼᵀ ᴰᴱᴾᴱᴺᴰᴱᴰ') . GetColor('info2') ;
 	}
 
 Say Info2 $link_indent . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;

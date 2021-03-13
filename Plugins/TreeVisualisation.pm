@@ -326,8 +326,8 @@ my @extra_options ;
 
 # colorize tree in blocks
 use Term::ANSIColor qw(:constants) ;
-my @colors = map { GetColor($_) } qw ( ttcl_1 ttcl_2 ttcl_3 ttcl_4 ) ;
-my @one_color = map { GetColor($_) } qw ( ttcl_1 ) ;
+my @colors = map { GetColor($_) } qw ( ttcl1 ttcl2 ttcl3 ttcl4 ) ;
+my @one_color = map { GetColor($_) } qw ( ttcl1 ) ;
 
 push @extra_options, 'COLOR_LEVELS' => $pbs_config->{TREE_COLOR_LEVELS} ? [\@colors, ''] : [\@one_color, ''] ;
 push @extra_options, 'WRAP_WIDTH' => $pbs_config->{WRAP_WIDTH} if $pbs_config->{WRAP_WIDTH} ;

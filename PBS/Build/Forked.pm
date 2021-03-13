@@ -641,7 +641,7 @@ print $builder_channel "BUILD_NODE" . "__PBS_FORKED_BUILDER__"
 
 #---------------------------------------------------------------------------------------------------------------
 
-my @bg_color_classes = ([qw ( box_1_1 box_1_2 )], [qw ( box_2_1 box_2_2 )]) ;
+my @bg_color_classes = ([qw ( box_11 box_12 )], [qw ( box_21 box_22 )]) ;
 my $bg_color_class = 0 ;
 
 sub CollectNodeBuildResult

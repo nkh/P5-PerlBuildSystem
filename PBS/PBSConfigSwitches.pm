@@ -286,10 +286,10 @@ EOT
 Color names used in Pbs:
 	error
 	warning
-	warning_2
+	warning2
 	info
-	info_2
-	info_3
+	info2
+	info3
 	user
 	shell
 	debug

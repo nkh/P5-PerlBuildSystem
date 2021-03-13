@@ -209,10 +209,10 @@ unless(@$targets)
 			$targets_pbs_config,
 			"use strict ;\n"
 			  . "use warnings ;\n"
+			  . "use PBS::Output ;\n"
 			  . "use Data::TreeDumper;\n"
 			  . "use PBS::Prf ;\n" # target and pbs options functions
 			  . "use PBS::Constants ;\n"
-			  . "use PBS::Output ;\n"
 			  . "use PBS::Rules ;\n"
 			  . "use PBS::Rules::Scope ;\n"
 			  . "use PBS::Triggers ;\n"
