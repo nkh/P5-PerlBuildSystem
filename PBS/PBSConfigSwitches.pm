@@ -641,6 +641,10 @@ EOT
 		'Maximum number of dependers run in parallel.',
 		'',
 		
+	'dp|depend_processes=i'                        => \$config->{DEPEND_PROCESSES},
+		'Maximum number of depend processes.',
+		'',
+		
 	'cj|check_jobs=i'                      => \$config->{CHECK_JOBS},
 		'Maximum number of checker run in parallel.',
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
@@ -786,6 +790,10 @@ EOT
 
 	'dpde|display_parallel_depend_end' =>\$config->{DISPLAY_PARALLEL_DEPEND_END},
 		'Display a message when a parallel depend end.',
+		'',
+
+	'dpdn|display_parallel_depend_node' =>\$config->{DISPLAY_PARALLEL_DEPEND_NODE},
+		'Display the node name in parallel depend end messages.',
 		'',
 
 	'dpdnr|display_parallel_depend_no_resource' =>\$config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
@@ -1807,7 +1815,7 @@ my ($options) = GetOptions() ;
 my (@slice, @switches) ;
 push @switches, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
 
-my $completion_list = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
+my ($completion_list, $option_tuples) = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
 
 my ($completion_command, $perl_script) = Term::Bash::Completion::Generator::generate_perl_completion_script('pbs', $completion_list, 1) ;
 
@@ -1836,10 +1844,13 @@ if($word_to_complete !~ /^\s?$/)
 	my (@slice, @options) ;
 	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
 
-	my $names = Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
+	my ($names, $option_tuples )= Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
 
 	my $aliases = AliasOptions([]) ;
 	push @$names, keys %$aliases ;
+	
+	my $reduce = $word_to_complete =~ s/-$// ;
+	my $expand = $word_to_complete =~ s/\+$// ;
 
 	use Tree::Trie ;
 	my $trie = new Tree::Trie ;
@@ -1849,7 +1860,29 @@ if($word_to_complete !~ /^\s?$/)
 
 	if(@matches)
 		{
-		print join("\n", @matches) . "\n" ;
+		if(@matches == 1 && ($reduce || $expand))
+			{
+			my $munged ;
+			
+			for  my $tuple (@$option_tuples)
+				{
+				if (any { $word_to_complete =~ /^-*$_$/ } @$tuple)
+					{
+					$munged = $reduce
+							?  $tuple->[0]
+							: defined $tuple->[1]
+								? $tuple->[1]
+								: $tuple->[0] ;
+					last ;
+					}
+				}
+			
+			print defined $munged ? "-$munged\n": "-$matches[0]\n" ;
+			}
+		else
+			{
+			print join("\n", @matches) . "\n" ;
+			}
 		}
 	else
 		{
@@ -1872,7 +1905,7 @@ if($word_to_complete !~ /^\s?$/)
 				DisplaySwitchesHelp(@matches) ;
 				
 				@matches = map { "--$_" } grep { /$word/ } @$names ;
-				print @matches > 1 ? join("\n", @matches) . "\n" : "\n.\n" ;
+				print @matches > 1 ? join("\n", @matches) . "\n" : "\n​\n" ;
 				}
 			else
 				{
@@ -1891,7 +1924,7 @@ if($word_to_complete !~ /^\s?$/)
 				DisplaySwitchHelp(@matches) ;
 				
 				@matches = map { "--$_" } grep { /$word/ } @$names ;
-				print @matches > 1 ? join("\n", @matches) . "\n" : "\n.\n" ;
+				print @matches > 1 ? join("\n", @matches) . "\n" : "\n​\n" ;
 				}
 			else
 				{
@@ -1919,7 +1952,7 @@ my ($options) = GetOptions() ;
 my (@slice, @switches) ;
 push @switches, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
 
-print join( "\n", map { ("-" . $_) } @{ Term::Bash::Completion::Generator::de_getop_ify_list(\@switches)} ) . "\n" ;
+print join( "\n", map { ("-" . $_) } @{ (Term::Bash::Completion::Generator::de_getop_ify_list(\@switches))[0]} ) . "\n" ;
 }
 
 #-------------------------------------------------------------------------------
