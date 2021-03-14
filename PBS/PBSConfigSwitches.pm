@@ -303,6 +303,10 @@ EOT
 		'',
 		'',
 
+	'ofw|devel_outpout_from_where'            => \$PBS::Output::output_from_where,
+		'',
+		'',
+
 	'p|pbsfile=s'               => \$config->{PBSFILE},
 		'Pbsfile use to defines the build.',
 		'',

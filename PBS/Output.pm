@@ -159,6 +159,7 @@ our $indentation = '    ' ;
 our $indentation_depth = 0 ;
 our $display_error_context  = 0 ;
 our $no_indentation = 0 ;
+our $output_from_where = 0 ;
 
 #-------------------------------------------------------------------------------
 
@@ -250,6 +251,8 @@ sub _print
 {
 #use Carp qw(cluck longmess shortmess);
 #cluck "This is how we got here!"; 
+
+print STDERR (join ';', (caller(1))[1, 2]) if $output_from_where ;
 
 my ($glob, $color_and_depth, $data, $indent, $color_indent) = @_ ;
 

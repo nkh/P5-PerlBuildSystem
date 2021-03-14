@@ -1,3 +1,8 @@
+
+-file_watcher
+	a command to get modified files from
+		-fw 'gss'
+
 #Say Info indents like Print Info and not like PrintInfo
 
 #dfl doesn't take the extra switches

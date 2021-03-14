@@ -1035,7 +1035,7 @@ if(@has_matching_non_subpbs_rules)
 		}
 
 	# run the last subpbs dependency in this process
-	delete $tree->{$subpbs_dependencies[-1]}{__PARALLEL_SCHEDULE} if @subpbs_dependencies ;
+	delete $tree->{$subpbs_dependencies[-1][0]}{__PARALLEL_SCHEDULE} if @subpbs_dependencies ;
 
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
 
@@ -1056,7 +1056,8 @@ if(@has_matching_non_subpbs_rules)
 		# show some pertinent depend information
 		if
 			(
-			$tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile
+			! exists $tree->{$dependency}{__WARP_NODE}
+			&& $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE} eq $Pbsfile
 			&& defined $tree->{$dependency}{__DEPENDED_AT}
 			&& $tree->{$dependency}{__DEPENDED_AT} ne $Pbsfile
 			)
