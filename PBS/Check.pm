@@ -106,6 +106,8 @@ PrintInfo "\e[K\e[K" ; # bleah!
 # warn if node isn't depended or has no dependencies
 if (NodeIsGenerated($tree))
 	{
+use Carp ;
+print Carp::croak unless defined $tree->{__NAME} ;
 	my $matching_rules = @{$tree->{__MATCHING_RULES}} ;
 	 
 	my @dependencies = grep { $_ !~ /^__/ } keys %$tree ;

@@ -1934,9 +1934,9 @@ if($word_to_complete !~ /^\s?$/)
 		else
 			{
 			my $word =  $word_to_complete =~ s/^-*//r ;
-
+			
 			@matches = grep { /$word/ } sort @$names ;
-
+			
 			print join("\n", map { "--$_" } @matches) . "\n" ;
 			}
 		}

@@ -5,7 +5,7 @@ use 5.006 ;
 use strict ;
 use warnings ;
 
-#use Time::HiRes qw(gettimeofday tv_interval) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 
 require Exporter ;
 
@@ -20,9 +20,9 @@ use HTTP::Status ;
 use HTTP::Request::Params ;
 use HTTP::Tiny;
 
-use Time::HiRes qw(usleep) ;
+use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 use Data::Dumper ;
-use List::Util qw(first) ;
+use List::Util qw(all first) ;
  
 use PBS::Output ;
 
@@ -33,8 +33,11 @@ sub Post
 my ($pbs_config, $url, $where, $what, $whom) = @_ ;
 $what //= {} ;
 
+#my $t0_message = [gettimeofday];
+
 my $response = HTTP::Tiny->new->post_form("${url}pbs/$where", $what) ;
- 
+
+#SDT $what, sprintf("Http: POST to ${url}pbs/$where, time: %0.4f s.", tv_interval ($t0_message, [gettimeofday])) if $pbs_config->{HTTP_DISPLAY_POST} ;
 SDT $what, "Http: POST to ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
 
 unless ($response->{success})
@@ -150,7 +153,7 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	Say Debug "Depend∥ : " . $_[0]
 			. _INFO2_
 				  ', dependers: ' . scalar( keys %parallel_dependers)
-				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values  %parallel_dependers)
+				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers)
 				. ', reused: ' . $reused
 				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS}
 				. ', leased: ' . $allocated
@@ -181,8 +184,16 @@ while (my $c = $d->accept)
 					
 					if
 						(
-						   (  $pbs_config->{USE_DEPEND_SERVER} && $id && $dependers < $pbs_config->{DEPEND_JOBS} )
-						|| (! $pbs_config->{USE_DEPEND_SERVER} && $id )
+							(
+							   (  $pbs_config->{USE_DEPEND_SERVER} && $id && $dependers < $pbs_config->{DEPEND_JOBS} )
+							|| (! $pbs_config->{USE_DEPEND_SERVER} && $id )
+							)
+						
+						&&
+							(
+							! defined $pbs_config->{DEPEND_PROCESSES}
+							|| (keys %parallel_dependers < $pbs_config->{DEPEND_PROCESSES})
+							)
 						)
 						{
 						RESPONSE { ID => $id } ;
@@ -201,7 +212,7 @@ while (my $c = $d->accept)
 				&& do 
 					{
 					my $id = first { $resources{$_} } keys %resources ;
-					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values  %parallel_dependers ;
+					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers ;
 			
 					if ($id && $idle_depender)
 						{
@@ -221,10 +232,17 @@ while (my $c = $d->accept)
 					} ;
 					
 			'/pbs/get_depend_resource_status' eq $path
-				&& RESPONSE { AVAILABLE_RESOURCES => scalar(grep { $_ } values %resources) } ;
+				&& RESPONSE
+					{
+					AVAILABLE_RESOURCES => scalar(grep { $_ } values %resources),
+					ALL_DEPENDERS_DONE  => all { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers
+					} ;
 					
 			'/pbs/get_parallel_dependers' eq $path
 				&& RESPONSE { SERIALIZED_DEPENDERS => Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]) }  ;
+			
+			
+			'/pbs/get_graph' eq $path && RESPONSE { GRAPH => $data->[1] }  ;
 			
 			#$c->send_error(RC_FORBIDDEN) ;
 			#$c->send_file_response("/") ;

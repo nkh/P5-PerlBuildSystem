@@ -17,7 +17,7 @@ our @EXPORT = qw(DefaultBuild) ;
 our $VERSION = '0.04' ;
 
 use Data::TreeDumper;
-use Time::HiRes qw(usleep gettimeofday tv_interval) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
 use List::Util qw(any) ;
@@ -276,50 +276,7 @@ else
 	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
-if($pbs_config->{DEPEND_JOBS})
-	{
-	my $data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
-	my $available_resources = $data->{AVAILABLE_RESOURCES} ;
-	
-	my $wait_counter = 0 ;
-	while ($available_resources ne $pbs_config->{DEPEND_JOBS})
-		{
-		my $processes_left = ($pbs_config->{DEPEND_JOBS} - $available_resources) ;
-		my $wait_time = 0.01 * $wait_counter ;
-		
-		Say Warning3 "Depend: remaining processes: $processes_left, elapsed time: $wait_time s."
-			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
-		
-		usleep 10_000 ;
-
-		$data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) // 0 ;
-		$available_resources = $data->{AVAILABLE_RESOURCES} ;
-		}
-
-	# handle all the forked dependers
-	my $t0_shutdown = [gettimeofday];
-
-	$data = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
-	my $serialized_dependers = $data->{SERIALIZED_DEPENDERS} ;
-
-	my $dependers ;
-	eval $serialized_dependers ;
-	Say Error $@ if $@ ;
-
-	if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
-		{
-		kill 'KILL',  $_->{PID}  for values %$dependers ;
-		}
-	else
-		{
-		PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
-		}
-
-	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
-
-	my $number_of_dependers = scalar keys %$dependers ;
-	PrintInfo sprintf("\nDepend: dependers: $number_of_dependers, shutdown time: %0.2f s.\n", tv_interval ($t0_shutdown, [gettimeofday])) ;
-	} 
+PBS::Depend::Forked::Link($pbs_config) if $pbs_config->{DEPEND_JOBS} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

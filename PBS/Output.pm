@@ -4,8 +4,6 @@ use 5.006 ;
 use strict ;
 use warnings ;
 
-use Sub::Install ;
-
 require Exporter ;
 
 our @ISA = qw(Exporter) ;
@@ -29,6 +27,8 @@ BEGIN
 
 sub CreateColorFunctions
 {
+use Sub::Install ;
+
 my @exports ;
 
 for my $color_name (@_)
@@ -71,7 +71,7 @@ for my $color_name (@_)
 @exports 
 }
 
-use subs qw - Error - ;
+use subs qw - Error Color - ;
 
 use vars qw($VERSION @ISA @EXPORT) ;
 
@@ -108,7 +108,6 @@ my @exports =
 
 			test_bg 
 			test_bg2
-			dark
 
 			ignoring_local_rule
 
@@ -117,6 +116,7 @@ my @exports =
 			ttcl3
 			ttcl4
 			/),
+			#dark
 		qw(
 			Say Print
 
