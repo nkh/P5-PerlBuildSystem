@@ -121,39 +121,39 @@ $config->{JOBS_DIE_ON_ERROR} = 0 ;
 $config->{GENERATE_TREE_GRAPH_GROUP_MODE} = GRAPH_GROUP_NONE ;
 $config->{GENERATE_TREE_GRAPH_SPACING} = 1 ;
 
-$config->{PBS_QR_OPTIONS}                        ||= [] ;
-$config->{RULE_NAMESPACES}                       ||= [] ;
-$config->{CONFIG_NAMESPACES}                     ||= [] ;
-$config->{SOURCE_DIRECTORIES}                    ||= [] ;
-$config->{PLUGIN_PATH}                           ||= [] ;
-$config->{LIB_PATH}                              ||= [] ;
-$config->{DISPLAY_BUILD_INFO}                    ||= [] ;
-$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}     ||= [] ;
-$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT} ||= [] ;
-$config->{DISPLAY_NODE_INFO}                     ||= [] ;
-$config->{DISPLAY_NODE_ENVIRONMENT}              ||= [] ;
-$config->{NODE_ENVIRONMENT_REGEX}                ||= [] ;
-$config->{LOG_NODE_INFO}                         ||= [] ;
-$config->{USER_OPTIONS}                          ||= {} ;
-$config->{KEEP_ENVIRONMENT}                      ||= [] ;
-$config->{COMMAND_LINE_DEFINITIONS}              ||= {} ;
-$config->{DISPLAY_DEPENDENCIES_REGEX}            ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_REGEX_NOT}        ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_RULE_NAME}        ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}    ||= [] ;
-$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX}  ||= [] ;
-$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}      ||= [] ;
-$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}     ||= [] ;
-$config->{GENERATE_TREE_GRAPH_EXCLUDE}           ||= [] ;
-$config->{GENERATE_TREE_GRAPH_INCLUDE}           ||= [] ;
-$config->{DISPLAY_PBS_CONFIGURATION}             ||= [] ;
-$config->{VERBOSITY}                             ||= [] ;
-$config->{POST_PBS}                              ||= [] ;
-$config->{DISPLAY_TREE_FILTER}                   ||= [] ;
-$config->{DISPLAY_TEXT_TREE_REGEX}               ||= [] ;
-$config->{BREAKPOINTS}                           ||= [] ;
-$config->{NODE_BUILD_ACTIONS}                    ||= [] ;
-$config->{EXTERNAL_CHECKERS}                     ||= [] ;
+$config->{PBS_QR_OPTIONS}                        //= [] ;
+$config->{RULE_NAMESPACES}                       //= [] ;
+$config->{CONFIG_NAMESPACES}                     //= [] ;
+$config->{SOURCE_DIRECTORIES}                    //= [] ;
+$config->{PLUGIN_PATH}                           //= [] ;
+$config->{LIB_PATH}                              //= [] ;
+$config->{DISPLAY_BUILD_INFO}                    //= [] ;
+$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}     //= [] ;
+$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT} //= [] ;
+$config->{DISPLAY_NODE_INFO}                     //= [] ;
+$config->{DISPLAY_NODE_ENVIRONMENT}              //= [] ;
+$config->{NODE_ENVIRONMENT_REGEX}                //= [] ;
+$config->{LOG_NODE_INFO}                         //= [] ;
+$config->{USER_OPTIONS}                          //= {} ;
+$config->{KEEP_ENVIRONMENT}                      //= [] ;
+$config->{COMMAND_LINE_DEFINITIONS}              //= {} ;
+$config->{DISPLAY_DEPENDENCIES_REGEX}            //= [] ;
+$config->{DISPLAY_DEPENDENCIES_REGEX_NOT}        //= [] ;
+$config->{DISPLAY_DEPENDENCIES_RULE_NAME}        //= [] ;
+$config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}    //= [] ;
+$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX}  //= [] ;
+$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}      //= [] ;
+$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}     //= [] ;
+$config->{GENERATE_TREE_GRAPH_EXCLUDE}           //= [] ;
+$config->{GENERATE_TREE_GRAPH_INCLUDE}           //= [] ;
+$config->{DISPLAY_PBS_CONFIGURATION}             //= [] ;
+$config->{VERBOSITY}                             //= [] ;
+$config->{POST_PBS}                              //= [] ;
+$config->{DISPLAY_TREE_FILTER}                   //= [] ;
+$config->{DISPLAY_TEXT_TREE_REGEX}               //= [] ;
+$config->{BREAKPOINTS}                           //= [] ;
+$config->{NODE_BUILD_ACTIONS}                    //= [] ;
+$config->{EXTERNAL_CHECKERS}                     //= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $config) ;} ;
 
@@ -1677,18 +1677,17 @@ sub DisplaySwitchesHelp
 {
 my (@switches) = @_ ;
 
-my (@t, @matches) = (GetOptionsElements()) ;
+my @matches ;
 
-for my $option (@t)
+for my $option (sort { $a->[0] cmp $b->[0] } GetOptionsElements())
 	{
-	my $name = $option->[0] ;
-	
-	for my $element (split /\|/, $name)
+	for my $option_element (split /\|/, $option->[0])
 		{
-		if( any { $element =~ /$_\s*(=*.)*$/ } @switches )
+		$option_element =~ s/=.*$// ;
+
+		if( any { $_ eq $option_element} @switches )
 			{
 			push @matches, $option ;
-			last ;
 			}
 		}
 	}
@@ -1711,16 +1710,33 @@ sub _DisplayHelp
 {
 my ($narrow_display, $display_long_help, @matches) = @_ ;
 
-my $max_length = $narrow_display ? 0 : max map { length $_->[0] } @matches ;
-
-my $lht = $->[3] eq '' ? '' : '*' ;
+my (@short, @long, @options) ;
 
 for (@matches)
 	{
-	my ($name, $help, $long_help) = @{$_}[0, 2, 3] ;
+	my ($option, $help, $long_help) = @{$_}[0, 2, 3] ;
+	
+	my ($short, $long) =  split(/\|/, ($option =~ s/=.*$//r), 2) ;
+	
+	($short, $long) = ('', $short) unless defined $long ;
+	
+	push @short, length($short) ;
+	push @long , length($long) ;
+	
+	push @options, [$short, $long, $help, $long_help] ; 
+	}
 
-	Say Info3 (sprintf "%-${max_length}s$lht: ", $name)
-			. ($narrow_display ? "\n  " : ' ')
+my $max_short = $narrow_display ? 0 : max(@short) + 2 ;
+my $max_long  = $narrow_display ? 0 : max(@long);
+
+for (@options)
+	{
+	my ($short, $long, $help, $long_help) = @{$_} ;
+
+	my $lht = $long_help eq '' ? '' : '*' ;
+
+	Say Info3 sprintf( "--%-${max_long}s %-${max_short}s$lht: ", $long, ($short eq '' ? '' : "--$short"))
+			. ($narrow_display ? "\n" : '')
 			. _INFO_($help) ;
 
 	Say Info  "$long_help" if $display_long_help && $long_help ne '' ;
@@ -1848,7 +1864,7 @@ my ($options) = @_ ;
 shift @ARGV ;
 my ($command_name, $word_to_complete, $previous_arguments) = @ARGV ;
 
-if($word_to_complete !~ /^\s?$/)
+if($word_to_complete !~ /^-?-?\s?$/)
 	{
 	my (@slice, @options) ;
 	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
@@ -1857,19 +1873,21 @@ if($word_to_complete !~ /^\s?$/)
 
 	my $aliases = AliasOptions([]) ;
 	push @$names, keys %$aliases ;
+
+	@$names = sort @$names ;
 	
 	my $reduce = $word_to_complete =~ s/-$// ;
 	my $expand = $word_to_complete =~ s/\+$// ;
 
 	use Tree::Trie ;
 	my $trie = new Tree::Trie ;
-	$trie->add( map { ("-" . $_) , ("--" . $_) } @{$names }) ;
+	$trie->add( map { ("-" . $_) , ("--" . $_) }  @{$names }) ;
 
 	my @matches = $trie->lookup($word_to_complete) ;
 
 	if(@matches)
 		{
-		if(@matches == 1 && ($reduce || $expand))
+		if($reduce || $expand)
 			{
 			my $munged ;
 			
@@ -1877,11 +1895,7 @@ if($word_to_complete !~ /^\s?$/)
 				{
 				if (any { $word_to_complete =~ /^-*$_$/ } @$tuple)
 					{
-					$munged = $reduce
-							?  $tuple->[0]
-							: defined $tuple->[1]
-								? $tuple->[1]
-								: $tuple->[0] ;
+					$munged = $reduce ?  $tuple->[0] : defined $tuple->[1] ? $tuple->[1] : $tuple->[0] ;
 					last ;
 					}
 				}
@@ -1893,47 +1907,21 @@ if($word_to_complete !~ /^\s?$/)
 			print join("\n", @matches) . "\n" ;
 			}
 		}
-	else
+	elsif($word_to_complete =~ /[^\?\-\+]+/)
 		{
-		if($word_to_complete =~ /\?\?$/)
+		if($word_to_complete =~ /\?\??$/)
 			{
-			my ($word) = $word_to_complete =~ m/^-*(.+)\?\?$/ ;
-
-			if($word_to_complete =~ m/^-/)
-				{
-				@matches = grep { /^$word/ } @$names ;
-				}
-			else
-				{
-				@matches = grep { /$word/ } @$names ;
-				}
-
+			my ($word, $only_one) = $word_to_complete =~ /^-*(.+?)(\?\??)$/ ;
+			
+			@matches = grep { /^$word/ } @$names ;
+			
 			if(@matches)
 				{
 				Print Info "\n\n";
-				DisplaySwitchesHelp(@matches) ;
 				
-				@matches = map { "--$_" } grep { /$word/ } @$names ;
-				print @matches > 1 ? join("\n", @matches) . "\n" : "\n​\n" ;
-				}
-			else
-				{
-				print join("\n", map { "--$_" } grep { /$word/ } @$names) . "\n" ;
-				}
-			}
-		elsif($word_to_complete =~ /\?$/)
-			{
-			my ($word) = $word_to_complete =~ m/^-*(.+)\?$/ ;
-
-			@matches = grep { /^$word\s*$/ } @$names ;
-
-			if(1 == @matches)
-				{
-				Print Info "\n\n";
-				DisplaySwitchHelp(@matches) ;
+				DisplaySwitchesHelp($only_one eq '?' ? $word : @matches) ;
 				
-				@matches = map { "--$_" } grep { /$word/ } @$names ;
-				print @matches > 1 ? join("\n", @matches) . "\n" : "\n​\n" ;
+				print @matches > 1 ? join("\n", map { "--$_" } @matches) . "\n" : "\n​\n" ;
 				}
 			else
 				{
@@ -1942,11 +1930,9 @@ if($word_to_complete !~ /^\s?$/)
 			}
 		else
 			{
-			my $word =  $word_to_complete =~ s/^-*//r ;
+			my $word = $word_to_complete =~ s/^-*//r ;
 			
-			@matches = grep { /$word/ } sort @$names ;
-			
-			print join("\n", map { "--$_" } @matches) . "\n" ;
+			print join("\n", map { "--$_" } sort grep { /$word/ } @$names) . "\n" ;
 			}
 		}
 	}

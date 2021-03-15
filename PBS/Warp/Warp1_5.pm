@@ -40,9 +40,7 @@ my %external_checked ;
 
 if(@{$pbs_config->{EXTERNAL_CHECKERS}})
 	{
-	my ($t0_warp) = ([gettimeofday],[gettimeofday]) ;
-
-	my %external_checked = map { chomp $_ => 1 } map { read_file($_) } uniq @{$pbs_config->{EXTERNAL_CHECKERS}} ;
+	%external_checked = map { chomp ; $_ => 1 } map { read_file($_) } uniq @{$pbs_config->{EXTERNAL_CHECKERS}} ;
 	
 	if(0 == keys %external_checked)
 		{
@@ -154,7 +152,7 @@ if($run_in_warp_mode)
 		return (BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes) ;
 		}
 
-	$IsFileModified ||= \&PBS::Digest::IsFileModified ;
+	$IsFileModified //= \&PBS::Digest::IsFileModified ;
 
 	# remove pbsfile triggered nodes and other global dependencies
 	my $trigger_log_warp = CheckWarpConfiguration($pbs_config, $nodes, $warp_configuration, $warp_dependents, $node_names, $IsFileModified) ;

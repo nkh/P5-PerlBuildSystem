@@ -1,5 +1,9 @@
 
--file_watcher
+#help align options
+	a   |aaaa
+	bbb |bbbbbbb
+
+#-external_checker
 	a command to get modified files from
 		-fw 'gss'
 		pbs  -wnmw -j 12 -ek . --devel_no_distribution_check -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")
