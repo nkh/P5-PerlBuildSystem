@@ -121,38 +121,39 @@ $config->{JOBS_DIE_ON_ERROR} = 0 ;
 $config->{GENERATE_TREE_GRAPH_GROUP_MODE} = GRAPH_GROUP_NONE ;
 $config->{GENERATE_TREE_GRAPH_SPACING} = 1 ;
 
-$config->{PBS_QR_OPTIONS} ||= [] ;
-$config->{RULE_NAMESPACES} ||= [] ;
-$config->{CONFIG_NAMESPACES} ||= [] ;
-$config->{SOURCE_DIRECTORIES} ||= [] ;
-$config->{PLUGIN_PATH} ||= [] ;
-$config->{LIB_PATH} ||= [] ;
-$config->{DISPLAY_BUILD_INFO} ||= [] ;
-$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX} ||= [] ;
+$config->{PBS_QR_OPTIONS}                        ||= [] ;
+$config->{RULE_NAMESPACES}                       ||= [] ;
+$config->{CONFIG_NAMESPACES}                     ||= [] ;
+$config->{SOURCE_DIRECTORIES}                    ||= [] ;
+$config->{PLUGIN_PATH}                           ||= [] ;
+$config->{LIB_PATH}                              ||= [] ;
+$config->{DISPLAY_BUILD_INFO}                    ||= [] ;
+$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}     ||= [] ;
 $config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT} ||= [] ;
-$config->{DISPLAY_NODE_INFO} ||= [] ;
-$config->{DISPLAY_NODE_ENVIRONMENT} ||= [] ;
-$config->{NODE_ENVIRONMENT_REGEX} ||= [] ;
-$config->{LOG_NODE_INFO} ||= [] ;
-$config->{USER_OPTIONS} ||= {} ;
-$config->{KEEP_ENVIRONMENT} ||= [] ;
-$config->{COMMAND_LINE_DEFINITIONS} ||= {} ;
-$config->{DISPLAY_DEPENDENCIES_REGEX} ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_REGEX_NOT} ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_RULE_NAME} ||= [] ;
-$config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT} ||= [] ;
-$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX} ||= [] ;
-$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE} ||= [] ;
-$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX} ||= [] ;
-$config->{GENERATE_TREE_GRAPH_EXCLUDE} ||= [] ;
-$config->{GENERATE_TREE_GRAPH_INCLUDE} ||= [] ;
-$config->{DISPLAY_PBS_CONFIGURATION} ||= [] ;
-$config->{VERBOSITY} ||= [] ;
-$config->{POST_PBS} ||= [] ;
-$config->{DISPLAY_TREE_FILTER} ||= [] ;
-$config->{DISPLAY_TEXT_TREE_REGEX} ||= [] ;
-$config->{BREAKPOINTS} ||= [] ;
-$config->{NODE_BUILD_ACTIONS} ||= [] ;
+$config->{DISPLAY_NODE_INFO}                     ||= [] ;
+$config->{DISPLAY_NODE_ENVIRONMENT}              ||= [] ;
+$config->{NODE_ENVIRONMENT_REGEX}                ||= [] ;
+$config->{LOG_NODE_INFO}                         ||= [] ;
+$config->{USER_OPTIONS}                          ||= {} ;
+$config->{KEEP_ENVIRONMENT}                      ||= [] ;
+$config->{COMMAND_LINE_DEFINITIONS}              ||= {} ;
+$config->{DISPLAY_DEPENDENCIES_REGEX}            ||= [] ;
+$config->{DISPLAY_DEPENDENCIES_REGEX_NOT}        ||= [] ;
+$config->{DISPLAY_DEPENDENCIES_RULE_NAME}        ||= [] ;
+$config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}    ||= [] ;
+$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX}  ||= [] ;
+$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}      ||= [] ;
+$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}     ||= [] ;
+$config->{GENERATE_TREE_GRAPH_EXCLUDE}           ||= [] ;
+$config->{GENERATE_TREE_GRAPH_INCLUDE}           ||= [] ;
+$config->{DISPLAY_PBS_CONFIGURATION}             ||= [] ;
+$config->{VERBOSITY}                             ||= [] ;
+$config->{POST_PBS}                              ||= [] ;
+$config->{DISPLAY_TREE_FILTER}                   ||= [] ;
+$config->{DISPLAY_TEXT_TREE_REGEX}               ||= [] ;
+$config->{BREAKPOINTS}                           ||= [] ;
+$config->{NODE_BUILD_ACTIONS}                    ||= [] ;
+$config->{EXTERNAL_CHECKERS}                     ||= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $config) ;} ;
 
@@ -652,6 +653,10 @@ EOT
 	'cj|check_jobs=i'                      => \$config->{CHECK_JOBS},
 		'Maximum number of checker run in parallel.',
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
+
+	'ce|external_checker=s'                      => $config->{EXTERNAL_CHECKERS},
+		'external command giving list of changed nodes',
+		'',
 
 	'distribute=s'                   => \$config->{DISTRIBUTE},
 		'Define where to distribute the build.',

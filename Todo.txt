@@ -2,6 +2,7 @@
 -file_watcher
 	a command to get modified files from
 		-fw 'gss'
+		pbs  -wnmw -j 12 -ek . --devel_no_distribution_check -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")
 
 #Say Info indents like Print Info and not like PrintInfo
 

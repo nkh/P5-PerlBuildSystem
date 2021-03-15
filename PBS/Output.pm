@@ -68,6 +68,7 @@ for my $color_name (@_)
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $ST_COLOR, as => $name });
 	}
+
 @exports 
 }
 
@@ -177,7 +178,7 @@ $cc{$_} = { %{$default_colors->{$_} // {}}, %{$cc{$_} // {}} } for keys %$defaul
 # colors defined on the command line
 $cc{$cd}{$_} = $user_cc{$cd}{$_} for keys %{$user_cc{$cd}} ;
 
-CreateColorFunctions keys %{$cc{$cd}} ;
+CreateColorFunctions grep { $_ ne 'dark' } keys %{$cc{$cd}} ;
 }
 
 sub GetColor
