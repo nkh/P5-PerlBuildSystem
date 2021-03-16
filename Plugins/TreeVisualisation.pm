@@ -152,7 +152,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					$tag  = NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
 					$tag .= _WARNING_(' ⋂') if $tree->{$_}{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{$_}{__MATCHED_SUBPBS};
 					$tag .= $cache // $rules ;
- 					$tag .= GetColor('info_2')  ;
+ 					$tag .= GetColor('info2')  ;
 					
 					
 					$_ = [$_, $tag] if defined $tag ;

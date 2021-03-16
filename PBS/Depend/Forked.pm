@@ -174,6 +174,7 @@ if($resource_id)
 			PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { pid => $$ }, $$) ;
 				
 			my %nodes_snapshot = %{$_[7]} ;
+			my $target = $_[6][0] ;
 
 			my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package) =
 				PBS::PBS::Pbs(@_) ;
@@ -198,26 +199,40 @@ if($resource_id)
 					$$
 					) ;
 				
-				my %graph = map 
-						{
-						my $node = $_ ;
-						
-						$node =>
+				my %not_depended ;
+				my %graph  = 
+					(
+					PID      => $$,
+					TARGET   => $target,
+					PARENT   => $parent_pid,
+					CHILDREN => \%forked_children,
+					
+					NODES    => 
 							{
 							map 
 								{
-								my $ref = ref $inserted_nodes->{$node}{$_} ;
+								my $node = $_ ;
 								
-								'' eq $ref
-									? ($_ => $inserted_nodes->{$node}{$_})
-									: ($_ => $ref)
-								} 
-								keys %{$inserted_nodes->{$_}}
-							}
-						} @new_nodes ;
+								$not_depended{$node}++ if ! exists $inserted_nodes->{$node}{__DEPENDED}
+											 && ! exists $inserted_nodes->{$node}{__IS_SOURCE} ;
+								
+								$node =>
+									{
+									map 
+										{
+										my $ref = ref $inserted_nodes->{$node}{$_} ;
+										
+										'' eq $ref
+											? ($_ => $inserted_nodes->{$node}{$_})
+											: ($_ => $ref)
+										} 
+										keys %{$inserted_nodes->{$node}}
+									}
+								} @new_nodes
+							},
+					) ;
 				
-				# check the nodes from the target, compute build sequence and integrate check result %graph
-				# that will be send to main pbs
+				$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
 				
 				local $Data::Dumper::Indent = 0 ;
 				my $serialized_graph = Data::Dumper->Dump([\%graph], [qw(graph)]) ;
@@ -303,7 +318,7 @@ use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
 sub Link
 {
-my ($pbs_config) = @_ ;
+my ($pbs_config, $inserted_nodes) = @_ ;
 
 if($pbs_config->{DEPEND_JOBS})
 	{
@@ -330,7 +345,7 @@ if($pbs_config->{DEPEND_JOBS})
 	eval $serialized_dependers ;
 	Say Error $@ if $@ ;
 
-	LinkChildren($pbs_config, $serialized_dependers, $dependers) ;
+	LinkChildren($pbs_config, $serialized_dependers, $dependers, $inserted_nodes) ;
 
 	my $t0_shutdown = [gettimeofday];
 
@@ -352,28 +367,76 @@ if($pbs_config->{DEPEND_JOBS})
 	
 sub LinkChildren
 {
-my ($pbs_config, $serialized_dependers, $dependers) = @_ ;
+my ($pbs_config, $serialized_dependers, $dependers, $inserted_nodes) = @_ ;
+
+my $t0_link = [gettimeofday];
 
 eval $serialized_dependers unless defined $dependers;
-Say Error $@ if $@ ;
+Say Error $@ and die "\n"if $@ ;
 
-#SDT [ $$, $parent_pid, \%forked_children, length($serialized_dependers) ], 'linking', MAX_DEPTH => 2 ;
+my %main_graph =
+	(
+	PID          => $$,
+	TARGET       => 'ROOT',
+	PARENT       => $parent_pid,
+	CHILDREN     => \%forked_children,
+	
+	NODES        => $inserted_nodes,
 
-my $t0_link_message = [gettimeofday];
+	NOT_DEPENDED => {
+			map { $_->{__NAME} => $_ }
+				grep { ! exists $_->{__DEPENDED} && ! exists $_->{__IS_SOURCE} }
+					values %$inserted_nodes
+			},
+	) ;
 
 my %graphs = map 
 		{
 		my $data = PBS::Net::Get($pbs_config, $dependers->{$_}{ADDRESS}, 'get_graph', {}, $$) ;
-
 		my $graph ; eval $data->{GRAPH} ; die $@ if $@ ;
 
 		$_ => $graph ; 
 		} keys %$dependers ;
 
-#SDT \%graphs ;
+$graphs{$$} = \%main_graph ;
 
-my $messages = keys %$dependers ;
-PrintInfo sprintf("Depend: link messages: $messages, time: %0.2f s.\n", tv_interval ($t0_link_message, [gettimeofday])) ;
+my %nodes ;
+my %not_linked ;
+
+for my $graph ( values %graphs)
+	{
+	for (keys %{$graph->{NODES}})
+		{
+		Say Debug "Link: duplicate: $_" if exists $nodes{$_} ;
+		$nodes{$_} = $graph->{NODES}{$_} ;
+		}
+	}
+
+my $linked = 0 ;
+for my $graph ( values %graphs, \%main_graph)
+	{
+	for (keys %{$graph->{NOT_DEPENDED}})
+		{
+		if(exists $nodes{$_})
+			{
+			$graph->{LINKED}{$_} = $nodes{$_} ;
+			$linked++ ;
+			#Say Debug "Link: linking: $_, graph: $graph->{PID}" ;
+			}
+		else
+			{
+			$not_linked{$_} = $graph->{NOT_DEPENDED}{$_} ;
+			Say Debug "Link: can't find node: $_, graph: $graph->{PID}" ;
+			}
+		}
+	}
+
+my $time                = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
+my $nodes               = keys %nodes ;
+my $not_linked          = keys %not_linked ;
+my $number_of_dependers = keys %$dependers ;
+
+Say Info "Depend: gather, ∥ dependers: $number_of_dependers, nodes: $nodes, linked: $linked, not linked: $not_linked, time: $time" ;
 }
 
 
