@@ -708,32 +708,31 @@ else
 	if($build_result == BUILD_SUCCESS)
 		{
 		$built_node->{__BUILD_DONE} = "PBS::Build::Forked Done." ;
-
+		
 		unless($no_output)
 			{
 			print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
-
+			
 			my $print_separator ;
-
+			
 			# collect builder output and display it
 			while(<$builder_channel>)
 				{
 				last if /__PBS_FORKED_BUILDER__/ ;
-				next if $no_output ;
-
+				
 				chomp ;
 				$_ = $PBS::Output::indentation if ($_ eq '' || $_ eq "\t") ;
-
+				
 				my $length = length($PBS::Output::indentation) || 4 ;
 				my $o = $pbs_config->{BOX_NODE}
 						? ta_highlight((ta_length($_) == 0 ? (' ' x $length) : $_) , qr/.{$length}/, GetColor($bg_colors[$bg_color])) 
 						: $_ ;
-
-				PrintVerbatim "$o\n" unless $no_output ;
-
-				$print_separator++ unless $no_output || $o eq q{} ;
+						
+				PrintVerbatim "$o\n" ;
+				
+				$print_separator++ unless $o eq q{} ;
 				}
-
+			
 			PrintVerbatim "\n" if $print_separator ;
 			}
 		}
@@ -746,14 +745,14 @@ else
 		while(<$builder_channel>)
 			{
 			last if /__PBS_FORKED_BUILDER__/ ;
-
+			
 			chomp ;
 			$_ = '   ' if ($_ eq '' || $_ eq "\t") ;
 			
 			my $o = $pbs_config->{BOX_NODE}
 					? ta_highlight((ta_length($_) == 0 ? ' ' : $_) , qr/./, GetColor('on_error')) 
 					: $_ ;
-
+			
 			$error_output .= $o . "\n" ;
 			}
 		}

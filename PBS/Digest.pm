@@ -340,7 +340,7 @@ sub ClearMd5Cache
 sub GetFileMD5
 {
 #  this one caching too.
-my $file = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
+my $file = shift ; #or carp ERROR "GetFileMD5: Called without argument!\n" ;
 my $warn = shift // 1 ;
 
 my $md5 = 'invalid md5' ;

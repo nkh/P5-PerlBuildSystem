@@ -118,7 +118,7 @@ if($pid)
 	}
 else
 	{
-	BecomeServer($pbs_config, 'ressource server', $httpd, []) ;
+	BecomeServer($pbs_config, 'ressource server', $httpd, {}) ;
 	exit 0 ;
 	}
 }
@@ -241,8 +241,9 @@ while (my $c = $d->accept)
 			'/pbs/get_parallel_dependers' eq $path
 				&& RESPONSE { SERIALIZED_DEPENDERS => Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]) }  ;
 			
+			#  below depender urls
 			
-			'/pbs/get_graph' eq $path && RESPONSE { GRAPH => $data->[1] }  ;
+			'/pbs/get_graph' eq $path && RESPONSE { GRAPH => $data->{GRAPH} }  ;
 			
 			#$c->send_error(RC_FORBIDDEN) ;
 			#$c->send_file_response("/") ;
@@ -333,6 +334,8 @@ while (my $c = $d->accept)
 					$parallel_dependers{$pid}{ADDRESS} = $address ;
 					$status->("idling, pid: $pid") ;
 					} ;
+			
+			'/pbs/build' eq $path and PBS::Depend::Forked::Build($pbs_config, $data) ;
 			}
 		
 		$c->force_last_request ;
@@ -342,7 +345,7 @@ while (my $c = $d->accept)
 	last if $stop ;
 	}
 
-Say Error "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
+Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
 }
 
 #-------------------------------------------------------------------------------

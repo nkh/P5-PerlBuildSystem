@@ -253,7 +253,7 @@ sub _print
 #use Carp qw(cluck longmess shortmess);
 #cluck "This is how we got here!"; 
 
-print STDERR (join ';', (caller(1))[1, 2]) if $output_from_where ;
+print STDERR join ':', (caller(1))[1, 2] if $output_from_where ;
 
 my ($glob, $color_and_depth, $data, $indent, $color_indent) = @_ ;
 
@@ -300,8 +300,9 @@ sub _ST
 {
 my ($color, $caller) = splice @_, 0, 2 ;
 
-my ($f, $l) = @{$caller}[1, 2] ;
+print STDERR join ':', (caller(1))[1, 2] if $output_from_where ;
 
+my ($f, $l) = @{$caller}[1, 2] ;
 $f = GetRunRelativePath({TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'}, $f, 1) ;
 
 eval

@@ -74,7 +74,7 @@ $node_name_matches_ddrr = 0 if any { $node_name =~ $_ } @{$pbs_config->{DISPLAY_
 my %dependency_rules ; # keep a list of  which rules generated which dependencies
 my $has_dependencies = 0 ;
 my @has_matching_non_subpbs_rules ;
-my @sub_pbs ; # list of subpbs matching this node
+my @subpbses ; # list of subpbs matching this node
 
 PrintInfo2("Rule: target:" . _INFO3_("'$node_name'") . _INFO2_(", rules: " . scalar(@{$dependency_rules}) . "\n"))
 	if ($node_name !~ /^__/) && ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} || $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
@@ -194,8 +194,11 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				INDEX             => $rule_index,
 				DEFINITIONS       => $dependency_rules,
 				},
-			DEPENDENCIES => \@dependencies,
-			};
+
+			DEPENDENCIES => 'HASH' eq ref $dependencies[0]
+						? [] 
+						: \@dependencies, 
+			} ;
 		
 		my $subs_list = $rule->{NODE_SUBS} ;
 		
@@ -249,7 +252,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		if(@dependencies && 'HASH' eq ref $dependencies[0])
 			{
 			$dependencies[0]{__RULE_NAME} = $rule->{NAME} ;
-			push @sub_pbs, 
+			push @subpbses, 
 				{
 				SUBPBS => $dependencies[0],
 				RULE   => $rule,
@@ -326,7 +329,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			push @node_matching_rules, $rule_name ;
 			}
 		
-		# transform the node name into an internal structure and check for node attributes
+		# check for node attributes
 		@dependencies = map
 				{
 				if(('' eq ref $_) && (! /^__/))
@@ -648,11 +651,11 @@ for my $dependency (@node_dependencies)
 	push @dependencies, $tree->{$dependency->{NAME}} unless $seen{$dependency->{NAME}}++ ;
 	}
 
-if(@sub_pbs > 1)
+if(@subpbses > 1)
 	{
-	PrintInfo3 _INFO3_("$indent'$node_name' ") . _ERROR_(scalar(@sub_pbs) . " matching subpbs rules.\n") ;
+	PrintInfo3 _INFO3_("$indent'$node_name' ") . _ERROR_(scalar(@subpbses) . " matching subpbs rules.\n") ;
 
-	for (@sub_pbs)
+	for (@subpbses)
 		{
 		PrintWithContext
 			(
@@ -672,7 +675,7 @@ if(@sub_pbs > 1)
 
 =pod
 	# just the name and file:line
-	my $max = max map { length $_->{RULE}{NAME} } @sub_pbs ;
+	my $max = max map { length $_->{RULE}{NAME} } @subpbses ;
 
 	PrintError 
 		sprintf
@@ -685,10 +688,10 @@ if(@sub_pbs > 1)
 					. ":$_->{RULE}{LINE}\n"
 					),
 			$_->{RULE}{NAME}
-			) for @sub_pbs ;
+			) for @subpbses ;
 
 	# tree of subpbs rules
-	PrintError(DumpTree \@sub_pbs, "Subpbs:", MAX_DEPTH => 4, DISPLAY_ADDRESS => 0) ;
+	PrintError(DumpTree \@subpbses, "Subpbs:", MAX_DEPTH => 4, DISPLAY_ADDRESS => 0) ;
 =cut
 	die _ERROR_("PBS: error: multiple matching subpbs rules") . "\n" ;
 	}
@@ -843,11 +846,11 @@ for my $triggered_node_data (@triggered_nodes)
 	}
 # handle node triggers finished
 
-for my $dependency_defintion (@dependencies)
+for my $dependency_definition (@dependencies)
 	{
-	my $dependency_name = $dependency_defintion->{NAME} ;
-	my $rule_index      = $dependency_defintion->{RULE_INDEX} ;
-	my $user_attribute  = $dependency_defintion->{USER_ATTRIBUTE} ;
+	my $dependency_name = $dependency_definition->{NAME} ;
+	my $rule_index      = $dependency_definition->{RULE_INDEX} ;
+	my $user_attribute  = $dependency_definition->{USER_ATTRIBUTE} ;
 	my $rule            = $dependency_rules->[$rule_index] ;
 	
 	$has_dependencies++ ;
@@ -929,12 +932,12 @@ for my $dependency_defintion (@dependencies)
 	
 if(@has_matching_non_subpbs_rules)
 	{
-	if(@sub_pbs)
+	if(@subpbses)
 		{
 		PrintError DumpTree
 			{
 			AddRule => \@has_matching_non_subpbs_rules,
-			AddSubpbsRule => \@sub_pbs,
+			AddSubpbsRule => \@subpbses,
 			},
 			"Depend: '$node_name' Error: found rules and subpbs rules, Pbsfile: $Pbsfile" ;
 			
@@ -1136,14 +1139,14 @@ if(@has_matching_non_subpbs_rules)
 			}
 		}
 	}
-elsif(@sub_pbs)
+elsif(@subpbses)
 	{
-	$tree->{__MATCHED_SUBPBS} = @sub_pbs ;
+	$tree->{__MATCHED_SUBPBS} = @subpbses ;
 	
-	SET \@sub_pbs, "Depend: error '$node_name' @ pbsfile '$Pbsfile'  matches multiple subpbs" && die "\n"
-		if @sub_pbs != 1 ;
+	SET \@subpbses, "Depend: error '$node_name' @ pbsfile '$Pbsfile'  matches multiple subpbs" && die "\n"
+		if @subpbses != 1 ;
 	
-	my $subpbs_definition = $sub_pbs[0]{SUBPBS} ;
+	my $subpbs_definition = $subpbses[0]{SUBPBS} ;
 	
 	my $subpbs_name = $subpbs_definition->{PBSFILE_LOCATED} =
 		 LocatePbsfile
@@ -1151,7 +1154,7 @@ elsif(@sub_pbs)
 			$pbs_config,
 			$Pbsfile,
 			$subpbs_definition->{PBSFILE},
-			$sub_pbs[0]{RULE}
+			$subpbses[0]{RULE}
 			) ;
 	
 	SIT $subpbs_definition, "subpbs:" if defined $pbs_config->{DISPLAY_SUB_PBS_DEFINITION} ;
@@ -1161,7 +1164,7 @@ elsif(@sub_pbs)
 		{
 		%{$tree->{__PBS_CONFIG}},
 		%$subpbs_definition,
-		#SUBPBS_HASH => $sub_pbs[0]{RULE}
+		#SUBPBS_HASH => $subpbses[0]{RULE}
 		} ;
 	
 	$subpbs_pbs_config->{PBS_COMMAND}    = DEPEND_ONLY ;
@@ -1179,7 +1182,7 @@ elsif(@sub_pbs)
 	my $subpbs_config = PBS::Config::get_subps_configuration
 				(
 				$subpbs_definition,
-				\@sub_pbs,
+				\@subpbses,
 				$tree,
 				$sub_node_name,
 				$pbs_config,
@@ -1207,7 +1210,7 @@ elsif(@sub_pbs)
 				$subpbs_config,
 				[$sub_node_name],
 				$inserted_nodes,
-				("sub_pbs$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
+				("subpbses$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
 				DEPEND_ONLY,
 				],
 			) ;
@@ -1502,7 +1505,7 @@ my ($pbs_config, $Pbsfile, $subpbs_name, $rule) = @_ ;
 my $info = $pbs_config->{ADD_ORIGIN} ? "rule '$rule->{NAME}' at '$rule->{FILE}\:$rule->{LINE}'" : '' ;
 
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
-my $sub_pbs_name_stem ;
+my $subpbses_name_stem ;
 
 if(file_name_is_absolute($subpbs_name))
 	{
@@ -1547,7 +1550,7 @@ else
 			}
 		}
 		
-	my $sub_pbs_name_stem ;
+	my $subpbses_name_stem ;
 	$found_pbsfile ||= "$path$subpbs_name" ;
 	
 	#check if we can find it somewhere else in the source directories
@@ -1558,21 +1561,21 @@ else
 		
 		if($found_pbsfile =~ /$flag^$source_directory(.*)/)
 			{
-			$sub_pbs_name_stem = $1
+			$subpbses_name_stem = $1
 			}
 		}
 		
 	my $relocated_subpbs ;
-	if(defined $sub_pbs_name_stem)
+	if(defined $subpbses_name_stem)
 		{
 		if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 			{
-			PrintInfo "Locate: found stem '$sub_pbs_name_stem'.\n" ;
+			PrintInfo "Locate: found stem '$subpbses_name_stem'.\n" ;
 			}
 			
 		for my $source_directory (@$source_directories)
 			{
-			my $relocated_from_stem = PBS::PBSConfig::CollapsePath("$source_directory/$sub_pbs_name_stem") ;
+			my $relocated_from_stem = PBS::PBSConfig::CollapsePath("$source_directory/$subpbses_name_stem") ;
 			
 			if(-e $relocated_from_stem)
 				{
@@ -1582,13 +1585,13 @@ else
 					
 					if($relocated_from_stem ne $found_pbsfile)
 						{
-						PrintWarning2("Locate: relocated '$sub_pbs_name_stem' in '$source_directory' $info.\n") ;
+						PrintWarning2("Locate: relocated '$subpbses_name_stem' in '$source_directory' $info.\n") ;
 						}
 					else
 						{
 						if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 							{
-							PrintInfo "Locate: keeping '$sub_pbs_name_stem' from '$source_directory' $info.\n" ;
+							PrintInfo "Locate: keeping '$subpbses_name_stem' from '$source_directory' $info.\n" ;
 							}
 						}
 						
@@ -1598,7 +1601,7 @@ else
 					{
 					if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 						{
-						PrintInfo "Locate: ignoring relocation of '$sub_pbs_name_stem' in '$source_directory' $info.\n" ;
+						PrintInfo "Locate: ignoring relocation of '$subpbses_name_stem' in '$source_directory' $info.\n" ;
 						}
 					}
 				}
@@ -1606,7 +1609,7 @@ else
 				{
 				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 					{
-					PrintInfo "Locate: couldn't relocate '$sub_pbs_name_stem' in '$source_directory' $info.\n" ;
+					PrintInfo "Locate: couldn't relocate '$subpbses_name_stem' in '$source_directory' $info.\n" ;
 					}
 				}
 			}

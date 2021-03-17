@@ -65,6 +65,8 @@ $node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
 return $node_header, $type, $tab ;
 }
 
+#-------------------------------------------------------------------------------------------------------
+
 sub GetNodeInformation
 {
 my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
@@ -303,7 +305,7 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 							: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
 								? _WARNING_ $_ . $cache
 								: _INFO3_   $_ . $cache
-						if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
+							if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;
 						}
 						map { $_->{NAME} } @{$rule->{DEPENDENCIES}})
 				. "\n" ;

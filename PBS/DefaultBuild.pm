@@ -57,7 +57,6 @@ my $t0_depend = [gettimeofday] ;
 
 my $indent = $PBS::Output::indentation ;
 
-# display pbsfile 
 my $short_pbsfile = GetRunRelativePath($pbs_config, $Pbsfile, 1) ;
 
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
@@ -269,7 +268,7 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
+	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
 	}
 else
 	{
@@ -285,6 +284,33 @@ return (BUILD_SUCCESS, 'Dependended successfuly', []) if $pbs_config->{NO_CHECK}
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+
+return CheckAndBuild
+		(
+		$pbs_config,
+		$config,
+		$targets,
+		$inserted_nodes,
+		$tree,
+		$build_point,
+		$build_type,
+		) ;
+}
+
+sub CheckAndBuild
+{
+my 
+	(
+	$pbs_config,
+	$config,
+	$targets,
+	$inserted_nodes,
+	$tree,
+	$build_point,
+	$build_type,
+	) = @_ ;
+
+my $indent = $PBS::Output::indentation ;
 
 my ($build_node, @build_sequence, %trigged_nodes) ;
 

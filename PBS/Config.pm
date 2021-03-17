@@ -421,16 +421,35 @@ if(@_ > 1)
 	}
 elsif(@_ == 1)
 	{
+	my $config_variable = $_[0] ;
+
 	my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
 	my %user_config = ExtractConfig($configs{$package}, $pbs_config->{CONFIG_NAMESPACES}) ;
 
-	__GetConfig
-		(
-		$package, $file_name, $line,
-		wantarray,
-		\%user_config,
-		@_,
-		)
+	if($config_variable =~ '%')
+		{
+		my $config = GetPackageConfig($package) ;
+		   $config = { ExtractConfig($config, ['User']) } ;
+
+		EvalConfig
+			(
+			$config_variable,
+			$config,
+			"$file_name:$line",
+			$package, # to record config  access
+			{}, #to display extra info if option is set
+			) ;
+		}
+	else
+		{
+		__GetConfig
+			(
+			$package, $file_name, $line,
+			wantarray,
+			\%user_config,
+			$config_variable,
+			)
+		}
 	}
 }
 

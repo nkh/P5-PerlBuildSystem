@@ -1,44 +1,11 @@
 
-#help align options
-	a   |aaaa
-	bbb |bbbbbbb
+rework declaration of options
+	use object-verb, keep old OPTION_NAMES
 
-#-external_checker
-	a command to get modified files from
-		-fw 'gss'
-		pbs  -wnmw -j 12 -ek . --devel_no_distribution_check -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")
-
-#Say Info indents like Print Info and not like PrintInfo
-
-#dfl doesn't take the extra switches
-
-#stack reducer
-	object goes out of scope
-
-# long enqueuing time
-
-# -q breaks the build
-
-#parallel depend + http interface (and reasons why)
-	depend 3 times faster but all global info gets mangled as parts get distributed
-
-	http is clean but slow to shutdown
+	'h|help', 'Displays this help.', '', => \$config->{DISPLAY_HELP},
+		
 
 IsSource can be cached in the node in depend.pm
-
-parallel depend reuse the same process instead for forking
-	we can reuse the same inserted nodes and config, ...
-	we need to keep track of added nodes only
-
-	parallel depend can check the set of nodes it has depended against each other
-
-	check finds the nodes that are not depended, the ones that need to be linked to another parallel depend
-
-when we fork take a snapshot of inserted nodes to make it easier to find which nodes the fork has added
-
-subpbs node get an attribute to help decide if it should be parallelized
-
-
 
 node digest bypassed by warp on distro change!
 
@@ -553,6 +520,47 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#help align options
+	a   |aaaa
+	bbb |bbbbbbb
+
+#-external_checker
+	a command to get modified files from
+		-fw 'gss'
+		pbs  -wnmw -j 12 -ek . --devel_no_distribution_check -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")
+
+#Say Info indents like Print Info and not like PrintInfo
+
+#dfl doesn't take the extra switches
+
+#stack reducer
+	object goes out of scope
+
+# long enqueuing time
+
+# -q breaks the build
+
+#parallel depend + http interface (and reasons why)
+	depend 3 times faster but all global info gets mangled as parts get distributed
+
+	http is clean but slow to shutdown
+
+
+!parallel depend reuse the same process instead for forking
+	we can reuse the same inserted nodes and config, ...
+	we need to keep track of added nodes only
+
+	parallel depend can check the set of nodes it has depended against each other
+
+	check finds the nodes that are not depended, the ones that need to be linked to another parallel depend
+
+	complicates handling of parallel depender and is slow due to http as a fork is faster than sending a message!
+
+#when we fork take a snapshot of inserted nodes to make it easier to find which nodes the fork has added
+
+#subpbs node get an attribute to help decide if it should be parallelized
+
 
 #check environment variables
 	which one does the command use? and sub command ?
