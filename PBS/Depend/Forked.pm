@@ -44,7 +44,7 @@ sub Subpbs
 {
 my ($pbs_config, $node, $args) = @_ ;
 
-my $depender = \&PBS::PBS::Pbs ;
+my $depender ;
 
 if($pbs_config->{DEPEND_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 	{
@@ -97,6 +97,8 @@ if($pbs_config->{DEPEND_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 		}
 
 	}
+
+$depender //= \&PBS::PBS::Pbs ;
 
 $depender->(@$args) ;
 }
@@ -174,7 +176,8 @@ if($resource_id)
 			%forked_children = () ; # forget parents children
 			$parent_pid = $parent_pid_copy ;
 			
-			my (@args) = @_
+			my (@args) = @_ ;
+
 			my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
 			Say Color 'test_bg',  "Depend: parallel start$node_text, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
 			
@@ -335,7 +338,7 @@ open STDOUT, '>&' . fileno($OLDOUT) or die "Can't restore STDOUT: $!";
 
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
-sub Link
+sub LinkMainGraph
 {
 my ($pbs_config, $inserted_nodes) = @_ ;
 
@@ -352,22 +355,22 @@ if($pbs_config->{DEPEND_JOBS})
 			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
 		
 		usleep 10_000 ;
-
+		
 		$response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource_status', {}, $$) ;
 		}
-
+	
 	# handle all the forked dependers
 	$response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
 	my $serialized_dependers = $response->{SERIALIZED_DEPENDERS} ;
-
+	
 	my $dependers ;
 	eval $serialized_dependers ;
 	Say Error $@ if $@ ;
-
+	
 	LinkChildren($pbs_config, $dependers, $inserted_nodes) ;
-
+	
 	my $t0_shutdown = [gettimeofday];
-
+	
 	if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
 		{
 		kill 'KILL',  $_->{PID}  for values %$dependers ;
@@ -376,9 +379,9 @@ if($pbs_config->{DEPEND_JOBS})
 		{
 		PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
 		}
-
+	
 	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
-
+	
 	my $number_of_dependers = scalar keys %$dependers ;
 	PrintInfo sprintf("Depend∥ : shutdown: %0.2f s.\n", tv_interval ($t0_shutdown, [gettimeofday])) ;
 	} 

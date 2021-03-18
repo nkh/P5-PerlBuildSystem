@@ -196,14 +196,14 @@ if(defined $node)
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
 		$node->{__PBS_CONFIG}{DISPLAY_BUILD_SEQUENCER_INFO}++ ;
-
+		
 		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
 		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
-
+		
 		$PBS::Shell::silent_commands = 0 ;
 		$PBS::Shell::silent_commands_output = 0 ; 
 		}
-
+	
 	eval 
 		{
 		($build_result, $build_message) =
@@ -215,9 +215,9 @@ if(defined $node)
 				$node_build_sequencer_info
 				) ;
 		} ;
-
+	
 	#close(STDERR) ;
-
+	
 	if($@)
 		{
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;

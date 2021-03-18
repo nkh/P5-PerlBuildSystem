@@ -91,34 +91,33 @@ my $counter = 0 ;
 for my $subpbs_option (@$unchecked_subpbs_options)
 	{
 	$counter++ ;
-
+	
 	my ($options, $config) = PBS::PBSConfigSwitches::GetOptions() ;
-
+	
 	my $package = "SUBPBS_OPTIONS_$counter" ;
 	PBS::PBSConfig::RegisterPbsConfig($package, $config) ;
 	$config->{PBSFILE} = $package ;
-
-SUT 3 ;
+	
 	my ($switch_parse_ok, $parse_message) = PBS::PBSConfig::ParseSwitches($options, $config, [@$new_argv, @{$subpbs_option->{OPTIONS}}]) ;
 	PBS::PBSConfig::CheckPbsConfig($config) ;
-SUT 4 ;
+	
 	unless ($switch_parse_ok)
 		{
 		$subpbs_switch_parse_ok = 0 ;
 		$subpbs_parse_message = $parse_message ;
 		last ;
 		}
-
+	
 	delete $config->{NO_BUILD} ;
 	delete $config->{DO_BUILD} ;
 	delete $config->{TARGETS} ;
-
+	
 	# keep added or modified options
 	for my $config_key (keys %$config)
 		{
 		delete $config->{$config_key} if Compare($config->{$config_key}, $config_no_options->{$config_key}) ;
 		}
-
+	
 	push @subpbs_options, {QR => $subpbs_option->{QR}, OPTIONS => $config, LOCAL => $subpbs_option->{LOCAL}} ;
 	}
 

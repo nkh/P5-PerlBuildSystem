@@ -1,11 +1,9 @@
 
 package PBS::Prf ;
-use PBS::Debug ;
 
 use 5.006 ;
 use strict ;
 use warnings ;
-use Data::TreeDumper ;
 
 require Exporter ;
 
@@ -16,6 +14,8 @@ our @EXPORT = qw(AddTargets target AddCommandLineDefinitions AddCommandLineSwitc
 our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
+
+use Getopt::Long ;
 
 use PBS::Config ;
 use PBS::PBSConfig ;
@@ -81,7 +81,6 @@ my $ignore_error = $pbs_config->{'PRF_IGNORE_ERROR'} ;
 
 local $SIG{__WARN__} = sub { PrintWarning $_[0] unless $ignore_error } ;
 
-use Getopt::Long ;
 Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'require_order') ;
 unless(GetOptions(@flags))
 	{

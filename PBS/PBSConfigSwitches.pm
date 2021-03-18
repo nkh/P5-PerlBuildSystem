@@ -6,9 +6,6 @@ use 5.006 ;
 
 use strict ;
 use warnings ;
-use Data::Dumper ;
-use Carp ;
-use List::Util qw(max any);
 
 require Exporter ;
 
@@ -16,7 +13,12 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(RegistredFlagsAndHelp) ;
-our $VERSION = '0.03' ;
+our $VERSION = '0.04' ;
+
+use Data::Dumper ;
+use Carp ;
+use List::Util qw(max any);
+use File::Slurp ;
 
 use PBS::Constants ;
 use PBS::Output ;
@@ -37,35 +39,28 @@ my (@options) = @_ ;
 my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ; $file_name =~ s/'$// ;
 
-my $succes = 1 ;
+my $success = 1 ;
 
-while( my ($switch, $variable, $help1, $help2) = splice(@options, 0, 4))
+while( my ($switch, $help1, $help2, $variable) = splice(@options, 0, 4))
 	{
-	my $switch_copy = $switch ;
-	$switch_copy =~ s/(=|:).*$// ;
-	
-	my $switch_is_unique = 1 ;
-	for my $switch_unit (split('\|',$switch_copy))
+	for my $switch_unit ( split('\|', ($switch =~ s/(=|:).*$//r)) )
 		{
-		if(exists $registred_flags{$switch_unit})
-			{
-			$succes = 0 ;
-			$switch_is_unique = 0 ;
-			Say Warning "In Plugin '$file_name:$line', switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'. Ignoring." ;
-			}
-		else
+		if(! exists $registred_flags{$switch_unit})
 			{
 			$registred_flags{$switch_unit} = "$file_name:$line" ;
 			}
+		else
+			{
+			$success = 0 ;
+			Say Warning "In Plugin '$file_name:$line', switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'. Ignoring." ;
+			}
 		}
 		
-	if($switch_is_unique)
-		{
-		push @registred_flags_and_help, $switch, $variable, $help1, $help2 ;
-		}
+	push @registred_flags_and_help, $switch, $variable, $help1, $help2
+		if $success ;
 	}
 
-return $succes ;
+$success ;
 }
 
 #-------------------------------------------------------------------------------
@@ -74,19 +69,17 @@ sub RegisterDefaultPbsFlags
 {
 my ($options) = GetOptions() ;
 
-while(my ($switch, $variable, $help1, $help2) = splice(@$options, 0, 4))
+while(my ($switch) = splice(@$options, 0, 4))
 	{
-	$switch =~ s/(=|:).*$// ;
-	
-	for my $switch_unit (split('\|', $switch))
+	for my $switch_unit ( split('\|', ($switch =~ s/(=|:).*$//r)) )
 		{
-		if(exists $registred_flags{$switch_unit})
+		if(! exists $registred_flags{$switch_unit})
 			{
-			die ERROR "Switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'.\n" ;
+			$registred_flags{$switch_unit} = "PBS reserved switch " . __PACKAGE__ ;
 			}
 		else
 			{
-			$registred_flags{$switch_unit} = "PBS reserved switch " . __PACKAGE__ ;
+			die ERROR "Switch '$switch_unit' already registered @ '$registred_flags{$switch_unit}'.\n" ;
 			}
 		}
 	}
@@ -98,11 +91,11 @@ sub Get_GetoptLong_Data
 {
 my ($options, @t) = @_  ;
 
-my @c = @$options ; # don't splice user data
+my @c = @$options ; # don't splice caller's data
 
 push @t, [ splice @c, 0, 4 ] while @c ;
 
-map { $_->[0], $_->[1] } @t
+map { $_->[0], $_->[3] } @t
 }
 
 #-------------------------------------------------------------------------------
@@ -111,84 +104,63 @@ sub GetOptions
 {
 my $config = shift // {} ;
 
-$config->{DO_BUILD} = 1 ;
-$config->{TRIGGER} = [] ;
-
-$config->{SHORT_DEPENDENCY_PATH_STRING} = '…' ;
-
-$config->{JOBS_DIE_ON_ERROR} = 0 ;
-
-$config->{GENERATE_TREE_GRAPH_GROUP_MODE} = GRAPH_GROUP_NONE ;
-$config->{GENERATE_TREE_GRAPH_SPACING} = 1 ;
-
-$config->{PBS_QR_OPTIONS}                        //= [] ;
-$config->{RULE_NAMESPACES}                       //= [] ;
-$config->{CONFIG_NAMESPACES}                     //= [] ;
-$config->{SOURCE_DIRECTORIES}                    //= [] ;
-$config->{PLUGIN_PATH}                           //= [] ;
-$config->{LIB_PATH}                              //= [] ;
-$config->{DISPLAY_BUILD_INFO}                    //= [] ;
-$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}     //= [] ;
+$config->{BREAKPOINTS}                           //= [] ;
 $config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT} //= [] ;
-$config->{DISPLAY_NODE_INFO}                     //= [] ;
-$config->{DISPLAY_NODE_ENVIRONMENT}              //= [] ;
-$config->{NODE_ENVIRONMENT_REGEX}                //= [] ;
-$config->{LOG_NODE_INFO}                         //= [] ;
-$config->{USER_OPTIONS}                          //= {} ;
-$config->{KEEP_ENVIRONMENT}                      //= [] ;
+$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}     //= [] ;
 $config->{COMMAND_LINE_DEFINITIONS}              //= {} ;
-$config->{DISPLAY_DEPENDENCIES_REGEX}            //= [] ;
+$config->{CONFIG_NAMESPACES}                     //= [] ;
+$config->{DISPLAY_BUILD_INFO}                    //= [] ;
 $config->{DISPLAY_DEPENDENCIES_REGEX_NOT}        //= [] ;
-$config->{DISPLAY_DEPENDENCIES_RULE_NAME}        //= [] ;
+$config->{DISPLAY_DEPENDENCIES_REGEX}            //= [] ;
 $config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT}    //= [] ;
-$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX}  //= [] ;
+$config->{DISPLAY_DEPENDENCIES_RULE_NAME}        //= [] ;
+$config->{DISPLAY_NODE_ENVIRONMENT}              //= [] ;
+$config->{DISPLAY_NODE_INFO}                     //= [] ;
+$config->{DISPLAY_PBS_CONFIGURATION}             //= [] ;
+$config->{DISPLAY_TEXT_TREE_REGEX}               //= [] ;
+$config->{DISPLAY_TREE_FILTER}                   //= [] ;
+$config->{DO_BUILD}                                = 1 ;
+$config->{EXTERNAL_CHECKERS}                     //= [] ;
 $config->{GENERATE_TREE_GRAPH_CLUSTER_NODE}      //= [] ;
 $config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX}     //= [] ;
 $config->{GENERATE_TREE_GRAPH_EXCLUDE}           //= [] ;
+$config->{GENERATE_TREE_GRAPH_GROUP_MODE}          = GRAPH_GROUP_NONE ;
 $config->{GENERATE_TREE_GRAPH_INCLUDE}           //= [] ;
-$config->{DISPLAY_PBS_CONFIGURATION}             //= [] ;
-$config->{VERBOSITY}                             //= [] ;
-$config->{POST_PBS}                              //= [] ;
-$config->{DISPLAY_TREE_FILTER}                   //= [] ;
-$config->{DISPLAY_TEXT_TREE_REGEX}               //= [] ;
-$config->{BREAKPOINTS}                           //= [] ;
+$config->{GENERATE_TREE_GRAPH_SPACING}             = 1 ;
+$config->{JOBS_DIE_ON_ERROR}                       = 0 ;
+$config->{KEEP_ENVIRONMENT}                      //= [] ;
+$config->{LIB_PATH}                              //= [] ;
+$config->{LOG_NODE_INFO}                         //= [] ;
 $config->{NODE_BUILD_ACTIONS}                    //= [] ;
-$config->{EXTERNAL_CHECKERS}                     //= [] ;
+$config->{NODE_ENVIRONMENT_REGEX}                //= [] ;
+$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX}  //= [] ;
+$config->{PBS_QR_OPTIONS}                        //= [] ;
+$config->{PLUGIN_PATH}                           //= [] ;
+$config->{POST_PBS}                              //= [] ;
+$config->{RULE_NAMESPACES}                       //= [] ;
+$config->{SHORT_DEPENDENCY_PATH_STRING}            = '…' ;
+$config->{SOURCE_DIRECTORIES}                    //= [] ;
+$config->{TRIGGER}                                 = [] ;
+$config->{USER_OPTIONS}                          //= {} ;
+$config->{VERBOSITY}                             //= [] ;
 
 my $load_config_closure = sub {LoadConfig(@_, $config) ;} ;
 
 my @options =
 	(
-	'h|help'                          => \$config->{DISPLAY_HELP},
-		'Displays this help.', '',
+	'v|version', 'Displays Pbs version.', '',
+		\$config->{DISPLAY_VERSION},
 		
-	'hs|help_switch=s'                => \$config->{DISPLAY_SWITCH_HELP},
-		'Displays help for the given switch.', '',
+	'h|help', 'Displays this help.', '',
+		\$config->{DISPLAY_HELP},
 		
-	'hnd|help_narrow_display'         => \$config->{DISPLAY_HELP_NARROW_DISPLAY},
-		'Writes the flag name and its explanation on separate lines.', '',
+	'hs|help_switch=s', 'Displays help for the given switch.', '',
+		\$config->{DISPLAY_SWITCH_HELP},
+		
+	'hnd|help_narrow_display', 'Writes the flag name and its explanation on separate lines.', '',
+		\$config->{DISPLAY_HELP_NARROW_DISPLAY},
 
-	'generate_bash_completion_script'   => \$config->{GENERATE_BASH_COMPLETION_SCRIPT},
-		'create a bash completion script and exits.', '',
-
-	'get_bash_completion'   => \$config->{GET_BASH_COMPLETION},
-		'return completion list.', '',
-
-	'get_options_list'   => \$config->{GET_OPTIONS_LIST},
-		'return completion list on stdout.', '',
-
-	'pbs_options=s'   => \$config->{PBS_OPTIONS},
-		'start list subpbs options, argumet is a regex matching the target.', '',
-
-	'pbs_options_local=s'   => \$config->{PBS_OPTIONS_LOCAL},
-		'as pbs_options but only applied at the local subpbs level.', '',
-
-	'pbs_options_end'   => \my $not_used,
-		'ends the list of options for specific subpbs.', '',
-
-	'pp|pbsfile_pod'                    => \$config->{DISPLAY_PBSFILE_POD},
-		"Displays a user defined help. See 'Online help' in pbs.pod",
-		<<'EOH',
+	'pp|pbsfile_pod', "Displays a user defined help. See 'Online help' in pbs.pod", <<'EOH', \$config->{DISPLAY_PBSFILE_POD},
 =for PBS =head1 SOME TITLE
 
 this is extracted by the --pbsfile_pod command
@@ -215,35 +187,35 @@ previous =for PBS section
 =cut 
 
 EOH
+	
+	'pbs2pod', 'Extracts the pod contained in the Pbsfile (except user documentation POD).', 'See --pbsfile_pod.',
+		\$config->{PBS2POD},
 		
-	'pbs2pod'                         => \$config->{PBS2POD},
-		'Extracts the pod contained in the Pbsfile (except user documentation POD).',
-		'See --pbsfile_pod.',
+	'raw_pod', '-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '',
+		\$config->{RAW_POD},
 		
-	'raw_pod'                         => \$config->{RAW_POD},
-		'-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '',
+	'd|display_pod_documenation:s', 'Interactive PBS documentation display and search.', '',
+		\$config->{DISPLAY_POD_DOCUMENTATION},
 		
-	'd|display_pod_documenation:s'    => \$config->{DISPLAY_POD_DOCUMENTATION},
-		'Interactive PBS documentation display and search.', '',
+	'wizard:s', 'Starts a wizard.', '',
+		\$config->{WIZARD},
 		
-	'wizard:s'                      => \$config->{WIZARD},
-		'Starts a wizard.', '',
+	'wi|display_wizard_info', 'Shows Informatin about the found wizards.', '',
+		\$config->{DISPLAY_WIZARD_INFO},
 		
-	'wi|display_wizard_info'          => \$config->{DISPLAY_WIZARD_INFO},
-		'Shows Informatin about the found wizards.', '',
+	'wh|display_wizard_help', 'Tell the choosen wizards to show help.', '',
+		\$config->{DISPLAY_WIZARD_HELP},
 		
-	'wh|display_wizard_help'          => \$config->{DISPLAY_WIZARD_HELP},
-		'Tell the choosen wizards to show help.', '',
-		
-	'v|version'                     => \$config->{DISPLAY_VERSION},
-		'Displays Pbs version.', '',
-		
-	'info_label=s'                  => \&PBS::Output::InfoLabel,
-		'Adds a text label to all output.', '',
-		
-	'c|color=s'                     => \&PBS::Output::SetOutputColorDepth,
-		'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors',
-		<<EOT,
+	'generate_bash_completion_script', 'create a bash completion script and exits.', '',
+		\$config->{GENERATE_BASH_COMPLETION_SCRIPT},
+
+	'get_bash_completion', 'return completion list.', '',
+		\$config->{GET_BASH_COMPLETION},
+
+	'get_options_list', 'return completion list on stdout.', '',
+		\$config->{GET_OPTIONS_LIST},
+
+	'c|color=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', <<EOT, \&PBS::Output::SetOutputColorDepth,
 Term::AnsiColor is used  to color output.
 
 Recognized colors are :
@@ -265,9 +237,7 @@ Recognized colors are :
 	or RGB5 values, check 'Term::AnsiColor' for more information. 
 EOT
 
-	'cs|color_set=s'                => \&PBS::Output::SetOutputColor,
-		"Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'",
-		<<EOT,
+	'cs|color_set=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
 Color names used in Pbs:
 	error
 	warning
@@ -280,262 +250,264 @@ Color names used in Pbs:
 	debug
 EOT
 
-	'output_indentation=s'            => \$PBS::Output::indentation,
-		'set the text used to indent the output. This is repeated "subpbs level" times.', '',
+	'info_label=s', 'Adds a text label to all output.', '',
+		\&PBS::Output::InfoLabel,
+		
+	'output_indentation=s', 'set the text used to indent the output. This is repeated "subpbs level" times.', '',
+		\$PBS::Output::indentation,
 
-	'no_indentation'            => \$PBS::Output::no_indentation,
-		'', '',
+	'no_indentation', '', '',
+		\$PBS::Output::no_indentation,
 
-	'DOFW|devel_output_from_where'  => \$PBS::Output::output_from_where,
-		'', '',
+	'DOFW|devel_output_from_where', '', '',
+		\$PBS::Output::output_from_where,
 
-	'p|pbsfile=s'               => \$config->{PBSFILE},
-		'Pbsfile use to defines the build.', '',
+	'p|pbsfile=s', 'Pbsfile use to defines the build.', '',
+		\$config->{PBSFILE},
 		
-	'pfn|pbsfile_names=s'               => \$config->{PBSFILE_NAMES},
-		'string containing space separated file names that can be pbsfiles.', '',
+	'pfn|pbsfile_names=s', 'string containing space separated file names that can be pbsfiles.', '',
+		\$config->{PBSFILE_NAMES},
 		
-	'pfe|pbsfile_extensions=s'               => \$config->{PBSFILE_EXTENSIONS},
-		'string containing space separated extensionss that can match a pbsfile.', '',
+	'pfe|pbsfile_extensions=s', 'string containing space separated extensionss that can match a pbsfile.', '',
+		\$config->{PBSFILE_EXTENSIONS},
 		
-	'prf|pbs_response_file=s'         => \$config->{PBS_RESPONSE_FILE},
-		'File containing switch definitions and targets.', '',
+	'prf|pbs_response_file=s', 'File containing switch definitions and targets.', '',
+		\$config->{PBS_RESPONSE_FILE},
 		
-	'q|quiet'                         => \$config->{QUIET},
-		'Reduce the output from the command. See --bdn, --so, --sco.', '',
-		
-	'naprf|no_anonymous_pbs_response_file'     => \$config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
-		'Use only a response file named after the user or the one given on the command line.', '',
+	'naprf|no_anonymous_pbs_response_file', 'Use only a response file named after the user or the one given on the command line.', '',
+		\$config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
  
-	'nprf|no_pbs_response_file'       => \$config->{NO_PBS_RESPONSE_FILE},
-		'Don\'t use any response file.', '',
+	'nprf|no_pbs_response_file', 'Don\'t use any response file.', '',
+		\$config->{NO_PBS_RESPONSE_FILE},
 		
-	'plp|pbs_lib_path=s'              => $config->{LIB_PATH},
-		"Path to the pbs libs. Multiple directories can be given, each directory must start at '/' (root) or '.' or pbs will display an error message and exit.", '',
+	'pbs_options=s', 'start list subpbs options, argumet is a regex matching the target.', '',
+		\$config->{PBS_OPTIONS},
+
+	'pbs_options_local=s', 'as pbs_options but only applied at the local subpbs level.', '',
+		\$config->{PBS_OPTIONS_LOCAL},
+
+	'pbs_options_end', 'ends the list of options for specific subpbs.', '',
+		\my $not_used,
+
+	'plp|pbs_lib_path=s', "Path to the pbs libs. Multiple directories can be given, each directory must start at '/' (root) or '.'", '',
+		$config->{LIB_PATH},
 		
-	'display_pbs_lib_path'            => \$config->{DISPLAY_LIB_PATH},
-		"Displays PBS lib paths (for the current project) and exits.", '',
+	'display_pbs_lib_path', "Displays PBS lib paths (for the current project) and exits.", '',
+		\$config->{DISPLAY_LIB_PATH},
 		
-	'ppp|pbs_plugin_path=s'           => $config->{PLUGIN_PATH},
-		"Path to the pbs plugins. The directory must start at '/' (root) or '.' or pbs will display an error message and exit.", '',
+	'ppp|pbs_plugin_path=s', "Path to the pbs plugins. The directory must start at '/' (root) or '.' or pbs will display an error message and exit.", '',
+		$config->{PLUGIN_PATH},
 		
-	'display_pbs_plugin_path'         => \$config->{DISPLAY_PLUGIN_PATH},
-		"Displays PBS plugin paths (for the current project) and exits.", '',
+	'display_pbs_plugin_path', "Displays PBS plugin paths (for the current project) and exits.", '',
+		\$config->{DISPLAY_PLUGIN_PATH},
 		
-	'no_default_path_warning'              => \$config->{NO_DEFAULT_PATH_WARNING},
-		"When this switch is used, PBS will not display a warning when using the distribution's PBS lib and plugins.", '',
+	'no_default_path_warning', "When this switch is used, PBS will not display a warning when using the distribution's PBS lib and plugins.", '',
+		\$config->{NO_DEFAULT_PATH_WARNING},
 		
-	'dpli|display_plugin_load_info'   => \$config->{DISPLAY_PLUGIN_LOAD_INFO},
-		"displays which plugins are loaded.", '',
+	'dpli|display_plugin_load_info', "displays which plugins are loaded.", '',
+		\$config->{DISPLAY_PLUGIN_LOAD_INFO},
 		
-	'display_plugin_runs'             => \$config->{DISPLAY_PLUGIN_RUNS},
-		"displays which plugins subs are run.", '',
+	'display_plugin_runs', "displays which plugins subs are run.", '',
+		\$config->{DISPLAY_PLUGIN_RUNS},
 		
-	'dpt|display_pbs_time'            => \$config->{DISPLAY_PBS_TIME},
-		"Display where time is spend in PBS.", '',
+	'dpt|display_pbs_time', "Display where time is spend in PBS.", '',
+		\$config->{DISPLAY_PBS_TIME},
 		
-	'dmt|display_minimum_time=f'        => \$config->{DISPLAY_MINIMUM_TIME},
-		"Don't display time if it is less than this value (in seconds, default 0.5s).", '',
+	'dmt|display_minimum_time=f', "Don't display time if it is less than this value (in seconds, default 0.5s).", '',
+		\$config->{DISPLAY_MINIMUM_TIME},
 		
-	'dptt|display_pbs_total_time'            => \$config->{DISPLAY_PBS_TOTAL_TIME},
-		"Display How much time is spend in PBS.", '',
+	'dptt|display_pbs_total_time', "Display How much time is spend in PBS.", '',
+		\$config->{DISPLAY_PBS_TOTAL_TIME},
 		
-	'dpu|display_pbsuse'              => \$config->{DISPLAY_PBSUSE},
-		"displays which pbs module is loaded by a 'PbsUse'.", '',
+	'dpu|display_pbsuse', "displays which pbs module is loaded by a 'PbsUse'.", '',
+		\$config->{DISPLAY_PBSUSE},
 		
-	'dpuv|display_pbsuse_verbose'     => \$config->{DISPLAY_PBSUSE_VERBOSE},
-		"displays which pbs module is loaded by a 'PbsUse' (full path) and where the the PbsUse call was made.", '',
+	'dpuv|display_pbsuse_verbose', "displays which pbs module is loaded by a 'PbsUse' (full path) and where the the PbsUse call was made.", '',
+		\$config->{DISPLAY_PBSUSE_VERBOSE},
 		
-	'dput|display_pbsuse_time'        => \$config->{DISPLAY_PBSUSE_TIME},
-		"displays the time spend in 'PbsUse' for each pbsfile.", '',
+	'dput|display_pbsuse_time', "displays the time spend in 'PbsUse' for each pbsfile.", '',
+		\$config->{DISPLAY_PBSUSE_TIME},
 		
-	'dputa|display_pbsuse_time_all'    => \$config->{DISPLAY_PBSUSE_TIME_ALL},
-		"displays the time spend in each pbsuse.", '',
+	'dputa|display_pbsuse_time_all', "displays the time spend in each pbsuse.", '',
+		\$config->{DISPLAY_PBSUSE_TIME_ALL},
 		
-	'dpus|display_pbsuse_statistic'    => \$config->{DISPLAY_PBSUSE_STATISTIC},
-		"displays 'PbsUse' statistic.", '',
+	'dpus|display_pbsuse_statistic', "displays 'PbsUse' statistic.", '',
+		\$config->{DISPLAY_PBSUSE_STATISTIC},
 		
-	'display_md5_statistic'            => \$config->{DISPLAY_MD5_STATISTICS},
-		"displays 'MD5' statistic.", '',
+	'display_md5_statistic', "displays 'MD5' statistic.", '',
+		\$config->{DISPLAY_MD5_STATISTICS},
 		
-	'display_md5_time'            => \$PBS::Digest::display_md5_time,
-		"displays the time it takes to hash each node", '',
+	'display_md5_time', "displays the time it takes to hash each node", '',
+		\$PBS::Digest::display_md5_time,
 		
-	'build_directory=s'               => \$config->{BUILD_DIRECTORY},
-		'Directory where the build is to be done.', '',
+	'build_directory=s', 'Directory where the build is to be done.', '',
+		\$config->{BUILD_DIRECTORY},
 		
-	'mandatory_build_directory'       => \$config->{MANDATORY_BUILD_DIRECTORY},
-		'PBS will not run unless a build directory is given.', '',
+	'mandatory_build_directory', 'PBS will not run unless a build directory is given.', '',
+		\$config->{MANDATORY_BUILD_DIRECTORY},
 		
-	'sd|source_directory=s'           => $config->{SOURCE_DIRECTORIES},
-		'Directory where source files can be found. Can be used multiple times.',
-		<<EOT,
+	'sd|source_directory=s', 'Directory where source files can be found. Can be used multiple times.', <<EOT, $config->{SOURCE_DIRECTORIES},
 Source directories are searched in the order they are given. The current 
 directory is taken as the source directory if no --SD switch is given on
 the command line. 
 
 See also switches: --display_search_info --display_all_alternatives
 EOT
-	'rule_namespace=s'                => $config->{RULE_NAMESPACES},
-		'Rule name space to be used by DefaultBuild()', '',
+	
+	'rule_namespace=s', 'Rule name space to be used by DefaultBuild()', '',
+		$config->{RULE_NAMESPACES},
 		
-	'config_namespace=s'              => $config->{CONFIG_NAMESPACES},
-		'Configuration name space to be used by DefaultBuild()', '',
+	'config_namespace=s', 'Configuration name space to be used by DefaultBuild()', '',
+		$config->{CONFIG_NAMESPACES},
 		
-	'save_config=s'                   => \$config->{SAVE_CONFIG},
-		'PBS will save the config, used in each PBS run, in the build directory',
+	'save_config=s', 'PBS will save the config, used in each PBS run, in the build directory',
 		"Before a subpbs is run, its start config will be saved in a file. PBS will display the filename so you "
-		  . "can load it later with '--load_config'. When working with a hirarchical build with configuration "
-		  . "defined at the top level, it may happend that you want to run pbs at lower levels but have no configuration, "
-		  . "your build will probably fail. Run pbs from the top level with '--save_config', then run the subpbs " 
-		  . "with the the saved config as argument to the '--load_config' option.",
+		. "can load it later with '--load_config'. When working with a hirarchical build with configuration "
+		. "defined at the top level, it may happend that you want to run pbs at lower levels but have no configuration, "
+		. "your build will probably fail. Run pbs from the top level with '--save_config', then run the subpbs " 
+		. "with the the saved config as argument to the '--load_config' option.",
+		\$config->{SAVE_CONFIG},
 		
-	'load_config=s'                   => $load_config_closure,
-		'PBS will load the given config before running the Pbsfile.',
-		'see --save_config.',
+	'load_config=s', 'PBS will load the given config before running the Pbsfile.', 'see --save_config.',
+		$load_config_closure,
 		
-	'no_config_inheritance'           =>  \$config->{NO_CONFIG_INHERITANCE},
-		'Configuration variables are not iherited by child nodes/package.', '',
+	'no_config_inheritance', 'Configuration variables are not iherited by child nodes/package.', '',
+		\$config->{NO_CONFIG_INHERITANCE},
 		
-	'fb|force_build'                  => \$config->{FORCE_BUILD},
-		'Debug flags cancel the build pass, this flag re-enables the build pass.', '',
+	'no_build', 'Cancel the build pass. Only the dependency and check passes are run.', '',
+		\$config->{NO_BUILD},
+
+	'fb|force_build', 'Debug flags cancel the build pass, this flag re-enables the build pass.', '',
+		\$config->{FORCE_BUILD},
 		
-	'cdabt|check_dependencies_at_build_time' => \$config->{CHECK_DEPENDENCIES_AT_BUILD_TIME},
-		'Skipps the node build if no dependencies have changed or where rebuild to the same state.', '',
+	'ns|no_stop', 'Continues building even if a node couldn\'t be buid. See --bi.', '',
+		\$config->{NO_STOP},
+		
+	'do_immediate_build', 'do immediate build even if --no_build is set.', '',
+		\$config->{DO_IMMEDIATE_BUILD},
 
-	'hsb|hide_skipped_builds' => \$config->{HIDE_SKIPPED_BUILDS},
-		'Builds skipped due to -check_dependencies_at_build_time are not displayed.', '',
+	'cdabt|check_dependencies_at_build_time', 'Skipps the node build if no dependencies have changed or where rebuild to the same state.', '',
+		\$config->{CHECK_DEPENDENCIES_AT_BUILD_TIME},
 
-	'check_only_terminal_nodes' => \$config->{DEBUG_CHECK_ONLY_TERMINAL_NODES},
-		'Skipps the checking of generated artefacts.', '',
+	'hsb|hide_skipped_builds', 'Builds skipped due to -check_dependencies_at_build_time are not displayed.', '',
+		\$config->{HIDE_SKIPPED_BUILDS},
 
-	'no_check'                     => \$config->{NO_CHECK},
-		'Cancel the check and build pass. Only the dependency pass is run.', '',
+	'check_only_terminal_nodes', 'Skipps the checking of generated artefacts.', '',
+		\$config->{DEBUG_CHECK_ONLY_TERMINAL_NODES},
 
-	'no_build'                     => \$config->{NO_BUILD},
-		'Cancel the build pass. Only the dependency and check passes are run.', '',
+	'no_check', 'Cancel the check and build pass. Only the dependency pass is run.', '',
+		\$config->{NO_CHECK},
 
-	'do_immediate_build'                     => \$config->{DO_IMMEDIATE_BUILD},
-		'do immediate build even if --no_build is set.', '',
-
-	'nba|node_build_actions=s'               => $config->{NODE_BUILD_ACTIONS},
-		'actions that are run on a node at build time.',
+	'nba|node_build_actions=s', 'actions that are run on a node at build time.',
 		q~example: pbs -ke .  -nba '3::stop' -nba "trigger::priority 4::message '%name'" -trigger '.' -w 0  -fb -dpb0 -j 12 -nh~,
+		$config->{NODE_BUILD_ACTIONS},
 
-	'ns|no_stop'                      => \$config->{NO_STOP},
-		'Continues building even if a node couldn\'t be buid. See --bi.', '',
+	'nh|no_header', 'PBS won\'t display the steps it is at. (Depend, Check, Build).', '',
+		\$config->{DISPLAY_NO_STEP_HEADER},
+
+	'nhc|no_header_counter', 'Hide depend counter', '',
+		\$config->{DISPLAY_NO_STEP_HEADER_COUNTER},
+
+	'dsi|display_subpbs_info', 'Display extra information for nodes matching a subpbs rule.', '',
+		\$config->{DISPLAY_SUBPBS_INFO},
 		
-	'nh|no_header'                    => \$config->{DISPLAY_NO_STEP_HEADER},
-		'PBS won\'t display the steps it is at. (Depend, Check, Build).', '',
-
-	'nhc|no_header_counter'           => \$config->{DISPLAY_NO_STEP_HEADER_COUNTER},
-		'Hide depend counter', '',
-
-	'dsi|display_subpbs_info'         => \$config->{DISPLAY_SUBPBS_INFO},
-		'Display extra information for nodes matching a subpbs rule.', '',
+	'allow_virtual_to_match_directory', 'PBS won\'t display any warning if a virtual node matches a directory name.', '',
+		\$config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY},
 		
-	'allow_virtual_to_match_directory'    => \$config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY},
-		'PBS won\'t display any warning if a virtual node matches a directory name.', '',
-		
-	'link_no_external'                => \$config->{NO_EXTERNAL_LINK},
-		'Dependencies Linking from other Pbsfile stops the build if any local rule can match.', '',
+	'link_no_external', 'Dependencies Linking from other Pbsfile stops the build if any local rule can match.', '',
+		\$config->{NO_EXTERNAL_LINK},
 
-	'lni|link_no_info'                => \$config->{NO_LINK_INFO},
-		'PBS won\'t display which dependency node are linked instead for generated.', '',
+	'lni|link_no_info', 'PBS won\'t display which dependency node are linked instead for generated.', '',
+		\$config->{NO_LINK_INFO},
 
-	'lnli|link_no_local_info'                => \$config->{NO_LOCAL_LINK_INFO},
-		'PBS won\'t display linking to local nodes.', '',
+	'lnli|link_no_local_info', 'PBS won\'t display linking to local nodes.', '',
+		\$config->{NO_LOCAL_LINK_INFO},
 
-	'nlmi|no_local_match_info'        => \$config->{NO_LOCAL_MATCHING_RULES_INFO},
-		'PBS won\'t display a warning message if a linked node matches local rules.', '',
+	'nlmi|no_local_match_info', 'PBS won\'t display a warning message if a linked node matches local rules.', '',
+		\$config->{NO_LOCAL_MATCHING_RULES_INFO},
 		
-	'nwmwzd|no_warning_matching_with_zero_dependencies' => \$config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
-		'PBS won\'t warn if a node has no dependencies but a matching rule.', '',
+	'nwmwzd|no_warning_matching_with_zero_dependencies', 'PBS won\'t warn if a node has no dependencies but a matching rule.', '',
+		\$config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES},
 		
-	'display_no_dependencies_ok'        => \$config->{DISPLAY_NO_DEPENDENCIES_OK},
-		'Display a message if a node was tagged has having no dependencies with HasNoDependencies.',
+	'display_no_dependencies_ok', 'Display a message if a node was tagged has having no dependencies with HasNoDependencies.',
 		"Non source files (nodes with digest) are checked for dependencies since they need to be build from something, "
 		. "some nodes are generated from non files or don't always have dependencies as for C cache which dependency file "
 		. "is created on the fly if it doens't exist.",
+		\$config->{DISPLAY_NO_DEPENDENCIES_OK},
 
-	'display_duplicate_info'           => \$config->{DISPLAY_DUPLICATE_INFO},
-		'PBS will display which dependency are duplicated for a node.', '',
+	'display_duplicate_info', 'PBS will display which dependency are duplicated for a node.', '',
+		\$config->{DISPLAY_DUPLICATE_INFO},
 	
-	'ntii|no_trigger_import_info'     => \$config->{NO_TRIGGER_IMPORT_INFO},
-		'PBS won\'t display which triggers are imported in a package.', '',
+	'ntii|no_trigger_import_info', 'PBS won\'t display which triggers are imported in a package.', '',
+		\$config->{NO_TRIGGER_IMPORT_INFO},
 	
-	'nhnd|no_has_no_dependencies=s'     => $config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX},
-		'PBS won\'t display warning if node does not have dependencies.', '',
+	'nhnd|no_has_no_dependencies=s', 'PBS won\'t display warning if node does not have dependencies.', '',
+		$config->{NO_DISPLAY_HAS_NO_DEPENDENCIES_REGEX},
 		
-	'sc|silent_commands'              => \$PBS::Shell::silent_commands,
-		'shell commands are not echoed to the console.', '',
+	'q|quiet', 'Reduce the output from the command. See --bdn, --so, --sco.', '',
+		\$config->{QUIET},
 		
-	'sco|silent_commands_output'       => \$PBS::Shell::silent_commands_output,
-		'shell commands output are not displayed, except if an error occures.', '',
+	'sc|silent_commands', 'shell commands are not echoed to the console.', '',
+		\$PBS::Shell::silent_commands,
 		
-	'dm|dump_maxdepth=i'              => \$config->{MAX_DEPTH},
-		'Maximum depth of the structures displayed by pbs.', '',
+	'sco|silent_commands_output', 'shell commands output are not displayed, except if an error occures.', '',
+		\$PBS::Shell::silent_commands_output,
 		
-	'di|dump_indentation=i'           => \$config->{INDENT_STYLE},
-		'Data dump indent style (0-1-2).', '',
-		
-	'ni|node_information=s'           => $config->{DISPLAY_NODE_INFO},
-		'Display information about the node matching the given regex before the build.', '',
+	'ni|node_information=s', 'Display information about the node matching the given regex before the build.', '',
+		$config->{DISPLAY_NODE_INFO},
 	
-	'nnr|no_node_build_rule'              => \$config->{DISPLAY_NO_NODE_BUILD_RULES},
-		'Rules used to depend a node are not displayed', '',
+	'nnr|no_node_build_rule', 'Rules used to depend a node are not displayed', '',
+		\$config->{DISPLAY_NO_NODE_BUILD_RULES},
 
-	'nnp|no_node_parents'            => \$config->{DISPLAY_NO_NODE_PARENTS},
-		"Don't display the node's parents.", '',
+	'nnp|no_node_parents', "Don't display the node's parents.", '',
+		\$config->{DISPLAY_NO_NODE_PARENTS},
 
-	'nonil|no_node_info_links'  => \$config->{NO_NODE_INFO_LINKS},
-		'Pbs inserts node_info files links in info_files and logs, disable it', '',
+	'nonil|no_node_info_links', 'Pbs inserts node_info files links in info_files and logs, disable it', '',
+		\$config->{NO_NODE_INFO_LINKS},
 	
-	'nli|log_node_information=s'      => $config->{LOG_NODE_INFO},
-		'Log information about nodes matching the given regex before the build.', '',
+	'nli|log_node_information=s', 'Log information about nodes matching the given regex before the build.', '',
+		$config->{LOG_NODE_INFO},
 		
-	'nci|node_cache_information'        => \$config->{NODE_CACHE_INFORMATION},
-		'Display if the node is from the cache.', '',
+	'nci|node_cache_information', 'Display if the node is from the cache.', '',
+		\$config->{NODE_CACHE_INFORMATION},
 		
-	'nbn|node_build_name'             => \$config->{DISPLAY_NODE_BUILD_NAME},
-		'Display the build name in addition to the logical node name.', '',
+	'nbn|node_build_name', 'Display the build name in addition to the logical node name.', '',
+		\$config->{DISPLAY_NODE_BUILD_NAME},
 		
-	'no|node_origin'                  => \$config->{DISPLAY_NODE_ORIGIN},
-		'Display where the node has been inserted in the dependency tree.', '',
+	'no|node_origin', 'Display where the node has been inserted in the dependency tree.', '',
+		\$config->{DISPLAY_NODE_ORIGIN},
 		
-	'np|node_parents'            => \$config->{DISPLAY_NODE_PARENTS},
-		"Display the node's parents.", '',
+	'np|node_parents', "Display the node's parents.", '',
+		\$config->{DISPLAY_NODE_PARENTS},
 		
-	'nd|node_dependencies'            => \$config->{DISPLAY_NODE_DEPENDENCIES},
-		'Display the dependencies for a node.', '',
+	'nd|node_dependencies', 'Display the dependencies for a node.', '',
+		\$config->{DISPLAY_NODE_DEPENDENCIES},
 		
-	'ne|node_environment=s'            => $config->{DISPLAY_NODE_ENVIRONMENT},
-		'Display the environment variables for the nodes matching the regex.', '',
+	'ne|node_environment=s', 'Display the environment variables for the nodes matching the regex.', '',
+		$config->{DISPLAY_NODE_ENVIRONMENT},
 		
-	'ner|node_environment_regex=s'      => $config->{NODE_ENVIRONMENT_REGEX},
-		'Display the environment variables  matching the regex.', '',
+	'ner|node_environment_regex=s', 'Display the environment variables  matching the regex.', '',
+		$config->{NODE_ENVIRONMENT_REGEX},
 		
-	'nc|node_build_cause'             => \$config->{DISPLAY_NODE_BUILD_CAUSE},
-		'Display why a node is to be build.', '',
+	'nc|node_build_cause', 'Display why a node is to be build.', '',
+		\$config->{DISPLAY_NODE_BUILD_CAUSE},
 		
-	'nr|node_build_rule'              => \$config->{DISPLAY_NODE_BUILD_RULES},
-		'Display the rules used to depend a node (rule defining a builder ar tagged with [B].', '',
+	'nr|node_build_rule', 'Display the rules used to depend a node (rule defining a builder ar tagged with [B].', '',
+		\$config->{DISPLAY_NODE_BUILD_RULES},
 		
-	'nb|node_builder'                  => \$config->{DISPLAY_NODE_BUILDER},
-		'Display the rule which defined the Builder and which command is being run.', '',
+	'nb|node_builder', 'Display the rule which defined the Builder and which command is being run.', '',
+		\$config->{DISPLAY_NODE_BUILDER},
 		
-	'nconf|node_config'                => \$config->{DISPLAY_NODE_CONFIG},
-		'Display the config used to build a node.', '',
+	'nconf|node_config', 'Display the config used to build a node.', '',
+		\$config->{DISPLAY_NODE_CONFIG},
 		
-	'npbc|node_build_post_build_commands'  => \$config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS},
-		'Display the post build commands for each node.', '',
+	'npbc|node_build_post_build_commands', 'Display the post build commands for each node.', '',
+		\$config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS},
 
-	'ppbc|pbs_build_post_build_commands'  => \$config->{DISPLAY_PBS_POST_BUILD_COMMANDS},
-		'Display the Pbs build post build commands.', '',
+	'ppbc|pbs_build_post_build_commands', 'Display the Pbs build post build commands.', '',
+		\$config->{DISPLAY_PBS_POST_BUILD_COMMANDS},
 
-	'o|origin'                        => \$config->{ADD_ORIGIN},
-		'PBS will also display the origin of rules in addition to their names.',
-		<<EOT,
+	'o|origin', 'PBS will also display the origin of rules in addition to their names.', <<EOT, \$config->{ADD_ORIGIN},
 The origin contains the following information:
 	* Name
 	* Package
@@ -544,226 +516,224 @@ The origin contains the following information:
 	* Definition line
 EOT
 
-	'j|jobs=i'                        => \$config->{JOBS},
-		'Maximum number of build commands run in parallel.', '',
+	'j|jobs=i', 'Maximum number of build commands run in parallel.', '',
+		\$config->{JOBS},
 		
-	'jdoe|jobs_die_on_errors=i'       => \$config->{JOBS_DIE_ON_ERROR},
-		'0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.', '',
+	'jdoe|jobs_die_on_errors=i', '0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.', '',
+		\$config->{JOBS_DIE_ON_ERROR},
 		
-	'dj|depend_jobs=i'                        => \$config->{DEPEND_JOBS},
-		'Maximum number of dependers run in parallel.', '',
+	'dj|depend_jobs=i', 'Maximum number of dependers run in parallel.', '',
+		\$config->{DEPEND_JOBS},
 		
-	'dp|depend_processes=i'                        => \$config->{DEPEND_PROCESSES},
-		'Maximum number of depend processes.', '',
+	'dp|depend_processes=i', 'Maximum number of depend processes.', '',
+		\$config->{DEPEND_PROCESSES},
 		
-	'cj|check_jobs=i'                      => \$config->{CHECK_JOBS},
-		'Maximum number of checker run in parallel.',
+	'cj|check_jobs=i', 'Maximum number of checker run in parallel.',
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
+		\$config->{CHECK_JOBS},
 
-	'ce|external_checker=s'                      => $config->{EXTERNAL_CHECKERS},
-		'external command giving list of changed nodes', '',
+	'ce|external_checker=s', 'external command giving list of changed nodes', '',
+		$config->{EXTERNAL_CHECKERS},
 
-	'distribute=s'                   => \$config->{DISTRIBUTE},
-		'Define where to distribute the build.',
+	'distribute=s', 'Define where to distribute the build.',
 		'The file should return a list of hosts in the format defined by the default distributor '
 		 .'or define a distributor.',
+		\$config->{DISTRIBUTE},
 		 
-	'display_shell_info'                   => \$config->{DISPLAY_SHELL_INFO},
-		'Displays which shell executes a command.', '',
+	'display_shell_info', 'Displays which shell executes a command.', '',
+		\$config->{DISPLAY_SHELL_INFO},
 		
-	'dbi|display_builder_info'                 => \$config->{DISPLAY_BUILDER_INFORMATION},
-		'Displays if a node is build by a perl sub or shell commands.', '',
+	'dbi|display_builder_info', 'Displays if a node is build by a perl sub or shell commands.', '',
+		\$config->{DISPLAY_BUILDER_INFORMATION},
 		
-	'time_builders'                   => \$config->{TIME_BUILDERS},
-		'Displays the total time a builders took to run.', '',
+	'time_builders', 'Displays the total time a builders took to run.', '',
+		\$config->{TIME_BUILDERS},
 		
-	'dji|display_jobs_info'           => \$config->{DISPLAY_JOBS_INFO},
-		'PBS will display extra information about the parallel build.', '',
+	'dji|display_jobs_info', 'PBS will display extra information about the parallel build.', '',
+		\$config->{DISPLAY_JOBS_INFO},
 
-	'djr|display_jobs_running'        => \$config->{DISPLAY_JOBS_RUNNING},
-		'PBS will display which nodes are under build.', '',
+	'djr|display_jobs_running', 'PBS will display which nodes are under build.', '',
+		\$config->{DISPLAY_JOBS_RUNNING},
 
-	'l|log|create_log'                => \$config->{CREATE_LOG},
-		'Create a log for the build',
+	'l|log|create_log', 'Create a log for the build',
 		'Node build output is always kept in the build directory.',
+		\$config->{CREATE_LOG},
 		
-	'log_tree'                        => \$config->{LOG_TREE},
-		'Add a tree dump to the log, an option as during incremental build this takes most of the time.', '',
+	'log_tree', 'Add a tree dump to the log, an option as during incremental build this takes most of the time.', '',
+		\$config->{LOG_TREE},
 		
-	'log_html|create_log_html'              => \$config->{CREATE_LOG_HTML},
-		'create a html log for each node, implies --create_log ', '',
+	'log_html|create_log_html', 'create a html log for each node, implies --create_log ', '',
+		\$config->{CREATE_LOG_HTML},
 		
 	#----------------------------------------------------------------------------------
 		
-	'dpos|display_original_pbsfile_source'      => \$config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
-		'Display original Pbsfile source.', '',
+	'dpos|display_original_pbsfile_source', 'Display original Pbsfile source.', '',
+		\$config->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
 		
-	'dps|display_pbsfile_source'      => \$config->{DISPLAY_PBSFILE_SOURCE},
-		'Display Modified Pbsfile source.', '',
+	'dps|display_pbsfile_source', 'Display Modified Pbsfile source.', '',
+		\$config->{DISPLAY_PBSFILE_SOURCE},
 		
-	'dpc|display_pbs_configuration=s'=> $config->{DISPLAY_PBS_CONFIGURATION},
-		'Display the pbs configuration matching  the regex.', '',
+	'dpc|display_pbs_configuration=s', 'Display the pbs configuration matching  the regex.', '',
+		$config->{DISPLAY_PBS_CONFIGURATION},
 		
-	'dpcl|display_configuration_location'=> \$config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
-		'Display the pbs configuration location.', '',
+	'dpcl|display_configuration_location', 'Display the pbs configuration location.', '',
+		\$config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 		
-	'dec|display_error_context'       => \$PBS::Output::display_error_context,
-		'When set and if an error occures in a Pbsfile, PBS will display the error line.', '',
+	'dec|display_error_context', 'When set and if an error occures in a Pbsfile, PBS will display the error line.', '',
+		\$PBS::Output::display_error_context,
 		
-	'display_no_perl_context'         => \$config->{DISPLAY_NO_PERL_CONTEXT},
-		'When displaying an error with context, do not parse the perl code to find the context end.', '',
+	'display_no_perl_context', 'When displaying an error with context, do not parse the perl code to find the context end.', '',
+		\$config->{DISPLAY_NO_PERL_CONTEXT},
 		
-	'dpl|display_pbsfile_loading'     => \$config->{DISPLAY_PBSFILE_LOADING},
-		'Display which pbsfile is loaded.', '',
+	'dpl|display_pbsfile_loading', 'Display which pbsfile is loaded.', '',
+		\$config->{DISPLAY_PBSFILE_LOADING},
 		
-	'dplt|display_pbsfile_load_time'  => \$config->{DISPLAY_PBSFILE_LOAD_TIME},
-		'Display the time to load and evaluate a pbsfile.', '',
+	'dplt|display_pbsfile_load_time', 'Display the time to load and evaluate a pbsfile.', '',
+		\$config->{DISPLAY_PBSFILE_LOAD_TIME},
 		
-	'dspd|display_subpbs_definition' => \$config->{DISPLAY_SUB_PBS_DEFINITION},
-		'Display subpbs definition.', '',
+	'dspd|display_subpbs_definition', 'Display subpbs definition.', '',
+		\$config->{DISPLAY_SUB_PBS_DEFINITION},
 		
-	'dspc|display_subpbs_config' => \$config->{DISPLAY_SUB_PBS_CONFIG},
-		'Display subpbs config.', '',
+	'dspc|display_subpbs_config', 'Display subpbs config.', '',
+		\$config->{DISPLAY_SUB_PBS_CONFIG},
 		
-	'dcu|display_config_usage' => \$config->{DISPLAY_CONFIG_USAGE},
-		'Display config variables not used.', '',
+	'dcu|display_config_usage', 'Display config variables not used.', '',
+		\$config->{DISPLAY_CONFIG_USAGE},
 		
-	'dncu|display_node_config_usage' => \$config->{DISPLAY_NODE_CONFIG_USAGE},
-		'Display config variables not used by nodes.', '',
+	'dncu|display_node_config_usage', 'Display config variables not used by nodes.', '',
+		\$config->{DISPLAY_NODE_CONFIG_USAGE},
 		
-	'display_target_path_usage' => \$config->{DISPLAY_TARGET_PATH_USAGE},
-		"Don't remove TARGET_PATH from config usage report.", '',
+	'display_target_path_usage', "Don't remove TARGET_PATH from config usage report.", '',
+		\$config->{DISPLAY_TARGET_PATH_USAGE},
 		
-	'display_nodes_per_pbsfile'        => \$config->{DISPLAY_NODES_PER_PBSFILE},
-		'Display how many nodes where added by each pbsfile run.', '',
+	'display_nodes_per_pbsfile', 'Display how many nodes where added by each pbsfile run.', '',
+		\$config->{DISPLAY_NODES_PER_PBSFILE},
 		
-	'display_nodes_per_pbsfile_names'        => \$config->{DISPLAY_NODES_PER_PBSFILE_NAMES},
-		'Display which nodes where added by each pbsfile run.', '',
+	'display_nodes_per_pbsfile_names', 'Display which nodes where added by each pbsfile run.', '',
+		\$config->{DISPLAY_NODES_PER_PBSFILE_NAMES},
 		
-	'dl|depend_log' => \$config->{DEPEND_LOG},
-		'Created a log for each subpbs.', '',
+	'dl|depend_log', 'Created a log for each subpbs.', '',
+		\$config->{DEPEND_LOG},
 		
-	'dlm|depend_log_merged' => \$config->{DEPEND_LOG_MERGED},
-		'Merge children subpbs output in log.', '',
+	'dlm|depend_log_merged', 'Merge children subpbs output in log.', '',
+		\$config->{DEPEND_LOG_MERGED},
 		
-	'dfl|depend_full_log' => \$config->{DEPEND_FULL_LOG},
-		'Created a log for each subpbs with extra display options set. Logs are not merged', '',
+	'dfl|depend_full_log', 'Created a log for each subpbs with extra display options set. Logs are not merged', '',
+		\$config->{DEPEND_FULL_LOG},
 		
-	'dflo|depend_full_log_options=s' => \$config->{DEPEND_FULL_LOG_OPTIONS},
-		'Set extra display options for full log.', '',
+	'dflo|depend_full_log_options=s', 'Set extra display options for full log.', '',
+		\$config->{DEPEND_FULL_LOG_OPTIONS},
 		
-	'ddi|display_depend_indented' => \$config->{DISPLAY_DEPEND_INDENTED},
-		'Add indentation before node.', '',
+	'ddi|display_depend_indented', 'Add indentation before node.', '',
+		\$config->{DISPLAY_DEPEND_INDENTED},
 		
-	'dds|display_depend_separator=s' => \$config->{DISPLAY_DEPEND_SEPARATOR},
-		'Display a separator between nodes.', '',
+	'dds|display_depend_separator=s', 'Display a separator between nodes.', '',
+		\$config->{DISPLAY_DEPEND_SEPARATOR},
 		
-	'ddnl|display_depend_new_line' => \$config->{DISPLAY_DEPEND_NEW_LINE},
-		'Display an extra blank line araound a depend.', '',
+	'ddnl|display_depend_new_line', 'Display an extra blank line araound a depend.', '',
+		\$config->{DISPLAY_DEPEND_NEW_LINE},
 		
-	'dde|display_depend_end'        => \$config->{DISPLAY_DEPEND_END},
-		'Display when a depend ends.', '',
+	'dde|display_depend_end', 'Display when a depend ends.', '',
+		\$config->{DISPLAY_DEPEND_END},
 		
-	'log_parallel_depend' =>\$config->{LOG_PARALLEL_DEPEND},
-		'Creates a log of the parallel depend.', '',
+	'log_parallel_depend', 'Creates a log of the parallel depend.', '',
+		\$config->{LOG_PARALLEL_DEPEND},
 
-	'dpds|display_parallel_depend_start' =>\$config->{DISPLAY_PARALLEL_DEPEND_START},
-		'Display a message when a parallel depend starts.', '',
+	'dpds|display_parallel_depend_start', 'Display a message when a parallel depend starts.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_START},
 
-	'dpde|display_parallel_depend_end' =>\$config->{DISPLAY_PARALLEL_DEPEND_END},
-		'Display a message when a parallel depend end.', '',
+	'dpde|display_parallel_depend_end', 'Display a message when a parallel depend end.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_END},
 
-	'dpdn|display_parallel_depend_node' =>\$config->{DISPLAY_PARALLEL_DEPEND_NODE},
-		'Display the node name in parallel depend end messages.', '',
+	'dpdn|display_parallel_depend_node', 'Display the node name in parallel depend end messages.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_NODE},
 
-	'dpdnr|display_parallel_depend_no_resource' =>\$config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
-		'Display a message when a parallel depend could be done but no resource is available.', '',
+	'dpdnr|display_parallel_depend_no_resource', 'Display a message when a parallel depend could be done but no resource is available.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
 
-	'ddpl|display_parallel_depend_linking' =>\$config->{DISPLAY_PARALLEL_DEPEND_LINKING},
-		'Display parallel depend linking result.', '',
+	'ddpl|display_parallel_depend_linking', 'Display parallel depend linking result.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_LINKING},
 
-	'ddplv|display_parallel_depend_linking_verbose' =>\$config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE},
-		'Display a verbose parallel depend linking result.', '',
+	'ddplv|display_parallel_depend_linking_verbose', 'Display a verbose parallel depend linking result.', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE},
 
-	'ddrp|display_depend_remaining_processes' =>\$config->{DISPLAY_DEPEND_REMAINING_PROCESSES},
-		'Display how many depend processes are running after the main depend process ended.', '',
+	'ddrp|display_depend_remaining_processes', 'Display how many depend processes are running after the main depend process ended.', '',
+		\$config->{DISPLAY_DEPEND_REMAINING_PROCESSES},
 
-	'display_too_many_nodes_warning=i'        => \$config->{DISPLAY_TOO_MANY_NODE_WARNING},
-		'Display a warning when a pbsfile adds too many nodes.', '',
+	'display_too_many_nodes_warning=i', 'Display a warning when a pbsfile adds too many nodes.', '',
+		\$config->{DISPLAY_TOO_MANY_NODE_WARNING},
 
-	'display_rule_to_order'          => \$config->{DISPLAY_RULES_TO_ORDER},
-		'Display that there are rules order.', '',
+	'display_rule_to_order', 'Display that there are rules order.', '',
+		\$config->{DISPLAY_RULES_TO_ORDER},
 		
-	'display_rule_order'          => \$config->{DISPLAY_RULES_ORDER},
-		'Display the order rules.', '',
+	'display_rule_order', 'Display the order rules.', '',
+		\$config->{DISPLAY_RULES_ORDER},
 		
-	'display_rule_ordering'          => \$config->{DISPLAY_RULES_ORDERING},
-		'Display the pbsfile used to order rules and the rules order.', '',
+	'display_rule_ordering', 'Display the pbsfile used to order rules and the rules order.', '',
+		\$config->{DISPLAY_RULES_ORDERING},
 		
-	'rro|rule_run_once'          => \$config->{RULE_RUN_ONCE},
-		'Rules run only once except if they are tagged as MULTI', '',
+	'rro|rule_run_once', 'Rules run only once except if they are tagged as MULTI', '',
+		\$config->{RULE_RUN_ONCE},
 		
-	'rns|rule_no_scope'          => \$config->{RULE_NO_SCOPE},
-		'Disable rule scope.', '',
+	'rns|rule_no_scope', 'Disable rule scope.', '',
+		\$config->{RULE_NO_SCOPE},
 		
-	'display_rule_scope'          => \$config->{DISPLAY_RULE_SCOPE},
-		'display scope parsing and generation', '',
+	'display_rule_scope', 'display scope parsing and generation', '',
+		\$config->{DISPLAY_RULE_SCOPE},
 		
-	'maximum_rule_recursion'          => \$config->{MAXIMUM_RULE_RECURSION},
-		'Set the maximum rule recusion before pbs, aborts the build', '',
+	'maximum_rule_recursion', 'Set the maximum rule recusion before pbs, aborts the build', '',
+		\$config->{MAXIMUM_RULE_RECURSION},
 		
-	'rule_recursion_warning'          => \$config->{RULE_RECURSION_WARNING},
-		'Set the level at which pbs starts warning aabout rule recursion', '',
+	'rule_recursion_warning', 'Set the level at which pbs starts warning aabout rule recursion', '',
+		\$config->{RULE_RECURSION_WARNING},
 		
-	'dnmr|display_non_matching_rules' => \$config->{DISPLAY_NON_MATCHING_RULES},
-		'Display the rules used during the dependency pass.', '',
+	'dnmr|display_non_matching_rules', 'Display the rules used during the dependency pass.', '',
+		\$config->{DISPLAY_NON_MATCHING_RULES},
 		
-	'dur|display_used_rules'          => \$config->{DISPLAY_USED_RULES},
-		'Display the rules used during the dependency pass.', '',
+	'dur|display_used_rules', 'Display the rules used during the dependency pass.', '',
+		\$config->{DISPLAY_USED_RULES},
 		
-	'durno|display_used_rules_name_only' => \$config->{DISPLAY_USED_RULES_NAME_ONLY},
-		'Display the names of the rules used during the dependency pass.', '',
+	'durno|display_used_rules_name_only', 'Display the names of the rules used during the dependency pass.', '',
+		\$config->{DISPLAY_USED_RULES_NAME_ONLY},
 		
-	'dar|display_all_rules'           => \$config->{DISPLAY_ALL_RULES},
-		'Display all the registred rules.',
+	'dar|display_all_rules', 'Display all the registred rules.',
 		'If you run a hierarchical build, these rules will be dumped every time a package runs a dependency step.',
+		\$config->{DISPLAY_ALL_RULES},
 		
-	'dc|display_config'               => \$config->{DISPLAY_CONFIGURATION},
-		'Display the config used during a Pbs run (simplified and from the used config namespaces only).', '',
+	'dc|display_config', 'Display the config used during a Pbs run (simplified and from the used config namespaces only).', '',
+		\$config->{DISPLAY_CONFIGURATION},
 		
-	'dcs|display_config_start'        => \$config->{DISPLAY_CONFIGURATION_START},
-		'Display the config to be used in a Pbs run before loading the Pbsfile', '',
+	'dcs|display_config_start', 'Display the config to be used in a Pbs run before loading the Pbsfile', '',
+		\$config->{DISPLAY_CONFIGURATION_START},
 		
-        'display_config_delta'            => \$config->{DISPLAY_CONFIGURATION_DELTA},
-		'Display the delta between the parent config and the config after the Pbsfile is run.', '',
+        'display_config_delta', 'Display the delta between the parent config and the config after the Pbsfile is run.', '',
+		\$config->{DISPLAY_CONFIGURATION_DELTA},
 					
-	'dcn|display_config_namespaces'   => \$config->{DISPLAY_CONFIGURATION_NAMESPACES},
-		'Display the config namespaces used during a Pbs run (even unused config namspaces).', '',
+	'dcn|display_config_namespaces', 'Display the config namespaces used during a Pbs run (even unused config namspaces).', '',
+		\$config->{DISPLAY_CONFIGURATION_NAMESPACES},
 		
-	'dac|display_all_configs'         => \$config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
-		'(DF). Display all configurations.', '',
+	'dac|display_all_configs', '(DF). Display all configurations.', '',
+		\$config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
 		
-	'dam|display_configs_merge'       => \$config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
-		'(DF). Display how configurations are merged.', '',
+	'dam|display_configs_merge', '(DF). Display how configurations are merged.', '',
+		\$config->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
 		
-	'display_package_configuration'   => \$config->{DISPLAY_PACKAGE_CONFIGURATION},
-		'If PACKAGE_CONFIGURATION for a subpbs exists, it will be displayed if this option is set (also displayed when --dc is set)', '',
+	'display_package_configuration', 'If PACKAGE_CONFIGURATION for a subpbs exists, it will be displayed if this option is set (also displayed when --dc is set)', '',
+		\$config->{DISPLAY_PACKAGE_CONFIGURATION},
 		
-	'no_silent_override'         => \$config->{NO_SILENT_OVERRIDE},
-		'Makes all SILENT_OVERRIDE configuration visible.', '',
+	'no_silent_override', 'Makes all SILENT_OVERRIDE configuration visible.', '',
+		\$config->{NO_SILENT_OVERRIDE},
 		
-	'display_subpbs_search_info'         => \$config->{DISPLAY_SUBPBS_SEARCH_INFO},
-		'Display information about how the subpbs files are found.', '',
+	'display_subpbs_search_info', 'Display information about how the subpbs files are found.', '',
+		\$config->{DISPLAY_SUBPBS_SEARCH_INFO},
 		
-	'display_all_subpbs_alternatives'         => \$config->{DISPLAY_ALL_SUBPBS_ALTERNATIVES},
-		'Display all the subpbs files that could match.', '',
+	'display_all_subpbs_alternatives', 'Display all the subpbs files that could match.', '',
+		\$config->{DISPLAY_ALL_SUBPBS_ALTERNATIVES},
 		
-	'dsd|display_source_directory'    => \$config->{DISPLAY_SOURCE_DIRECTORIES},
-		'display all the source directories (given through the -sd switch ot the Pebsfile).', '',
+	'dsd|display_source_directory', 'display all the source directories (given through the -sd switch ot the Pebsfile).', '',
+		\$config->{DISPLAY_SOURCE_DIRECTORIES},
 		
-	'display_search_info'         => \$config->{DISPLAY_SEARCH_INFO},
-		'Display the files searched in the source directories. See --daa.',
-		<<EOT,
+	'display_search_info', 'Display the files searched in the source directories. See --daa.', <<EOT, \$config->{DISPLAY_SEARCH_INFO},
 PBS will display its search for source files. 
 
   $> pwd
@@ -787,9 +757,7 @@ PBS will display its search for source files.
 See switch: --display_all_alternatives.
 EOT
 
-	'daa|display_all_alternates'      => \$config->{DISPLAY_SEARCH_ALTERNATES},
-		'Display all the files found in the source directories.',
-		<<EOT,
+	'daa|display_all_alternates', 'Display all the files found in the source directories.', <<EOT, \$config->{DISPLAY_SEARCH_ALTERNATES},
 When PBS searches for a node in the source directories, it stops at the first found node.
 if you have multiple source directories, you might want to see the files 'PBS' didn't choose.
 The first one will still be choosen.
@@ -807,116 +775,114 @@ The first one will still be choosen.
 EOT
 		
 	#----------------------------------------------------------------------------------
-	'dr|display_rules'                => \$config->{DEBUG_DISPLAY_RULES},
-		'(DF) Display which rules are registred. and which rule packages are queried.', '',
+	'dr|display_rules', '(DF) Display which rules are registred. and which rule packages are queried.', '',
+		\$config->{DEBUG_DISPLAY_RULES},
 		
-	'dir|display_inactive_rules'      => \$config->{DISPLAY_INACTIVE_RULES},
-		'Display rules present i the åbsfile but tagged as NON_ACTIVE.', '',
+	'dir|display_inactive_rules', 'Display rules present i the åbsfile but tagged as NON_ACTIVE.', '',
+		\$config->{DISPLAY_INACTIVE_RULES},
 		
-	'drd|display_rule_definition'     => \$config->{DEBUG_DISPLAY_RULE_DEFINITION},
-		'(DF) Display the definition of each registrated rule.', '',
+	'drd|display_rule_definition', '(DF) Display the definition of each registrated rule.', '',
+		\$config->{DEBUG_DISPLAY_RULE_DEFINITION},
 		
-	'drs|display_rule_statistics'     => \$config->{DEBUG_DISPLAY_RULE_STATISTICS},
-		'(DF) Display rule statistics after each pbs run.', '',
+	'drs|display_rule_statistics', '(DF) Display rule statistics after each pbs run.', '',
+		\$config->{DEBUG_DISPLAY_RULE_STATISTICS},
 		
-	'dtr|display_trigger_rules'       => \$config->{DEBUG_DISPLAY_TRIGGER_RULES},
-		'(DF) Display which triggers are registred. and which trigger packages are queried.', '',
+	'dtr|display_trigger_rules', '(DF) Display which triggers are registred. and which trigger packages are queried.', '',
+		\$config->{DEBUG_DISPLAY_TRIGGER_RULES},
 		
-	'dtrd|display_trigger_rule_definition' => \$config->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION},
-		'(DF) Display the definition of each registrated trigger.', '',
+	'dtrd|display_trigger_rule_definition', '(DF) Display the definition of each registrated trigger.', '',
+		\$config->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION},
 		
 	# -------------------------------------------------------------------------------	
-	'dpbcr|display_post_build_commands_registration' => \$config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION},
-		'(DF) Display the registration of post build commands.', '',
+	'dpbcr|display_post_build_commands_registration', '(DF) Display the registration of post build commands.', '',
+		\$config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS_REGISTRATION},
 		
-	'dpbcd|display_post_build_command_definition' => \$config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION},
-		'(DF) Display the definition of post build commands when they are registered.', '',
+	'dpbcd|display_post_build_command_definition', '(DF) Display the definition of post build commands when they are registered.', '',
+		\$config->{DEBUG_DISPLAY_POST_BUILD_COMMAND_DEFINITION},
 		
-	'dpbc|display_post_build_commands' => \$config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS},
-		'(DF) Display which post build command will be run for a node.', '',
+	'dpbc|display_post_build_commands', '(DF) Display which post build command will be run for a node.', '',
+		\$config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS},
 		
-	'dpbcre|display_post_build_result'  => \$config->{DISPLAY_POST_BUILD_RESULT},
-		'Display the result code and message returned buy post build commands.', '',
+	'dpbcre|display_post_build_result', 'Display the result code and message returned buy post build commands.', '',
+		\$config->{DISPLAY_POST_BUILD_RESULT},
 		
 	#-------------------------------------------------------------------------------	
-	'display_full_dependency_path'         => \$config->{DISPLAY_FULL_DEPENDENCY_PATH},
-		'Display full dependency_path.', '',
+	'display_full_dependency_path', 'Display full dependency_path.', '',
+		\$config->{DISPLAY_FULL_DEPENDENCY_PATH},
 		
-	'short_dependency_path_string=s'         => \$config->{SHORT_DEPENDENCY_PATH_STRING},
-		'Replace full dependency_path with argument.', '',
+	'short_dependency_path_string=s', 'Replace full dependency_path with argument.', '',
+		\$config->{SHORT_DEPENDENCY_PATH_STRING},
 		
-	'dd|display_dependencies'         => \$config->{DEBUG_DISPLAY_DEPENDENCIES},
-		'(DF) Display the dependencies for each file processed.', '',
+	'dd|display_dependencies', '(DF) Display the dependencies for each file processed.', '',
+		\$config->{DEBUG_DISPLAY_DEPENDENCIES},
 		
-	'dh|depend_header'                => \$config->{DISPLAY_DEPEND_HEADER},
-		"Show depend header.", '',
+	'dh|depend_header', "Show depend header.", '',
+		\$config->{DISPLAY_DEPEND_HEADER},
 		
-	'ddl|display_dependencies_long'         => \$config->{DEBUG_DISPLAY_DEPENDENCIES_LONG},
-		'(DF) Display one dependency perl line.', '',
+	'ddl|display_dependencies_long', '(DF) Display one dependency perl line.', '',
+		\$config->{DEBUG_DISPLAY_DEPENDENCIES_LONG},
 		
-	'ddt|display_dependency_time'     => \$config->{DISPLAY_DEPENDENCY_TIME},
-		' Display the time spend in each Pbsfile.', '',
+	'ddt|display_dependency_time', ' Display the time spend in each Pbsfile.', '',
+		\$config->{DISPLAY_DEPENDENCY_TIME},
 		
-	'dct|display_check_time'          => \$config->{DISPLAY_CHECK_TIME},
-		' Display the time spend checking the dependency tree.', '',
+	'dct|display_check_time', ' Display the time spend checking the dependency tree.', '',
+		\$config->{DISPLAY_CHECK_TIME},
 		
-	'dre|dependency_result'           => \$config->{DISPLAY_DEPENDENCY_RESULT},
-		'Display the result of each dependency step.', '',
+	'dre|dependency_result', 'Display the result of each dependency step.', '',
+		\$config->{DISPLAY_DEPENDENCY_RESULT},
 		
-	'ddrr|display_dependencies_regex=s'=> $config->{DISPLAY_DEPENDENCIES_REGEX},
-		'Node matching the regex are displayed.', '',
+	'ddrr|display_dependencies_regex=s', 'Node matching the regex are displayed.', '',
+		$config->{DISPLAY_DEPENDENCIES_REGEX},
 		
-	'ddrrn|display_dependencies_regex_not=s'=> $config->{DISPLAY_DEPENDENCIES_REGEX_NOT},
-		'Node matching the regex are not displayed.', '',
+	'ddrrn|display_dependencies_regex_not=s', 'Node matching the regex are not displayed.', '',
+		$config->{DISPLAY_DEPENDENCIES_REGEX_NOT},
 		
-	'ddrn|display_dependencies_rule_name=s'=> $config->{DISPLAY_DEPENDENCIES_RULE_NAME},
-		'Node matching rules matching the regex are displayed.', '',
+	'ddrn|display_dependencies_rule_name=s', 'Node matching rules matching the regex are displayed.', '',
+		$config->{DISPLAY_DEPENDENCIES_RULE_NAME},
 		
-	'ddrnn|display_dependencies_rule_name_not=s'=> $config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT},
-		'Node matching rules matching the regex are not displayed.', '',
+	'ddrnn|display_dependencies_rule_name_not=s', 'Node matching rules matching the regex are not displayed.', '',
+		$config->{DISPLAY_DEPENDENCIES_RULE_NAME_NOT},
 		
-	'dnsr|display_node_subs_run'      => \$config->{DISPLAY_NODE_SUBS_RUN},
-		'Show when a node sub is run.', '',
+	'dnsr|display_node_subs_run', 'Show when a node sub is run.', '',
+		\$config->{DISPLAY_NODE_SUBS_RUN},
 
-	'trace_pbs_stack'        => \$config->{DEBUG_TRACE_PBS_STACK},
-		'(DF) Display the call stack within pbs runs.', '',
+	'trace_pbs_stack', '(DF) Display the call stack within pbs runs.', '',
+		\$config->{DEBUG_TRACE_PBS_STACK},
 		
-	'ddrd|display_dependency_rule_definition' => \$config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION},
-		'Display the definition of the rule that generates a dependency.', '',
+	'ddrd|display_dependency_rule_definition', 'Display the definition of the rule that generates a dependency.', '',
+		\$config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION},
 		
-	'ddr|display_dependency_regex'        => \$config->{DEBUG_DISPLAY_DEPENDENCY_REGEX},
-		'(DF) Display the regex used to depend a node.', '',
+	'ddr|display_dependency_regex', '(DF) Display the regex used to depend a node.', '',
+		\$config->{DEBUG_DISPLAY_DEPENDENCY_REGEX},
 		
-	'ddmr|display_dependency_matching_rule' => \$config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
-		'Display the rule which matched the node.', '',
+	'ddmr|display_dependency_matching_rule', 'Display the rule which matched the node.', '',
+		\$config->{DISPLAY_DEPENDENCY_MATCHING_RULE},
 		
-	'ddfp|display_dependency_full_pbsfile'   => \$config->{DISPLAY_DEPENDENCIES_FULL_PBSFILE},
-		'in conjonction with --display_dependency_matching_rule, display the fullpbsfile path rather than relative to target.', '',
+	'ddfp|display_dependency_full_pbsfile', 'in conjonction with --display_dependency_matching_rule, display the fullpbsfile path rather than relative to target.', '',
+		\$config->{DISPLAY_DEPENDENCIES_FULL_PBSFILE},
 		
-	'ddir|display_dependency_insertion_rule' => \$config->{DISPLAY_DEPENDENCY_INSERTION_RULE},
-		'Display the rule which added the node.', '',
+	'ddir|display_dependency_insertion_rule', 'Display the rule which added the node.', '',
+		\$config->{DISPLAY_DEPENDENCY_INSERTION_RULE},
 		
-	'dlmr|display_link_matching_rule' => \$config->{DISPLAY_LINK_MATCHING_RULE},
-		'Display the rule which matched the node that is being linked.', '',
+	'dlmr|display_link_matching_rule', 'Display the rule which matched the node that is being linked.', '',
+		\$config->{DISPLAY_LINK_MATCHING_RULE},
 		
-	'dtin|display_trigger_inserted_nodes' => \$config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES},
-		'(DF) Display the nodes inserted because of a trigger.', '',
+	'dtin|display_trigger_inserted_nodes', '(DF) Display the nodes inserted because of a trigger.', '',
+		\$config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES},
 		
-	'dt|display_triggered'              => \$config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES},
-		'(DF) Display the files that need to be rebuild and why they need so.', '',
+	'dt|display_triggered', '(DF) Display the files that need to be rebuild and why they need so.', '',
+		\$config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES},
 		
-	'display_digest_exclusion'        => \$config->{DISPLAY_DIGEST_EXCLUSION},
-		'Display when an exclusion or inclusion rule for a node matches.', '',
+	'display_digest_exclusion', 'Display when an exclusion or inclusion rule for a node matches.', '',
+		\$config->{DISPLAY_DIGEST_EXCLUSION},
 		
-	'display_digest'                  => \$config->{DISPLAY_DIGEST},
-		'Display the expected and the actual digest for each node.', '',
+	'display_digest', 'Display the expected and the actual digest for each node.', '',
+		\$config->{DISPLAY_DIGEST},
 		
-	'dddo|display_different_digest_only'  => \$config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
-		'Only display when a digest are diffrent.', '',
+	'dddo|display_different_digest_only', 'Only display when a digest are diffrent.', '',
+		\$config->{DISPLAY_DIFFERENT_DIGEST_ONLY},
 		
-	'DNDC|devel_no_distribution_check'  => \$config->{DEVEL_NO_DISTRIBUTION_CHECK},
-		'A development flag, not for user.',
-		<<EOT,
+	'DNDC|devel_no_distribution_check', 'A development flag, not for user.', <<EOT, \$config->{DEVEL_NO_DISTRIBUTION_CHECK},
 Pbs checks its distribution when building and rebuilds everything if it has changed.
 
 While developping we are constantly changing the distribution but want to see the effect
@@ -924,229 +890,236 @@ of the latest change without rebuilding everything which makes finding the effec
 latest change more difficult.
 EOT
 
-	'wnmw|warp_no_md5_warning'             => \$config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND},
-		'Do not display a warning if the file to compute hash for does not exist during warp verification.', '',
+	'wnmw|warp_no_md5_warning', 'Do not display a warning if the file to compute hash for does not exist during warp verification.', '',
+		\$config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND},
 		
-	'dfc|display_file_check'   => \$config->{DISPLAY_FILE_CHECK},
-		'Display hash checking for individual files.', '',
+	'dfc|display_file_check', 'Display hash checking for individual files.', '',
+		\$config->{DISPLAY_FILE_CHECK},
 		
-	'display_cyclic_tree'             => \$config->{DEBUG_DISPLAY_CYCLIC_TREE},
-		'(DF) Display the portion of the dependency tree that is cyclic', '',
+	'display_cyclic_tree', '(DF) Display the portion of the dependency tree that is cyclic', '',
+		\$config->{DEBUG_DISPLAY_CYCLIC_TREE},
 		
-	'no_source_cyclic_warning'             => \$config->{NO_SOURCE_CYCLIC_WARNING},
-		'No warning is displayed if a cycle involving source files is found.', '',
+	'no_source_cyclic_warning', 'No warning is displayed if a cycle involving source files is found.', '',
+		\$config->{NO_SOURCE_CYCLIC_WARNING},
 		
-	'die_source_cyclic_warning'             => \$config->{DIE_SOURCE_CYCLIC_WARNING},
-		'Die if a cycle involving source files is found (default is warn).', '',
+	'die_source_cyclic_warning', 'Die if a cycle involving source files is found (default is warn).', '',
+		\$config->{DIE_SOURCE_CYCLIC_WARNING},
 		
-	'tt|text_tree'                  => \$config->{DEBUG_DISPLAY_TEXT_TREE},
-		'(DF) Display the dependency tree using a text dumper', '',
+	'tt|text_tree', '(DF) Display the dependency tree using a text dumper', '',
+		\$config->{DEBUG_DISPLAY_TEXT_TREE},
 		
-	'ttmr|text_tree_match_regex:s'      => $config->{DISPLAY_TEXT_TREE_REGEX},
-		'limits how many trees are displayed.', '',
+	'ttmr|text_tree_match_regex:s', 'limits how many trees are displayed.', '',
+		$config->{DISPLAY_TEXT_TREE_REGEX},
 		
-	'ttmm|text_tree_match_max:i'      => \$config->{DISPLAY_TEXT_TREE_MAX_MATCH},
-		'limits how many trees are displayed.', '',
+	'ttmm|text_tree_match_max:i', 'limits how many trees are displayed.', '',
+		\$config->{DISPLAY_TEXT_TREE_MAX_MATCH},
 		
-	'ttf|text_tree_filter=s'          => $config->{DISPLAY_TREE_FILTER},
-		'(DF) List the fields that are to be displayed when -tt is active. The switch can be used multiple times.', '',
+	'ttf|text_tree_filter=s', '(DF) List the fields that are to be displayed when -tt is active. The switch can be used multiple times.', '',
+		$config->{DISPLAY_TREE_FILTER},
 		
-	'tta|text_tree_use_ascii'         => \$config->{DISPLAY_TEXT_TREE_USE_ASCII},
-		'Use ASCII characters instead for Ansi escape codes to draw the tree.', '',
+	'tta|text_tree_use_ascii', 'Use ASCII characters instead for Ansi escape codes to draw the tree.', '',
+		\$config->{DISPLAY_TEXT_TREE_USE_ASCII},
 		
-	'ttdhtml|text_tree_use_dhtml=s'     => \$config->{DISPLAY_TEXT_TREE_USE_DHTML},
-		'Generate a dhtml dump of the tree in the specified file.', '',
+	'ttdhtml|text_tree_use_dhtml=s', 'Generate a dhtml dump of the tree in the specified file.', '',
+		\$config->{DISPLAY_TEXT_TREE_USE_DHTML},
 		
-	'ttmd|text_tree_max_depth=i'       => \$config->{DISPLAY_TEXT_TREE_MAX_DEPTH},
-		'Limit the depth of the dumped tree.', '',
+	'ttmd|text_tree_max_depth=i', 'Limit the depth of the dumped tree.', '',
+		\$config->{DISPLAY_TEXT_TREE_MAX_DEPTH},
 		
-	'tno|tree_name_only'               => \$config->{DEBUG_DISPLAY_TREE_NAME_ONLY},
-		'(DF) Display the name of the nodes only.', '',
+	'tno|tree_name_only', '(DF) Display the name of the nodes only.', '',
+		\$config->{DEBUG_DISPLAY_TREE_NAME_ONLY},
 		
-	'vas|visualize_after_subpbs'       => \$config->{DEBUG_VISUALIZE_AFTER_SUPBS},
-		'(DF) visualization plugins run after every subpbs.', '',
+	'vas|visualize_after_subpbs', '(DF) visualization plugins run after every subpbs.', '',
+		\$config->{DEBUG_VISUALIZE_AFTER_SUPBS},
 		
-	'tda|tree_depended_at'               => \$config->{DEBUG_DISPLAY_TREE_DEPENDED_AT},
-		'(DF) Display which Pbsfile was used to depend each node.', '',
+	'tda|tree_depended_at', '(DF) Display which Pbsfile was used to depend each node.', '',
+		\$config->{DEBUG_DISPLAY_TREE_DEPENDED_AT},
 		
-	'tia|tree_inserted_at'               => \$config->{DEBUG_DISPLAY_TREE_INSERTED_AT},
-		'(DF) Display where the node was inserted.', '',
+	'tia|tree_inserted_at', '(DF) Display where the node was inserted.', '',
+		\$config->{DEBUG_DISPLAY_TREE_INSERTED_AT},
 		
-	'tnd|tree_display_no_dependencies'        => \$config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES},
-		'(DF) Don\'t show child nodes data.', '',
+	'tnd|tree_display_no_dependencies', '(DF) Don\'t show child nodes data.', '',
+		\$config->{DEBUG_DISPLAY_TREE_NO_DEPENDENCIES},
 		
-	'tad|tree_display_all_data'        => \$config->{DEBUG_DISPLAY_TREE_DISPLAY_ALL_DATA},
-		'Unset data within the tree are normally not displayed. This switch forces the display of all data.', '',
+	'tad|tree_display_all_data', 'Unset data within the tree are normally not displayed. This switch forces the display of all data.', '',
+		\$config->{DEBUG_DISPLAY_TREE_DISPLAY_ALL_DATA},
 		
-	'tnb|tree_name_build'               => \$config->{DEBUG_DISPLAY_TREE_NAME_BUILD},
-		'(DF) Display the build name of the nodes. Must be used with --tno', '',
+	'tnb|tree_name_build', '(DF) Display the build name of the nodes. Must be used with --tno', '',
+		\$config->{DEBUG_DISPLAY_TREE_NAME_BUILD},
 		
-	'TA|trigger_all'                        => \$config->{DEBUG_TRIGGER_ALL},
-		'(DF) As if all node triggered, see --trigger', '',
+	'tntr|tree_node_triggered_reason', '(DF) Display why a node is to be rebuild.', '',
+		\$config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON},
 		
-	'TN|trigger_none'                        => \$config->{DEBUG_TRIGGER_NONE},
-		'(DF) As if no node triggered, see --trigger', '',
+	'tm|tree_maxdepth=i', 'Maximum depth of the structures displayed by pbs.', '',
+		\$config->{MAX_DEPTH},
 		
-	'T|trigger=s'                           => $config->{TRIGGER},
-		'(DF) Force the triggering of a node if you want to check its effects.', '',
-		
-	'TL|trigger_list=s'                       => \$config->{DEBUG_TRIGGER_LIST},
-		'(DF) Points to a file containing trigers.', '',
-
-	'TD|display_trigger'                       => \$config->{DEBUG_DISPLAY_TRIGGER},
-		'(DF) display which files are processed and triggered', '',
-
-	'TDM|display_trigger_match_only'            => \$config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY},
-		'(DF) display only files which are triggered', '',
-
-	'tntr|tree_node_triggered_reason'   => \$config->{DEBUG_DISPLAY_TREE_NODE_TRIGGERED_REASON},
-		'(DF) Display why a node is to be rebuild.', '',
+	'ti|tree_indentation=i', 'Data dump indent style (0-1-2).', '',
+		\$config->{INDENT_STYLE},
 		
 	#-------------------------------------------------------------------------------	
-	'gtg|generate_tree_graph=s'       => \$config->{GENERATE_TREE_GRAPH},
-		'Generate a graph for the dependency tree. Give the file name as argument.', '',
+
+	'TN|trigger_none', '(DF) As if no node triggered, see --trigger', '',
+		\$config->{DEBUG_TRIGGER_NONE},
 		
-	'gtg_p|generate_tree_graph_package'=> \$config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE},
-		'Groups the node by definition package.', '',
+	'T|trigger=s', '(DF) Force the triggering of a node if you want to check its effects.', '',
+		$config->{TRIGGER},
 		
-	'gtg_canonical=s'=> \$config->{GENERATE_TREE_GRAPH_CANONICAL},
-		'Generates a canonical dot file.', '',
+	'TA|trigger_all', '(DF) As if all node triggered, see --trigger', '',
+		\$config->{DEBUG_TRIGGER_ALL},
 		
-	'gtg_format=s'                        => \$config->{GENERATE_TREE_GRAPH_FORMAT},
-		'chose graph format between: svg (default), ps, png.', '',
+	'TL|trigger_list=s', '(DF) Points to a file containing trigers.', '',
+		\$config->{DEBUG_TRIGGER_LIST},
+
+	'TD|display_trigger', '(DF) display which files are processed and triggered', '',
+		\$config->{DEBUG_DISPLAY_TRIGGER},
+
+	'TDM|display_trigger_match_only', '(DF) display only files which are triggered', '',
+		\$config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY},
+
+	#-------------------------------------------------------------------------------	
+
+	'gtg|generate_tree_graph=s', 'Generate a graph for the dependency tree. Give the file name as argument.', '',
+		\$config->{GENERATE_TREE_GRAPH},
 		
-	'gtg_html=s'=> \$config->{GENERATE_TREE_GRAPH_HTML},
-		'Generates a set of html files describing the build tree.', '',
+	'gtg_p|generate_tree_graph_package', 'Groups the node by definition package.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_PACKAGE},
 		
-	'gtg_html_frame'=> \$config->{GENERATE_TREE_GRAPH_HTML_FRAME},
-		'The use a frame in the graph html.', '',
+	'gtg_canonical=s', 'Generates a canonical dot file.', '',
+		\$config->{GENERATE_TREE_GRAPH_CANONICAL},
 		
-	'gtg_snapshots=s'=> \$config->{GENERATE_TREE_GRAPH_SNAPSHOTS},
-		'Generates a serie of snapshots from the build.', '',
+	'gtg_format=s', 'chose graph format between: svg (default), ps, png.', '',
+		\$config->{GENERATE_TREE_GRAPH_FORMAT},
 		
-	'gtg_cn=s'                         => $config->{GENERATE_TREE_GRAPH_CLUSTER_NODE},
-		'The node given as argument and its dependencies will be displayed as a single unit. Multiple gtg_cn allowed.', '',
+	'gtg_html=s', 'Generates a set of html files describing the build tree.', '',
+		\$config->{GENERATE_TREE_GRAPH_HTML},
 		
-	'gtg_cr=s'                         => $config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX},
-		'Put nodes matching the given regex in a node named as the regx. Multiple gtg_cr allowed.',
-		<<'EOT',
+	'gtg_html_frame', 'The use a frame in the graph html.', '',
+		\$config->{GENERATE_TREE_GRAPH_HTML_FRAME},
+		
+	'gtg_snapshots=s', 'Generates a serie of snapshots from the build.', '',
+		\$config->{GENERATE_TREE_GRAPH_SNAPSHOTS},
+		
+	'gtg_cn=s', 'The node given as argument and its dependencies will be displayed as a single unit. Multiple gtg_cn allowed.', '',
+		$config->{GENERATE_TREE_GRAPH_CLUSTER_NODE},
+		
+	'gtg_cr=s', 'Put nodes matching the given regex in a node named as the regx. Multiple gtg_cr allowed.', <<'EOT', $config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX},
 $> pbs -gtg_cr '\.c$' --gtg
 
 create a graph where all the .c files are clustered in a single node named '.c$'
 EOT
-	'gtg_crl=s'                         => \$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST},
-		'List of regexes, as if you gave multiple --gtg_cr, one per line', '',
+	'gtg_crl=s', 'List of regexes, as if you gave multiple --gtg_cr, one per line', '',
+		\$config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST},
 		
-	'gtg_sd|generate_tree_graph_source_directories' => \$config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES},
-		'As generate_tree_graph but groups the node by source directories, uncompatible with --generate_tree_graph_package.', '',
+	'gtg_sd|generate_tree_graph_source_directories', 'As generate_tree_graph but groups the node by source directories, uncompatible with --generate_tree_graph_package.', '',
+		\$config->{GENERATE_TREE_GRAPH_CLUSTER_SOURCE_DIRECTORIES},
 		
-	'gtg_exclude|generate_tree_graph_exclude=s'       => $config->{GENERATE_TREE_GRAPH_EXCLUDE},
-		"Exclude nodes and their dependenies from the graph.", '',
+	'gtg_exclude|generate_tree_graph_exclude=s', "Exclude nodes and their dependenies from the graph.", '',
+		$config->{GENERATE_TREE_GRAPH_EXCLUDE},
 		
-	'gtg_include|generate_tree_graph_include=s' => $config->{GENERATE_TREE_GRAPH_INCLUDE},
-		"Forces nodes and their dependencies back into the graph.",
+	'gtg_include|generate_tree_graph_include=s', "Forces nodes and their dependencies back into the graph.",
 		'Ex: pbs -gtg tree -gtg_exclude "*.c" - gtg_include "name.c".',
+		$config->{GENERATE_TREE_GRAPH_INCLUDE},
 		
-	'gtg_bd'                           => \$config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY},
-		'The build directory for each node is displayed.', '',
+	'gtg_bd', 'The build directory for each node is displayed.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_BUILD_DIRECTORY},
 		
-	'gtg_rbd'                          => \$config->{GENERATE_TREE_GRAPH_DISPLAY_ROOT_BUILD_DIRECTORY},
-		'The build directory for the root is displayed.', '',
+	'gtg_rbd', 'The build directory for the root is displayed.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_ROOT_BUILD_DIRECTORY},
 		
-	'gtg_tn'                           => \$config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES},
-		'Node inserted by Triggerring are also displayed.', '',
+	'gtg_tn', 'Node inserted by Triggerring are also displayed.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_TRIGGERED_NODES},
 		
-	'gtg_config'                       => \$config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG},
-		'Configs are also displayed.', '',
+	'gtg_config', 'Configs are also displayed.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG},
 		
-	'gtg_config_edge'                  => \$config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE},
-		'Configs are displayed as well as an edge from the nodes using it.', '',
+	'gtg_config_edge', 'Configs are displayed as well as an edge from the nodes using it.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_CONFIG_EDGE},
 		
-	'gtg_pbs_config'                   => \$config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG},
-		'Package configs are also displayed.', '',
+	'gtg_pbs_config', 'Package configs are also displayed.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG},
 		
-	'gtg_pbs_config_edge'              => \$config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG_EDGE},
-		'Package configs are displayed as well as an edge from the nodes using it.', '',
+	'gtg_pbs_config_edge', 'Package configs are displayed as well as an edge from the nodes using it.', '',
+		\$config->{GENERATE_TREE_GRAPH_DISPLAY_PBS_CONFIG_EDGE},
 		
-	'gtg_gm|generate_tree_graph_group_mode=i' => \$config->{GENERATE_TREE_GRAPH_GROUP_MODE},
-		'Set the grouping mode.0 no grouping, 1 main tree is grouped (default), 2 each tree is grouped.', '',
+	'gtg_gm|generate_tree_graph_group_mode=i', 'Set the grouping mode.0 no grouping, 1 main tree is grouped (default), 2 each tree is grouped.', '',
+		\$config->{GENERATE_TREE_GRAPH_GROUP_MODE},
 		
-	'gtg_spacing=f'                    => \$config->{GENERATE_TREE_GRAPH_SPACING},
-		'Multiply node spacing with given coefficient.', '',
+	'gtg_spacing=f', 'Multiply node spacing with given coefficient.', '',
+		\$config->{GENERATE_TREE_GRAPH_SPACING},
 		
-	'gtg_printer|generate_tree_graph_printer'=> \$config->{GENERATE_TREE_GRAPH_PRINTER},
-		'Non triggerring edges are displayed as dashed lines.', '',
+	'gtg_printer|generate_tree_graph_printer', 'Non triggerring edges are displayed as dashed lines.', '',
+		\$config->{GENERATE_TREE_GRAPH_PRINTER},
 		
-	'gtg_sn|generate_tree_graph_start_node=s'       => \$config->{GENERATE_TREE_GRAPH_START_NODE},
-		'Generate a graph from the given node.', '',
+	'gtg_sn|generate_tree_graph_start_node=s', 'Generate a graph from the given node.', '',
+		\$config->{GENERATE_TREE_GRAPH_START_NODE},
 		
-	'a|ancestors=s'                   => \$config->{DEBUG_DISPLAY_PARENT},
-		'(DF) Display the ancestors of a file and the rules that inserted them.', '',
-		
-	'dbsi|display_build_sequencer_info'      => \$config->{DISPLAY_BUILD_SEQUENCER_INFO},
-		'Display information about which node is build.', '',
+	#-------------------------------------------------------------------------------	
 
-	'dbs|display_build_sequence'      => \$config->{DEBUG_DISPLAY_BUILD_SEQUENCE},
-		'(DF) Dumps the build sequence data.', '',
+	'a|ancestors=s', '(DF) Display the ancestors of a file and the rules that inserted them.', '',
+		\$config->{DEBUG_DISPLAY_PARENT},
 		
-	'dbss|display_build_sequence_simple'      => \$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE},
-		'(DF) List the nodes to be build.', '',
+	'dbsi|display_build_sequencer_info', 'Display information about which node is build.', '',
+		\$config->{DISPLAY_BUILD_SEQUENCER_INFO},
+
+	'dbs|display_build_sequence', '(DF) Dumps the build sequence data.', '',
+		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE},
 		
-	'save_build_sequence_simple=s'      => \$config->{SAVE_BUILD_SEQUENCE_SIMPLE},
-		'Save a list of nodes to be build to a file.', '',
+	'dbss|display_build_sequence_simple', '(DF) List the nodes to be build.', '',
+		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE},
 		
-	'f|files|nodes'                   => \$config->{DISPLAY_FILE_LOCATION},
-		'Show all the nodes in the current_dependency tree and their final location.',
+	'save_build_sequence_simple=s', 'Save a list of nodes to be build to a file.', '',
+		\$config->{SAVE_BUILD_SEQUENCE_SIMPLE},
+		
+	'f|files|nodes', 'Show all the nodes in the current_dependency tree and their final location.',
 		'In warp only shows the nodes that have triggered, see option nodes_all for all nodes',
+		\$config->{DISPLAY_FILE_LOCATION},
 
-	'fa|files_all|nodes_all'          => \$config->{DISPLAY_FILE_LOCATION_ALL},
-		'Show all the nodes in the current_dependency tree and their final location.', '',
+	'fa|files_all|nodes_all', 'Show all the nodes in the current_dependency tree and their final location.', '',
+		\$config->{DISPLAY_FILE_LOCATION_ALL},
 
-	'bi|build_info=s'                 => $config->{DISPLAY_BUILD_INFO},
-		'Options: --b --d --bc --br. A file or \'*\' can be specified. No Build is done.', '',
+	'bi|build_info=s', 'Options: --b --d --bc --br. A file or \'*\' can be specified. No Build is done.', '',
+		$config->{DISPLAY_BUILD_INFO},
 		
-	'nbh|no_build_header'             => \$config->{DISPLAY_NO_BUILD_HEADER},
-		"Don't display the name of the node to be build.", '',
+	'nbh|no_build_header', "Don't display the name of the node to be build.", '',
+		\$config->{DISPLAY_NO_BUILD_HEADER},
 		
-	'bpb0|display_nop_progress_bar'        => \$config->{DISPLAY_PROGRESS_BAR_NOP},
-		"Force silent build mode and displays an empty progress bar.", '',
+	'bpb0|display_nop_progress_bar', "Force silent build mode and displays an empty progress bar.", '',
+		\$config->{DISPLAY_PROGRESS_BAR_NOP},
 
-	'bpb1|display_progress_bar'        => \$config->{DISPLAY_PROGRESS_BAR},
-		"Force silent build mode and displays a progress bar. This is Pbs default, see --build_verbose.", '',
+	'bpb1|display_progress_bar', "Force silent build mode and displays a progress bar. This is Pbs default, see --build_verbose.", '',
+		\$config->{DISPLAY_PROGRESS_BAR},
 
-	'bpb2|display_progress_bar_file'  => \$config->{DISPLAY_PROGRESS_BAR_FILE},
-		"Built node names are displayed above the progress bar", '',
+	'bpb2|display_progress_bar_file', "Built node names are displayed above the progress bar", '',
+		\$config->{DISPLAY_PROGRESS_BAR_FILE},
 
-	'bpb3|display_progress_bar_process'  => \$config->{DISPLAY_PROGRESS_BAR_PROCESS},
-		"A progress per build process is displayed above the progress bar", '',
+	'bpb3|display_progress_bar_process', "A progress per build process is displayed above the progress bar", '',
+		\$config->{DISPLAY_PROGRESS_BAR_PROCESS},
 
-	'bv|build_verbose'    => \$config->{DISPLAY_NO_PROGRESS_BAR},
-		"Verbose build mode.", '',
+	'bv|build_verbose', "Verbose build mode.", '',
+		\$config->{DISPLAY_NO_PROGRESS_BAR},
 		
-	'bvm|display_no_progress_bar_minimum'  => \$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
-		"Slightly less verbose build mode.", '',
+	'bvm|display_no_progress_bar_minimum', "Slightly less verbose build mode.", '',
+		\$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
 		
-	'bvmm|display_no_progress_bar_minimum_minimum'  => \$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
-		"Frankly less verbose build mode.", '',
+	'bvmm|display_no_progress_bar_minimum_minimum', "Frankly less verbose build mode.", '',
+		\$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
 
-	'bre|display_build_result'       => \$config->{DISPLAY_BUILD_RESULT},
-		'Shows the result returned by the builder.', '',
+	'bre|display_build_result', 'Shows the result returned by the builder.', '',
+		\$config->{DISPLAY_BUILD_RESULT},
 		
-	'bn|box_node' => \$config->{BOX_NODE},
-		'Display a colored margin for each node display.', '',
+	'bn|box_node', 'Display a colored margin for each node display.', '',
+		\$config->{BOX_NODE},
 
-	'bnir|build_and_display_node_information_regex=s' => $config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
-		'Only display information for matching nodes.', '',
+	'bnir|build_and_display_node_information_regex=s', 'Only display information for matching nodes.', '',
+		$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX},
 
-	'bnirn|build_and_display_node_information_regex_not=s' => $config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT},
-		"Don't  display information for matching nodes.", '',
+	'bnirn|build_and_display_node_information_regex_not=s', "Don't  display information for matching nodes.", '',
+		$config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT},
 
-	'bni_result' => \$config->{BUILD_DISPLAY_RESULT},
-		'display node header and build result even if not matched by --bnir.', '',
+	'bni_result', 'display node header and build result even if not matched by --bnir.', '',
+		\$config->{BUILD_DISPLAY_RESULT},
 
-	'bni|build_and_display_node_information' => \$config->{BUILD_AND_DISPLAY_NODE_INFO},
-		'Display information about the node to be build.',
-		<<EOT,
+	'bni|build_and_display_node_information', 'Display information about the node to be build.', <<EOT, \$config->{BUILD_AND_DISPLAY_NODE_INFO},
 these switches are turned on:
 	'no|node_origin'
 	'nd|nod_dependencies'
@@ -1162,9 +1135,7 @@ You may want to also add:
 	'nil|node_information_located'
 EOT
 
-	'verbosity=s'                 => $config->{VERBOSITY},
-		'Used in user defined modules.',
-		<<EOT,
+	'verbosity=s', 'Used in user defined modules.', <<EOT, $config->{VERBOSITY},
 -- verbose is not used by PBS. It is intended for user defined modules.
 
 I recomment to use the following settings:
@@ -1183,103 +1154,105 @@ I recomment to use the following settings:
 'string' => user defined verbosity level (ex 'my_module_9')
 EOT
 
-	'u|user_option=s'                 => $config->{USER_OPTIONS},
-		'options to be passed to the Build sub.', '',
+	'u|user_option=s', 'options to be passed to the Build sub.', '',
+		$config->{USER_OPTIONS},
 		
-	'D=s'                             => $config->{COMMAND_LINE_DEFINITIONS},
-		'Command line definitions.', '',
-
-	'ek|keep_environment=s'           => $config->{KEEP_ENVIRONMENT},
-		"Pbs empties %ENV, user --ke 'regex' to keep specific variables.", '',
-
-	'ed|display_environment'            => \$config->{DISPLAY_ENVIRONMENT},
-		"Display which environment variables are kept and discarded", '',
-
-	'edk|display_environment_kept'       => \$config->{DISPLAY_ENVIRONMENT_KEPT},
-		"Only display the evironment variables kept", '',
-
-	'es|display_environment_statistic'       => \$config->{DISPLAY_ENVIRONMENT_STAT},
-		"Display a statistics about environment variables", '',
+	'D=s', 'Command line definitions.', '',
+		$config->{COMMAND_LINE_DEFINITIONS},
 
 	#----------------------------------------------------------------------------------
 
-	'hdp|http_display_post' => \$config->{HTTP_DISPLAY_POST},
-		'Display a message when a POST is send.', '',
+	'ek|keep_environment=s', "Pbs empties %ENV, user --ke 'regex' to keep specific variables.", '',
+		$config->{KEEP_ENVIRONMENT},
 
-	'hdg|http_display_get' => \$config->{HTTP_DISPLAY_GET},
-		'Display a message when a GET is send.', '',
+	'ed|display_environment', "Display which environment variables are kept and discarded", '',
+		\$config->{DISPLAY_ENVIRONMENT},
 
-	'hdss|http_display_server_start' => \$config->{HTTP_DISPLAY_SERVER_START},
-		'Display a message when a server is started.', '',
+	'edk|display_environment_kept', "Only display the evironment variables kept", '',
+		\$config->{DISPLAY_ENVIRONMENT_KEPT},
 
-	'hdssd|http_display_server_shutdown' => \$config->{HTTP_DISPLAY_SERVER_SHUTDOWN},
-		'Display a message when a server is sshutdown.', '',
-
-	'hdr|http_display_request' => \$config->{HTTP_DISPLAY_REQUEST},
-		'Display a message when a request is received.', '',
-
-	'dus|use_depend_server' => \$config->{USE_DEPEND_SERVER},
-		'Display a message on resource events.', '',
-
-	'rde|resource_display_event' => \$config->{DISPLAY_RESOURCE_EVENT},
-		'Display a message on resource events.', '',
-
-	'rqsd|resource_quick_shutdown' => \$config->{RESOURCE_QUICK_SHUTDOWN},
-		'', '',
+	'es|display_environment_statistic', "Display a statistics about environment variables", '',
+		\$config->{DISPLAY_ENVIRONMENT_STAT},
 
 	#----------------------------------------------------------------------------------
-	
-	'bp|debug:s'                         => $config->{BREAKPOINTS},
-		'Enable debug support A startup file defining breakpoints can be given.', '',
 
-	'bph|debug_display_breakpoint_header' => \$config->{DISPLAY_BREAKPOINT_HEADER},
-		'Display a message when a breakpoint is run.', '',
+	'hdp|http_display_post', 'Display a message when a POST is send.', '',
+		\$config->{HTTP_DISPLAY_POST},
 
-	'dump'                            => \$config->{DUMP},
-		'Dump an evaluable tree.', '',
-		
-	#----------------------------------------------------------------------------------
-	
-	'dwfn|display_warp_file_name'      => \$config->{DISPLAY_WARP_FILE_NAME},
-		"Display the name of the warp file on creation or use.", '',
-		
-	'display_warp_time'                => \$config->{DISPLAY_WARP_TIME},
-		"Display the time spend in warp creation or use.", '',
-		
-	'w|warp=s'             => \$config->{WARP},
-		"specify which warp to use.", '',
-		
-	'warp_human_format'    => \$config->{WARP_HUMAN_FORMAT},
-		"Generate warp file in a readable format.", '',
-		
-	'no_pre_build_warp'             => \$config->{NO_PRE_BUILD_WARP},
-		"no pre-build warp will be generated.", '',
-		
-	'no_post_build_warp'             => \$config->{NO_POST_BUILD_WARP},
-		"no post-build warp will be generated.", '',
-		
-	'display_warp_checked_nodes'  => \$config->{DISPLAY_WARP_CHECKED_NODES},
-		"Display which nodes are contained in the warp tree and their status.", '',
-			
-	'display_warp_checked_nodes_fail_only'  => \$config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY},
-		"Display which nodes, in the warp tree, has a different MD5.", '',
-			
-	'display_warp_removed_nodes'  => \$config->{DISPLAY_WARP_REMOVED_NODES},
-		"Display which nodes are removed during warp.", '',
-			
-	'display_warp_triggered_nodes'  => \$config->{DISPLAY_WARP_TRIGGERED_NODES},
-		"Display which nodes are removed from the warp tree and why.", '',
+	'hdg|http_display_get', 'Display a message when a GET is send.', '',
+		\$config->{HTTP_DISPLAY_GET},
+
+	'hdss|http_display_server_start', 'Display a message when a server is started.', '',
+		\$config->{HTTP_DISPLAY_SERVER_START},
+
+	'hdssd|http_display_server_shutdown', 'Display a message when a server is sshutdown.', '',
+		\$config->{HTTP_DISPLAY_SERVER_SHUTDOWN},
+
+	'hdr|http_display_request', 'Display a message when a request is received.', '',
+		\$config->{HTTP_DISPLAY_REQUEST},
+
+	'dus|use_depend_server', 'Display a message on resource events.', '',
+		\$config->{USE_DEPEND_SERVER},
+
+	'rde|resource_display_event', 'Display a message on resource events.', '',
+		\$config->{DISPLAY_RESOURCE_EVENT},
+
+	'rqsd|resource_quick_shutdown', '', '',
+		\$config->{RESOURCE_QUICK_SHUTDOWN},
 
 	#----------------------------------------------------------------------------------
 	
-	'post_pbs=s'                        => $config->{POST_PBS},
-		"Run the given perl script after pbs. Usefull to generate reports, etc.", '',
+	'bp|debug:s', 'Enable debug support A startup file defining breakpoints can be given.', '',
+		$config->{BREAKPOINTS},
+
+	'bph|debug_display_breakpoint_header', 'Display a message when a breakpoint is run.', '',
+		\$config->{DISPLAY_BREAKPOINT_HEADER},
+
+	'dump', 'Dump an evaluable tree.', '',
+		\$config->{DUMP},
+		
+	#----------------------------------------------------------------------------------
+	
+	'dwfn|display_warp_file_name', "Display the name of the warp file on creation or use.", '',
+		\$config->{DISPLAY_WARP_FILE_NAME},
+		
+	'display_warp_time', "Display the time spend in warp creation or use.", '',
+		\$config->{DISPLAY_WARP_TIME},
+		
+	'w|warp=s', "specify which warp to use.", '',
+		\$config->{WARP},
+		
+	'warp_human_format', "Generate warp file in a readable format.", '',
+		\$config->{WARP_HUMAN_FORMAT},
+		
+	'no_pre_build_warp', "no pre-build warp will be generated.", '',
+		\$config->{NO_PRE_BUILD_WARP},
+		
+	'no_post_build_warp', "no post-build warp will be generated.", '',
+		\$config->{NO_POST_BUILD_WARP},
+		
+	'display_warp_checked_nodes', "Display which nodes are contained in the warp tree and their status.", '',
+		\$config->{DISPLAY_WARP_CHECKED_NODES},
+			
+	'display_warp_checked_nodes_fail_only', "Display which nodes, in the warp tree, has a different MD5.", '',
+		\$config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY},
+			
+	'display_warp_removed_nodes', "Display which nodes are removed during warp.", '',
+		\$config->{DISPLAY_WARP_REMOVED_NODES},
+			
+	'display_warp_triggered_nodes', "Display which nodes are removed from the warp tree and why.", '',
+		\$config->{DISPLAY_WARP_TRIGGERED_NODES},
+
+	#----------------------------------------------------------------------------------
+	
+	'post_pbs=s', "Run the given perl script after pbs. Usefull to generate reports, etc.", '',
+		$config->{POST_PBS},
 		
 	) ;
 
 my @rfh = @registred_flags_and_help ;
 
-while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
+while( my ($switch, $help1, $help2, $variable) = splice(@rfh, 0, 4))
     {
     if('' eq ref $variable)
         {
@@ -1293,9 +1266,8 @@ while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
             }
         }
 
-    push @options, $switch, $variable, $help1, $help2 ;
+    push @options, $switch, $help1, $help2, $variable ;
     }
-
 
 \@options, $config ;
 }
@@ -1304,12 +1276,9 @@ while( my ($switch, $variable, $help1, $help2) = splice(@rfh, 0, 4))
 
 sub AliasOptions
 {
-use File::Slurp ;
-
 my ($arguments) = @_ ;
 
-my $alias_file = 'pbs_option_aliases' ;
-my %aliases ;
+my ($alias_file, %aliases) = ('pbs_option_aliases') ;
 
 if (-e $alias_file)
 	{
@@ -1326,11 +1295,10 @@ if (-e $alias_file)
 		}
 	}
 
-my @aliased = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
 
-@{$arguments} = @aliased ; 
+@{$arguments} = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
 
-return \%aliases ;
+\%aliases
 }
 
 #-------------------------------------------------------------------------------
@@ -1349,11 +1317,10 @@ my ($loaded_pbs_config, $loaded_config) = do $file_name ;
 
 if(! defined $loaded_config || ! defined $loaded_pbs_config)
 	{
-	die WARNING2 "Config: error loading file'$file_name'\n" ;
+	die ERROR("Config: error loading file'$file_name'") . "\n" ;
 	}
 else
 	{
-	# add the configs
 	Say Info "Config: loading '$file_name'" unless $message_displayed ;
 	$message_displayed++ ;
 
@@ -1363,12 +1330,7 @@ else
 
 #-------------------------------------------------------------------------------
 
-sub DisplayHelp
-{
-my ($narrow_display) = @_ ;
-
-_DisplayHelp($narrow_display, 0, GetOptionsElements()) ;
-}                    
+sub DisplayHelp { _DisplayHelp($_[0], 0, GetOptionsElements()) }                    
 
 sub DisplaySwitchHelp
 {
@@ -1420,7 +1382,7 @@ _DisplayHelp(0, 0, @matches) ;
 
 sub GetOptionsElements
 {
-my ($options, $config, @t) = GetOptions() ;
+my ($options, undef, @t) = GetOptions() ;
 
 push @t, [splice @$options, 0, 4 ] while @$options ;
 
@@ -1435,7 +1397,7 @@ my (@short, @long, @options) ;
 
 for (@matches)
 	{
-	my ($option, $help, $long_help) = @{$_}[0, 2, 3] ;
+	my ($option, $help, $long_help) = @{$_}[0..2] ;
 	
 	my ($short, $long) =  split(/\|/, ($option =~ s/=.*$//r), 2) ;
 	

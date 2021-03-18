@@ -275,7 +275,7 @@ else
 	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
-PBS::Depend::Forked::Link($pbs_config, $inserted_nodes) if $pbs_config->{DEPEND_JOBS} ;
+PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes) if $pbs_config->{DEPEND_JOBS} ;
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

@@ -175,7 +175,7 @@ my $catchall =
 do
 	{
 	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ ;
-		
+	
 	unless(GetOptions(@flags, '<>' => $catchall))
 		{
 		return 0, "PBS: Try perl pbs.pl -h.\n", $config, @ARGV
