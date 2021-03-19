@@ -80,7 +80,7 @@ my $short_target = $em->( join ', ', map {"'$_'"} @$targets) ;
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
 my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
-my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') . ':' ;
+my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') ;
 
 my $target = _INFO3_($short_target)
 		. _INFO2_( $pbs_config->{DEPEND_JOBS} ? ", pid: $$" : '')
@@ -92,24 +92,24 @@ my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
 
 if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 	{
-	Say Info  "$Depend $target" ;
+	Say Info  "$Depend: $target" ;
 	Say Info2 "${indent}$pbsfile_info" ;
 	}
 elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
 	{
-	Say Info "$Depend $target\n" . _INFO2_ "${indent}$pbsfile_info"
+	Say Info "$Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
 	}
 elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
 	{
-	Say Info "$Depend $target"
+	Say Info "$Depend: $target"
 	}
 elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	Print Info "\r\e[K$Depend $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	}
 else
 	{
-	Say Info "$Depend $target" 
+	Say Info "$Depend: $target" 
 	}
 
 my $local_time =
@@ -135,7 +135,7 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	PrintInfo "Depend: $target, done"
+	PrintInfo "$Depend: $target, done"
 			. _INFO2_(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n") ;
 	}
 
@@ -144,7 +144,7 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	my $time = sprintf("%0.4f s.", tv_interval ($t0_depend, [gettimeofday])) ;
 	my $time2 = sprintf("%0.4f s.", $local_time) ;
 
-	my $template = "Depend: '%s', time: $time, local time: $time2\n" ;
+	my $template = "$Depend: '%s', time: $time, local time: $time2\n" ;
 	my $available = PBS::Output::GetScreenWidth() - length($template) ;
 
 	my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' }) ;
@@ -154,7 +154,7 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	
 if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 	{
-	PrintWarning "Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
+	PrintWarning "$Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
 	}
 
 if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
@@ -180,7 +180,7 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		$skipped += $rule->{STATS}{SKIPPED} // 0 ; 
 		}
 
-	PrintInfo "Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
+	PrintInfo "$Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
 			. "rules: $number_of_rules, "
 			. "calls: $calls, "
 			. "skipped: $skipped, " 
@@ -217,7 +217,7 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 			{
 			my $info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
 
-			PrintWarning3 "Depend: '$info' @ $short_target didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
+			PrintWarning3 "$Depend: '$info' @ $short_target didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
 			}
 		}
 	}
@@ -244,12 +244,10 @@ for my $target (@$targets)
 	}
 
 #-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 
 return (BUILD_SUCCESS, 'Dependended successfuly', [])
 	if DEPEND_ONLY == $build_type || $pbs_config->{DEPEND_ONLY} ;
 
-#-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
@@ -268,24 +266,18 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo sprintf("Depend: pbsfile$plural: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
+	PrintInfo sprintf("$Depend: pbsfile$plural: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
 	}
 else
 	{
-	PrintInfo "Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
+	PrintInfo "$Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
 	}
 
-PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes) if $pbs_config->{DEPEND_JOBS} ;
+PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
+	if $pbs_config->{DEPEND_JOBS} && ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-
-return (BUILD_SUCCESS, 'Dependended successfuly', []) if $pbs_config->{NO_CHECK} ;
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-
-return CheckAndBuild
+my ($build_node, $build_sequence) =
+	Check
 		(
 		$pbs_config,
 		$config,
@@ -295,9 +287,29 @@ return CheckAndBuild
 		$build_point,
 		$build_type,
 		) ;
+
+#-------------------------------------------------------------------------------
+
+return BUILD_SUCCESS, 'Generated build sequence', $build_sequence 
+	if DEPEND_AND_CHECK == $build_type || $pbs_config->{DEPEND_AND_CHECK} ;
+
+#-------------------------------------------------------------------------------
+
+Build
+	(
+	$pbs_config,
+	$config,
+	$targets,
+	$inserted_nodes,
+	$tree,
+	$build_point,
+	$build_type,
+	$build_node,
+	$build_sequence,
+	) ;
 }
 
-sub CheckAndBuild
+sub Check
 {
 my 
 	(
@@ -455,25 +467,36 @@ if ($check_failed)
 	die "\n" ;
 	}
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 
 $tree->{__BUILD_SEQUENCE} = \@build_sequence ;
 
-if(DEPEND_AND_CHECK == $build_type || $pbs_config->{DEPEND_AND_CHECK})
-	{
-	return(BUILD_SUCCESS, 'Generated build sequence', \@build_sequence)
-	}
+$build_node, $tree->{__BUILD_SEQUENCE}
+}
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+
+sub Build
+{
+my 
+	(
+	$pbs_config,
+	$config,
+	$targets,
+	$inserted_nodes,
+	$tree,
+	$build_point,
+	$build_type,
+	$build_node,
+	$build_sequence,
+	) = @_ ;
 
 my ($build_result, $build_message) ;
+
+my $indent = $PBS::Output::indentation ;
 
 if($pbs_config->{DO_BUILD})
 	{
 	($build_result, $build_message) 
-		= PBS::Build::BuildSequence($pbs_config, \@build_sequence, $inserted_nodes) ;
+		= PBS::Build::BuildSequence($pbs_config, $build_sequence, $inserted_nodes) ;
 	PrintError("Build: failed\n") unless $build_result == BUILD_SUCCESS ;
 	
 	# run a global post build
@@ -521,10 +544,10 @@ else
 	($build_result, $build_message) = (0, 'No build flags') ;
 	}
 
-RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $build_node) ;
-RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $build_node) ;
+RunPluginSubs($pbs_config, 'CreateDump', $pbs_config, $tree, $inserted_nodes, $build_sequence, $build_node) ;
+RunPluginSubs($pbs_config, 'CreateLog', $pbs_config, $tree, $inserted_nodes, $build_sequence, $build_node) ;
 
-return $build_result, $build_message, \@build_sequence ;
+return $build_result, $build_message, $build_sequence ;
 }
 
 #-------------------------------------------------------------------------------

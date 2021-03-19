@@ -79,63 +79,65 @@ use vars qw($VERSION @ISA @EXPORT) ;
 require Exporter;
 
 my @exports = 
-		(
-		CreateColorFunctions
-			(qw/
-			debug   
-			debug2  
-			debug3  
-			on_error
-			error   
-			info    
-			info2   
-			info3   
-			info4   
-			info5   
-			shell   
-			user    
-			warning 
-			warning2
-			warning3
-			warning4
+	(
+	CreateColorFunctions
+	(qw/
+		debug   
+		debug2  
+		debug3  
+		error   
+		error2   
+		error3   
+		on_error
+		info    
+		info2   
+		info3   
+		info4   
+		info5   
+		info6
+		shell   
+		shell2   
+		user    
+		warning 
+		warning2
+		warning3
+		warning4
+		
+		ignoring_local_rule
+		no_match
+		
+		box_11  
+		box_12  
+		box_21  
+		box_22  
+		
+		test_bg 
+		test_bg2
+		
+		ttcl1
+		ttcl2
+		ttcl3
+		ttcl4
+	/),
+		#dark
+	qw(
+		Say Print
 
-			no_match
+		COLOR Color GetColor
+		NO_COLOR NoColor _NO_COLOR_
 
-			box_11  
-			box_12  
+		PrintColor PrintNoColor PrintVerbatim
+		
+		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
 
-			box_21  
-			box_22  
-
-			test_bg 
-			test_bg2
-
-			ignoring_local_rule
-
-			ttcl1
-			ttcl2
-			ttcl3
-			ttcl4
-			/),
-			#dark
-		qw(
-			Say Print
-
-			COLOR Color GetColor
-			NO_COLOR NoColor _NO_COLOR_
-
-			PrintColor PrintNoColor PrintVerbatim
-			
-			GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
-
-			GetRunRelativePath GetTargetRelativePath
-		) 
-		);
+		GetRunRelativePath GetTargetRelativePath
+	) 
+	);
 
 @ISA     = qw(Exporter) ;
 @EXPORT  = @exports ;
 		
-$VERSION = '0.07' ;
+$VERSION = '0.08' ;
 
 #-------------------------------------------------------------------------------
 
@@ -192,12 +194,17 @@ sub SetOutputColorDepth { $cd = $_[1] }
 
 sub SetOutputColor
 {
-return if $cd == 2 ;
-
 my ($color_name, $color) = split(':', $_[1]) ;
 
-my $escape_code = '' ;
+unless(defined $color)
+	{
+	print STDERR "Colors: invalid definition for '$color_name'\n" ;
+	return ;
+	}
 
+return if $cd == 2 ;
+
+my $escape_code = '' ;
 eval {$escape_code = Term::ANSIColor::color($color) ;} ;
 
 if($@)
@@ -240,6 +247,7 @@ $string =~ s/\n(.)/\n$indentation2$1/g ;
 
 return $indentation . $color . $string . $reset ;
 }
+
 *Color=\&COLOR ;
 
 sub _NO_COLOR_ { return COLOR('reset',  @_, 0) }
@@ -466,35 +474,52 @@ PrintWithContext
 #-------------------------------------------------------------------------------
 
 use Cwd ;
+my $cwd = Cwd::getcwd() ;
+
+my %GRRP ; # cache access, memoize?
+
 sub GetRunRelativePath
 {
 my ($pbs_config, $file, $no_target_path) = @_ ;
+$no_target_path //= 0 ;
 
 unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 	{
-	my $cwd = Cwd::getcwd() ;
-	$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
-	$file =~ s~$pbs_config->{TARGET_PATH}~$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~g unless $no_target_path || $pbs_config->{TARGET_PATH} eq '' ;
-	$file =~ s~^\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
+	if(exists $GRRP{"$file$no_target_path"})
+		{
+		$file = $GRRP{"$file$no_target_path"} ;
+		}
+	else
+		{
+		$file =~ s/$cwd/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}/g ;
+		$file =~ s~$pbs_config->{TARGET_PATH}~$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~g unless $no_target_path || $pbs_config->{TARGET_PATH} eq '' ;
+		$file =~ s~^\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
 
-	$file =~ s/$_/PBS_LIB\//g for @{$pbs_config->{LIB_PATH}} ;
+		$file =~ s/$_/PBS_LIB\//g for @{$pbs_config->{LIB_PATH}} ;
+		
+		$GRRP{"$file$no_target_path"} = $file ;
+		}
 	}
 $file
 }
+
+my %GTRP ; # cache access, memoize?
 
 sub GetTargetRelativePath
 {
 my ($pbs_config, $name) = @_ ;
 
-my $no_short_name = $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
-my $short_name = $name ;
-my $glyph = '' eq $pbs_config->{TARGET_PATH}
-		? "./"
-		: $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+unless(exists $GTRP{$name}) 
+	{
+	my $glyph = '' eq $pbs_config->{TARGET_PATH} ? "./" : $pbs_config->{SHORT_DEPENDENCY_PATH_STRING} ;
+	
+	my $short_name = $name ;
+	   $short_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH} ;
+	
+	$GTRP{$name} = $short_name ;
+	}
 
-$short_name =~ s/^.\/$pbs_config->{TARGET_PATH}/$glyph/ unless $no_short_name ;
-
-$short_name
+$GTRP{$name} ; 
 }
 
 #-------------------------------------------------------------------------------

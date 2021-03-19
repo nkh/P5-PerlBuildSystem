@@ -39,6 +39,14 @@ my ($tree, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $n
 
 return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
 
+if(exists $tree->{__PARALLEL_DEPEND} || exists $tree->{__PARALLEL_NODE})
+	{
+	Say Info "Check: Parallel node $tree->{__NAME}" if exists $tree->{__PARALLEL_NODE} ;
+	Say Info "Check: Parallel HEAD node $tree->{__NAME}" if exists $tree->{__PARALLEL_DEPEND} ;
+
+	#return exists $tree->{__TRIGGERED}
+	}
+
 # we also build data for the build step
 $tree->{__CHILDREN_TO_BUILD} = 0 ;
 
@@ -104,15 +112,16 @@ $tree->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 PrintInfo "\e[K\e[K" ; # bleah!
 
 # warn if node isn't depended or has no dependencies
-if (NodeIsGenerated($tree))
+unless (NodeIsSource($tree))
 	{
-use Carp ;
-print Carp::croak unless defined $tree->{__NAME} ;
+	#use Carp ;
+	#print Carp::croak unless defined $tree->{__NAME} ;
+
 	my $matching_rules = @{$tree->{__MATCHING_RULES}} ;
 	 
 	my @dependencies = grep { $_ !~ /^__/ } keys %$tree ;
 
-	my $inserted_at = GetRunRelativePath($pbs_config, GetInsertionRule($tree)) ;
+	my $inserted_at = GetRunRelativePath($pbs_config, GetInsertionRule($tree) // '') // '';
 
 	my $depended_at = '' ;
 

@@ -488,7 +488,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 												&& exists $inserted_nodes->{$_}{__WARP_NODE}
 													? _INFO2_ ('ᶜ')
 													: '' ;
-
+													
 										DependencyIsSource($tree, $_, $inserted_nodes)
 											? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
 											: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
@@ -1293,7 +1293,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			{
 			RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
 		
-			PrintInfo "$indent" . _INFO3_("'$node_name'") . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+			Say "$indent" . _INFO3_("'$node_name'") . _WARNING3_ (' [IMMEDIATE_BUILD]') ;
 			$PBS::Output::indentation_depth++ ;
 			
 			my ($build_result, $build_message) = PBS::Build::BuildSequence

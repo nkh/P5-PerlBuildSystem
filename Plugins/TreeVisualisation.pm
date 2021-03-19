@@ -141,17 +141,33 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 				{
 				if(! /^__/ && 'HASH' eq ref $tree->{$_})
 					{
-					my $cache = _INFO2_ ('ᶜ') if exists $inserted_nodes->{$_}{__WARP_NODE} ;
-					my $rules = ! @{$tree->{$_}{__MATCHING_RULES} // []} && NodeIsGenerated($tree->{$_})
+					my $is_source = NodeIsSource($tree->{$_}) ;
+					
+					my $parallel_depend   = exists $inserted_nodes->{$_}{__PARALLEL_DEPEND} ;
+					my $parallel_depended = exists $inserted_nodes->{$_}{__PARALLEL_NODE} ;
+					my $parallel_node     = $parallel_depend || $parallel_depended ;
+					
+					my $rules = ! $parallel_node && ! @{$tree->{$_}{__MATCHING_RULES} // []} && ! $is_source
 							? _ERROR_(' ∅ ')
 							: '' ;
+					
 					my $tag ;
 					
 					$tag  = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
-					$tag  = "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
-					$tag  = NodeIsSource($tree->{$_}) ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
+					$tag .= "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
+					
+					$tag  = $is_source ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
+					
 					$tag .= _WARNING_(' ⋂') if $tree->{$_}{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{$_}{__MATCHED_SUBPBS};
-					$tag .= $cache // $rules ;
+					
+					$tag .=  exists $inserted_nodes->{$_}{__WARP_NODE} ? _INFO2_ ('ᶜ') :  $rules ;
+					
+					$tag .= $parallel_depend
+							? _WARNING2_ ('∥ ')
+							: $parallel_depended
+								? _INFO2_ ('∥ ')
+								: '' ;
+					
  					$tag .= GetColor('info2')  ;
 					
 					

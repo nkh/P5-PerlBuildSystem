@@ -340,10 +340,13 @@ sub ClearMd5Cache
 sub GetFileMD5
 {
 #  this one caching too.
-my $file = shift ; #or carp ERROR "GetFileMD5: Called without argument!\n" ;
-my $warn = shift // 1 ;
+my ($file, $warn) = @_ ;
+
+$file //= '?' ;
+$warn //= 1 ;
 
 my $md5 = 'invalid md5' ;
+
 my $t0_md5 = [gettimeofday] ;
 
 $md5_requests++ ;
@@ -872,40 +875,35 @@ for my $name (keys %force_patterns)
 
 #-------------------------------------------------------------------------------
 
-sub NodeIsSource { ! NodeIsGenerated(@_) }
+sub NodeIsGenerated { ! NodeIsSource(@_) }
 
-sub NodeIsGenerated
+sub NodeIsSource
 {
 my($node) = @_ ;
 
 use Carp ;
 confess unless 'HASH' eq ref $node ;
 
-if(exists $node->{__WARP_NODE})
+if(defined $node->{__IS_SOURCE})
 	{
-	! $node->{__IS_SOURCE} ;
+	$node->{__IS_SOURCE} ;
 	}
 else
 	{
-	unless(exists $node->{__NODE_IS_GENERATED})
-		{
-		$node->{__NODE_IS_GENERATED} =
-			PBS::Digest::IsDigestToBeGenerated
-				(
-				exists $node->{__MATCHING_RULES}
-				&& defined $node->{__MATCHING_RULES}[0]
-				&& exists $node->{__MATCHING_RULES}[0]{RULE}
-				&& exists $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
-				&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
-				&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
-					? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
-					: $node->{__LOAD_PACKAGE},
+	$node->{__IS_SOURCE} =
+		! IsDigestToBeGenerated
+			(
+			exists $node->{__MATCHING_RULES}
+			&& defined $node->{__MATCHING_RULES}[0]
+			&& exists $node->{__MATCHING_RULES}[0]{RULE}
+			&& exists $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}
+			&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]
+			&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+				? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
+				: $node->{__LOAD_PACKAGE},
 
-				$node
-				) ; 
-		}
-
-	$node->{__NODE_IS_GENERATED} ;
+			$node
+			) ; 
 	}
 }
 
@@ -938,7 +936,7 @@ if (exists $inserted_nodes->{$node_name})
 					? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 					: $dependent->{__LOAD_PACKAGE} ;
 
-	$is_source = ! PBS::Digest::IsDigestToBeGenerated
+	$is_source = ! IsDigestToBeGenerated
 			(
 			$package,
 			$inserted_nodes->{$node_name}
@@ -955,7 +953,7 @@ else
 				? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: $dependent->{__LOAD_PACKAGE} ;
 
-	$is_source = ! PBS::Digest::IsDigestToBeGenerated
+	$is_source = ! IsDigestToBeGenerated
 			(
 			$package,
 			{__NAME => $node_name, __PBS_CONFIG => $dependent->{__PBS_CONFIG}}

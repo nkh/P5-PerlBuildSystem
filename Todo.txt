@@ -1,16 +1,120 @@
+embedded color names
+	Say <P> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+	Say <C> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
 
-rework declaration of options
-	use object-verb, keep old OPTION_NAMES
+	Say Colored "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+	Say CNI "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
 
-	'h|help', 'Displays this help.', '', => \$config->{DISPLAY_HELP},
+	SayI "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+	SayC "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+
+	PrintNoColor 
+		_INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}$node_matches"
+	
+		. (
+			@dependency_names
+			?  _INFO_
+				(
+				' => '
+				. join
+					(
+					' ',
+					map 
+						{
+						my $r_name = GetTargetRelativePath($pbs_config, $_) ;
+						my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
+								&& exists $inserted_nodes->{$_}
+								&& exists $inserted_nodes->{$_}{__WARP_NODE}
+									? _INFO2_ ('ᶜ')
+									: '' ;
+									
+						DependencyIsSource($tree, $_, $inserted_nodes)
+							? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
+							: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
+						} 
+						@dependency_names
+					)
+				)
+			: _INFO2_(" => ∅ ")
+		),
 		
+		. _INFO2_ $node_matching_rule . $node_insertion_rule ;
 
-IsSource can be cached in the node in depend.pm
+
+	SayI "$indent<node_hi>'$short_node_name'${node_type}${forced_trigger}$node_matches"
+		. (! @dependency_names ? '<I2> => ∅ ' : '<I> => ' . GetNodesTagged @dependency_names)
+		. "<I2>$node_matching_rule$node_insertion_rule" ;
+
+	sub GetNodesTagged
+	{
+	my ($nodes) = @_ ;
+
+	join ' ', map
+			{
+			my $r_name = GetTargetRelativePath($pbs_config, $node) ;
+			my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
+					&& exists $inserted_nodes->{$node}
+					&& exists $inserted_nodes->{$node}{__WARP_NODE}
+						? '<cache>ᶜ'
+						: '' ;
+						
+			DependencyIsSource($tree, $node, $inserted_nodes)
+				? "<source>" . $em->($r_name) . $cache . "<source>'"
+				? "<node>" . $em->($r_name) . $cache . "<node>'"
+			}
+	} 
+
+	--ddl
+	$node_matching_rule = _INFO2_(',') . $node_matching_rule unless @dependency_names || $node_matching_rule eq '' ;
+	PrintInfo3
+		(
+		$em->("$indent'$short_node_name'$node_matches${node_type}${forced_trigger}")
+		. ( @dependency_names ? '' : _INFO2_" => ∅ " )
+		. $node_matching_rule . $node_insertion_rule . "\n"
+		) ;
+
+	if(@dependency_names)
+		{
+		PrintInfo
+			$indent . $indent
+			. join
+				(
+				"\n$indent$indent",
+				map 
+					{
+					my $r_name = GetTargetRelativePath($pbs_config, $_) ;
+					my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
+							&& exists $inserted_nodes->{$_}
+							&& exists $inserted_nodes->{$_}{__WARP_NODE}
+								? _INFO2_ ('ᶜ')
+								: '' ;
+
+					DependencyIsSource($tree, $_, $inserted_nodes)
+						? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
+						: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
+					} 
+					@dependency_names
+				)
+			. "\n" ;
+		}
+
+
+	SayI $em->("$indent'$short_node_name'$node_matches${node_type}${forced_trigger}")
+		. (  @dependency_names ? '' : '<I2>=> ∅ ' )
+		. (! @dependency_names && $node_matching_rule eq '' ? '' : "<I2>, $node_matching_rule")
+		. $node_insertion_rule ;
+
+	SayI @dependency_names
+		?  join "\n", map { "$indent$indent<I>=> " . GetNodesTagged($_) } @dependency_names
+		:  '<I2> => ∅ '
+
+
+	say !@deps ? '<I2> => ∅ ' : join "\n", map { "<I>=> " . GetNodesTagged($_) } @deps
 
 node digest bypassed by warp on distro change!
 
 	change distro
-	build -> dstro digest trigger
+	build -> distro digest trigger
 	^C
 
 	build -> build OK !
@@ -520,6 +624,11 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#IsSource can be cached in the node in depend.pm
+
+#rework declaration of options
+	'h|help', 'Displays this help.', '', => \$config->{DISPLAY_HELP},
 
 #help align options
 	a   |aaaa

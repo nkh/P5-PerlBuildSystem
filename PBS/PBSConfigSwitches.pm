@@ -215,7 +215,7 @@ EOH
 	'get_options_list', 'return completion list on stdout.', '',
 		\$config->{GET_OPTIONS_LIST},
 
-	'c|color=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', <<EOT, \&PBS::Output::SetOutputColorDepth,
+	'c|color_depth=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', <<EOT, \&PBS::Output::SetOutputColorDepth,
 Term::AnsiColor is used  to color output.
 
 Recognized colors are :
@@ -237,7 +237,7 @@ Recognized colors are :
 	or RGB5 values, check 'Term::AnsiColor' for more information. 
 EOT
 
-	'cs|color_set=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
+	'cd|color_define=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
 Color names used in Pbs:
 	error
 	warning
@@ -394,9 +394,6 @@ EOT
 
 	'check_only_terminal_nodes', 'Skipps the checking of generated artefacts.', '',
 		\$config->{DEBUG_CHECK_ONLY_TERMINAL_NODES},
-
-	'no_check', 'Cancel the check and build pass. Only the dependency pass is run.', '',
-		\$config->{NO_CHECK},
 
 	'nba|node_build_actions=s', 'actions that are run on a node at build time.',
 		q~example: pbs -ke .  -nba '3::stop' -nba "trigger::priority 4::message '%name'" -trigger '.' -w 0  -fb -dpb0 -j 12 -nh~,
