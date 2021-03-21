@@ -13,6 +13,10 @@ sub GetColorDefinitions
 {
 256 =>
 	{
+	dark     => color('rgb000'),
+	no_match => color('rgb200'),
+	ignoring_local_rule => color('rgb220 on_rgb101'),
+	
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
@@ -34,11 +38,6 @@ sub GetColorDefinitions
 	warning3 => color('rgb210'),
 	warning4 => color('rgb310'),
 	
-	dark     => color('rgb000'),
-	
-	ignoring_local_rule => color('rgb220 on_rgb101'),
-	no_match => color('rgb200'),
-	
 	box_11   => color('on_grey4'),
 	box_12   => color('on_grey4'),
 	box_21   => color(''),
@@ -57,6 +56,10 @@ sub GetColorDefinitions
 
 night =>
 	{
+	dark     => color('rgb000'),
+	no_match => color('rgb200'),
+	ignoring_local_rule => color('rgb220 on_rgb101'),
+	
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
@@ -77,12 +80,7 @@ night =>
 	warning2 => color('bright_yellow'),
 	warning3 => color('rgb210'),
 	warning4 => color('rgb310'),
-	
-	dark     => color('rgb000'),
-	
-	ignoring_local_rule => color('rgb220 on_rgb101'),
-	no_match => color('rgb200'),
-	
+
 	box_11   => color('on_grey4'),
 	box_12   => color('on_grey4'),
 	box_21   => color(''),
@@ -128,6 +126,10 @@ night =>
 	},
 2 =>
 	{
+	dark     => '',
+	no_match => '',
+	ignoring_local_rule => '',
+	
 	debug    => '',
 	debug2   => '',
 	debug3   => '',
@@ -148,11 +150,6 @@ night =>
 	user     => '',
 	shell    => '',
 	shell2   => '',
-	
-	dark     => '',
-	
-	ignoring_local_rule => '',
-	no_match => '',
 	
 	box_11   => '',
 	box_12   => '',

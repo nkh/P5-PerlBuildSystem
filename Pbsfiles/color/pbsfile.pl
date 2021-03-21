@@ -32,9 +32,11 @@ Say Color 'ttcl2',  'ttcl2' ;
 Say Color 'ttcl3',  'ttcl3' ;
 Say Color 'ttcl4',  'ttcl4' ;
  
- Say '-' x 10 ;
- Print Color 'info2', "Info2\n" ;
+Say '-' x 10 ;
+Print Color 'info2', "Info2\n" ;
 Say Color 'info2', "Info2" ;
+
+Say EC "<info2>info2<I3>info3<reset>reset<on_error>on_error<unkown>unknown" ;
 
 rule [V], 'all', ['all'], BuildOk ;
 

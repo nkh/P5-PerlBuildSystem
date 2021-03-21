@@ -47,7 +47,6 @@ push @unicode_numbers, ('+') x 100 ;
 
 my %trigger_rules ;
 
-
 sub CreateDependencyTree
 {
 my 	
@@ -76,8 +75,8 @@ my $has_dependencies = 0 ;
 my @has_matching_non_subpbs_rules ;
 my @subpbses ; # list of subpbs matching this node
 
-PrintInfo2("Rule: target:" . _INFO3_("'$node_name'") . _INFO2_(", rules: " . scalar(@{$dependency_rules}) . "\n"))
-	if ($node_name !~ /^__/) && ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} || $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
+Say EC "<I2>Rule: target: <I3>'$node_name'<I2>, rules: " . scalar(@{$dependency_rules})
+	if $node_name !~ /^__/ && ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} || $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 
 for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
 	{
@@ -87,13 +86,10 @@ for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
 		{
 		push @{$tree->{__POST_BUILD_COMMANDS}}, $post_build_command ;
 		
-		PrintInfo3 "$indent'" . GetRunRelativePath($pbs_config, $node_name) . "'"
-			. _INFO_
-				(
-				", post build command: $post_build_command->{NAME}: "
-				. GetRunRelativePath($pbs_config, $post_build_command->{FILE})
-				. ":$post_build_command->{LINE}\n"
-				)
+		Say EC "<I3>$indent'" . GetRunRelativePath($pbs_config, $node_name) . "'"
+			. "<I>, post build command: $post_build_command->{NAME}: "
+			. GetRunRelativePath($pbs_config, $post_build_command->{FILE})
+			. ":$post_build_command->{LINE}"
 			if $pbs_config->{DEBUG_DISPLAY_POST_BUILD_COMMANDS} ;
 		}
 	}
@@ -140,8 +136,8 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 	if((! $matched) && @not_matched)
 		{
-		PrintInfo2 "${indent}skipping rule '$rule_name' waiting for: '" . join(", '", @not_matched) . "'\n"
-				if $node_name !~ /^__/ && $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
+		Say EC "<I2>${indent}skipping rule '$rule_name' waiting for: '" . join(", '", @not_matched)
+			if $node_name !~ /^__/ && $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
 			
 		$rule->{STATS}{SKIPPED}++ ;
 		next ;
@@ -226,7 +222,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				}
 			else
 				{
-				PrintError "Depend: Error: node sub is not a sub @ $rule_info\n" ; die "\n" ;
+				Say Error "Depend: Error: node sub is not a sub @ $rule_info" ; die "\n" ;
 				}
 				
 			my $index = 0 ;
@@ -234,15 +230,12 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				{
 				$index++ ;
 			
-				PrintUser(
-					"$indent'$node_name'" 
-					. _INFO_(" node sub $index/" . scalar(@$subs))
-					. _INFO2_(" '$rule_name:$rule->{FILE}:$rule->{LINE}'\n"))
-						if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+				Say EC "<U>$indent'$node_name'<I> node sub $index/" . scalar(@$subs). "<I2> '$rule_name:$rule->{FILE}:$rule->{LINE}'"
+					if $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				
 				my @r = $sub->($node_name, $config, $tree, $inserted_nodes, $rule) ;
 				
-				PrintInfo2("$indent${indent}node sub returned: @r\n") if @r && $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
+				Say EC "<I2>$indent${indent}node sub returned: @r" if @r && $pbs_config->{DISPLAY_NODE_SUBS_RUN} ;
 				}
 			}
 			
@@ -283,39 +276,26 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				my $node_matching_rule = $display_node_matching_rule ? _INFO2_($em->("$rule_index:$rule_info")) : '' ;
 
 				my $node_insertion_rule = $display_node_insertion_rule
-								? _INFO2_(
-									"inserted at: "
+								? "<I2> inserted at: "
 									. GetRunRelativePath
 										(
 										$pbs_config,
 										GetInsertionRule($tree),
 										1 # no target path replacement
 										)
-									)
 								: '' ;
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					PrintInfo3
-						(
-						"${indent}'$short_node_name'\n"
-						. _INFO_("$indent${indent}subpbs match") . _INFO2_(", pbsfile:'$subpbs_file'\n")
-						. ($display_node_matching_rule ? "$indent${indent}$node_matching_rule\n" : '')
-						. ($display_node_insertion_rule ? "$indent$indent$node_insertion_rule\n" : '')
-						) ;
+					Say EC "<I3>${indent}'$short_node_name'\n<I>$indent${indent}subpbs match<I2>, pbsfile:'$subpbs_file'";
+					Say EC "<I2>$indent${indent}$node_matching_rule" if $display_node_matching_rule ; 
+					Say EC "<I2>$indent${indent}$node_insertion_rule" if $display_node_insertion_rule ; 
 					}
 				else
 					{
-					my $comma = _INFO2_(', ') ;
-					
-					PrintInfo3
-						(
-						"${indent}'$short_node_name'"
-						. _INFO_(" subpbs match") . _INFO2_(", pbsfile: '$subpbs_file'")
-						. ($display_node_matching_rule ? "$comma$node_matching_rule" : '')
-						. ($display_node_insertion_rule ? "$comma$node_insertion_rule" : '')
-						. "\n"
-						) ;
+					Say EC "<I3>${indent}'$short_node_name'<I>subpbs match<I2>, pbsfile:'$subpbs_file'"
+						. ($display_node_matching_rule ? ", $node_matching_rule" : '')
+						. ($display_node_insertion_rule ? ", $node_insertion_rule" : '')
 					}
 					
 				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
@@ -384,7 +364,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					{
 					push @node_type, map { $_ eq 'TRIGGER_INSERTED' ? 'T' : $_ } ($type =~ s/^__//r) if exists $tree->{$type} ;
 					}
-
+				
 				my $node_type = scalar(@node_type) ? ' [' . join(', ', @node_type) . ']' : '' ;
 				
 				my $rule_info =  $rule->{NAME}
@@ -393,119 +373,54 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 							: ':' . $rule->{FILE} . ':' . $rule->{LINE}) ;
 				
 				$rule_info = GetRunRelativePath($pbs_config, $rule_info, $pbs_config->{DISPLAY_DEPENDENCIES_FULL_PBSFILE}) ;
-
+				
 				my $rule_type = '' ;
 				$rule_type .= '[B]'  if(defined $rule->{BUILDER}) ;
 				$rule_type .= '[S]'  if(defined $rule->{NODE_SUBS}) ;
 				$rule_type = " $rule_type" unless $rule_type eq '' ;
-
+				
 				my @dependency_names = map {$_->{NAME}} grep {'' eq ref $_->{NAME}} @dependencies ;
 				
 				my $forced_trigger = (any { $_->{NAME} =~ '__PBS_FORCE_TRIGGER' } @dependencies) ? ' FORCED_TRIGGER' : '' ;
 				
 				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
-
+				
 				my $node_matches = $rules_matching > 1 
-							? _INFO2_($unicode_numbers[$rules_matching])
-							: $rule_type eq ''
-								? ' '
-								: ''  ;
-
+							? "<I2>$unicode_numbers[$rules_matching]"
+							: $rule_type eq '' ? ' ' : ''  ;
+				
 				my $node_insertion_rule = $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE}
-								? _INFO2_(
-									", ⬂ "
-									. GetRunRelativePath
-										(
-										$pbs_config,
-										GetInsertionRule($tree) ,
-										)
-									. ' '
-									)
+								? (", ⬂ " . GetRunRelativePath($pbs_config, GetInsertionRule($tree)) . ' ')
 								: '' ;
-
+				  
 				# the subpbs root node have no insertion data we can use
 				$node_insertion_rule = '' if $node_insertion_rule =~ /PBS:Subpbs/ ;
 
 				my $node_matching_rule = $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
-								? _INFO2_(" $rule_info$rule_type")
+								? ", $rule_info$rule_type"
 								: '' ;
-
+				
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					$node_matching_rule = _INFO2_(',') . $node_matching_rule unless @dependency_names || $node_matching_rule eq '' ;
-					PrintInfo3
-						(
-						$em->("$indent'$short_node_name'$node_matches${node_type}${forced_trigger}")
-						. ( @dependency_names ? '' : _INFO2_" => ∅ " )
-						. $node_matching_rule . $node_insertion_rule . "\n"
-						) ;
-
-					if(@dependency_names)
-						{
-						PrintInfo
-							$indent . $indent
-							. join
-								(
-								"\n$indent$indent",
-								map 
-									{
-									my $r_name = GetTargetRelativePath($pbs_config, $_) ;
-									my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
-											&& exists $inserted_nodes->{$_}
-											&& exists $inserted_nodes->{$_}{__WARP_NODE}
-												? _INFO2_ ('ᶜ')
-												: '' ;
-
-									DependencyIsSource($tree, $_, $inserted_nodes)
-										? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
-										: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
-									} 
-									@dependency_names
-								)
-							. "\n" ;
-						}
+					Say EC $em->("$indent<I3>'$short_node_name'$node_matches${node_type}${forced_trigger}")
+						. (  @dependency_names ? '' : '<I2> => ∅ ' )
+						. "<I2>$node_matching_rule$node_insertion_rule" ;
+					
+					Say EC join("\n", map { "$indent$indent" . GetNodesTagged($pbs_config, $inserted_nodes, $tree, $em, $_) } @dependency_names)
+						if @dependency_names ;
 					}
 				else
 					{
-					$node_matching_rule = ',' . $node_matching_rule unless $node_matching_rule eq '' ;
+					Say EC "$indent<I3>'$short_node_name'${node_type}${forced_trigger}$node_matches"
+						. (@dependency_names
+							? ('<I> => '  . GetNodesTagged($pbs_config, $inserted_nodes, $tree, $em, @dependency_names))
+							: '<I2> => ∅ ')
+						. "<I2>$node_matching_rule$node_insertion_rule" ;
 					
-					PrintNoColor 
-						_INFO3_ "$indent'$short_node_name'${node_type}${forced_trigger}$node_matches"
-					
-						. (
-							 @dependency_names
-							?  _INFO_
-								(
-								' => '
-								. join
-									(
-									' ',
-									map 
-										{
-										my $r_name = GetTargetRelativePath($pbs_config, $_) ;
-										my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
-												&& exists $inserted_nodes->{$_}
-												&& exists $inserted_nodes->{$_}{__WARP_NODE}
-													? _INFO2_ ('ᶜ')
-													: '' ;
-													
-										DependencyIsSource($tree, $_, $inserted_nodes)
-											? _WARNING_("'" . $em->($r_name) . $cache . _WARNING_("'"))
-											: _INFO_("'" . $em->($r_name) . $cache. _INFO_("'"))
-										} 
-										@dependency_names
-									)
-								)
-							: _INFO2_(" => ∅ ")
-						),
-						
-						. _INFO2_ $node_matching_rule . $node_insertion_rule ;
-
-					Say Info '' ;
 					}
 					
 				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;
-
+				
 				if($pbs_config->{DEBUG_DISPLAY_DEPENDENCY_RULE_DEFINITION})
 					{
 					PrintInfo "$indent${indent}'$rule->{NAME}' definition:\n" ;
@@ -528,43 +443,43 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			{
 			if(@{$parent_matching_rules->{$rule_name}} + 1 > $pbs_config->{MAXIMUM_RULE_RECURSION})
 				{
-				PrintError "Depend: maximum rule recusion, rule: '$rule_name', pbsfile '$Pbsfile'\n" ;
-
+				Say Error "Depend: maximum rule recusion, rule: '$rule_name', pbsfile '$Pbsfile'" ;
+				
 				my @trace = ("rule '$rule_name' => '$node_name'") ;
-
+				
 				my $parent_rule = $tree->{__INSERTED_AT}{INSERTION_RULE_NAME} ;
 				my $parent = $tree->{__INSERTED_AT}{INSERTING_NODE} ;
 				while (defined $parent)
 					{
 					push @trace, "rule '$parent_rule' => '$parent'" ;
-
+				
 					$parent_rule =  $inserted_nodes->{$parent}{__INSERTED_AT}{INSERTION_RULE_NAME} ;
 					$parent = $inserted_nodes->{$parent}{__INSERTED_AT}{INSERTING_NODE} ;
 					}
 				
 				pop @trace ; # PBS root, for this package
-				PrintError "Depend: rules trace:\n" ;
-				PrintError "$indent$_\n" for reverse @trace ;
-
+				Say Error 'Depend: rules trace:' ;
+				Say Error "$indent$_" for reverse @trace ;
+				
 				die "\n" ;
 				}
-
+			
 			if(@{$parent_matching_rules->{$rule_name}} == 1)
 				{
-				PrintWarning "$indent${indent}warning: rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'\n", 1 ;
+				Say EC "<W>$indent${indent}warning: rule '$rule_name' matched '$node_name' and parent '$parent_matching_rules->{$rule_name}[0]'", 1 ;
 				}
-
+				
 			if
 				(
 				@{$parent_matching_rules->{$rule_name}} >= $pbs_config->{RULE_RECURSION_WARNING}
 				&& ! (@{$parent_matching_rules->{$rule_name}} % 5)
 				)
 				{
-				PrintWarning "$indent${indent}warning: rule '$rule_name' matched '$node_name' and "
-						. scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes\n", 1 ;
+				Say EC "<W>$indent${indent}warning: rule '$rule_name' matched '$node_name' and "
+						. scalar(@{$parent_matching_rules->{$rule_name}}) . " parent nodes", 1 ;
 				}
 			} 
-
+		
 		#----------------------------------------------------------------------------
 		# Check the dependencies
 		#----------------------------------------------------------------------------
@@ -574,7 +489,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			if(my ($reason) = $dependency_name =~ /__PBS_FORCE_TRIGGER:?(.*)?/)
 				{
 				$reason .= ' ' . $rule->{NAME} . $rule->{ORIGIN} ;
-
+				
 				push @{$tree->{__PBS_FORCE_TRIGGER}}, {NAME => $dependency_name, REASON => $reason} ;
 				next ;
 				}
@@ -610,14 +525,12 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						my $inserting_rule_info  =  $dependency_rules->[$inserting_rule_index]{NAME}
 										. $dependency_rules->[$inserting_rule_index]{ORIGIN} ;
 											
-						PrintWarning
-							(
+						Say Warning
 							  "Depend: ignoring duplicate dependency '$dependency_name'\n"
 							. "\tpbsfile: $Pbsfile\n"
 							. "\trule: $rule_info\n"
 							. "\tnode: '$node_name'\n"
-							. "\tinserting rule: $inserting_rule_index:$inserting_rule_info\n"
-							) ;
+							. "\tinserting rule: $inserting_rule_index:$inserting_rule_info"
 						}
 					}
 				}
@@ -637,7 +550,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 		push @{$rule->{STATS}{NOT_MATCHED}}, $tree ;
 
 		my $depender_message = $dependencies[0] // 'No match' ;
-		PrintColor 'no_match', "$PBS::Output::indentation$depender_message, $rule_info\n" if defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT} ;
+		Say Color 'no_match', "$PBS::Output::indentation$depender_message, $rule_info" if defined $pbs_config->{DISPLAY_DEPENDENCY_RESULT} ;
 		}
 	}
 
@@ -653,7 +566,7 @@ for my $dependency (@node_dependencies)
 
 if(@subpbses > 1)
 	{
-	PrintInfo3 _INFO3_("$indent'$node_name' ") . _ERROR_(scalar(@subpbses) . " matching subpbs rules.\n") ;
+	Say EC "<I3>$indent'$node_name' <E>" . scalar(@subpbses) . " matching subpbs rules." ;
 
 	for (@subpbses)
 		{
@@ -706,7 +619,7 @@ my $trigger_rules_displayed = exists $trigger_rules{$load_package} ;
 my $trigger_rules = ( $trigger_rules{$load_package} //= [PBS::Triggers::GetTriggerRules($load_package)] ) ;
 my $number_of_trigger_rules = scalar(@{$trigger_rules}) ;
 
-PrintInfo2("${indent}trigger rules: $number_of_trigger_rules\n") 
+Say Info2 "${indent}trigger rules: $number_of_trigger_rules" 
 	if !$trigger_rules_displayed && $number_of_trigger_rules && defined $pbs_config->{DEBUG_DISPLAY_TRIGGER_RULES} ;
 
 for my $dependency (@dependencies)
@@ -718,7 +631,7 @@ for my $dependency (@dependencies)
 	
 	unless('HASH' eq ref $dependency)
 		{
-		PrintError \$dependency, 'Trigger: invalid dependency', MAX_DEPTH => 3 ;
+		SET \$dependency, 'Trigger: invalid dependency', MAX_DEPTH => 3 ;
 
 		use Carp ;
 		confess  ;
@@ -781,10 +694,8 @@ for my $dependency (@dependencies)
 					}
 				}
 				
-			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES})
-				{
-				PrintNoColor($trigger_message)  ;
-				}
+			PrintNoColor $trigger_message 
+				if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} || $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} ;
 			}
 		}
 	}
@@ -1079,13 +990,11 @@ if(@has_matching_non_subpbs_rules)
 			
 			my $depending_rules = join ', ', @depending_rules ;
 			
-			PrintWarning
-				(
+			Say Warning
 				  "Depend: '$node_name' has dependency '$dependency' which was inserted at rule: "
 				. "$tree->{$dependency}{__INSERTED_AT}{INSERTION_RULE} "
 				. " [Pbsfile: $tree->{$dependency}{__INSERTED_AT}{INSERTION_FILE}]"
-				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules\n"
-				) ;
+				. " but has been depended in another pbsfile: '$tree->{$dependency}{__DEPENDED_AT}' by $depending_rules" ;
 			
 			my $ignored_rules ='' ;
 			
@@ -1100,7 +1009,8 @@ if(@has_matching_non_subpbs_rules)
 				$ignored_rules .= "\t$matching_rule_index:$rule->{NAME}$rule->{ORIGIN}\n" if($matched) ;
 				}
 				
-			PrintColor 'ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules" if $ignored_rules ne '' ;
+			PrintColor 'ignoring_local_rule', "Depend: ignoring local matching rules from '$Pbsfile':\n$ignored_rules"
+				 if $ignored_rules ne '' ;
 			}
 			
 		if (! exists $tree->{$dependency}{__DEPENDED} && ! DependencyIsSource($tree, $dependency, $inserted_nodes) ) 
@@ -1116,7 +1026,7 @@ if(@has_matching_non_subpbs_rules)
 			
 			$PBS::Output::indentation_depth++ if $pbs_config->{DISPLAY_DEPEND_INDENTED} && $node_name !~ /^__PBS/ ;
 			
-			PrintInfo2 $PBS::Output::indentation . $pbs_config->{DISPLAY_DEPEND_SEPARATOR} . "\n"
+			Say Info2 $PBS::Output::indentation . $pbs_config->{DISPLAY_DEPEND_SEPARATOR}
 				if defined $pbs_config->{DISPLAY_DEPEND_SEPARATOR} ;
 			
 			my $local_time = CreateDependencyTree 
@@ -1233,9 +1143,7 @@ else
 		my $inserted_at = GetInsertionRule($tree) ;
 		$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 		
-		PrintInfo3 "$PBS::Output::indentation'$short_node_name'"
-				. _WARNING_(" no matching rules")
-				. _INFO2_(", inserted at: $inserted_at'\n") ;
+		Say EC "<I3>$PBS::Output::indentation'$short_node_name'<W> no matching rules<I2>, inserted at: $inserted_at'" ;
 		}
 		
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
@@ -1292,8 +1200,9 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		if (@build_sequence)
 			{
 			RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
-		
-			Say "$indent" . _INFO3_("'$node_name'") . _WARNING3_ (' [IMMEDIATE_BUILD]') ;
+			
+			Say EC "<I3>$indent'$node_name'<W3> [IMMEDIATE_BUILD]" ;
+			
 			$PBS::Output::indentation_depth++ ;
 			
 			my ($build_result, $build_message) = PBS::Build::BuildSequence
@@ -1314,7 +1223,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 		}
 	else
 		{
-		PrintWarning "$indent" . _INFO3_("'$node_name'") . _WARNING_ (" skipped [IMMEDIATE_BUILD]\n") ;
+		Say EC "$indent<I3>'$node_name'<W> skipped [IMMEDIATE_BUILD]" ;
 		}
 	}
 	
@@ -1492,8 +1401,30 @@ $display_linked_node_info = 0 if $dependency->{__MATCHED_SUBPBS} ;
 
 PrintNoColor $linked_node_info . $local_rule_info if $display_linked_node_info || $error_linking ;
 
-PrintError "Depend: error linking to non local node\n" if $error_linking ;
+Say Error 'Depend: error linking to non local node' if $error_linking ;
 die "\n" if $error_linking ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetNodesTagged
+{
+my ($pbs_config, $inserted_nodes, $tree, $em, @nodes) = @_ ;
+
+join ' ', map
+		{
+		my $r_name = GetTargetRelativePath($pbs_config, $_) ;
+		my $cache = $pbs_config->{NODE_CACHE_INFORMATION}
+				&& exists $inserted_nodes->{$_}
+				&& exists $inserted_nodes->{$_}{__WARP_NODE}
+					? '<I2>ᶜ'
+					: '' ;
+					
+		DependencyIsSource($tree, $_, $inserted_nodes)
+			? "<W>" . $em->($r_name) . $cache . "<W>'"
+			: "<I3>" . $em->($r_name) . $cache . "<I3>'"
+		}
+		@nodes 
 }
 
 #-------------------------------------------------------------------------------
@@ -1524,17 +1455,13 @@ else
 			{
 			if($found_pbsfile)
 				{
-				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-					{
-					PrintInfo "Locate: ignoring pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
-					}
+				Say Info "Locate: ignoring pbsfile '$subpbs_name' in '$source_directory' $info"
+					if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 				}
 			else
 				{
-				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-					{
-					PrintInfo "Locate: located pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
-					}
+				Say Info "Locate: located pbsfile '$subpbs_name' in '$source_directory' $info"
+					if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 					
 				$found_pbsfile = $searched_pbsfile ;
 				
@@ -1543,10 +1470,8 @@ else
 			}
 		else
 			{
-			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-				{
-				PrintInfo "Locate: couldn't find pbsfile '$subpbs_name' in '$source_directory' $info.\n" ;
-				}
+			Say Info "Locate: couldn't find pbsfile '$subpbs_name' in '$source_directory' $info"
+				if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 			}
 		}
 		
@@ -1570,7 +1495,7 @@ else
 		{
 		if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
 			{
-			PrintInfo "Locate: found stem '$subpbses_name_stem'.\n" ;
+			Say Info "Locate: found stem '$subpbses_name_stem'" ;
 			}
 			
 		for my $source_directory (@$source_directories)
@@ -1585,32 +1510,26 @@ else
 					
 					if($relocated_from_stem ne $found_pbsfile)
 						{
-						PrintWarning2("Locate: relocated '$subpbses_name_stem' in '$source_directory' $info.\n") ;
+						Say Warning2 "Locate: relocated '$subpbses_name_stem' in '$source_directory' $info" ;
 						}
 					else
 						{
-						if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-							{
-							PrintInfo "Locate: keeping '$subpbses_name_stem' from '$source_directory' $info.\n" ;
-							}
+						Say Info "Locate: keeping '$subpbses_name_stem' from '$source_directory' $info"
+							if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 						}
 						
 					last unless $pbs_config->{DISPLAY_ALL_SUBPBS_ALTERNATIVES} ;
 					}
 				else
 					{
-					if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-						{
-						PrintInfo "Locate: ignoring relocation of '$subpbses_name_stem' in '$source_directory' $info.\n" ;
-						}
+					Say Info "Locate: ignoring relocation of '$subpbses_name_stem' in '$source_directory' $info"
+						if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ; 
 					}
 				}
 			else
 				{
-				if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-					{
-					PrintInfo "Locate: couldn't relocate '$subpbses_name_stem' in '$source_directory' $info.\n" ;
-					}
+				PrintInfo "Locate: couldn't relocate '$subpbses_name_stem' in '$source_directory' $info"
+					if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 				}
 			}
 		}

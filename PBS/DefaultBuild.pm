@@ -135,8 +135,7 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 
-	PrintInfo "$Depend: $target, done"
-			. _INFO2_(", nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)\n") ;
+	Say EC "<I>$Depend: $target, done<I2>, nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)" ;
 	}
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
@@ -144,17 +143,17 @@ if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
 	my $time = sprintf("%0.4f s.", tv_interval ($t0_depend, [gettimeofday])) ;
 	my $time2 = sprintf("%0.4f s.", $local_time) ;
 
-	my $template = "$Depend: '%s', time: $time, local time: $time2\n" ;
+	my $template = "$Depend: '%s', time: $time, local time: $time2" ;
 	my $available = PBS::Output::GetScreenWidth() - length($template) ;
 
 	my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' }) ;
 
-	PrintInfo2 sprintf($template, $em->(GetRunRelativePath($pbs_config, $Pbsfile, 1))) ;
+	Say Info2 sprintf($template, $em->(GetRunRelativePath($pbs_config, $Pbsfile, 1))) ;
 	}
 	
 if ($added_nodes_in_run > $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING})
 	{
-	PrintWarning "$Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'\n" ;
+	Say Warning "$Depend: warning too many nodes: $added_nodes_in_run, pbsfile: '$Pbsfile'" ;
 	}
 
 if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
@@ -180,17 +179,17 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 		$skipped += $rule->{STATS}{SKIPPED} // 0 ; 
 		}
 
-	PrintInfo "$Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
+	Say Info "$Depend: '" . GetRunRelativePath($pbs_config, $Pbsfile, 1) . "', "
 			. "rules: $number_of_rules, "
 			. "calls: $calls, "
 			. "skipped: $skipped, " 
 			. "matches: $matches, "
 			. "match rate: " . sprintf("%0.02f", ($matches + $skipped) / ($calls || 1))
-			. "\n\n";
+			. "\n";
 
 	$rule_name_max_length++ ; # we add ':' to the name
 
-	PrintInfo "\t\t" . (' ' x $rule_name_max_length) . " called  skipped  matched types\n\n" ;
+	Say Info "\t\t" . (' ' x $rule_name_max_length) . " called  skipped  matched types\n" ;
 
 	for my $rule (@{$rules->{Builtin}}, @{$rules->{User}} )
 		{
@@ -204,7 +203,7 @@ if($pbs_config->{DEBUG_DISPLAY_RULE_STATISTICS})
 					$matched,
 					_INFO_ $types{$rule->{NAME}} ;
 
-		PrintInfo "\t\t$stat\n" ;
+		Say Info "\t\t$stat" ;
 		}
 	}
 elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
@@ -217,7 +216,7 @@ elsif($pbs_config->{DISPLAY_NON_MATCHING_RULES})
 			{
 			my $info = $rule->{NAME} . ':' . GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' . $rule->{LINE} ;
 
-			PrintWarning3 "$Depend: '$info' @ $short_target didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0). "\n" ;
+			Say Warning3 "$Depend: '$info' @ $short_target didn't match, calls: $rule->{STATS}{CALLS}, skipped: " . ($rule->{STATS}{SKIPPED} // 0) ;
 			}
 		}
 	}
@@ -235,7 +234,7 @@ if($pbs_config->{DISPLAY_CONFIG_USAGE})
 	}
 
 
-Print Info "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
+Say ' ' if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 for my $target (@$targets)
 	{ 
@@ -258,7 +257,6 @@ if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	}
 
 $pbs_runs = PBS::PBS::GetPbsRuns() ;
-my $plural = $pbs_runs > 1 ? 's' : '' ;
 
 my $nodes = scalar(keys %$inserted_nodes) ;
 my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
@@ -266,11 +264,11 @@ my $warp_nodes = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	PrintInfo sprintf("$Depend: pbsfile$plural: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n", tv_interval ($t0_depend, [gettimeofday])) ;
+	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes", tv_interval ($t0_depend, [gettimeofday])) ;
 	}
 else
 	{
-	PrintInfo "$Depend: pbsfile$plural: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes\n" unless defined $pbs_config->{QUIET};
+	Say Info "$Depend: pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes" unless defined $pbs_config->{QUIET};
 	}
 
 PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
@@ -351,7 +349,7 @@ else
 
 			if(@matches == 0)
 				{
-				PrintError "PBS: no such node '$build_point', found nothing matching\n" ;
+				Say Error "PBS: no such node '$build_point', found nothing matching" ;
 				die "\n" ;
 				}
 			elsif(@matches == 1)
@@ -360,7 +358,7 @@ else
 				}
 			else
 				{
-				PrintError          "PBS: no such node '$build_point'\n" ;
+				Say Error "PBS: no such node '$build_point'" ;
 				DisplayCloseMatches $build_point, $inserted_nodes ;
 				die "\n" ;
 				}
@@ -394,11 +392,11 @@ eval
 		
 		unless(exists $inserted_nodes->{$node_name}{__CHECKED})
 			{
-			#~PrintWarning "Node '$inserted_nodes->{$node_name}{__NAME}' wasn't checked!\n" ;
+			#~Say Warning "Node '$inserted_nodes->{$node_name}{__NAME}' wasn't checked!" ;
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				PrintInfo "Check: " . INFO3("'$inserted_nodes->{$node_name}{__NAME}' [T]\n")
+				Say EC "<I>Check: <I3>'$inserted_nodes->{$node_name}{__NAME}' [T]"
 					 unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 				my @triggered_build_sequence ;
@@ -427,7 +425,7 @@ eval
 	PrintInfo $stat_message unless $stat_message eq ''  ;
 	} ;
 
-PrintInfo sprintf("Check: time: %0.2f s.\n", tv_interval ($t0_check, [gettimeofday])) if $pbs_config->{DISPLAY_CHECK_TIME} ;
+Say Info sprintf("Check: time: %0.2f s.", tv_interval ($t0_check, [gettimeofday])) if $pbs_config->{DISPLAY_CHECK_TIME} ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	{
@@ -439,10 +437,9 @@ if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 		my $is_alternative_source++ if exists $node->{__ALTERNATE_SOURCE_DIRECTORY} ;
 		my $is_virtual = exists $node->{__VIRTUAL} ;
 		
-		PrintInfo "Node: " . INFO3($name) 
-				. INFO2($is_alternative_source ? ' -> [R]' : '')
-				. INFO2($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> $full_name" : '')
-				. "\n" ;
+		Say EC "<I>Node: <I3>$name" 
+			. ($is_alternative_source ? '<I2> -> [R]' : '')
+			. ($is_virtual ? '<I2> -> [V]' : $full_name ne $name ? " -> $full_name" : '')
 		} 
 	}
 
@@ -497,7 +494,8 @@ if($pbs_config->{DO_BUILD})
 	{
 	($build_result, $build_message) 
 		= PBS::Build::BuildSequence($pbs_config, $build_sequence, $inserted_nodes) ;
-	PrintError("Build: failed\n") unless $build_result == BUILD_SUCCESS ;
+
+	Say Error 'Build: failed' unless $build_result == BUILD_SUCCESS ;
 	
 	# run a global post build
 	# this allows nodes to modify the dependency tree before warp
@@ -518,16 +516,16 @@ if($pbs_config->{DO_BUILD})
 			{
 			$post_build_commands++ ;
 
-			PrintInfo "Build: running post build command for node:" . USER(" '$node->{__NAME}'\n", 0) 
+			Say EC "<I>Build: running post build command for node: <U>'$node->{__NAME}'" 
 				if $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 
 			my @r = $node->{__PBS_POST_BUILD}($node, $inserted_nodes) ;
 
-			PrintInfo2 "${indent}node sub returned: @r\n" if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
+			Say Info2 "${indent}node sub returned: @r" if @r && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 			}
 		}
 
-	PrintInfo sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.\n", tv_interval($t0_pbs_post_build, [gettimeofday]))
+	Say Info sprintf("Build: ran $post_build_commands post build commands in: %0.2f s.", tv_interval($t0_pbs_post_build, [gettimeofday]))
 		 if $post_build_commands && $pbs_config->{DISPLAY_PBS_POST_BUILD_COMMANDS} ;
 
 	}
@@ -537,8 +535,7 @@ else
 	
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
-		PrintWarning "Build: $debug_flag\n"
-			if ! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value ;
+		Say Warning "Build: $debug_flag" if ! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value ;
 		}
 
 	($build_result, $build_message) = (0, 'No build flags') ;

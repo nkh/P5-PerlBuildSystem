@@ -15,6 +15,7 @@ our $VERSION = '0.03' ;
 my $cd = 256 ; # color_depth
 my %cc ;
 my %user_cc ; 
+my %color_alias ;
 
 BEGIN
 {
@@ -35,6 +36,10 @@ for my $color_name (@_)
 	{
 	no warnings 'redefine' ;
 
+	my ($initial, $number) = $color_name =~ /^(.).*?(\d+)?$/ ;
+	$number //= '' ;
+	$color_alias{uc($initial) . $number } = $color_name ;
+
 	my $COLOR  = sub { COLOR($color_name, @_) } ;
 
 	my $name =  uc($color_name) ;
@@ -51,16 +56,21 @@ for my $color_name (@_)
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $COLOR_, as => $name });
 
+
+
 	my $PRINT_COLOR = eval "sub { _print(\\*STDERR, \\&" . uc($color_name) . ", \@_) } " ;
 
 	$name =  'Print' . ucfirst($color_name) ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $PRINT_COLOR, as => $name });
 
+
+
+
 	my $ST_COLOR = eval "sub { _ST(\\&" . uc($color_name) . ", [caller(0)], \@_) }" ;
 
 	my $letter = uc(substr $color_name, 0, 1) ;
-	my ($number) = $color_name =~ m/(\d+)$/ ; 
+	($number) = $color_name =~ m/(\d+)$/ ; 
 	$number //= '' ;
 
 	$name =  'S' . $letter . $number . 'T' ;
@@ -82,6 +92,10 @@ my @exports =
 	(
 	CreateColorFunctions
 	(qw/
+		dark
+		no_match
+		ignoring_local_rule
+		
 		debug   
 		debug2  
 		debug3  
@@ -103,9 +117,6 @@ my @exports =
 		warning3
 		warning4
 		
-		ignoring_local_rule
-		no_match
-		
 		box_11  
 		box_12  
 		box_21  
@@ -119,12 +130,12 @@ my @exports =
 		ttcl3
 		ttcl4
 	/),
-		#dark
 	qw(
 		Say Print
 
 		COLOR Color GetColor
 		NO_COLOR NoColor _NO_COLOR_
+		Colored EC
 
 		PrintColor PrintNoColor PrintVerbatim
 		
@@ -229,10 +240,10 @@ my ($color_name, $string, $indent, $no_indent_color, $continuation_color) = @_ ;
 
 $string //= 'undef' ;
 $indent //= 1 ;
-$no_indent_color //= 0 ; 
+$no_indent_color //= 1 ; 
 #print STDERR " ($color_name, $string, $indent, $no_indent_color) \n" ;
 
-my $depth  = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
+my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
 my $indentation = $indent && ! $PBS::Output::no_indentation ? ($PBS::Output::indentation x $depth) : '' ;
 
 my $color = $cc{$cd}{$color_name} // '' ;
@@ -240,12 +251,12 @@ my $reset = defined $continuation_color ? $cc{$cd}{$continuation_color} // '' : 
 
 my $string_indent = $PBS::Output::indentation ne q{} && $string =~ s/^($PBS::Output::indentation+)// ? $1 : '' ; # works for first line only
 
-$indentation = $no_indent_color ? $indentation . $string_indent . $color : $color . $indentation . $string_indent ;
-my $indentation2 = $no_indent_color ? $indentation . $color : $color . $indentation ;
+my $indentation1 = $no_indent_color ? $indentation . $string_indent : $color . $indentation . $string_indent ;
 
+my $indentation2 = $no_indent_color ? $indentation : $color . $indentation ;
 $string =~ s/\n(.)/\n$indentation2$1/g ;
 
-return $indentation . $color . $string . $reset ;
+return $indentation1 . $color . $string . $reset ;
 }
 
 *Color=\&COLOR ;
@@ -256,6 +267,20 @@ sub NO_COLOR { return COLOR('reset', @_) }
 
 #-------------------------------------------------------------------------------
 
+sub Colored
+{
+my ($string, $indent, $no_indent_color, $continuation_color) = @_ ;
+
+$string =~ s~<([[:alnum:]_]+)>~$cc{$cd}{$color_alias{$1}}//$cc{$cd}{$1}//$cc{$cd}{reset}~ge ;
+
+COLOR('', $string, $indent, $no_indent_color, $continuation_color) ;
+}
+
+*EC=\&Colored ;
+
+
+#-------------------------------------------------------------------------------
+
 sub _print
 {
 #use Carp qw(cluck longmess shortmess);
@@ -263,7 +288,7 @@ sub _print
 
 print STDERR join ':', (caller(1))[1, 2] if $output_from_where ;
 
-my ($glob, $color_and_depth, $data, $indent, $color_indent) = @_ ;
+my ($glob, $color, $data, $indent, $color_indent) = @_ ;
 
 return unless defined $data ;
 
@@ -279,8 +304,8 @@ my $lines =  join
 		map 	
 			{ 
 			$_ ne "\e[K\e[K" 
-				? $color_and_depth
-					? $color_and_depth->($_, $indent, $color_indent)
+				? $color
+					? $color->($_, $indent, $color_indent)
 					: $_
 				: q{} 
 			}
