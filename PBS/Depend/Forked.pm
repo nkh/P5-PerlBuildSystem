@@ -159,10 +159,10 @@ if($resource_id)
 		{
 		my $pid = fork() ;
 		
+		$node->{__PARALLEL_DEPEND} = $pid ;
+
 		if($pid)
 			{
-			$node->{__PARALLEL_DEPEND} = $pid ;
-			
 			$forked_children{$pid}++ ; 
 			#SUT \%forked_children, $$ ;
 			

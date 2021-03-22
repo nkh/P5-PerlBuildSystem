@@ -38,7 +38,26 @@ for my $color_name (@_)
 
 	my ($initial, $number) = $color_name =~ /^(.).*?(\d+)?$/ ;
 	$number //= '' ;
-	$color_alias{uc($initial) . $number } = $color_name ;
+
+	my $alias = uc($initial) . $number ;
+
+	if(exists $color_alias{$alias})
+		{
+		my $counter = 1 ;
+		my $alias_c = "${alias}_$counter" ;
+
+		while (exists $color_alias{$alias_c})
+			{
+			$counter++ ;
+			$alias_c = "${alias}_$counter" ;
+			}
+
+		$color_alias{$alias_c} = $color_name ;
+		}
+	else
+		{
+		$color_alias{$alias} = $color_name ;
+		}
 
 	my $COLOR  = sub { COLOR($color_name, @_) } ;
 
@@ -56,16 +75,11 @@ for my $color_name (@_)
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $COLOR_, as => $name });
 
-
-
 	my $PRINT_COLOR = eval "sub { _print(\\*STDERR, \\&" . uc($color_name) . ", \@_) } " ;
 
 	$name =  'Print' . ucfirst($color_name) ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $PRINT_COLOR, as => $name });
-
-
-
 
 	my $ST_COLOR = eval "sub { _ST(\\&" . uc($color_name) . ", [caller(0)], \@_) }" ;
 
@@ -92,10 +106,6 @@ my @exports =
 	(
 	CreateColorFunctions
 	(qw/
-		dark
-		no_match
-		ignoring_local_rule
-		
 		debug   
 		debug2  
 		debug3  
@@ -129,6 +139,11 @@ my @exports =
 		ttcl2
 		ttcl3
 		ttcl4
+		
+		dark
+		no_match
+		ignoring_local_rule
+		
 	/),
 	qw(
 		Say Print
@@ -151,6 +166,8 @@ my @exports =
 $VERSION = '0.08' ;
 
 #-------------------------------------------------------------------------------
+
+use Module::Util qw(find_installed) ;
 
 use Term::ANSIColor qw(:constants) ;
 $Term::ANSIColor::AUTORESET = 1 ;
@@ -191,7 +208,7 @@ $cc{$_} = { %{$default_colors->{$_} // {}}, %{$cc{$_} // {}} } for keys %$defaul
 # colors defined on the command line
 $cc{$cd}{$_} = $user_cc{$cd}{$_} for keys %{$user_cc{$cd}} ;
 
-CreateColorFunctions grep { $_ ne 'dark' } keys %{$cc{$cd}} ;
+CreateColorFunctions sort keys %{$cc{$cd}} ;
 }
 
 sub GetColor
@@ -240,7 +257,7 @@ my ($color_name, $string, $indent, $no_indent_color, $continuation_color) = @_ ;
 
 $string //= 'undef' ;
 $indent //= 1 ;
-$no_indent_color //= 1 ; 
+$no_indent_color //= 0 ; 
 #print STDERR " ($color_name, $string, $indent, $no_indent_color) \n" ;
 
 my $depth = $PBS::Output::indentation_depth ; $depth = 0 if $depth < 0 ;
@@ -521,6 +538,9 @@ unless($pbs_config->{DISPLAY_FULL_DEPENDENCY_PATH})
 		$file =~ s~^\./$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}~~ ;
 
 		$file =~ s/$_/PBS_LIB\//g for @{$pbs_config->{LIB_PATH}} ;
+
+		my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
+		$file =~ s/$path/$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}\//g ;
 		
 		$GRRP{"$file$no_target_path"} = $file ;
 		}

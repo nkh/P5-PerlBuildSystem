@@ -58,9 +58,20 @@ my $terminal_width = chars() || 10_000 ;
 
 my $node_header = '' ;
 
+my $parallel_depend   = exists $file_tree->{__PARALLEL_DEPEND} ;
+my $parallel_depended = exists $file_tree->{__PARALLEL_NODE} ;
+my $parallel_node     = $parallel_depend || $parallel_depended ;
+
+my $tag = $parallel_depend
+		? _WARNING2_ ('∥ ')
+		: $parallel_depended
+			? _INFO2_ ('∥ ')
+			: '' ;
+$tag .= GetColor('info3') ;
+
 $node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
-			? _INFO3_("Node: $type'$name':") . _INFO2_(" $build_name\n")
-			: _INFO3_ "Node: $type'$name':\n" ;
+			? _INFO3_("Node$tag: $type'$name':") . _INFO2_(" $build_name\n")
+			: _INFO3_ "Node$tag: $type'$name':\n" ;
 	
 return $node_header, $type, $tab ;
 }
@@ -401,7 +412,7 @@ for my $rule (@rules_with_builders)
 #----------------------
 if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
-	my $config = INFO DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1) ;
+	my $config = INFO( DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1)) ;
 
 	$log_node_info .= $config ;
 	$node_info .= $config if $pbs_config->{DISPLAY_NODE_CONFIG} ;

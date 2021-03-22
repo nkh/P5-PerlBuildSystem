@@ -67,12 +67,13 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR} && $pbs_config->{DISPLAY_PROGRESS_BAR_PRO
 my $available = (chars() // 10_000) - length($PBS::Output::indentation x ($PBS::Output::indentation_depth)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available) , truncate => 'middle' });
 my @failed_nodes ;
-
+SDT 1 ;
 while ($number_of_nodes_to_build > $number_of_already_build_node)
 	{
 	# start building a node if a process is free
 	if(!$number_of_failed_builders || $pbs_config->{NO_STOP})
 		{
+SDT 2 ;
 		my $started_builders = StartNodesBuild
 					(
 					$pbs_config,
@@ -85,10 +86,11 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					
 		$node_build_index += $started_builders ; 
 		}
-	
+SDT 3 ;
 	my @builders = WaitForBuilderToFinish($pbs_config, $builders) ;
 	@builders || last if $number_of_failed_builders ; # stop if nothing is building and an error occurred
 	
+SDT 4 ;
 	# PBS::RPC::Handle(@builder) # todo: check if build send an RPC request
 	
 	for my $builder (@builders)

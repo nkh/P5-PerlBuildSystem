@@ -293,7 +293,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					Say EC "<I3>${indent}'$short_node_name'<I>subpbs match<I2>, pbsfile:'$subpbs_file'"
+					Say EC "<I3>${indent}'$short_node_name'<I> subpbs match<I2>, pbsfile:'$subpbs_file'"
 						. ($display_node_matching_rule ? ", $node_matching_rule" : '')
 						. ($display_node_insertion_rule ? ", $node_insertion_rule" : '')
 					}
@@ -395,7 +395,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				  
 				# the subpbs root node have no insertion data we can use
 				$node_insertion_rule = '' if $node_insertion_rule =~ /PBS:Subpbs/ ;
-
+				
 				my $node_matching_rule = $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE}
 								? ", $rule_info$rule_type"
 								: '' ;
@@ -524,7 +524,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 						my $inserting_rule_index = $tree->{$dependency_name}{RULE_INDEX} ;
 						my $inserting_rule_info  =  $dependency_rules->[$inserting_rule_index]{NAME}
 										. $dependency_rules->[$inserting_rule_index]{ORIGIN} ;
-											
+						
 						Say Warning
 							  "Depend: ignoring duplicate dependency '$dependency_name'\n"
 							. "\tpbsfile: $Pbsfile\n"

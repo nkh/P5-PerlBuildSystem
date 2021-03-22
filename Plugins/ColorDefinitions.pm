@@ -13,13 +13,10 @@ sub GetColorDefinitions
 {
 256 =>
 	{
-	dark     => color('rgb000'),
-	no_match => color('rgb200'),
-	ignoring_local_rule => color('rgb220 on_rgb101'),
-	
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
+	debug4   => color('rgb203'),
 	error    => color('rgb300'),
 	error2   => color('rgb200'),
 	error3   => color('rgb400'),
@@ -52,14 +49,14 @@ sub GetColorDefinitions
 	ttcl4    => color('rgb101'),
 	
 	reset    => color('reset'),
+
+	dark     => color('rgb000'),
+	no_match => color('rgb200'),
+	ignoring_local_rule => color('rgb220 on_rgb101'),
 	},
 
 night =>
 	{
-	dark     => color('rgb000'),
-	no_match => color('rgb200'),
-	ignoring_local_rule => color('rgb220 on_rgb101'),
-	
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
@@ -95,6 +92,11 @@ night =>
 	ttcl4    => color('rgb101'),
 	
 	reset    => color('reset'),
+
+	dark     => color('rgb000'),
+	no_match => color('rgb200'),
+	ignoring_local_rule => color('rgb220 on_rgb101'),
+	
 	},
 16 =>
 	{
@@ -123,6 +125,10 @@ night =>
 	box_22   => color('on_bright_black'),
 
 	reset    => color('reset'),
+
+	dark     => color(''),
+	no_match => color(''),
+	ignoring_local_rule => color(''),
 	},
 2 =>
 	{

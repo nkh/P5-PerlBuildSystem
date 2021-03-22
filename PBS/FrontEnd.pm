@@ -42,7 +42,7 @@ sub Pbs
 my $t0 = [gettimeofday];
 my (%pbs_arguments) = @_ ;
 
-if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--get_bash_completion')
+if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_get_completion')
 	{
 	my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 

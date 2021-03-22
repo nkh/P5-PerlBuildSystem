@@ -82,9 +82,7 @@ my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
 my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') ;
 
-my $target = _INFO3_($short_target)
-		. _INFO2_( $pbs_config->{DEPEND_JOBS} ? ", pid: $$" : '')
-		. GetColor('info')  ;
+my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{DEPEND_JOBS} ? ", pid: $$" : '') . GetColor('info')  ;
 
 my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
 my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;

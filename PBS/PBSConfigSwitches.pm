@@ -160,7 +160,7 @@ my @options =
 	'hnd|help_narrow_display', 'Writes the flag name and its explanation on separate lines.', '',
 		\$config->{DISPLAY_HELP_NARROW_DISPLAY},
 
-	'pp|pbsfile_pod', "Displays a user defined help. See 'Online help' in pbs.pod", <<'EOH', \$config->{DISPLAY_PBSFILE_POD},
+	'hud|help_user_defined', "Displays a user defined help. See 'Online help' in pbs.pod", <<'EOH', \$config->{DISPLAY_PBSFILE_POD},
 =for PBS =head1 SOME TITLE
 
 this is extracted by the --pbsfile_pod command
@@ -188,15 +188,24 @@ previous =for PBS section
 
 EOH
 	
-	'pbs2pod', 'Extracts the pod contained in the Pbsfile (except user documentation POD).', 'See --pbsfile_pod.',
+	'pod_extract', 'Extracts the pod contained in the Pbsfile (except user documentation POD).', 'See --help_user_defined.',
 		\$config->{PBS2POD},
 		
-	'raw_pod', '-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '',
+	'pod_raw', '-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '',
 		\$config->{RAW_POD},
 		
-	'd|display_pod_documenation:s', 'Interactive PBS documentation display and search.', '',
+	'pod_interactive_documenation:s', 'Interactive PBS documentation display and search.', '',
 		\$config->{DISPLAY_POD_DOCUMENTATION},
 		
+	'options_generate_bash_completion', 'create a bash completion script and exits.', '',
+		\$config->{GENERATE_BASH_COMPLETION_SCRIPT},
+
+	'options_get_completion', 'return completion list.', '',
+		\$config->{GET_BASH_COMPLETION},
+
+	'options_list', 'return completion list on stdout.', '',
+		\$config->{GET_OPTIONS_LIST},
+
 	'wizard:s', 'Starts a wizard.', '',
 		\$config->{WIZARD},
 		
@@ -206,15 +215,6 @@ EOH
 	'wh|display_wizard_help', 'Tell the choosen wizards to show help.', '',
 		\$config->{DISPLAY_WIZARD_HELP},
 		
-	'generate_bash_completion_script', 'create a bash completion script and exits.', '',
-		\$config->{GENERATE_BASH_COMPLETION_SCRIPT},
-
-	'get_bash_completion', 'return completion list.', '',
-		\$config->{GET_BASH_COMPLETION},
-
-	'get_options_list', 'return completion list on stdout.', '',
-		\$config->{GET_OPTIONS_LIST},
-
 	'c|color_depth=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', <<EOT, \&PBS::Output::SetOutputColorDepth,
 Term::AnsiColor is used  to color output.
 
@@ -237,7 +237,7 @@ Recognized colors are :
 	or RGB5 values, check 'Term::AnsiColor' for more information. 
 EOT
 
-	'cd|color_define=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
+	'cu|color_user=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
 Color names used in Pbs:
 	error
 	warning
@@ -250,16 +250,22 @@ Color names used in Pbs:
 	debug
 EOT
 
-	'info_label=s', 'Adds a text label to all output.', '',
+	'output_info_label=s', 'Adds a text label to all output.', '',
 		\&PBS::Output::InfoLabel,
 		
 	'output_indentation=s', 'set the text used to indent the output. This is repeated "subpbs level" times.', '',
 		\$PBS::Output::indentation,
 
-	'no_indentation', '', '',
+	'output_indentation_none', '', '',
 		\$PBS::Output::no_indentation,
 
-	'DOFW|devel_output_from_where', '', '',
+	'output_full_path', 'Display full path for files.', '',
+		\$config->{DISPLAY_FULL_DEPENDENCY_PATH},
+		
+	'output_short_path_glyph=s', 'Replace full dependency_path with argument.', '',
+		\$config->{SHORT_DEPENDENCY_PATH_STRING},
+		
+	'OFW|output_from_where', '', '',
 		\$PBS::Output::output_from_where,
 
 	'p|pbsfile=s', 'Pbsfile use to defines the build.', '',
@@ -274,10 +280,10 @@ EOT
 	'prf|pbs_response_file=s', 'File containing switch definitions and targets.', '',
 		\$config->{PBS_RESPONSE_FILE},
 		
-	'naprf|no_anonymous_pbs_response_file', 'Use only a response file named after the user or the one given on the command line.', '',
+	'prfna|pbs_response_file_no_anonymous', 'Use only a response file named after the user or the one given on the command line.', '',
 		\$config->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
  
-	'nprf|no_pbs_response_file', 'Don\'t use any response file.', '',
+	'prfn|pbs_response_file_none', 'Don\'t use any response file.', '',
 		\$config->{NO_PBS_RESPONSE_FILE},
 		
 	'pbs_options=s', 'start list subpbs options, argumet is a regex matching the target.', '',
@@ -289,26 +295,29 @@ EOT
 	'pbs_options_end', 'ends the list of options for specific subpbs.', '',
 		\my $not_used,
 
-	'plp|pbs_lib_path=s', "Path to the pbs libs. Multiple directories can be given, each directory must start at '/' (root) or '.'", '',
+	'path_lib=s', "Path to the pbs libs. Multiple directories can be given, each directory must start at '/' (root) or '.'", '',
 		$config->{LIB_PATH},
-		
-	'display_pbs_lib_path', "Displays PBS lib paths (for the current project) and exits.", '',
+	
+	'path_lib_display', "Displays PBS lib paths (for the current project) and exits.", '',
 		\$config->{DISPLAY_LIB_PATH},
 		
-	'ppp|pbs_plugin_path=s', "Path to the pbs plugins. The directory must start at '/' (root) or '.' or pbs will display an error message and exit.", '',
+	'path_no_default_warning', "When this switch is used, PBS will not display a warning when using the distribution's PBS lib and plugins.", '',
+		\$config->{NO_DEFAULT_PATH_WARNING},
+	
+	'plugins_path=s', "Path to the pbs plugins. The directory must start at '/' (root) or '.' or pbs will display an error message and exit.", '',
 		$config->{PLUGIN_PATH},
 		
-	'display_pbs_plugin_path', "Displays PBS plugin paths (for the current project) and exits.", '',
+	'plugins_path_display', "Displays PBS plugin paths (for the current project) and exits.", '',
 		\$config->{DISPLAY_PLUGIN_PATH},
-		
-	'no_default_path_warning', "When this switch is used, PBS will not display a warning when using the distribution's PBS lib and plugins.", '',
-		\$config->{NO_DEFAULT_PATH_WARNING},
-		
-	'dpli|display_plugin_load_info', "displays which plugins are loaded.", '',
+	
+	'plugins_load_info', "displays which plugins are loaded.", '',
 		\$config->{DISPLAY_PLUGIN_LOAD_INFO},
-		
-	'display_plugin_runs', "displays which plugins subs are run.", '',
+	
+	'plugins_runs', "displays which plugins subs are run.", '',
 		\$config->{DISPLAY_PLUGIN_RUNS},
+		
+	'plugins_runs_all', "displays plugins subs not run.", '',
+		\$config->{DISPLAY_PLUGIN_RUNS_ALL},
 		
 	'dpt|display_pbs_time', "Display where time is spend in PBS.", '',
 		\$config->{DISPLAY_PBS_TIME},
@@ -804,12 +813,6 @@ EOT
 		\$config->{DISPLAY_POST_BUILD_RESULT},
 		
 	#-------------------------------------------------------------------------------	
-	'display_full_dependency_path', 'Display full dependency_path.', '',
-		\$config->{DISPLAY_FULL_DEPENDENCY_PATH},
-		
-	'short_dependency_path_string=s', 'Replace full dependency_path with argument.', '',
-		\$config->{SHORT_DEPENDENCY_PATH_STRING},
-		
 	'dd|display_dependencies', '(DF) Display the dependencies for each file processed.', '',
 		\$config->{DEBUG_DISPLAY_DEPENDENCIES},
 		

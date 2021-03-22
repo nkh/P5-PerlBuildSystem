@@ -52,7 +52,8 @@ my ($config, $plugin) = @_;
 if($config->{DISPLAY_PLUGIN_LOAD_INFO})
 	{
 	my ($basename, $path, $ext) = File::Basename::fileparse($plugin, ('\..*')) ;
-	PrintInfo "Plugin: loading: '$basename$ext'\n" ;
+	#Say Debug "Plugin: loading: '$plugin' from " . GetRunRelativePath($config, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+	PrintDebug "Plugin: loading: '$basename$ext'\n" ;
 	}
 	
 if(exists $loaded_plugins{$plugin})
@@ -89,7 +90,7 @@ sub LoadPluginFromSubRefs
 my ($package, $file_name, $line) = caller() ;
 my ($config, $plugin, %subs) = @_;
 
-PrintInfo "Plugin: loading: '$plugin' from '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+Say Debug "Plugin: loading: '$plugin' from " . GetRunRelativePath($config, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 
 if(exists $loaded_plugins{$plugin})
 	{
@@ -180,8 +181,6 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-PrintInfo "Plugin: '$plugin_sub_name' called at '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
-
 for my $plugin_path (sort keys %loaded_plugins)
 	{
 	no warnings ;
@@ -194,14 +193,16 @@ for my $plugin_path (sort keys %loaded_plugins)
 	
 	if($plugin_sub)
 		{
-		PrintInfo "\trunning in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
-		
+		Say EC "<D3>Plugin: <D>$plugin_sub_name<D3>:" . GetRunRelativePath($config, $plugin_path)
+				." @ '". GetRunRelativePath($config,$file_name) . ":$line'"
+			 if $config->{DISPLAY_PLUGIN_RUNS} ;
+	
 		eval {$plugin_sub->(@plugin_arguments)} ;
 		die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 		}
 	else
 		{
-		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL} ;
 		}
 	}
 }
@@ -220,8 +221,6 @@ my ($package, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-PrintInfo "Plugin: '$plugin_sub_name' called at '$file_name:$line':\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
-
 my (@found_plugin, $plugin_path, $plugin_sub) ;
 my ($plugin_sub_to_run, $plugin_to_run_path) ;
 
@@ -238,11 +237,10 @@ for $plugin_path (sort keys %loaded_plugins)
 		{
 		$plugin_sub_to_run = $plugin_sub ;
 		$plugin_to_run_path = $plugin_path ;
-		PrintInfo "\tfound in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
 		}
 	else
 		{
-		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+		Say Warning "\tnot in '$plugin_path'" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL};
 		}
 	}
 	
@@ -253,7 +251,9 @@ if(@found_plugin > 1)
 
 if($plugin_sub_to_run)
 	{
-	PrintInfo "Plugin: running '$plugin_sub_name''\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+	Say EC "<D3>Plugin: <D>$plugin_sub_name<D3>:" . GetRunRelativePath($config, $plugin_to_run_path)
+			." @ '". GetRunRelativePath($config,$file_name) . ":$line'"
+		 if $config->{DISPLAY_PLUGIN_RUNS} ;
 	
 	if(! defined wantarray)
 		{
