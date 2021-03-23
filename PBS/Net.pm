@@ -335,7 +335,7 @@ while (my $c = $d->accept)
 					$status->("idling, pid: $pid") ;
 					} ;
 			
-			'/pbs/build' eq $path and PBS::Depend::Forked::Build($pbs_config, $data) ;
+			'/pbs/link' eq $path and PBS::Depend::Forked::Link($pbs_config, $data) ;
 			}
 		
 		$c->force_last_request ;

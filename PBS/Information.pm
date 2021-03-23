@@ -121,6 +121,7 @@ if($parallel_node)
 	$log_node_info .= $current_node_info ;
 	$node_info     .= $current_node_info ;
 	}
+
 #----------------------
 # insertion origin
 #----------------------
@@ -468,7 +469,7 @@ sub DisplayNodeInformation
 {
 my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 
-if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} ||  @{$pbs_config->{DISPLAY_BUILD_INFO}})
+if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO})
 	{
 	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
 	PrintNoColor "$node_info\n" ;

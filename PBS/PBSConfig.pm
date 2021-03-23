@@ -237,12 +237,6 @@ if($pbs_config->{DEPEND_FULL_LOG})
 	undef $pbs_config->{DEPEND_LOG} ;
 	}
 
-if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
-	{
-	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
-	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
-	}
-	
 if($pbs_config->{DISPLAY_PROGRESS_BAR})
 	{
 	$PBS::Shell::silent_commands++ ;
@@ -250,6 +244,12 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR})
 	$pbs_config->{DISPLAY_NO_BUILD_HEADER}++ ;
 	}
 
+if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
+	{
+	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
+	}
+	
 if($pbs_config->{QUIET})
 	{
 	$PBS::Shell::silent_commands++ ;
@@ -257,8 +257,6 @@ if($pbs_config->{QUIET})
 	$pbs_config->{DISPLAY_NO_BUILD_HEADER}++ ;
 	$pbs_config->{DISPLAY_PROGRESS_BAR} = 0 ;
 	}
-
-$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}++ if $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 
 $pbs_config->{DISPLAY_BUILD_RESULT}++ if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 
@@ -324,7 +322,6 @@ if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
 	}
 
-
 if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	{
 	$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ ;
@@ -343,11 +340,15 @@ $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} 
 
 $pbs_config->{DISPLAY_SEARCH_INFO}++ if $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
 
-if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
+if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
+	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
+	$PBS::Shell::silent_commands = 0 ;
+	$PBS::Shell::silent_commands_output = 0 ;
+
 	$pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
 
-	undef $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} if @{$pbs_config->{DISPLAY_BUILD_INFO}} ;
 	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
 	unless ($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})

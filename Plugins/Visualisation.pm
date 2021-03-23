@@ -83,7 +83,7 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 		}
 	}
 
-if(exists $pbs_config->{DISPLAY_NODE_INFO} && @{$pbs_config->{DISPLAY_NODE_INFO}})
+if(@{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
 	for my $node_name (sort keys %$inserted_nodes)
 		{

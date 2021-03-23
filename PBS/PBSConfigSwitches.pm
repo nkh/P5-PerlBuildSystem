@@ -1083,8 +1083,8 @@ EOT
 	'nbh|no_build_header', "Don't display the name of the node to be build.", '',
 		\$config->{DISPLAY_NO_BUILD_HEADER},
 		
-	'bpb0|display_nop_progress_bar', "Force silent build mode and displays an empty progress bar.", '',
-		\$config->{DISPLAY_PROGRESS_BAR_NOP},
+	'bpb0|display_no_progress_bar', "Display no progress bar.", '',
+		\$config->{DISPLAY_NO_PROGRESS_BAR},
 
 	'bpb1|display_progress_bar', "Force silent build mode and displays a progress bar. This is Pbs default, see --build_verbose.", '',
 		\$config->{DISPLAY_PROGRESS_BAR},
@@ -1095,9 +1095,22 @@ EOT
 	'bpb3|display_progress_bar_process', "A progress per build process is displayed above the progress bar", '',
 		\$config->{DISPLAY_PROGRESS_BAR_PROCESS},
 
-	'bv|build_verbose', "Verbose build mode.", '',
-		\$config->{DISPLAY_NO_PROGRESS_BAR},
-		
+	'bv|build_verbose', "Verbose build mode.", <<EOT, \$config->{BUILD_AND_DISPLAY_NODE_INFO},
+these switches are turned on:
+	'no|node_origin'
+	'nd|nod_dependencies'
+	'nc|node_build_cause' 
+	'nr|node_build_rule' 
+	'nb|node_builder'
+	'npbc|node_build_post_build_commands'
+
+You may want to also add:
+	'np|mode_parents'
+	'nbn|node_build_name' 
+	'nconf|node_config'
+	'nil|node_information_located'
+EOT
+
 	'bvm|display_no_progress_bar_minimum', "Slightly less verbose build mode.", '',
 		\$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
 		
@@ -1118,22 +1131,6 @@ EOT
 
 	'bni_result', 'display node header and build result even if not matched by --bnir.', '',
 		\$config->{BUILD_DISPLAY_RESULT},
-
-	'bni|build_and_display_node_information', 'Display information about the node to be build.', <<EOT, \$config->{BUILD_AND_DISPLAY_NODE_INFO},
-these switches are turned on:
-	'no|node_origin'
-	'nd|nod_dependencies'
-	'nc|node_build_cause' 
-	'nr|node_build_rule' 
-	'nb|node_builder'
-	'npbc|node_build_post_build_commands'
-
-You may want to also add:
-	'np|mode_parents'
-	'nbn|node_build_name' 
-	'nconf|node_config'
-	'nil|node_information_located'
-EOT
 
 	'verbosity=s', 'Used in user defined modules.', <<EOT, $config->{VERBOSITY},
 -- verbose is not used by PBS. It is intended for user defined modules.

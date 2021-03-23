@@ -216,8 +216,6 @@ if(defined $node)
 				) ;
 		} ;
 	
-	#close(STDERR) ;
-	
 	if($@)
 		{
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;
@@ -234,12 +232,12 @@ if(defined $node)
 		}
 
 	PBS::Log::Html::LogNodeData($node, $redirection_path, $redirection_file, $redirection_file_log)
-		if(defined $pbs_config->{CREATE_LOG_HTML}) ;
+		if defined $pbs_config->{CREATE_LOG_HTML} ;
 
 	open(STDERR, ">&OLDERR");
 	open(STDOUT, ">&OLDOUT");
 
-	return($build_result, $build_message, $redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday])) ;
+	return $build_result, $build_message, $redirection_file_log, $redirection_file, tv_interval ($t0, [gettimeofday]) ;
 	}
 else
 	{
@@ -247,7 +245,7 @@ else
 	open(STDERR, ">&OLDERR");
 	open(STDOUT, ">&OLDOUT");
 
-	die ERROR "ForkedBuilder: Couldn't find node '$node_name' in build_sequence.\n" ;
+	die ERROR("ForkedBuilder: Couldn't find node '$node_name' in build_sequence") . "\n" ;
 	}
 }
 

@@ -152,7 +152,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					for ($number_of_builders)
 						{
 						my $distance = $number_of_builders - $builder->{INDEX} ;  
-
+						
 						PrintInfo2 "\e[${distance}A"
 								. "\r\e[K"
 								. $em ->("Build: [$builder->{INDEX}] $built_node->{__NAME}")
@@ -161,26 +161,26 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					}
 				
 				my $time_remaining = (tv_interval ($t0, [gettimeofday]) / $number_of_already_build_node) * ($number_of_nodes_to_build - $number_of_already_build_node) ;
-
+				
 				$time_remaining = $time_remaining < 60 
 							? sprintf("%0.2f", $time_remaining) . "s." 
 							: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
-
+				
 				do
 					{
 					my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
 				
 					PrintInfo "\r\e[KBuild: ETA: $time_remaining, nodes: $remaining_nodes" ;
-
+				
 					if (0 == $remaining_nodes)
 						{
 						PrintNoColor "\r\e[K" ;
 						PrintInfo "Build: success, nodes: $number_of_already_build_node\n" ;
 						}
 					}
-					unless $pbs_config->{DISPLAY_PROGRESS_BAR_NOP} || $number_of_failed_builders ;
+					unless $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $number_of_failed_builders ;
 				}
-
+			
 			$builder_using_perl_time += $build_time 
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
 			
@@ -190,11 +190,11 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			{
 			$error_output .= $node_error_output ;
 			$number_of_failed_builders++ ;
-
+			
 			$excluded += MarkAllParentsAsFailed($pbs_config, $built_node) ;
 			push @failed_nodes, $built_node ;
 			}
-
+		
 		if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 			{
 			my $index = 1 ;
@@ -235,7 +235,7 @@ if ($number_of_failed_builders)
 		. INFO(", success: " . ($number_of_already_build_node - $number_of_failed_builders))
 		. "\n"
 		) ;
- 
+	
 	for my $failed_node (@failed_nodes)
 		{
 		PrintError "Build: failed: " 
@@ -263,13 +263,13 @@ my $excluded = 0 ;
 for my $parent (@{ $built_node->{__PARENTS} })
 	{
 	next if $parent->{__NAME} =~ /^__/ ;
-
+	
 	next if exists $parent->{__HAS_FAILED_CHILD} ;
-
+	
 	$parent->{__HAS_FAILED_CHILD}++ ;
 	PrintWarning "Build: excluding node '$parent->{__NAME}'\n" if $pbs_config->{NO_STOP} ;
 	$excluded++ ;
-
+	
 	$excluded += MarkAllParentsAsFailed($pbs_config, $parent) ;
 	}
 
@@ -674,7 +674,7 @@ $build_result = BUILD_FAILED unless defined $build_result ;
 
 my ($build_time, $error_output) = (-1, '') ;
 
-print STDERR "\n" unless $build_result == BUILD_SUCCESS ;
+#print STDERR "\n" unless $build_result == BUILD_SUCCESS ;
 
 if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 	{
@@ -732,7 +732,7 @@ else
 				
 				$print_separator++ unless $o eq q{} ;
 				}
-			
+
 			PrintVerbatim "\n" if $print_separator ;
 			}
 		}
@@ -802,7 +802,7 @@ for my $parent (@{$node->{__PARENTS}})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
-			Say Info2 "Tally: '$parent->{__NAME}' [$parent->{__CHILDREN_TO_BUILD}], done: $node->{__NAME} " ;
+			Say Info2 "Tally: '$parent->{__NAME}' [$parent->{__CHILDREN_TO_BUILD}], built: $node->{__NAME} " ;
 			}
 		}
 	}

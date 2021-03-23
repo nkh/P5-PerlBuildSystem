@@ -265,7 +265,6 @@ if($resource_id)
 						},
 					) ;
 				
-				#SDT \%graph ;
 				$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
 				
 				my $server = PBS::Net::StartHttpDeamon($pbs_config) ;
@@ -375,7 +374,7 @@ if($pbs_config->{DEPEND_JOBS})
 		{
 		my $wait_time = 0.01 * $wait_counter ;
 		
-		Say Warning3 "Depend: waiting for parallel depender to be done, elapsed time: $wait_time s."
+		Say Warning3 "Depend: waiting for parallel pbs, elapsed time: $wait_time s."
 			if $pbs_config->{DISPLAY_DEPEND_REMAINING_PROCESSES} && $wait_counter++ > 50 && ! ($wait_counter % 5) ;
 		
 		usleep 10_000 ;
@@ -401,9 +400,7 @@ if($pbs_config->{DEPEND_JOBS})
 		{
 		my $response = PBS::Net::Post($pbs_config, $graph->{ADDRESS}, 'build', {}, $$) ;
 		}
-
-	Say Info "Build∥ : sent $number_of_dependers build commands, time: " . sprintf '%0.2f s.', tv_interval ($t0, [gettimeofday]) ;
-
+	
 	$t0 = [gettimeofday];
 	
 	if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
@@ -640,30 +637,15 @@ Say Info "Depend∥ : dependers: $number_of_dependers, linked: $linked_dependers
 
 #-------------------------------------------------------------------------------------------------------
 
-sub Build
+sub Link
 {
 my ($pbs_config, $data) = @_ ;
 
 my ($node, $address, $args) = @{$data}{qw. NODE ADDRESS ARGS .} ;
 
 local $PBS::Output::indentation_depth = 0 ;
-Say Info "Build∥ : " . _INFO3_("'$node->{__NAME}'") . _INFO2_(" @ $$") ;
+Say Info "Link∥ : " . _INFO3_("'$node->{__NAME}'") . _INFO2_(" @ $$") ;
 
-=pod
-PBS::DefaultBuild::Build
-	(
-	$args->[PBS_CONFIG],
-	$args->[CONFIG],
-	$args->[NODE_NAME],
-	$args->[INSERTED_NODES],
-	$args->[INSERTED_NODES]{$node},
-	'', #  build_point
-	$args->[BUILD_TYPE],
-	) ;
-=cut
-
-# handle errors, tell parent node build failed, or succeeded 
-# warp generation handled in main graph
 }
 
 #-------------------------------------------------------------------------------------------------------
