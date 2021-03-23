@@ -102,40 +102,54 @@ if(NodeIsSource($file_tree))
 	}
 
 #----------------------
+# parallel node 
+#----------------------
+my $parallel_depend   = exists $file_tree->{__PARALLEL_DEPEND} ;
+my $parallel_depended = exists $file_tree->{__PARALLEL_NODE} ;
+my $parallel_node     = $parallel_depend || $parallel_depended ;
+
+if($parallel_node)
+	{
+	my $tag = $parallel_depend
+			? _WARNING2_ ('∥ ')
+			: $parallel_depended
+				? _INFO2_ ('∥ ')
+				: '' ;
+	$tag .= GetColor('info2') ;
+
+	$current_node_info = INFO2 "${tab}${tag}Pid: $file_tree->{__PARALLEL_NODE}\n" ;
+	$log_node_info .= $current_node_info ;
+	$node_info     .= $current_node_info ;
+	}
+#----------------------
 # insertion origin
 #----------------------
 if ($generate_for_log || $pbs_config->{DISPLAY_NODE_ORIGIN})
 	{
 	$current_node_info = '' ;
 
+	my $inserted = $pbs_config->{ADD_ORIGIN} 
+			? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}"
+			: "$file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME}"
+			  . ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_FILE}"
+			  . ($file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME} eq 'PBS'
+				? ''
+				: ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_LINE}") ;
+
 	if(exists $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}) # inserted and depended in different pbsfiles
 		{
-		my $inserted = $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} ;
-		my $origin = "${tab}Originated at rule: " 
-				. ($pbs_config->{ADD_ORIGIN} 
-					? $inserted->{INSERTION_RULE} 
-					: "$inserted->{INSERTION_RULE_NAME}:$inserted->{INSERTION_FILE}"
-						. ($inserted->{INSERTION_RULE_NAME} eq '__ROOT'
-							? ''
-							: ":$inserted->{INSERTION_RULE_LINE}")
-				  ) ;
+		my $o_inserted = $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} ;
+		my $origin = $pbs_config->{ADD_ORIGIN} 
+				? $o_inserted->{INSERTION_RULE} 
+				: "$o_inserted->{INSERTION_RULE_NAME}:$o_inserted->{INSERTION_FILE}"
+					. ($o_inserted->{INSERTION_RULE_NAME} eq '__ROOT'
+						? ''
+						: ":$o_inserted->{INSERTION_RULE_LINE}") ;
 
-		$current_node_info = INFO2 "$origin\n" ;
+		$current_node_info =  $origin ne $inserted ? INFO2 "${tab}Originated at rule: $origin\n" : '' ;
 		}
 
-	my $inserted = "${tab}Inserted at rule: "
-			. ($pbs_config->{ADD_ORIGIN} 
-
-				? "$file_tree->{__INSERTED_AT}{INSERTION_RULE}"
-
-				: "$file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME}"
-				  . ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_FILE}"
-				  . ($file_tree->{__INSERTED_AT}{INSERTION_RULE_NAME} eq 'PBS'
-					? ''
-					: ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_LINE}")
-				) ;
-
-	$current_node_info .= INFO "$inserted\n" ;
+	$current_node_info .= INFO "${tab}Inserted at rule: $inserted\n" ;
 	$current_node_info .= INFO "${tab}Pbsfile:$file_tree->{__INSERTED_AT}{INSERTION_FILE}\n\n"
 				 unless $file_tree->{__INSERTED_AT}{INSERTION_RULE_FILE} eq $file_tree->{__INSERTED_AT}{INSERTION_FILE} ;
 	
@@ -454,7 +468,7 @@ sub DisplayNodeInformation
 {
 my ($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) = @_ ;
 
-if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || $pbs_config->{BUILD_NODE_INFO} || $pbs_config->{DISPLAY_BUILD_INFO})
+if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} ||  @{$pbs_config->{DISPLAY_BUILD_INFO}})
 	{
 	my ($node_info) = GetNodeInformation($file_tree, $pbs_config, $generate_for_log, $inserted_nodes) ;
 	PrintNoColor "$node_info\n" ;

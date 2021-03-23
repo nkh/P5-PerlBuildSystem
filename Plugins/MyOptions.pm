@@ -31,34 +31,34 @@ my $comment = <<'EOF' ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'my_flag',
+	'',
+	'',
 	'MY_FLAG',
-	'',
-	'',
 
 	'my_flag_string=s',
+	'',
+	'',
 	'MY_FLAG_STRING',
-	'',
-	'',
 
 	'my_flag_string_list=s@',
+	'',
+	'',
 	'MY_FLAG_STRING_LIST',
-	'',
-	'',
 
 	'my_flag_integer=i',
+	'',
+	'',
 	'MY_FLAG_INTEGER',
-	'',
-	'',
 
 	'my_flag_integer_list=i@',
+	'',
+	'',
 	'MY_FLAG_INTEGER_LIST',
-	'',
-	'',
 	
 	'my_flag_integer_hash=i%',
+	'',
+	'',
 	'MY_FLAG_INTEGER_HASH',
-	'',
-	'',
 	) ;
 EOF
 

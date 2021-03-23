@@ -47,9 +47,9 @@ our $evaluate_shell_command_verbose ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'evaluate_shell_command_verbose',
-	'EVALUATE_SHELL_COMMAND_VERBOSE',
 	"Will display the transformation this plugin does.",
 	'',
+	'EVALUATE_SHELL_COMMAND_VERBOSE',
 	) ;
 	
 use PBS::Build::NodeBuilder ;

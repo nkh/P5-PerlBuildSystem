@@ -203,7 +203,7 @@ if($node_needs_rebuild || !$pbs_config->{HIDE_SKIPPED_BUILDS})
 		(
 		$display_node
 		&&  ( $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}
-			|| $pbs_config->{DISPLAY_BUILD_INFO}
+			|| @{$pbs_config->{DISPLAY_BUILD_INFO}}
 			|| $pbs_config->{CREATE_LOG}
 			)
 		)
@@ -473,7 +473,7 @@ eval # rules might throw an exception
 		$build_message = "Builder $rule_info didn't return a valid build result!" ;
 		}
 		
-	$build_message ||= 'no message returned by builder' ;
+	$build_message = 'no message returned by builder' if $build_message eq '' ;
 	
 	#DEBUG HOOK
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, POST => 1, BUILD_RESULT => $build_result, BUILD_MESSAGE => $build_message) ;

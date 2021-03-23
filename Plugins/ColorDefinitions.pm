@@ -12,7 +12,7 @@ use Term::ANSIColor qw(:constants color) ;
 sub GetColorDefinitions
 {
 256 =>
-	{
+	[
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
@@ -53,10 +53,10 @@ sub GetColorDefinitions
 	dark     => color('rgb000'),
 	no_match => color('rgb200'),
 	ignoring_local_rule => color('rgb220 on_rgb101'),
-	},
+	],
 
 night =>
-	{
+	[
 	debug    => color('rgb314'),
 	debug2   => color('rgb304'),
 	debug3   => color('rgb102'),
@@ -97,9 +97,9 @@ night =>
 	no_match => color('rgb200'),
 	ignoring_local_rule => color('rgb220 on_rgb101'),
 	
-	},
+	],
 16 =>
-	{
+	[
 	debug    => color('magenta'),
 	debug2   => color('magenta'),
 	debug3   => color('magenta'),
@@ -129,13 +129,9 @@ night =>
 	dark     => color(''),
 	no_match => color(''),
 	ignoring_local_rule => color(''),
-	},
+	],
 2 =>
-	{
-	dark     => '',
-	no_match => '',
-	ignoring_local_rule => '',
-	
+	[
 	debug    => '',
 	debug2   => '',
 	debug3   => '',
@@ -170,8 +166,12 @@ night =>
 	test_bg  => '',
 	test_bg2 => '',
 	
+	dark     => '',
+	no_match => '',
+	ignoring_local_rule => '',
+	
 	reset    => '',
-	},
+	],
 }
 
 #-------------------------------------------------------------------------------

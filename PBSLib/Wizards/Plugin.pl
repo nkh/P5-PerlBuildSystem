@@ -33,14 +33,14 @@ my @my_flag_list ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'xxxxx|long_xxxxx',
-	\$my_flag,
 	"short description.",
 	'documentation',
-	
+	'VARIABLE_NAME',
+
 	'xxxxx|long_xxxxx=s',
-	\@my_flag_list,
 	"short description.",
 	'documentation',
+	'@VARIABLE_NAME',
 	) ;
 	
 

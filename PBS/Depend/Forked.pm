@@ -154,15 +154,14 @@ my $parent_pid_copy = $$ ;
 
 if($resource_id)
 	{
-	$depender = 
-		sub
+	$depender = sub
 		{
 		my $pid = fork() ;
 		
-		$node->{__PARALLEL_DEPEND} = $pid ;
-
 		if($pid)
 			{
+			$node->{__PARALLEL_DEPEND} = $pid ;
+			
 			$forked_children{$pid}++ ; 
 			#SUT \%forked_children, $$ ;
 			
@@ -171,7 +170,8 @@ if($resource_id)
 			}
 		else
 			{
-			$node->{__PARALLEL_HEAD} = $pid ;
+			$node->{__PARALLEL_DEPEND} = $$ ;
+			$node->{__PARALLEL_HEAD} = $$ ;
 			
 			# if fork ok depend in other process otherwise depend in this process
 			
@@ -216,7 +216,7 @@ if($resource_id)
 					$$
 					) ;
 				
-				$inserted_nodes->{$_}{__PARALLEL_NODE}++ for @new_nodes ;
+				$inserted_nodes->{$_}{__PARALLEL_NODE} = $$ for @new_nodes, $target ;
 				
 				my %not_depended ;
 				my %graph  = 
@@ -226,49 +226,53 @@ if($resource_id)
 					PARENT   => $parent_pid,
 					CHILDREN => \%forked_children,
 					
-					#NODES    => \%new_nodes, # need to sever the nodes from $inserted nodes first
-					#my %new_nodes = map { $_ => $inserted_nodes->{$_} } grep { ! exists $nodes_snapshot{$_} } keys %$inserted_nodes ;
-					#   $new_nodes{$target} = $inserted_nodes->{$target} ;
-					#my $new_nodes = keys %new_nodes ;
-					
-					NODES    => 
+					NODES => 
+						{
+						map 
 							{
-							map 
+							my $node_name = $_ ;
+							my $node = $inserted_nodes->{$node_name} ;
+							
+							$not_depended{$node_name}++ if ! exists $node->{__DEPENDED} && ! $node->{__IS_SOURCE} ;
+							
+							$node_name =>
 								{
-								my $node = $_ ;
-								
-								$not_depended{$node}++ if ! exists $inserted_nodes->{$node}{__DEPENDED}
-											 && ! $inserted_nodes->{$node}{__IS_SOURCE} ;
-								
-								$node =>
+								(
+								map 
 									{
-									map 
-										{
-										my $ref = ref $inserted_nodes->{$node}{$_} ;
-										
-										'' eq $ref
-											? ($_ => $inserted_nodes->{$node}{$_})
-											: 'HASH' eq $ref
-												? 
-													(
-													$_ eq '__PBS_CONFIG'
-														? ($_ => $inserted_nodes->{$node}{$_})
-														: ($_ => {} )
-													)
-												: ( $_ => [] )
-										} 
-										keys %{$inserted_nodes->{$node}}
-									}
-								} @new_nodes, $target
-							},
+									my $ref = ref $node->{$_} ;
+									
+									'' eq $ref
+										? ($_ => $node->{$_})
+										: 'HASH' eq $ref
+											? 
+												(
+												$_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
+													? ($_ => $node->{$_})
+													: ($_ => {} )
+												)
+											:
+												(
+												$_ eq  '__TRIGGERED'
+													? ($_ => $node->{$_})
+													: ($_ => [] )
+												)
+									} 
+									keys %$node
+								),
+								}
+							} @new_nodes, $target
+						},
 					) ;
 				
+				#SDT \%graph ;
 				$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
 				
 				my $server = PBS::Net::StartHttpDeamon($pbs_config) ;
 				$graph{ADDRESS} = $server->url ;
 				
 				local $Data::Dumper::Indent = 0 ;
+				local $Data::Dumper::Purity = 1 ;
 				my $serialized_graph = Data::Dumper->Dump([\%graph], [qw(graph)]) ;
 				
 				BecomeDependServer
@@ -281,6 +285,7 @@ if($resource_id)
 						GRAPH   => $serialized_graph
 					}
 					) ;
+				
 				exit 0 ;
 				}
 			else
@@ -439,7 +444,7 @@ $data_size = sprintf "%.2f %s",  $data_size, qw[ bytes KB MB GB ][$unit] ;
 
 my $download_time = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
 
-$graphs{$$} = 
+my $main_graph = 
 	{
 	PID          => $$,
 	ADDRESS      => 'main graph',
@@ -456,7 +461,7 @@ $graphs{$$} =
 
 my (%nodes, %targets, %not_linked) ;
 
-for my $graph ( values %graphs)
+for my $graph ( $main_graph, values %graphs)
 	{
 	$targets{$graph->{TARGET}} = $graph ;
 	
@@ -496,6 +501,8 @@ for my $graph ( values %graphs)
 		}
 	}
 	
+$graphs{$$} = $main_graph ;
+
 # re-generate main graph
 
 for my $node (keys %nodes)
@@ -517,7 +524,7 @@ for my $node (keys %nodes)
 		$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
 		}
 		
-	Say Info "Depend∥ : merge $node" if $display_info ;
+	Say Info "Depend∥ : merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
 	
 	for my $element (keys %{$nodes{$node}{NODES}{$node}})
 		{
@@ -579,14 +586,44 @@ for my $graph ( values %graphs)
 		{
  		for (keys %{$graph->{LINKED}})
 			{
-			my $info = _INFO2_ "< $graph->{PID} - $graph->{ADDRESS} > to < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} >" ;
+			Say EC "<I3>Depend∥ : chain <I3>$_ <I3>< $graph->{PID} - $graph->{ADDRESS} >"
+				. " to < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} >" ;
 			
-			Say Info "Depend∥ : chain $_ $info" ;
+			if($graph->{PID} == $$)
+				{
+				# link to main process, send link info to remote pbs later
+				#SDT $graphs{$graph->{LINKED}{$_}{PID}}{NODES}{$_}, "remote node", MAX_DEPTH => 1 ;
+					
+				my $node = $graph->{NODES}{$_}{__NAME} ;
+				my $remote_node = $graphs{$graph->{LINKED}{$_}{PID}}{NODES}{$_} ;
+				
+				for my $element (keys %$remote_node)
+					{
+					if ($element !~ /^__/)
+						{
+						$inserted_nodes->{$element} = $remote_node->{$element}
+							unless exists $inserted_nodes->{$element} ;
+						
+						$inserted_nodes->{$node}{$element} = $inserted_nodes->{$element} ;
+						
+						Say Info2 "                $element" ;
+						}
+					else
+						{
+						#next if $element eq '' ;
+						next if $element eq '__DEPENDENCY_TO' ;
+						next if $element eq '__INSERTED_AT' ;
+						next if $element eq '__MATCHING_RULES' ;
+						
+						$inserted_nodes->{$node}{$element} = $remote_node->{$element} ;
+						}
+					}
+				}
 			}
 		}
 	}
 
-# send link info to parallel pbs
+# send link info to remote pbs
 
 my $time                    = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
 my $nodes                   = keys %nodes ;

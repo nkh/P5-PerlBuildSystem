@@ -43,24 +43,24 @@ use List::Util qw(any) ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'tnonh',
-	'NO_HEADER_FILES_DISPLAY',
 	"Do not display header files in the tree dump.",
 	'',
+	'NO_HEADER_FILES_DISPLAY',
 	
 	'tnonr=s',
-	'@DISPLAY_FILTER_REGEXES' ,
 	"Removes files matching the passed regex from the tree dump.",
 	'',
+	'@DISPLAY_FILTER_REGEXES' ,
 
 	'tww=i',
-	'WRAP_WIDTH' ,
 	"Set the wrap width.",
 	'',
+	'WRAP_WIDTH' ,
 
 	'ttcl',
-	'TREE_COLOR_LEVELS' ,
 	"Color the tree glyphs per level.",
 	'',
+	'TREE_COLOR_LEVELS' ,
 	) ;
 	
 sub PostDependAndCheck

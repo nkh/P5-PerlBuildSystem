@@ -39,24 +39,24 @@ use Data::TreeDumper ;
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
 	'use_watch_server',
-	'USE_WATCH_SERVER',
 	'Uses file watch server to speed up file verification.',
 	'',
+	'USE_WATCH_SERVER',
 	
 	'watch_server_verbose',
-	'WATCH_SERVER_VERBOSE',
 	'Will display what files the server has been notfied for.',
 	'',
+	'WATCH_SERVER_VERBOSE',
 
 	'watch_server_double_check',
-	'WATCH_SERVER_DOUBLE_CHECK',
-	'As use_watch_server but also does ai hash verification.',
+	'As use_watch_server but also does digest verification.',
 	'',
+	'WATCH_SERVER_DOUBLE_CHECK',
 
 	'watch_server_double_check_stats_only',
-	'WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY',
 	'As use_watch_server_doulbe_check  but only outputs statistics.',
 	'',
+	'WATCH_SERVER_DOUBLE_CHECK_STATS_ONLY',
 	) ;
 	
 

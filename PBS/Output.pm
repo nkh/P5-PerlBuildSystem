@@ -26,10 +26,40 @@ BEGIN
 
 } ; #BEGIN
 
+my %registered_colors ;
+sub ResetUniqColorNames { %registered_colors = () }
+
+sub GetUniqColorName
+{
+my ($name) = @_ ;
+
+if(exists $registered_colors{$name})
+	{
+	my $counter = 1 ;
+	my $name_c = "${name}_$counter" ;
+
+	while (exists $registered_colors{$name_c})
+		{
+		$counter++ ;
+		$name_c = "${name}_$counter" ;
+		}
+
+	$registered_colors{$name_c}++ ;
+	$name = $name_c ;
+	}
+else
+	{
+	$registered_colors{$name}++ ;
+	}
+
+$name
+}
+
 sub CreateColorFunctions
 {
 use Sub::Install ;
 
+ResetUniqColorNames() ;
 my @exports ;
 
 for my $color_name (@_)
@@ -39,56 +69,45 @@ for my $color_name (@_)
 	my ($initial, $number) = $color_name =~ /^(.).*?(\d+)?$/ ;
 	$number //= '' ;
 
-	my $alias = uc($initial) . $number ;
+	my $name = uc($initial) . $number ;
+	$color_alias{$name} = $color_name unless exists $color_alias{$name} ;
 
-	if(exists $color_alias{$alias})
-		{
-		my $counter = 1 ;
-		my $alias_c = "${alias}_$counter" ;
-
-		while (exists $color_alias{$alias_c})
-			{
-			$counter++ ;
-			$alias_c = "${alias}_$counter" ;
-			}
-
-		$color_alias{$alias_c} = $color_name ;
-		}
-	else
-		{
-		$color_alias{$alias} = $color_name ;
-		}
-
+	#---------------------------------------------------------------------
 	my $COLOR  = sub { COLOR($color_name, @_) } ;
 
-	my $name =  uc($color_name) ;
+	$name = GetUniqColorName(uc($color_name)) ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $COLOR, as => $name});
 
-	$name =  ucfirst($color_name) ;
+	$name =  GetUniqColorName(ucfirst($color_name)) ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $COLOR, as => $name });
 
+	#---------------------------------------------------------------------
 	my $COLOR_ = sub { COLOR($color_name, @_, 0) } ;
 
-	$name =  '_' . uc($color_name) . '_' ;
+	$name =  GetUniqColorName('_' . uc($color_name) . '_') ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $COLOR_, as => $name });
 
+	#---------------------------------------------------------------------
 	my $PRINT_COLOR = eval "sub { _print(\\*STDERR, \\&" . uc($color_name) . ", \@_) } " ;
 
-	$name =  'Print' . ucfirst($color_name) ;
+	$name =  GetUniqColorName('Print' . ucfirst($color_name)) ;
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $PRINT_COLOR, as => $name });
 
+	#---------------------------------------------------------------------
 	my $ST_COLOR = eval "sub { _ST(\\&" . uc($color_name) . ", [caller(0)], \@_) }" ;
 
 	my $letter = uc(substr $color_name, 0, 1) ;
 	($number) = $color_name =~ m/(\d+)$/ ; 
 	$number //= '' ;
 
-	$name =  'S' . $letter . $number . 'T' ;
+	my $uname = GetUniqColorName(uc($initial) . $number) ;
 
+	$name =  'S' . $uname . 'T' ;
+ 
 	push @exports, $name ;
 	Sub::Install::reinstall_sub ({ code => $ST_COLOR, as => $name });
 	}
@@ -105,7 +124,7 @@ require Exporter;
 my @exports = 
 	(
 	CreateColorFunctions
-	(qw/
+		(qw/
 		debug   
 		debug2  
 		debug3  
@@ -144,7 +163,7 @@ my @exports =
 		no_match
 		ignoring_local_rule
 		
-	/),
+		/),
 	qw(
 		Say Print
 
@@ -163,7 +182,7 @@ my @exports =
 @ISA     = qw(Exporter) ;
 @EXPORT  = @exports ;
 		
-$VERSION = '0.08' ;
+$VERSION = '0.09' ;
 
 #-------------------------------------------------------------------------------
 
@@ -200,16 +219,29 @@ sub GetScreenWidth { (chars() // 10_000) - ( length($indentation x ($indentation
 
 sub SetDefaultColors
 {
-my ($default_colors) = @_ ;
-$default_colors //= {} ;
-	
-$cc{$_} = { %{$default_colors->{$_} // {}}, %{$cc{$_} // {}} } for keys %$default_colors ;
+my ($colors) = @_ ;
+my @colors ;
 
-# colors defined on the command line
-$cc{$cd}{$_} = $user_cc{$cd}{$_} for keys %{$user_cc{$cd}} ;
+use Data::TreeDumper ;
+#print DumpTree $colors, 'colors' ;
 
-CreateColorFunctions sort keys %{$cc{$cd}} ;
+for my $class (keys %$colors)
+	{
+	for (my $i = 0 ; $i < $#{$colors->{$class}} ; $i += 2)
+		{
+		push @colors, [ $colors->{$class}[$i] => $colors->{$class}[$i +1] ] ;
+		}
+
+	push @colors, { [ $colors->{$class}[$_] => $user_cc{$class}{$_} ] } for keys %{$user_cc{$class}} ;
+		 
+	$cc{$class}{$_->[0]} = $_->[1] for @colors ;
+	}
+
+#print DumpTree \%cc ;
+
+CreateColorFunctions(map { $_->[0] } @colors) ;
 }
+
 
 sub GetColor
 {
@@ -362,7 +394,7 @@ eval
 	    else     { print STDERR $color->(Data::TreeDumper::DumpTree(@_, DUMPER_NAME => "SDT $f:$l")) }
 	} ;
 
-Say Error "SxT: error: Odd number of arguments @ $f:$l" if $@ ;
+Say Error "SxT: error: Odd number of arguments @ $f:$l $@" if $@ ;
 }
 
 #-------------------------------------------------------------------------------

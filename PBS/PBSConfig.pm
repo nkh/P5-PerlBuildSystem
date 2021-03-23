@@ -185,6 +185,7 @@ do
 while(@ARGV) ;
 
 my %cc = RunUniquePluginSub({}, 'GetColorDefinitions') ;
+
 PBS::Output::SetDefaultColors(\%cc) ;
 
 push @{$config->{TARGETS}}, @targets ;

@@ -11,23 +11,6 @@ use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 
-#~ my $my_flag ;
-#~ my @my_flag_list ;
-
-#~ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
-	#~ (
-	#~ 'xxxxx|long_xxxxx',
-	#~ \$my_flag,
-	#~ "short description.",
-	#~ 'documentation',
-	
-	#~ 'xxxxx|long_xxxxx=s',
-	#~ \@my_flag_list,
-	#~ "short description.",
-	#~ 'documentation',
-	#~ ) ;
-	
-
 #~ sub PostPbs
 #~ {
 #~ my ($build_success, $pbs_config, $dependency_tree, $inserted_nodes) = @_ ;
