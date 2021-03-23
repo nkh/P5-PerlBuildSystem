@@ -41,8 +41,8 @@ if(exists $tree->{__PARALLEL_DEPEND} || exists $tree->{__PARALLEL_NODE})
 	{
 	my $triggered = (exists $tree->{__CHECKED} and exists $tree->{__TRIGGERED}) ? ', triggered' : '' ;
 	
-	Say EC "<I>Check: <I3>'$tree->{__NAME}'<W>, remote node$triggered" if exists $tree->{__PARALLEL_NODE} ;
-	Say EC "<I>Check: <I3>'$tree->{__NAME}'<W>, remote HEAD node$triggered" if exists $tree->{__PARALLEL_DEPEND} ;
+	Say EC "<I>Check: <I3>$tree->{__NAME}<W>, remote node$triggered" if exists $tree->{__PARALLEL_NODE} ;
+	Say EC "<I>Check: <I3>$tree->{__NAME}<W>, remote HEAD node$triggered" if exists $tree->{__PARALLEL_DEPEND} ;
 	}
 
 return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
@@ -134,12 +134,12 @@ unless (NodeIsSource($tree))
 		$depended_at .= $rule->{LINE} ;
 		}
 
-	Say EC "<I>Check: <I3>'$name'<W> inserted and depended in different pbsfiles<I2>, inserted: $inserted_at, depended: $depended_at"
+	Say EC "<I>Check: <I3>$name<W> inserted and depended in different pbsfiles<I2>, inserted: $inserted_at, depended: $depended_at"
 		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{__MATCHED_SUBPBS};
 
 	if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
 		{
-		Say EC "<I>Check: <I3>'$name'<W>, no dependencies"
+		Say EC "<I>Check: <I3>$name<W>, no dependencies"
 			. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
 			. "<I2>, inserted: $inserted_at"
 			. ($tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
@@ -147,7 +147,7 @@ unless (NodeIsSource($tree))
 		}
 	elsif(0 == $matching_rules)
 		{
-		Say EC "<I>Check: <I3>'$name' <W>no matching rules<I2>, inserted: $inserted_at" ;
+		Say EC "<I>Check: <I3>$name <W>no matching rules<I2>, inserted: $inserted_at" ;
 		}
 	}
 
@@ -176,7 +176,7 @@ else
 $full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
 $tree->{__BUILD_NAME} = $full_name ;
 
-Say EC "<I>Place: <I3>'$name'<I2>" 
+Say EC "<I>Place: <I3>$name<I2>" 
 	. ($is_alternative_source ? ' -> [R]' : '')
 	. ($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> '$full_name'" : '')
 	if $pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/ ;
@@ -201,7 +201,7 @@ for my $dependency_name (sort keys %$tree)
 			{
 			if($dependency_name =~ /$trigger_regex/)
 				{
-				Say Info2 "Trigger: source '$dependency_name' matches /$trigger_regex/" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				Say Info2 "Trigger: source $dependency_name matches /$trigger_regex/" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				$trigger_match++ ;
 
 				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
@@ -209,12 +209,12 @@ for my $dependency_name (sort keys %$tree)
 				$triggered++ ;
 
 				$tree->{__CHILDREN_TO_BUILD}++ ;
-				push @tally, EC "<I2>Tally: <I2>'$name' [$tree->{__CHILDREN_TO_BUILD}]<I2>, child: '$dependency_name'"
+				push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
 					if $pbs_config->{DISPLAY_JOBS_INFO} ;
 				}
 			}
 
-		Say Info2 "Trigger: '$dependency_name' not triggered"
+		Say Info2 "Trigger: $dependency_name not triggered"
 			 if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 
 		#source file are not checked but they must be located
@@ -242,7 +242,7 @@ for my $dependency_name (sort keys %$tree)
 		$tree->{$dependency_name}{__BUILD_NAME} = $full_name ;
 		$tree->{$dependency_name}{__BUILD_DONE}++ ;
 
-		Say EC "<I>Place: <I3>'$dependency_name' <I2>-> '$full_name'"
+		Say EC "<I>Place: <I3>$dependency_name <I2>-> $full_name"
 			if $pbs_config->{DISPLAY_FILE_LOCATION} && $dependency_name !~ /^__/ ;
 		}
 	elsif(exists $dependency->{__CHECKED})
@@ -266,7 +266,7 @@ for my $dependency_name (sort keys %$tree)
 			
 			push @$build_sequence, $dependency if $dependency->{__PARALLEL_DEPEND} ;
 			
-			push @tally, EC "<I2>Tally: <I2>'$name' [$tree->{__CHILDREN_TO_BUILD}] <I2>, child: '$dependency_name'"
+			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
 				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
 			}
 		}
@@ -301,7 +301,7 @@ for my $dependency_name (sort keys %$tree)
 			push @{$dependency->{__PARENTS}}, $tree ;
 			push @dependency_triggering, $dependency ;
 
-			push @tally, EC "<I2>Tally: <I2>'$name' [$tree->{__CHILDREN_TO_BUILD}] <I2>, child: '$dependency_name'"
+			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
 				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
 			}
 		}
@@ -623,7 +623,7 @@ unless(file_name_is_absolute($file))
 	$located_file =~ s!//!/! ;
 	
 	my $file_found = 0 ;
-	Say EC "<I2>Place: target: <I3>'$unlocated_file'" if $display_search_info ;
+	Say EC "<I2>Place: target: <I3>$unlocated_file" if $display_search_info ;
 	
 	if(-e $located_file)
 		{

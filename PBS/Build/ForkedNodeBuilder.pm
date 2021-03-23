@@ -163,10 +163,8 @@ STDOUT->autoflush(1) ;
 open(OLDERR, ">&STDERR") ;
 open STDERR, '>>&=' . fileno(STDOUT) or die "Can't redirect STDERR to '$redirection_file': $!" ;
 
-if(defined $pbs_config->{DISPLAY_JOBS_INFO})
-	{
-	PrintInfo2 "Build: building node: '$node_name', level: $node->{__LEVEL}, stats: $node_build_sequencer_info.\n" ;
-	}
+PrintInfo2 "Build: building node: '$node_name', level: $node->{__LEVEL}, stats: $node_build_sequencer_info.\n"
+	if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
 
 if(defined $node)
 	{

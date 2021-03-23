@@ -246,8 +246,8 @@ if($pbs_config->{DISPLAY_PROGRESS_BAR})
 
 if($pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
 	{
-	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
+	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 	}
 	
 if($pbs_config->{QUIET})
@@ -314,6 +314,8 @@ $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPEN
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCY_REGEX} ;
 $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG} ;
 
+$pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING}++ if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
+
 $pbs_config->{DISPLAY_NO_STEP_HEADER} = 0 if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
 
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
@@ -342,14 +344,14 @@ $pbs_config->{DISPLAY_SEARCH_INFO}++ if $pbs_config->{DISPLAY_SEARCH_ALTERNATES}
 
 if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{
-	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
 	$pbs_config->{DISPLAY_NO_PROGRESS_BAR}++ ;
-	$PBS::Shell::silent_commands = 0 ;
-	$PBS::Shell::silent_commands_output = 0 ;
+	undef $pbs_config->{DISPLAY_PROGRESS_BAR} ;
+
+	$pbs_config->{DISPLAY_NO_BUILD_HEADER} = 0 ;
+	$PBS::Shell::silent_commands           = 0 ;
+	$PBS::Shell::silent_commands_output    = 0 ;
 
 	$pbs_config->{DISPLAY_NODE_BUILD_NAME}++ ; 
-
-	undef $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
 
 	unless ($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
 		{

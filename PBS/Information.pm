@@ -51,7 +51,7 @@ $type .= PBS::Build::NodeBuilderUsesPerlSubs($file_tree) ? '<P> ' : '<S> '
 	if $pbs_config->{DISPLAY_BUILDER_INFORMATION} ;
 
 my $tab = $PBS::Output::indentation ;
-	
+
 use Term::Size::Any qw(chars) ;
 
 my $terminal_width = chars() || 10_000 ;
@@ -69,9 +69,11 @@ my $tag = $parallel_depend
 			: '' ;
 $tag .= GetColor('info3') ;
 
+my $pid = $parallel_node ? _INFO2_ ", pid: $file_tree->{__PARALLEL_DEPEND}" : '' ;
+
 $node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
-			? _INFO3_("Node$tag: $type'$name':") . _INFO2_(" $build_name\n")
-			: _INFO3_ "Node$tag: $type'$name':\n" ;
+			? _INFO3_("Node$tag: $type$name") . _INFO2_(", " . GetRunRelativePath($pbs_config, $build_name, 1) . "$pid\n")
+			: _INFO3_ "Node$tag: $type$name$pid\n" ;
 	
 return $node_header, $type, $tab ;
 }
@@ -86,9 +88,7 @@ my ($current_node_info, $log_node_info, $node_info) = ('', '', '') ;
 my ($name, $build_name) = ($file_tree->{__NAME}, $file_tree->{__BUILD_NAME} || '') ;
 my ($node_header, $type, $tab) = GetNodeHeader($file_tree, $pbs_config) ;
 
-my $no_output = $pbs_config->{DISPLAY_NO_BUILD_HEADER} ;
-
-$node_info .= $node_header unless $no_output ;
+$node_info .= $node_header ;
 $log_node_info .= $node_header ;
 
 #----------------------
@@ -97,27 +97,6 @@ $log_node_info .= $node_header ;
 if(NodeIsSource($file_tree))
 	{
 	$current_node_info = WARNING2 "${tab}Type: 'source node', source node must exist not be generated.\n\n" ;
-	$log_node_info .= $current_node_info ;
-	$node_info     .= $current_node_info ;
-	}
-
-#----------------------
-# parallel node 
-#----------------------
-my $parallel_depend   = exists $file_tree->{__PARALLEL_DEPEND} ;
-my $parallel_depended = exists $file_tree->{__PARALLEL_NODE} ;
-my $parallel_node     = $parallel_depend || $parallel_depended ;
-
-if($parallel_node)
-	{
-	my $tag = $parallel_depend
-			? _WARNING2_ ('∥ ')
-			: $parallel_depended
-				? _INFO2_ ('∥ ')
-				: '' ;
-	$tag .= GetColor('info2') ;
-
-	$current_node_info = INFO2 "${tab}${tag}Pid: $file_tree->{__PARALLEL_NODE}\n" ;
 	$log_node_info .= $current_node_info ;
 	$node_info     .= $current_node_info ;
 	}
@@ -137,6 +116,8 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_ORIGIN})
 				? ''
 				: ":$file_tree->{__INSERTED_AT}{INSERTION_RULE_LINE}") ;
 
+	$inserted = GetRunRelativePath($pbs_config, $inserted, 1) ;
+
 	if(exists $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}) # inserted and depended in different pbsfiles
 		{
 		my $o_inserted = $file_tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} ;
@@ -146,12 +127,14 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_ORIGIN})
 					. ($o_inserted->{INSERTION_RULE_NAME} eq '__ROOT'
 						? ''
 						: ":$o_inserted->{INSERTION_RULE_LINE}") ;
-
+		
+		$origin = GetRunRelativePath($pbs_config, $origin, 1) ;
+		
 		$current_node_info =  $origin ne $inserted ? INFO2 "${tab}Originated at rule: $origin\n" : '' ;
 		}
 
 	$current_node_info .= INFO "${tab}Inserted at rule: $inserted\n" ;
-	$current_node_info .= INFO "${tab}Pbsfile:$file_tree->{__INSERTED_AT}{INSERTION_FILE}\n\n"
+	$current_node_info .= INFO "${tab}Pbsfile: $file_tree->{__INSERTED_AT}{INSERTION_FILE}\n\n"
 				 unless $file_tree->{__INSERTED_AT}{INSERTION_RULE_FILE} eq $file_tree->{__INSERTED_AT}{INSERTION_FILE} ;
 	
 	$log_node_info .= $current_node_info ;
@@ -175,34 +158,34 @@ if ($generate_for_log || (($pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{
 						{
 						unless($pbs_config->{NO_NODE_INFO_LINKS})
 							{
-							my ($link) = /^([^:]*)/ ;
-
+							my ($link) = /^([^,]*)/ ;
+							
 							my $file = exists $inserted_nodes->{$link}{__BUILD_NAME}
 									? "$inserted_nodes->{$link}{__BUILD_NAME}.pbs_log"
 									: '' ;
-
-							my $file_link = INFO2 "node info: $file" ;
 							
-							# set children node info links
+							my $file_link = INFO2 $file ;
+							
+							# set children log links
 							$tree->{$_}{$file_link} = [] ;
 							}
 						}
-
-					return ('HASH', undef, sort { $b =~ /node info:/ } grep { ! /node info/ unless $depth} grep { ! /^__/} keys %$tree) ;
+						
+					return ('HASH', undef, sort { $b =~ /log/ } grep { ! /log/ unless $depth} grep { ! /^__/} keys %$tree) ;
 					}
 				
 				return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
 				} ;
-
+	
 	$current_node_info = INFO DumpTree
 					$file_tree->{__DEPENDENCY_TO},
 					"Dependents:",
 					FILTER => $parent_tree,
 					DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1, NO_NO_ELEMENTS => 1 ;
-
+	
 	$log_node_info .= $current_node_info . "\n" ;
 	$node_info     .= $current_node_info . "\n" if $pbs_config->{DISPLAY_NODE_PARENTS} || $pbs_config->{DISPLAY_NODE_ORIGIN} ;
- 	}
+	}
 
 #----------------------
 # environment variables
@@ -285,7 +268,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 			&& ! $pbs_config->{NO_NODE_INFO_LINKS}
 			) 
 			{
-			my $file_link = INFO2 "node info: $inserted_nodes->{$_}{__BUILD_NAME}.pbs_info" ;
+			my $file_link = INFO2 "log: $inserted_nodes->{$_}{__BUILD_NAME}.pbs_info" ;
 			$current_node_info .= "${tab}${tab}$file_link\n" ;
 			}
 		}
@@ -402,13 +385,11 @@ for my $rule (@rules_with_builders)
 			{
 			$builder = $rule->{DEFINITION}{BUILDER} ;
 			$has_bo++ ;
-
-			$current_node_info = $node_header if $no_output ; # force a header  when displaying a warning
+			
 			$current_node_info .= WARNING "${tab}Build: using override builder rule: $rule_info\n" ;
 			}
 		elsif($has_bo)
 			{
-			$current_node_info = $node_header if $no_output ;
 			$current_node_info .= WARNING "${tab}Build: ignoring builder, rule: $rule_info\n" ;
 			}
 		else
@@ -487,7 +468,7 @@ sub GetParentsNames
 {
 my $node = shift ;
 
-map {/^([^:]+)/; $1} grep {! /^__/} keys %{$node->{__DEPENDENCY_TO}} ;
+map {/^([^,]+)/; $1} grep {! /^__/} keys %{$node->{__DEPENDENCY_TO}} ;
 }
 
 #----------------------------------------------------------------------

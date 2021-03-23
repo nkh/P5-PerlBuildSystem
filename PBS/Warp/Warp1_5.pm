@@ -595,11 +595,11 @@ for my $node (@$nodes_to_check)
 		{
 		if ($remove_this_node)
 			{
-			Say Info "\e[KWarp: removing: " . INFO3("'$node'") . INFO2(" [" . join(' ,', @reasons) . "]") ;
+			Say Info "\e[KWarp: removing: " . INFO3($node) . INFO2(" [" . join(' ,', @reasons) . "]") ;
 			}
 		else
 			{
-			Say Info "\e[KWarp: OK: " . INFO3("'$node'") unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+			Say Info "\e[KWarp: OK: " . INFO3($node) unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 			}
 		}
 
@@ -607,7 +607,7 @@ for my $node (@$nodes_to_check)
 		{
 		my @nodes_to_remove = ($node) ;
 		
-		Say Info "\e[KWarp: pruning from " . INFO3("'$node'")
+		Say Info "\e[KWarp: pruning from " . INFO3($node)
 			if $pbs_config->{DISPLAY_WARP_REMOVED_NODES} && @nodes_to_remove ;
 
 		while(@nodes_to_remove)

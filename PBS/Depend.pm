@@ -75,7 +75,7 @@ my $has_dependencies = 0 ;
 my @has_matching_non_subpbs_rules ;
 my @subpbses ; # list of subpbs matching this node
 
-Say EC "<I2>Rule: target: <I3>'$node_name'<I2>, rules: " . scalar(@{$dependency_rules})
+Say EC "<I2>Rule: target: <I3>$node_name<I2>, rules: " . scalar(@{$dependency_rules})
 	if $node_name !~ /^__/ && ($tree->{__PBS_CONFIG}{DEBUG_DISPLAY_DEPENDENCY_REGEX} || $pbs_config->{DISPLAY_DEPENDENCY_RESULT}) ;
 
 for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
@@ -86,7 +86,7 @@ for my $post_build_command (PBS::PostBuild::GetPostBuildRules($load_package))
 		{
 		push @{$tree->{__POST_BUILD_COMMANDS}}, $post_build_command ;
 		
-		Say EC "<I3>$indent'" . GetRunRelativePath($pbs_config, $node_name) . "'"
+		Say EC "<I3>$indent" . GetRunRelativePath($pbs_config, $node_name)
 			. "<I>, post build command: $post_build_command->{NAME}: "
 			. GetRunRelativePath($pbs_config, $post_build_command->{FILE})
 			. ":$post_build_command->{LINE}"
@@ -287,13 +287,13 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					Say EC "<I3>${indent}'$short_node_name'\n<I>$indent${indent}subpbs match<I2>, pbsfile:'$subpbs_file'";
+					Say EC "<I3>${indent}$short_node_name\n<I>$indent${indent}subpbs match<I2>, pbsfile: $subpbs_file";
 					Say EC "<I2>$indent${indent}$node_matching_rule" if $display_node_matching_rule ; 
 					Say EC "<I2>$indent${indent}$node_insertion_rule" if $display_node_insertion_rule ; 
 					}
 				else
 					{
-					Say EC "<I3>${indent}'$short_node_name'<I> subpbs match<I2>, pbsfile:'$subpbs_file'"
+					Say EC "<I3>${indent}$short_node_name<I> subpbs match<I2>, pbsfile: $subpbs_file"
 						. ($display_node_matching_rule ? ", $node_matching_rule" : '')
 						. ($display_node_insertion_rule ? ", $node_insertion_rule" : '')
 					}
@@ -402,7 +402,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 				
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					Say EC $em->("$indent<I3>'$short_node_name'$node_matches${node_type}${forced_trigger}")
+					Say EC $em->("$indent<I3>$short_node_name$node_matches${node_type}${forced_trigger}")
 						. (  @dependency_names ? '' : '<I2> => ∅ ' )
 						. "<I2>$node_matching_rule$node_insertion_rule" ;
 					
@@ -411,7 +411,7 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 					}
 				else
 					{
-					Say EC "$indent<I3>'$short_node_name'${node_type}${forced_trigger}$node_matches"
+					Say EC "$indent<I3>$short_node_name${node_type}${forced_trigger}$node_matches"
 						. (@dependency_names
 							? ('<I> => '  . GetNodesTagged($pbs_config, $inserted_nodes, $tree, $em, @dependency_names))
 							: '<I2> => ∅ ')
@@ -566,7 +566,7 @@ for my $dependency (@node_dependencies)
 
 if(@subpbses > 1)
 	{
-	Say EC "<I3>$indent'$node_name' <E>" . scalar(@subpbses) . " matching subpbs rules." ;
+	Say EC "<I3>$indent$node_name <E>" . scalar(@subpbses) . " matching subpbs rules." ;
 
 	for (@subpbses)
 		{
@@ -654,11 +654,11 @@ for my $dependency (@dependencies)
 			sub format_trigger_message
 				{
 				  INFO("${PBS::Output::indentation}Trigger:")
-				. _INFO3_(" '$_[1]'")
+				. _INFO3_(" $_[1]")
 				. _INFO_
 					(
 					" $_[2]"
-					. ", triggered by: " . _INFO3_("'$_[3]'")
+					. ", triggered by: " . _INFO3_($_[3])
 					. _INFO2_ (" @ '" . GetRunRelativePath($_[0], $_[4]) . "'\n")
 					) 
 				}
@@ -960,11 +960,11 @@ if(@has_matching_non_subpbs_rules)
 		my ($dependency, $type) = @$_ ;
 		
 		# keep parent relationship
-		my $key_name = $node_name . ': ' ;
+		my $key_name = $node_name ;
 		
 		for my $rule (@{$dependency_rules{$dependency}})
 			{
-			$key_name .= "rule: " . join(':', @$rule) . " "  ;
+			$key_name .= ', ' . join(':', @$rule)  ;
 			}
 		
 		$tree->{$dependency}{__DEPENDENCY_TO}{$key_name} = $tree->{__DEPENDENCY_TO} ;
@@ -1143,7 +1143,7 @@ else
 		my $inserted_at = GetInsertionRule($tree) ;
 		$inserted_at = GetRunRelativePath($pbs_config, $inserted_at) ;
 		
-		Say EC "<I3>$PBS::Output::indentation'$short_node_name'<W> no matching rules<I2>, inserted at: $inserted_at'" ;
+		Say EC "<I3>\t$short_node_name<W> no matching rules<I2>, inserted at: $inserted_at" ;
 		}
 		
 	$rule_time = tv_interval($t0_rules, [gettimeofday]) ;
@@ -1201,7 +1201,7 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			{
 			RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $tree, $inserted_nodes, \@build_sequence, $tree) ;
 			
-			Say EC "<I3>$indent'$node_name'<W3> [IMMEDIATE_BUILD]" ;
+			Say EC "<I3>$indent$node_name<W3> [IMMEDIATE_BUILD]" ;
 			
 			$PBS::Output::indentation_depth++ ;
 			
@@ -1218,12 +1218,12 @@ if($tree->{__IMMEDIATE_BUILD}  && ! exists $tree->{__BUILD_DONE})
 			}
 		else
 			{
-			#PrintInfo "$indent" . _INFO3_("'$node_name'") . _INFO_(' nothing to do') . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
+			#PrintInfo $indent . _INFO3_($node_name) . _INFO_(' nothing to do') . _WARNING3_ (" [IMMEDIATE_BUILD]\n") ;
 			}
 		}
 	else
 		{
-		Say EC "$indent<I3>'$node_name'<W> skipped [IMMEDIATE_BUILD]" ;
+		Say EC "$indent<I3>$node_name<W> skipped [IMMEDIATE_BUILD]" ;
 		}
 	}
 	
@@ -1360,8 +1360,8 @@ if($dependency_is_source)
 	}
 else
 	{
-	$linked_node_info  = _INFO3_ "$link_indent" . "'$short_dependency_name'" ;
-	$linked_node_info .= _INFO3_ ' [T]'  if exists $dependency->{__TRIGGER_INSERTED} ;
+	$linked_node_info  = _INFO3_ $link_indent . $short_dependency_name ;
+	$linked_node_info .= _INFO3_ ' [T]' if exists $dependency->{__TRIGGER_INSERTED} ;
 	
 	push @link_type, " ᴸᴵᴺᴷ" ;
 	push @link_type, $local_node ? 'ˡᵒᶜᵃˡ' : 'ᵒᵗʰᵉʳ ᵖᵇˢ' ;
@@ -1421,8 +1421,8 @@ join ' ', map
 					: '' ;
 					
 		DependencyIsSource($tree, $_, $inserted_nodes)
-			? "<W>" . $em->($r_name) . $cache . "<W>'"
-			: "<I3>" . $em->($r_name) . $cache . "<I3>'"
+			? "<W>" . $em->($r_name) . $cache 
+			: "<I3>" . $em->($r_name) . $cache
 		}
 		@nodes 
 }

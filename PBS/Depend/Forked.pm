@@ -458,7 +458,7 @@ my $main_graph =
 
 my (%nodes, %targets, %not_linked) ;
 
-for my $graph ( $main_graph, values %graphs)
+for my $graph ($main_graph, values %graphs)
 	{
 	$targets{$graph->{TARGET}} = $graph ;
 	
@@ -470,28 +470,25 @@ for my $graph ( $main_graph, values %graphs)
 			{
 			my $main_n = $graph->{PID} == $$ ? ' <M>' : '' ;
 			my $main_p = $nodes{$_}{PID} == $$ ? ' <M>' : '' ;
-			my $skip_node_pull ;
 			
-			if($pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE})
+			if(exists $graph->{NODES}{$_}{__PARALLEL_DEPEND})
 				{
-				if(exists $graph->{NODES}{$_}{__PARALLEL_DEPEND})
-					{
-					$skip_node_pull++ ;
-					
-					#Say Debug "Depend∥ : fetch $_, skipping $graph->{PID}$main_n, previous: $nodes{$_}{PID}$main_p" ;
-					}
-				elsif(exists $nodes{$_}{NODES}{$_}{__PARALLEL_DEPEND})
-					{
-					#Say Debug "Depend∥ : fetch $_, $graph->{PID}$main_n overrides $nodes{$_}{PID}$main_p" ;
-					}
-				else
-					{
-					Say Error "Depend∥ : fetch $_, duplicate node in $graph->{PID}$main_n, previous: $nodes{$_}{PID}$main_p" ;
-					}
+				#Say Debug "Depend∥ : fetch $_, skipping $graph->{PID}$main_n, previous: $nodes{$_}{PID}$main_p"
+				#	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE}
+			
+				# nodes that start another depend process gets overridden
+				next ;
 				}
 			
-			# nodes that start another depend process gets overridden
-			next if $skip_node_pull ;
+			if(exists $nodes{$_}{NODES}{$_}{__PARALLEL_DEPEND})
+				{
+				#Say Debug "Depend∥ : fetch $_, $graph->{PID}$main_n overrides $nodes{$_}{PID}$main_p"
+				#	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
+				}
+			else
+				{
+				Say Error "Depend∥ : fetch $_, duplicate node in $graph->{PID}$main_n, previous: $nodes{$_}{PID}$main_p" ;
+				}
 			}
 		
 		$nodes{$_} = $graph ;
@@ -513,8 +510,9 @@ for my $node (keys %nodes)
 		$display_info &&= ! $main_graph ;
 		
 		die ERROR("Depend∥ : merge: $node already depended") . "\n"
-			if ! $main_graph and exists $inserted_nodes->{$node}{__DEPENDED} ;
-			# except if it's a sub graph node that needs to be linked
+			if exists $inserted_nodes->{$node}{__DEPENDED}
+				# except if it's a sub graph node that needs to be linked
+				and ! $main_graph ;
 		}
 	else
 		{
@@ -575,16 +573,22 @@ for my $graph ( values %graphs)
 	my $links = scalar keys %{$graph->{LINKED}} ;
 	$linked_dependers++  if $links ;
 	
-	if($links and $links == $not_depended and ! $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE})
+	if($not_depended != $links)
 		{
-		Say User "Depend∥ : $graph->{PID} links: $links/$not_depended" if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
+		Say Warning "Depend∥ : $graph->{PID} links: not linked: $not_depended/$links" ;
+	
+		for my $not_depended (keys %{$graph->{NOT_DEPENDED}})
+			{
+			Say Warning "         $not_depended" unless exists $graph->{LINKED}{$not_depended} ;
+			}
 		}
 	else
 		{
  		for (keys %{$graph->{LINKED}})
 			{
-			Say EC "<I3>Depend∥ : chain <I3>$_ <I3>< $graph->{PID} - $graph->{ADDRESS} >"
-				. " to < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} >" ;
+			Say EC "<I>Depend∥ : chain <I3>$_ <I2>< $graph->{PID} - $graph->{ADDRESS} >"
+				. " to < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} >"
+					if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 			
 			if($graph->{PID} == $$)
 				{
@@ -603,7 +607,8 @@ for my $graph ( values %graphs)
 						
 						$inserted_nodes->{$node}{$element} = $inserted_nodes->{$element} ;
 						
-						Say Info2 "                $element" ;
+						Say Info2 "                $element"
+							if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 						}
 					else
 						{
@@ -644,7 +649,7 @@ my ($pbs_config, $data) = @_ ;
 my ($node, $address, $args) = @{$data}{qw. NODE ADDRESS ARGS .} ;
 
 local $PBS::Output::indentation_depth = 0 ;
-Say Info "Link∥ : " . _INFO3_("'$node->{__NAME}'") . _INFO2_(" @ $$") ;
+Say Info "Link∥ : " . _INFO3_($node->{__NAME}) . _INFO2_(" @ $$") ;
 
 }
 

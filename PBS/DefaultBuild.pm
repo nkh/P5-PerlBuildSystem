@@ -75,7 +75,7 @@ my $start_nodes = scalar(keys %$inserted_nodes) ;
 my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
 my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
 
-my $short_target = $em->( join ', ', map {"'$_'"} @$targets) ; 
+my $short_target = $em->( join ', ', @$targets) ; 
 
 my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
@@ -394,7 +394,7 @@ eval
 			
 			if(exists $inserted_nodes->{$node_name}{__TRIGGER_INSERTED})
 				{
-				Say EC "<I>Check: <I3>'$inserted_nodes->{$node_name}{__NAME}' [T]"
+				Say EC "<I>Check: <I3>$inserted_nodes->{$node_name}{__NAME} [T]"
 					 unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 
 				my @triggered_build_sequence ;
