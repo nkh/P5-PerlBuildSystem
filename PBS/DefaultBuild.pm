@@ -256,17 +256,19 @@ if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 
 $pbs_runs = PBS::PBS::GetPbsRuns() ;
 
-my $nodes = scalar(keys %$inserted_nodes) ;
-my $non_warp_nodes = scalar(grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes) ;
-my $warp_nodes = $nodes - $non_warp_nodes ;
+my $nodes          = scalar keys %$inserted_nodes ;
+my $non_warp_nodes = scalar grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes ;
+my $warp_nodes     = $nodes - $non_warp_nodes ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes", tv_interval ($t0_depend, [gettimeofday])) ;
+	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes", tv_interval ($t0_depend, [gettimeofday]))
+		unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 else
 	{
-	Say Info "$Depend: pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes" unless defined $pbs_config->{QUIET};
+	Say Info "$Depend: pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes"
+		unless $pbs_config->{QUIET} || $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 
 PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
@@ -423,7 +425,8 @@ eval
 	PrintInfo $stat_message unless $stat_message eq ''  ;
 	} ;
 
-Say Info sprintf("Check: time: %0.2f s.", tv_interval ($t0_check, [gettimeofday])) if $pbs_config->{DISPLAY_CHECK_TIME} ;
+Say Info sprintf("Check: time: %0.2f s.", tv_interval ($t0_check, [gettimeofday]))
+	if $pbs_config->{DISPLAY_CHECK_TIME} and ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
 
 if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	{

@@ -1032,11 +1032,11 @@ my ($rebuild_because_of_digest, $reasons, $number_of_differences) = (0, ['digest
 if(NodeIsGenerated($node))
 	{
 	my $digest_file_name = GetDigestFileName($node) ;
-
+	
 	if(-e $digest_file_name)
 		{
 		my ($digest, $sources, $ENV, $run_commands, $pbs_digest) ;
-
+		
 		unless (($digest, $sources, $ENV, $run_commands, $pbs_digest) = do $digest_file_name) 
 			{
 			PrintWarning "Digest: couldn't parse '$digest_file_name': $@" if $@;
@@ -1046,12 +1046,12 @@ if(NodeIsGenerated($node))
 			{
 			($rebuild_because_of_digest, $reasons, $number_of_differences)
 				= RebuildBecauseOfPbsDependency($pbs_config, $pbs_digest) ;
-
+			
 			unless ($rebuild_because_of_digest)
 				{
 				my $node_digest_no_md5 = GetNodeDigestNoMD5($node) ;
 				my @node_digest_no_md5_keys = keys %$node_digest_no_md5 ;
-
+				
 				my @size_sorted =
 					(
 						(
@@ -1065,7 +1065,7 @@ if(NodeIsGenerated($node))
 						 grep { defined $node_digest_no_md5->{$_} } @node_digest_no_md5_keys
 						),
 					) ;
-
+				
 				my $node_digest = 
 					{
 					%{GetPackageDigest($node->{__LOAD_PACKAGE})},
@@ -1200,21 +1200,22 @@ for my $key (@$order)
 	{
 	if(exists $digest->{$key})
 		{
-		$expected_digest->{$key} //= GetFileMD5($inserted_nodes->{$key}{__BUILD_NAME}) // "Can't compute '$key' MD5" ;
-	
+		$expected_digest->{$key} //= GetFileMD5($inserted_nodes->{$key}{__BUILD_NAME}) // "Can't compute '$key' MD5"
+			if $key ne '__DEPENDING_PBSFILE' ;
+		
 		if($trigger)
 		 	{
 			if( my $trigger_regex = first { $key =~ $_ } @{$pbs_config->{TRIGGER}} )
 				{
 				#PrintUser "Trigger: $key matches '$trigger_regex' (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
-
+				
 				push @digest_different_text, "$key [--trigger] " ;
 			
 				$digest_is_different++ ;
 				last ;
 				}
 			}
-
+		
 		if
 			(
 			   (defined $digest->{$key} && ! defined $expected_digest->{$key})
@@ -1405,9 +1406,6 @@ my $t0_generate_digest_get = [gettimeofday] ;
 my $node = shift ;
 
 PrintDebug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
-
-# TODO: Add plugins to digest  map {$_ => GetFileMD5($_)} PBS::Plugin::GetLoadedPlugins(),
-# TODO: Add pbs install to digest
 
 my $package_digest = GetPackageDigest($node->{__LOAD_PACKAGE}) ;
 my $node_digest = GetNodeDigest($node) ;

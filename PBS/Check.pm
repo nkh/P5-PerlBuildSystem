@@ -41,8 +41,10 @@ if(exists $tree->{__PARALLEL_DEPEND} || exists $tree->{__PARALLEL_NODE})
 	{
 	my $triggered = (exists $tree->{__CHECKED} and exists $tree->{__TRIGGERED}) ? ', triggered' : '' ;
 	
-	Say EC "<I>Check: <I3>$tree->{__NAME}<W>, remote node$triggered" if exists $tree->{__PARALLEL_NODE} ;
-	Say EC "<I>Check: <I3>$tree->{__NAME}<W>, remote HEAD node$triggered" if exists $tree->{__PARALLEL_DEPEND} ;
+	$PBS::Output::indentation_depth = 0 ;
+
+	Say EC "<I>Check∥ : <I3>$tree->{__NAME}<I2>$triggered, pid: $$" if exists $tree->{__PARALLEL_NODE} ;
+	Say EC "<I>Check<W>∥ <I>: <I3>$tree->{__NAME}<I2>$triggered, pid: $$" if exists $tree->{__PARALLEL_HEAD} ;
 	}
 
 return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
@@ -137,17 +139,23 @@ unless (NodeIsSource($tree))
 	Say EC "<I>Check: <I3>$name<W> inserted and depended in different pbsfiles<I2>, inserted: $inserted_at, depended: $depended_at"
 		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{__MATCHED_SUBPBS};
 
-	if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
+	if($tree->{__PARALLEL_DEPEND})
 		{
-		Say EC "<I>Check: <I3>$name<W>, no dependencies"
-			. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
-			. "<I2>, inserted: $inserted_at"
-			. ($tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
-				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
-	elsif(0 == $matching_rules)
+	else
 		{
-		Say EC "<I>Check: <I3>$name <W>no matching rules<I2>, inserted: $inserted_at" ;
+		if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
+			{
+			Say EC "<I>Check: <I3>$name<W>, no dependencies"
+				. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
+				. "<I2>, inserted: $inserted_at"
+				. ($tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
+					unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
+			}
+		elsif(0 == $matching_rules)
+			{
+			Say EC "<I>Check: <I3>$name <W>no matching rules<I2>, inserted: $inserted_at" ;
+			}
 		}
 	}
 
@@ -395,7 +403,7 @@ else
 		
 		my ($must_build_because_of_digest, $reason) = (0, '') ;
 		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($tree, $inserted_nodes) unless $triggered ;
-
+		
 		if($must_build_because_of_digest)
 			{
 			for (@$reason)

@@ -320,7 +320,8 @@ sub Colored
 {
 my ($string, $indent, $no_indent_color, $continuation_color) = @_ ;
 
-$string =~ s~<([[:alnum:]_]+)>~$cc{$cd}{$color_alias{$1}}//$cc{$cd}{$1}//$cc{$cd}{reset}~ge ;
+$string =~ s~(?<!\\)<([[:alnum:]_]+)>~(exists $color_alias{$1} and $cc{$cd}{$color_alias{$1}})//$cc{$cd}{$1}//"<$1>"~ge ;
+$string =~ s~\\(<([[:alnum:]_]+)>)~$1~g ;
 
 COLOR('', $string, $indent, $no_indent_color, $continuation_color) ;
 }

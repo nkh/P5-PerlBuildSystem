@@ -810,7 +810,7 @@ for my $node_name (keys %$inserted_nodes)
 			{
 			($nodes{$node_name}{__LOCATION}) = ($node->{__BUILD_NAME} // '')  =~ /^(.*)$1$/ ;
 
-			delete $nodes{$node_name}{__LOCATION} if $nodes{$node_name}{__LOCATION} eq '.' ;
+			delete $nodes{$node_name}{__LOCATION} if exists $nodes{$node_name}{__LOCATION} and $nodes{$node_name}{__LOCATION} eq '.' ;
 			delete $nodes{$node_name}{__LOCATION} unless defined $nodes{$node_name}{__LOCATION} ;
 			}
 			

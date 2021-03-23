@@ -575,7 +575,7 @@ for my $graph ( values %graphs)
 	
 	if($not_depended != $links)
 		{
-		Say Warning "Depend∥ : $graph->{PID} links: not linked: $not_depended/$links" ;
+		Say Warning "Depend∥ : not linked: $not_depended/$links, depender: < $graph->{PID} - $graph->{ADDRESS} >" ;
 	
 		for my $not_depended (keys %{$graph->{NOT_DEPENDED}})
 			{
@@ -633,7 +633,7 @@ my $not_linked              = keys %not_linked ;
 my $number_of_dependers     = keys %$dependers ;
 my $dependers_with_no_links = $number_of_dependers - $linked_dependers ;
 
-Say Info "Depend∥ : dependers: $number_of_dependers, linked: $linked_dependers/$dependers_with_no_links"
+Say Info "Depend∥ : dependers: $number_of_dependers, linked: $linked_dependers, terminal: $dependers_with_no_links"
 		. ", nodes: $nodes, links: $linked/$not_linked"
 		. ", time: $time s., dl: $data_size in $download_time s." ;
 
