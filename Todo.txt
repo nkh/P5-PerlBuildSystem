@@ -1,5 +1,7 @@
 wizard broken
 
+-nh stops node builder log generation? no output when error
+
 
 -hs, long help ?
 completion long help ?

@@ -21,7 +21,7 @@ use HTTP::Request::Params ;
 use HTTP::Tiny;
 
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
-use Data::Dumper ;
+use Storable qw(freeze) ;
 use List::Util qw(all first) ;
  
 use PBS::Output ;
@@ -54,12 +54,12 @@ $response->{success}
 
 sub Get
 {
-my ($pbs_config, $url, $where, $what, $whom) = @_ ;
+my ($pbs_config, $url, $where, $what, $whom, $raw) = @_ ;
 
 SDT $what, "Http: POST to ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
 
 my $HT = HTTP::Tiny->new() ;
-my $response = $HT->get("${url}pbs/$where", {content => Dumper $what}) ;
+my $response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
 
 if($response->{success})
 	{
@@ -71,6 +71,7 @@ if($response->{success})
 	#	Say Info2 "$k: $_" for ref $v eq 'ARRAY' ? @$v : $v ;
 	#	}
 
+	return $response->{content} if $raw ;
 	return
 		{ 
 		map { $_ eq 'undef' ? undef : $_ } map { split '=', $_, 2  } split '&', $response->{content}
@@ -87,6 +88,16 @@ else
 {
 my $response_connection ;
 sub RESPONSE_REGISTER { ($response_connection) = @_ }
+
+sub RESPONSE_RAW
+{
+my ($response) = @_ ;
+
+my $r = HTTP::Response->new(RC_ACCEPTED) ;
+$r->content($response) ;
+
+$response_connection->send_response($r) ;
+}
 
 sub RESPONSE
 {
@@ -239,11 +250,11 @@ while (my $c = $d->accept)
 					} ;
 					
 			'/pbs/get_parallel_dependers' eq $path
-				&& RESPONSE { SERIALIZED_DEPENDERS => Data::Dumper->Dump([\%parallel_dependers], [qw($dependers)]) }  ;
+				&& RESPONSE { SERIALIZED_DEPENDERS => freeze \%parallel_dependers }  ;
 			
 			#  below depender urls
 			
-			'/pbs/get_graph' eq $path && RESPONSE { GRAPH => $data->{GRAPH} }  ;
+			'/pbs/get_graph' eq $path && RESPONSE_RAW $data->{GRAPH} ; 
 			
 			#$c->send_error(RC_FORBIDDEN) ;
 			#$c->send_file_response("/") ;

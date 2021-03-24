@@ -747,7 +747,7 @@ for my $node_name (keys %$inserted_nodes)
 				__LINKED __CHECKED __PBS_CONFIG__DEPENDENCY_TO __DEPENDENCY_TO
 				__PBS_CONFIG
 				)} ;
-
+		
 		$nodes{$node_name}{__INSERTED_AT}{INSERTING_NODE} = $nodes_index{$node->{__INSERTED_AT}{INSERTING_NODE}} ;
 		$nodes{$node_name}{__INSERTED_AT}{INSERTION_FILE} = $nodes_index{$node->{__INSERTED_AT}{INSERTION_FILE}} ;
 		
@@ -763,22 +763,22 @@ for my $node_name (keys %$inserted_nodes)
 		
 		my @pbsfile_chain = @{$node->{__INSERTED_AT}{PBSFILE_CHAIN} // []} ;
 		my $node_pbsfile_id = pop @pbsfile_chain ;
-
+		
 		# See "pbsfile change" comments below 
 		if(defined $node_pbsfile_id)
 			{
 			my $node_pbsfile = $node_names[$node_pbsfile_id] ;
-
+			
 			$warp_dependents{$node_pbsfile}{DEPENDENTS}{$nodes_index{$node_name}}++ ;
 			$warp_dependents{$node_pbsfile}{NODES}++ ;
 			$warp_dependents{$node_pbsfile}{LEVEL} = @pbsfile_chain ;
-
+			
 			for my $pbsfile (@pbsfile_chain)
 				{
 				$warp_dependents{$node_names[$pbsfile]}{SUB_LEVELS}{$node_pbsfile_id}++ ;
 				}
 			}
-
+		
 		#todo: node can be linked to by new node and its pbsfile chain needs to be updated
 		#	linking during non warp depend should also update the pbsfile chain 
 		#	the linking is done by the parent
@@ -790,7 +790,7 @@ for my $node_name (keys %$inserted_nodes)
 			
 		my $node_is_source = NodeIsSource($node) ;
 		$nodes{$node_name}{__IS_SOURCE} = $node_is_source ;
-
+		
 		if(exists $node->{__LOAD_PACKAGE})
 			{
 			$nodes{$node_name}{__TERMINAL} = 1 if $node_is_source
@@ -800,16 +800,16 @@ for my $node_name (keys %$inserted_nodes)
 			# remember which node is terminal for later optimization
 			$nodes{$node_name}{__TERMINAL} = 1 ;
 			}
-
+		
 		if(exists $node->{__FORCED})
 			{
 			$nodes{$node_name}{__FORCED}++ ;
 			}
-
+		
 		if(!exists $node->{__VIRTUAL} && $node_name =~ /^\.(.*)/)
 			{
 			($nodes{$node_name}{__LOCATION}) = ($node->{__BUILD_NAME} // '')  =~ /^(.*)$1$/ ;
-
+			
 			delete $nodes{$node_name}{__LOCATION} if exists $nodes{$node_name}{__LOCATION} and $nodes{$node_name}{__LOCATION} eq '.' ;
 			delete $nodes{$node_name}{__LOCATION} unless defined $nodes{$node_name}{__LOCATION} ;
 			}
@@ -818,7 +818,7 @@ for my $node_name (keys %$inserted_nodes)
 					&& exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
 					? $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
 					: $node->{__INSERTED_AT}{INSERTING_NODE} ;
-
+		
 		unless (exists $nodes_index{$inserting_node})
 			{
 			push @node_names, $inserting_node ;

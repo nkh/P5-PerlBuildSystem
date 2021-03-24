@@ -1,7 +1,7 @@
 
 package PBS::Depend::Forked ;
 
-use 5.006 ;
+use v5.10 ;
 use strict ;
 use warnings ;
 
@@ -11,12 +11,13 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.01' ;
+our $VERSION = '0.02' ;
 
 use File::Path ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
-use Data::Dumper ;
+use Storable qw(freeze thaw) ;
+use Compress::Zlib ;
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
 use PBS::Depend ;
@@ -36,6 +37,8 @@ use constant
 	INSERTED_NODES => 7,
 	TREE_NAME      => 8,
 	BUILD_TYPE     => 9,
+	
+	RAW            => 1,
 	} ;
 
 #-------------------------------------------------------------------------------------------------------
@@ -54,6 +57,8 @@ if($pbs_config->{DEPEND_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 	
 	if(defined $idle_depender->{ADDRESS})
 		{
+		die Error("PBS: depend in existing idle depender is not enabled") . "\n" ;
+
 		$node->{__PARALLEL_DEPEND} = $idle_depender->{PID} ;
 		
 		$depender =
@@ -105,19 +110,11 @@ $depender->(@$args) ;
 
 sub Pbs
 {
-my ($data , $p) = @_ ;
+my ($data, $p) = @_ ;
 
-my $pbsfile_chain ;
-eval $p->{pbsfile_chain} ;
-die $@ if $@ ;
- 
-my $pbs_config ;
-eval $p->{pbs_config} ;
-die $@ if $@ ;
-
-my $parent_config ;
-eval $p->{parent_config} ;
-die $@ if $@ ;
+my $pbsfile_chain = thaw $p->{pbsfile_chain} ;
+my $pbs_config    = thaw $p->{pbs_config} ;
+my $parent_config = thaw $p->{parent_config} ;
 
 PBS::PBS::Pbs
 	(
@@ -218,6 +215,12 @@ if($resource_id)
 				
 				$inserted_nodes->{$_}{__PARALLEL_NODE} = $$ for @new_nodes, $target ;
 				
+				# remove undefined variables from pbs_configs, 10% speedup, 20% size
+				for my $pbs_config (grep { state %seen ; ! $seen{$_}++ } map { $inserted_nodes->{$_}{__PBS_CONFIG} } @new_nodes, $target )
+					{
+					delete @$pbs_config{ grep { ! defined $pbs_config->{$_} } keys %$pbs_config }
+					}
+				
 				my %not_depended ;
 				my %graph  = 
 					(
@@ -270,9 +273,8 @@ if($resource_id)
 				my $server = PBS::Net::StartHttpDeamon($pbs_config) ;
 				$graph{ADDRESS} = $server->url ;
 				
-				local $Data::Dumper::Indent = 0 ;
-				local $Data::Dumper::Purity = 1 ;
-				my $serialized_graph = Data::Dumper->Dump([\%graph], [qw(graph)]) ;
+				my $serialized_graph = freeze \%graph ;
+				   $serialized_graph = Compress::Zlib::memGzip($serialized_graph) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
 				
 				BecomeDependServer
 					(
@@ -282,8 +284,7 @@ if($resource_id)
 						ARGS    => $args,
 						ADDRESS => $server->url,
 						GRAPH   => $serialized_graph
-					}
-					) ;
+					}) ;
 				
 				exit 0 ;
 				}
@@ -386,8 +387,7 @@ if($pbs_config->{DEPEND_JOBS})
 	$response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_parallel_dependers', {}, $$) ;
 	my $serialized_dependers = $response->{SERIALIZED_DEPENDERS} ;
 	
-	my $dependers ;
-	eval $serialized_dependers ;
+	my $dependers = thaw $serialized_dependers ;
 	Say Error $@ if $@ ;
 	
 	my $number_of_dependers = scalar keys %$dependers ;
@@ -427,10 +427,11 @@ my $t0_link = [gettimeofday];
 my $data_size = 0 ;
 my %graphs = map 
 		{
-		my $response = PBS::Net::Get($pbs_config, $dependers->{$_}{ADDRESS}, 'get_graph', {}, $$) ;
-		$data_size += length $response->{GRAPH} ;
-
-		my $graph ; eval $response->{GRAPH} ; die $@ if $@ ;
+		my $response = PBS::Net::Get($pbs_config, $dependers->{$_}{ADDRESS}, 'get_graph', {}, $$, RAW) ;
+		$data_size += length $response ;
+	
+		$response = Compress::Zlib::memGunzip($response) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
+		my $graph = thaw $response ;
 		
 		$_ => $graph ; 
 		} keys %$dependers ;

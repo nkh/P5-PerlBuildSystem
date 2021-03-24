@@ -666,6 +666,9 @@ EOT
 	'ddrp|display_depend_remaining_processes', 'Display how many depend processes are running after the main depend process ended.', '',
 		\$config->{DISPLAY_DEPEND_REMAINING_PROCESSES},
 
+	'dpuc|depend_parallel_use_compression', 'Compress graphs before sending them', '',
+		\$config->{DEPEND_PARALLEL_USE_COMPRESSION},
+
 	'display_too_many_nodes_warning=i', 'Display a warning when a pbsfile adds too many nodes.', '',
 		\$config->{DISPLAY_TOO_MANY_NODE_WARNING},
 
