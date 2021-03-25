@@ -1,6 +1,6 @@
 package PBS::Constants ;
 
-use 5.006 ;
+use v5.10 ;
 use strict ;
 use warnings ;
  

@@ -2,7 +2,7 @@
 package PBS::PBSConfig ;
 use PBS::Debug ;
 
-use 5.006 ;
+use v5.10 ;
 use strict ;
 use warnings ;
 use Data::Dumper ;

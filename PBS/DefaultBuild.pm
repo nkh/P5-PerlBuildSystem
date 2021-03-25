@@ -6,7 +6,7 @@ use Data::Dumper ;
 use strict ;
 use warnings ;
 
-use 5.006 ;
+use v5.10 ;
  
 require Exporter ;
 
