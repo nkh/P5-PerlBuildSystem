@@ -28,6 +28,30 @@ use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 
+sub Put
+{
+my ($pbs_config, $url, $where, $what, $whom) = @_ ;
+$what //= {} ;
+
+#my $t0_message = [gettimeofday];
+
+my $response = HTTP::Tiny->new->put("${url}pbs/$where", {content => $what}) ;
+
+#SDT $what, sprintf("Http: POST to ${url}pbs/$where, time: %0.4f s.", tv_interval ($t0_message, [gettimeofday])) if $pbs_config->{HTTP_DISPLAY_POST} ;
+SDT $what, "Http: PUT to ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
+
+unless ($response->{success})
+	{
+	#SDT $response ;
+	#Say Error "PBS: can't PUT" ;
+	#die "\n" ;
+	}
+
+$response->{success}
+}
+
+#-------------------------------------------------------------------------------
+
 sub Post
 {
 my ($pbs_config, $url, $where, $what, $whom) = @_ ;
@@ -151,7 +175,7 @@ Say Debug "Http: starting $server_name <$url>, pid: $$" if $pbs_config->{HTTP_DI
 my $stop ;
 my $counter = 0 ;
 
-my %resources = map { $_ => 1 } 1 .. $pbs_config->{DEPEND_JOBS} ;
+my %resources = map { $_ => 1 } 1 .. $pbs_config->{PBS_JOBS} ;
 my $allocated = 0 ;
 my $reused = 0 ;
 
@@ -166,7 +190,7 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 				  ', dependers: ' . scalar( keys %parallel_dependers)
 				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers)
 				. ', reused: ' . $reused
-				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{DEPEND_JOBS}
+				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
 				. ', leased: ' . $allocated
 	}
 } ; 
@@ -196,7 +220,7 @@ while (my $c = $d->accept)
 					if
 						(
 							(
-							   (  $pbs_config->{USE_DEPEND_SERVER} && $id && $dependers < $pbs_config->{DEPEND_JOBS} )
+							   (  $pbs_config->{USE_DEPEND_SERVER} && $id && $dependers < $pbs_config->{PBS_JOBS} )
 							|| (! $pbs_config->{USE_DEPEND_SERVER} && $id )
 							)
 						
@@ -224,7 +248,7 @@ while (my $c = $d->accept)
 					{
 					my $id = first { $resources{$_} } keys %resources ;
 					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers ;
-			
+					
 					if ($id && $idle_depender)
 						{
 						$resources{$id} = 0 ;
@@ -290,7 +314,7 @@ while (my $c = $d->accept)
 					
 					$status->("depend, pid: $$, node: $node") ;
 					
-					PBS::Depend::Forked::Pbs($data, $parameters) ;
+					PBS::PBS::Forked::Pbs($data, $parameters) ;
 					
 					Post
 						(
@@ -345,8 +369,12 @@ while (my $c = $d->accept)
 					$parallel_dependers{$pid}{ADDRESS} = $address ;
 					$status->("idling, pid: $pid") ;
 					} ;
+			}
+		elsif ($rq->method eq 'PUT')
+			{
+			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
 			
-			'/pbs/link' eq $path and PBS::Depend::Forked::Link($pbs_config, $data) ;
+			'/pbs/link' eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
 			}
 		
 		$c->force_last_request ;

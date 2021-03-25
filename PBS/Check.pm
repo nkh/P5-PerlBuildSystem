@@ -43,8 +43,11 @@ if(exists $tree->{__PARALLEL_DEPEND} || exists $tree->{__PARALLEL_NODE})
 	
 	$PBS::Output::indentation_depth = 0 ;
 
-	Say EC "<I>Check∥ : <I3>$tree->{__NAME}<I2>$triggered, pid: $$" if exists $tree->{__PARALLEL_NODE} ;
-	Say EC "<I>Check<W>∥ <I>: <I3>$tree->{__NAME}<I2>$triggered, pid: $$" if exists $tree->{__PARALLEL_HEAD} ;
+	Say EC "<I>Check∥ : <I3>$tree->{__NAME}<I2>$triggered, pid: $$"
+		if exists $tree->{__PARALLEL_NODE} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
+
+	Say EC "<I>Check<W>∥ <I>: <I3>$tree->{__NAME}<I2>$triggered, pid: $$"
+		if exists $tree->{__PARALLEL_HEAD} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 	}
 
 return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
@@ -54,7 +57,8 @@ $tree->{__CHILDREN_TO_BUILD} = 0 ;
 
 my $indent = $PBS::Output::indentation ;
 
-PrintInfo "Check: $checked_dependency_tree\r" unless $checked_dependency_tree++ % 100 ;
+Print EC "\e[K<I>Check: $checked_dependency_tree<I2> \\<$$>\r", 0
+	unless $checked_dependency_tree++ % 29 || \$config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 
 $build_sequence //= [] ; 
 $files_in_build_sequence //= {} ;

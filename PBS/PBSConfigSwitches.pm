@@ -215,7 +215,9 @@ EOH
 	'wh|display_wizard_help', 'Tell the choosen wizards to show help.', '',
 		\$config->{DISPLAY_WIZARD_HELP},
 		
-	'c|color_depth=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', <<EOT, \&PBS::Output::SetOutputColorDepth,
+	'c|color_depth=s', 'Set color depth. Valid values are 2 = no_color, 16 = 16 colors, 256 = 256 colors', '', \&PBS::Output::SetOutputColorDepth,
+
+	'cu|color_user=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
 Term::AnsiColor is used  to color output.
 
 Recognized colors are :
@@ -235,19 +237,6 @@ Recognized colors are :
 	'white'   'on_white'
 
 	or RGB5 values, check 'Term::AnsiColor' for more information. 
-EOT
-
-	'cu|color_user=s', "Set a color. Argument is a string with format 'color_name:ansi_code_string; eg: -cs 'user:cyan on_yellow'", <<EOT, \&PBS::Output::SetOutputColor,
-Color names used in Pbs:
-	error
-	warning
-	warning2
-	info
-	info2
-	info3
-	user
-	shell
-	debug
 EOT
 
 	'output_info_label=s', 'Adds a text label to all output.', '',
@@ -414,6 +403,9 @@ EOT
 	'nhc|no_header_counter', 'Hide depend counter', '',
 		\$config->{DISPLAY_NO_STEP_HEADER_COUNTER},
 
+	'nhnl|no_header_newline', 'add a new line instead for the counter', '',
+		\$config->{DISPLAY_STEP_HEADER_NL},
+
 	'dsi|display_subpbs_info', 'Display extra information for nodes matching a subpbs rule.', '',
 		\$config->{DISPLAY_SUBPBS_INFO},
 		
@@ -528,8 +520,8 @@ EOT
 	'jdoe|jobs_die_on_errors=i', '0 (default) finish running jobs. 1 die immediatly. 2 build as much as possible.', '',
 		\$config->{JOBS_DIE_ON_ERROR},
 		
-	'dj|depend_jobs=i', 'Maximum number of dependers run in parallel.', '',
-		\$config->{DEPEND_JOBS},
+	'pj|pbs_jobs=i', 'Maximum number of dependers run in parallel.', '',
+		\$config->{PBS_JOBS},
 		
 	'dp|depend_processes=i', 'Maximum number of depend processes.', '',
 		\$config->{DEPEND_PROCESSES},
@@ -538,7 +530,8 @@ EOT
 		'Depending on the amount of nodes and their size, running checks in parallel can reduce check time, YMMV.',
 		\$config->{CHECK_JOBS},
 
-	'ce|external_checker=s', 'external command giving list of changed nodes', '',
+	'ce|external_checker=s', 'external list of changed nodes',
+		'pbs -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")',
 		$config->{EXTERNAL_CHECKERS},
 
 	'distribute=s', 'Define where to distribute the build.',
@@ -1070,6 +1063,10 @@ EOT
 	'dbss|display_build_sequence_simple', '(DF) List the nodes to be build.', '',
 		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE},
 		
+
+	'dbsss|display_build_sequence_simple_stats', '(DF) display number of nodes to be build.', '',
+		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY},
+		
 	'save_build_sequence_simple=s', 'Save a list of nodes to be build to a file.', '',
 		\$config->{SAVE_BUILD_SEQUENCE_SIMPLE},
 		
@@ -1116,8 +1113,8 @@ EOT
 
 	'bvm|display_no_progress_bar_minimum', "Slightly less verbose build mode.", '',
 		\$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM},
-		
-	'bvmm|display_no_progress_bar_minimum_minimum', "Frankly less verbose build mode.", '',
+	
+	'bvmm|display_no_progress_bar_minimum_minimum', "Definitely less verbose build mode.", '',
 		\$config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2},
 
 	'bre|display_build_result', 'Shows the result returned by the builder.', '',
@@ -1375,7 +1372,7 @@ for my $option (sort { $a->[0] cmp $b->[0] } GetOptionsElements())
 		}
 	}
 
-_DisplayHelp(0, 0, @matches) ;
+_DisplayHelp(0, @matches <= 1, @matches) ;
 }
 
 #-------------------------------------------------------------------------------

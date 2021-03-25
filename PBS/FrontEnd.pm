@@ -279,7 +279,7 @@ if(@$targets)
 	PBS::Debug::setup_debugger_run($pbs_config) ;
 	$DB::single = 1 ;
 
-	if($pbs_config->{DEPEND_JOBS})
+	if($pbs_config->{PBS_JOBS})
 		{
 		eval { use PBS::Net  } ;
 		die $@ if $@ ;

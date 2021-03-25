@@ -7,7 +7,7 @@ print "Please give a one line description of this Pbsfile: " ;
 my $purpose = <STDIN> ;
 chomp($purpose) ;
 
-#print <<EOP ;
+print <<EOP ;
 =head1 PBSFILE USER HELP
 
 =head2 I<pbsfile.pl>
@@ -45,3 +45,5 @@ rule 'rule_name3', ['*\*.*' => '*.*'], "command" ;
 rule 'subpbs_name', {NODE_REGEX => '', PBSFILE => './Pbsfile.pl', PACKAGE => ''} ;
 
 subpbs qr/regex/, $pbsfile ;
+EOP
+

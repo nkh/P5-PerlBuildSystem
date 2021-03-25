@@ -44,7 +44,7 @@ my ($pbs_config, $dependency_tree, $inserted_nodes, $build_sequence) = @_ ;
 
 if($pbs_config->{DISPLAY_PBSUSE_STATISTIC})
 	{
-	PrintInfo2(PBS::PBS::GetPbsUseStatistic()) ;
+	Print Info2 PBS::PBS::GetPbsUseStatistic() ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
@@ -66,19 +66,12 @@ if(defined $pbs_config->{DEBUG_DISPLAY_PARENT})
 							
 	if(exists $inserted_nodes->{$local_child})
 		{
-		PrintInfo
-			(
-			DumpTree
-				(
-				$inserted_nodes->{$local_child}{__DEPENDENCY_TO},
-				"\n$local_child ancestors:",
-				FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0,
-				)
-			) ;
+		SIT $inserted_nodes->{$local_child}{__DEPENDENCY_TO}, "$local_child ancestors:",
+			FILTER => $DependenciesOnly, DISPLAY_ADDRESS => 0,
 		}
 	else
 		{
-		PrintError("PBS: ancestor query, no such node '$pbs_config->{DEBUG_DISPLAY_PARENT}'\n") ;
+		Say Error "PBS: ancestor query, no such node $pbs_config->{DEBUG_DISPLAY_PARENT}" ;
 		DisplayCloseMatches($pbs_config->{DEBUG_DISPLAY_PARENT}, $inserted_nodes) ;
 		}
 	}
@@ -106,7 +99,7 @@ if(@{$pbs_config->{DISPLAY_NODE_INFO}})
 if (@{$pbs_config->{LOG_NODE_INFO}})
 	{
 	my $t0 = [gettimeofday];
-	PrintInfo "Log: creating pre-build node dependency info ..." ;
+	Print Info "Log: creating pre-build node dependency info ..." ;
 
 	my @lnis ;
 
@@ -130,7 +123,7 @@ if (@{$pbs_config->{LOG_NODE_INFO}})
 		}
 
 	PBS::Log::ForkedLNI::ParallelLNI($pbs_config, $inserted_nodes, \@lnis) ;
-	PrintInfo sprintf(" (nodes: %d, time: %0.2f s.)\n", scalar(@lnis),  tv_interval($t0, [gettimeofday])) ;
+	Say Info sprintf(" (nodes: %d, time: %0.2f s.)", scalar(@lnis),  tv_interval($t0, [gettimeofday])) ;
 	}
 	
 if(defined $pbs_config->{DEBUG_DISPLAY_ALL_CONFIGURATIONS})
@@ -145,6 +138,8 @@ if(defined $pbs_config->{DISPLAY_ALL_RULES})
    
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	{
+	my $nodes_in_build_sequence = @$build_sequence ;
+
 	my $GetBuildNames = 
 		sub
 		{
@@ -154,17 +149,21 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 		return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
 		} ;
 	
-	PrintInfo(DumpTree($build_sequence, "\nSequence:", FILTER => $GetBuildNames)) ;
+	SIT $build_sequence, "Sequence: nodes:$nodes_in_build_sequence", FILTER => $GetBuildNames ;
 	}
 
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 	{
-	PrintInfo "\nSequence:\n" ;
-	for (map { $_->{__NAME} } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)
-		{	
-		PrintInfo "$_\n" ;
+	my $parallel_nodes = grep { $_->{__NAME} !~ /^__/ && $_->{__PARALLEL_DEPEND}} @$build_sequence ;
+	my $nodes = @$build_sequence ;
+	my $ratio = sprintf('%.02f', $parallel_nodes / $nodes) ;
+
+	Say Info "Sequence: nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, ratio: $ratio" : '');
+	
+	unless ($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY})
+		{
+		Say Info $_ for map { $_->{__NAME} . ($_->{__PARALLEL_DEPEND} ? '∥ ' : '') } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
 		}
-	print "\n" ;
 	}
 
 if($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE})

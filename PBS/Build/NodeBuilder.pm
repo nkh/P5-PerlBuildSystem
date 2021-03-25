@@ -36,11 +36,8 @@ use PBS::PBSConfig ;
 
 sub BuildNode
 {
-my $file_tree      = shift ;
-my $pbs_config     = shift ;
-my $build_name     = $file_tree->{__BUILD_NAME} ;
-my $inserted_nodes = shift ;
-my $node_build_sequencer_info = shift ;
+my ($file_tree, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;
+my $build_name = $file_tree->{__BUILD_NAME} ;
 
 my $t0 = [gettimeofday];
 

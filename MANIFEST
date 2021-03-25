@@ -48,7 +48,6 @@ PBS/Constants.pm
 PBS/DefaultBuild.pm
 PBS/Debug.pm
 PBS/Depend.pm
-PBS/Depend/Forked.pm
 PBS/Digest.pm
 PBS/Distributor.pm
 PBS/Documentation.pm
@@ -66,6 +65,7 @@ PBS/Output.pm
 PBS/Prf.pm
 PBS/PrfNop.pm
 PBS/PBS.pm
+PBS/PBS/Forked.pm
 PBS/PBSConfig.pm
 PBS/PBSConfigSwitches.pm
 PBS/Plugin.pm

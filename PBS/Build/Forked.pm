@@ -185,7 +185,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 				if PBS::Build::NodeBuilderUsesPerlSubs($built_node) ;
 			
 			EnqueueNodeParents($pbs_config, $built_node, $build_queue) ;
-
+			
 			if(defined $pbs_config->{DISPLAY_JOBS_RUNNING})
 				{
 				my $index = 1 ;
@@ -450,7 +450,6 @@ my $pid = fork() ;
 if($pid)
 	{
 	close($to_parent) ;
-	#~ shutdown($to_parent, 2);
 	
 	$to_child->autoflush(1);
 	
@@ -468,7 +467,6 @@ else
 		}
 		
 	close($to_child) ;
-	#~ shutdown($to_child, 2);
 	
 	$to_parent->autoflush(1) ;
 	
@@ -489,7 +487,7 @@ my $number_of_builders = @$builders ;
 
 for (0 .. ($number_of_builders - 1))
 	{
-	if($builders->[$_]{BUILDING} == 1)
+	if($builders->[$_]{BUILDING})
 		{
 		my $builder = $builders->[$_] ;
 		push @waiting_for_messages, "'$builder->{NODE}{__NAME}', shell: '" . $builder->{SHELL}->GetInfo() . ', pid:' .  $builder->{PID} ;
@@ -539,7 +537,7 @@ my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 :
 # find which builder finished, start building on them
 for my $builder (@$builders)
 	{
-	next if $builder->{BUILDING} != 0 ; # skip active builders
+	next if $builder->{BUILDING} ; # skip active builders
 
 	my $node_to_build ; 
 	
@@ -550,7 +548,7 @@ for my $builder (@$builders)
 	
 	$started_builders++ ;
 
-	$builder->{BUILDING} = 1 ;
+	$builder->{BUILDING}++ ;
 	$builder->{NODE} = $node_to_build ;
 	
 	$node_to_build->{__SHELL_ORIGIN} = __PACKAGE__ . __FILE__ . __LINE__ ;
@@ -560,22 +558,20 @@ for my $builder (@$builders)
 		$node_to_build->{__SHELL_INFO} = $builder->{SHELL}->GetInfo() ;
 		}
 		
-	# keep some stats on which builder ran
-	$builder_stats->{'PID ' . $builder->{PID}}{RUNS}++ ;
-	$builder_stats->{'PID ' . $builder->{PID}}{NAME} = $builder->{SHELL}->GetInfo() ;
-	
-	my $override = exists $node_to_build->{__SHELL_OVERRIDE}
-			? " [L] "
-			: '' ;
+	my $override = exists $node_to_build->{__SHELL_OVERRIDE} ? " [L] " : '' ;
 
 	push @{$builder_stats->{'PID ' . $builder->{PID}}{NODES}}, 
 		"$node_to_build->{__NAME}$override" ;
 		
-	my $node_index = $started_builders + $node_build_index ;
-	SendIpcToBuildNode($pbs_config, $node_to_build, $node_index, $number_of_nodes_to_build, $builder) ;
-	
 	# keep the sequence in which the node where build
 	$node_to_build->{__BUILD_PARALLEL_TIMESTAMP} = $build_parallel_timestamp++ ;
+	
+	# keep some stats on which builder ran
+	$builder_stats->{'PID ' . $builder->{PID}}{RUNS}++ ;
+	$builder_stats->{'PID ' . $builder->{PID}}{NAME} = $builder->{SHELL}->GetInfo() ;
+	
+	my $node_index = $started_builders + $node_build_index ;
+	SendIpcToBuildNode($pbs_config, $node_to_build, $node_index, $number_of_nodes_to_build, $builder) ;
 	
 	my $distance = @$builders - $builder->{INDEX} ;  
 

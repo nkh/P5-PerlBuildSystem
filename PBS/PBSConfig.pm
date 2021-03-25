@@ -324,6 +324,9 @@ if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	undef $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
 	}
 
+$pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER}++ if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
+$pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE}++ if $pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY} ;
+
 if(@{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}})
 	{
 	$pbs_config->{DEBUG_DISPLAY_DEPENDENCIES}++ ;
@@ -362,8 +365,7 @@ if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_IN
 		$pbs_config->{DISPLAY_NODE_BUILD_RULES}++ ;
 		$pbs_config->{DISPLAY_NODE_CONFIG}++ ;
 		}
-
-
+	
 	if($pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2})
 		{
 		$pbs_config->{DISPLAY_NODE_ORIGIN} = 0 ;

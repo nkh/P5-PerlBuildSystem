@@ -1108,7 +1108,7 @@ elsif(@subpbses)
 	$tree->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA} = $tree->{__INSERTED_AT} ;
 	
 	my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
-		= PBS::Depend::Forked::Subpbs
+		= PBS::PBS::Forked::Subpbs
 			(
 			$pbs_config, $tree,
 				[

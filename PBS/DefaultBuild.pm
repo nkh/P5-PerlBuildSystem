@@ -30,6 +30,7 @@ use PBS::Output ;
 use PBS::Constants ;
 use PBS::Information ;
 use PBS::Plugin ;
+use PBS::PBS::Forked ;
 
 #-------------------------------------------------------------------------------
 
@@ -82,7 +83,7 @@ my $pbs_runs = PBS::PBS::GetPbsRuns() ;
 my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
 my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') ;
 
-my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{DEPEND_JOBS} ? ", pid: $$" : '') . GetColor('info')  ;
+my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{PBS_JOBS} ? ", pid: $$" : '') . GetColor('info')  ;
 
 my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
 my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
@@ -104,6 +105,7 @@ elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
 elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	PrintInfo "\n" if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
 	}
 else
 	{
@@ -250,8 +252,9 @@ return (BUILD_SUCCESS, 'Dependended successfuly', [])
 if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
 	my $number_of_nodes = scalar(keys %$inserted_nodes) ;
-
+	
 	PrintInfo "\r\e[K" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	PrintInfo "\n" if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
 	}
 
 $pbs_runs = PBS::PBS::GetPbsRuns() ;
@@ -271,8 +274,8 @@ else
 		unless $pbs_config->{QUIET} || $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 
-PBS::Depend::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
-	if $pbs_config->{DEPEND_JOBS} && ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
+PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
+	if $pbs_config->{PBS_JOBS} && ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
 
 my ($build_node, $build_sequence) =
 	Check

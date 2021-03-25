@@ -1,17 +1,40 @@
-wizard broken
 
--nh stops node builder log generation? no output when error
+some processes get a very large amount of odes while other don't
+	we can
+		fork the last subpbs but that means more processes
+		not fork before a minimum amount of nodes is in the current process
 
-
--hs, long help ?
-completion long help ?
+-w 0 and nothing to build, check: 1 sec
+	warp 0.2s
+		warp doesn't need to open and verify 1000 digests
 
 distributed build
+
+setting priority for nodes accros parallel pbs
 
 distributed post pbs
 	h files are merged back to graph but the h nodes
 		are in a sub process
 			we can read the files but the code to read the files is in a sub process
+
+#-nh stops node builder log generation? no output when error
+	-> when -bpb0
+
+	# when building in parallel, we can put as much possible in the log even if
+	# the progress bar is displayed, when it isn't, it's up to the user what gets in
+
+
+	=> the user will want everything in the log even if she doesn't add -bv
+
+	=> generate two information pages, one for display the other one for log
+
+#wizard broken
+
+#-hs, long help
+
+#completion long help ?
+
+#-check header not shown properly when parallel node head
 
 #embedded color names
 	Say <P> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
@@ -548,7 +571,6 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 #-external_checker
 	a command to get modified files from
-		-fw 'gss'
 		pbs  -wnmw -j 12 -ek . --devel_no_distribution_check -ce <(git status --short --untracked-files=no | perl -ae "print \"$PWD/\$F[1]\n\"")
 
 #Say Info indents like Print Info and not like PrintInfo

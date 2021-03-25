@@ -205,7 +205,7 @@ if(defined $node)
 	eval 
 		{
 		($build_result, $build_message) =
-			PBS::Build::NodeBuilder::BuildNode
+			PBS::PBS::Forked::BuildNode
 				(
 				$node,
 				$node->{__PBS_CONFIG},
@@ -214,12 +214,37 @@ if(defined $node)
 				) ;
 		} ;
 	
-	if($@)
+	my $exception = $@ ;
+
+	if	(
+		($exception || $build_result == BUILD_FAILED)
+		&& ! $node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR}
+		&& ! $node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}
+		)
+		{
+		$node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_ORIGIN}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_DEPENDENCIES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_CAUSE}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_RULES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_BUILD_SEQUENCER_INFO}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
+		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
+		
+		Say Info2 "Build: detected -bpb0 but no --build_verbose, generating extra node information:"  ;
+
+		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
+		}
+
+	if($exception)
 		{
 		($build_result, $build_message) = (BUILD_FAILED,  "Caught unexpected exception from Build::NodeBuilder::BuildNode") ;
 		
-		print OLDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
-		print STDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$@" ;
+		print OLDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$exception" ;
+		print STDERR ERROR "Caught unexpected exception from Build::NodeBuilder::BuildNode:\n$exception" ;
 		}
 	
 	if($build_result == BUILD_FAILED)
