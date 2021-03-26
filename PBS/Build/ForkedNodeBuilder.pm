@@ -218,8 +218,7 @@ if(defined $node)
 
 	if	(
 		($exception || $build_result == BUILD_FAILED)
-		&& ! $node->{__PBS_CONFIG}{DISPLAY_PROGRESS_BAR}
-		&& ! $node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}
+		&& (-s $redirection_file < 1024)
 		)
 		{
 		$node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}++ ;
@@ -234,9 +233,10 @@ if(defined $node)
 		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
 		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
 		
-		Say Info2 "Build: detected -bpb0 but no --build_verbose, generating extra node information:"  ;
-
 		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
+		
+		$build_message //= 'no message' ;
+		Say Error "\terror message: $build_message" ;
 		}
 
 	if($exception)

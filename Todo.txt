@@ -1,5 +1,5 @@
 
-some processes get a very large amount of odes while other don't
+some processes get a very large amount of nodes while other don't
 	we can
 		fork the last subpbs but that means more processes
 		not fork before a minimum amount of nodes is in the current process

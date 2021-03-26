@@ -165,10 +165,9 @@ elsif(ref $setup_data eq '')
 	{
 	my ($this, $file_name)  = @_ ;
 
-	my $new_this = do $file_name or die "Couldn't evaluate SubpbsResult file '$file_name'\nFile error: $!\nCompilation error: $@\n" ;
+	my $new_this = do $file_name or die "couldn't evaluate SubpbsResult, file: $file_name\nFile error: $!\nError: $@\n" ;
 
-	#~ print DumpTree $new_this, 'new this' ;
-	die "not a SubpbsResult object in file '$file_name'" unless(ref $new_this eq ref $this) ;
+	die "not a SubpbsResult object, file: $file_name" unless ref $new_this eq ref $this ;
 	
 	for my $class (keys %$new_this)
 		{
@@ -177,7 +176,7 @@ elsif(ref $setup_data eq '')
 	}
 else
 	{
-	die "Invalid setup data!" ;
+	die 'invalid setup data' ;
 	}
 }
 
@@ -279,10 +278,10 @@ Arguments:
 
 my ($this, $file_name)  = @_ ;
 
-my $new_this = do $file_name or die "Couldn't evaluate SubpbsResult file '$file_name'\nFile error: $!\nCompilation error: $@\n" ;
+my $new_this = do $file_name or die "couldn't evaluate SubpbsResult, file: $file_name\nFile error: $!\nError: $@\n" ;
 
 #~ print DumpTree $new_this, 'new this' ;
-die "not a SubpbsResult object in file '$file_name'" unless(ref $new_this eq ref $this) ;
+die "not a SubpbsResult object, file: $file_name" unless ref $new_this eq ref $this  ;
 
 # buddhist re-incarnation
 %{$this} = %{$new_this} ;
@@ -308,7 +307,7 @@ Arguments:
 
 my ($this, $file_name)  = @_ ;
 
-open(FILE, ">", $file_name) or die qq[Can't open $file_name: $!] ;
+open(FILE, ">", $file_name) or die qq[can't open $file_name: $!] ;
 
 local $Data::Dumper::Purity = 1 ;
 local $Data::Dumper::Indent = 1 ;

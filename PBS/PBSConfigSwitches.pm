@@ -554,6 +554,9 @@ EOT
 	'djr|display_jobs_running', 'PBS will display which nodes are under build.', '',
 		\$config->{DISPLAY_JOBS_RUNNING},
 
+	'djnt|display_jobs_no_tally', 'will not display nodes tally.', '',
+		\$config->{DISPLAY_JOBS_NO_TALLY},
+
 	'l|log|create_log', 'Create a log for the build',
 		'Node build output is always kept in the build directory.',
 		\$config->{CREATE_LOG},

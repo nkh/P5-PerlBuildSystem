@@ -697,26 +697,29 @@ my $build_name = $node->{__BUILD_NAME} ;
 if (exists $node->{__PARALLEL_NODE})
 	{
 	my $t0 = [gettimeofday];
-
+	
+	Say EC "<I>Build<W>∥ <I>: <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} >" ;
+	
 	my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
-
+	
 	#my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
-
+	 
 	my $node_needs_rebuild = 1 ;
-
+	
 	if($node->{__BUILD_DONE})
 		{
 		#PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
 		$node_needs_rebuild = 0 ;
 		}
-
+	
 	if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 		{
 		($build_result, $build_message) = (BUILD_FAILED, "--bi set, skip build.") ;
 		$node_needs_rebuild = 0 ;
 		}
-			
+		
 	$build_result, $build_message
+	#BUILD_FAILED, 'parallel node_build not implemented' ;
 	}
 else
 	{

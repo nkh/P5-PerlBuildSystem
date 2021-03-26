@@ -737,16 +737,14 @@ else
 		}
 	}
 	
-if(defined $pbs_config->{DISPLAY_JOBS_INFO})
+if($build_result == BUILD_FAILED)
 	{
-	if($build_result == BUILD_SUCCESS)
-		{
-		Say Info2 "Build: $built_node->{__NAME}, message: $build_message" ;
-		}
-	else
-		{
-		Say Error "Build: $built_node->{__NAME}, result: $build_result, message: $build_message" ;
-		}
+	Say Error "Build: $built_node->{__NAME}, result: $build_result, message: $build_message" ;
+	}
+else
+	{
+	Say Info2 "Build: $built_node->{__NAME}, message: $build_message"
+		if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
 	}
 	
 return($build_result, $build_time, $error_output) ;
@@ -780,7 +778,7 @@ for my $parent (@{$node->{__PARENTS}})
 	else
 		{
 		Say Info2 "Tally: $parent->{__NAME} [$parent->{__CHILDREN_TO_BUILD}], built: $node->{__NAME}"
-			if defined $pbs_config->{DISPLAY_JOBS_INFO} ;
+				if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} ;
 		}
 	}
 }

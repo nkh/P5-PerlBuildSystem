@@ -36,19 +36,19 @@ use PBS::PBSConfig ;
 
 sub BuildNode
 {
-my ($file_tree, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;
-my $build_name = $file_tree->{__BUILD_NAME} ;
+my ($node, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;
+my $build_name = $node->{__BUILD_NAME} ;
 
 my $t0 = [gettimeofday];
 
 my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
-my ($dependencies, $triggered_dependencies) = GetNodeDependencies($file_tree) ;
+my ($dependencies, $triggered_dependencies) = GetNodeDependencies($node) ;
 
 my $node_needs_rebuild = 1 ;
 
-if($file_tree->{__BUILD_DONE})
+if($node->{__BUILD_DONE})
 	{
-	#PrintWarning "Build: already build: $file_tree->{__BUILD_DONE}\n" ;
+	#PrintWarning "Build: already build: $node->{__BUILD_DONE}\n" ;
 	$node_needs_rebuild = 0 ;
 	}
 
@@ -59,7 +59,7 @@ if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 	}
 
 my $rule_used_to_build ;
-my $rules_with_builders = ExtractRulesWithBuilder($file_tree) ;
+my $rules_with_builders = ExtractRulesWithBuilder($node) ;
 
 if(@$rules_with_builders)
 	{
@@ -80,18 +80,18 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 	{
 	my($why, $reasons, $number_of_differences) ;
 
-	if (exists $file_tree->{__VIRTUAL})
+	if (exists $node->{__VIRTUAL})
 		{
 		# virtual node have no digests so we can't check it
 		($node_needs_rebuild, $why, $reasons, $number_of_differences) = (1, "\t\tVIRTUAL\n", ["__VIRTUAL\n"], 1)
 		}
-	elsif (any { $_->{NAME} eq '__SELF'} @{$file_tree->{__TRIGGERED}})
+	elsif (any { $_->{NAME} eq '__SELF'} @{$node->{__TRIGGERED}})
 		{
 		($node_needs_rebuild, $why, $reasons, $number_of_differences) = (1, "\t\tSELF\n", ["__SELF\n"], 1) 
 		}
 	else
 		{
-		($node_needs_rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($file_tree, $inserted_nodes) ;
+		($node_needs_rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
 
 		$why = "\t\tCheck: digest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $node_needs_rebuild ;
 		}
@@ -106,7 +106,7 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 				0, # Get what would be run
 				$pbs_config,
 				$rule_used_to_build,
-				$file_tree,
+				$node,
 				$dependencies,
 				$triggered_dependencies,
 				$inserted_nodes,
@@ -115,7 +115,7 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 		@node_commands = @evaluated_commands ;
 		
 		# compare with previous run commands
-		my $digest_file_name = PBS::Digest::GetDigestFileName($file_tree) ;
+		my $digest_file_name = PBS::Digest::GetDigestFileName($node) ;
 
 		if(-e $digest_file_name)
 			{
@@ -153,7 +153,7 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 				unless($node_needs_rebuild)
 					{
 					# compare ENV
-					my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($file_tree) ;
+					my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($node) ;
 					%node_ENV = %$node_ENV ;
 					
 					my @diffs = grep { ! exists $node_ENV->{$_} || $node_ENV->{$_} ne $build_ENV->{$_} } keys %$build_ENV ;
@@ -188,8 +188,10 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 		}
 	}
 
-my $display_node =   any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
-   $display_node = ! any { $file_tree->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT}} ;
+my $display_node =   any { $node->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
+   $display_node = ! any { $node->{__NAME} =~ $_ } @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX_NOT}} ;
+
+my $node_info_displayed ;
 
 local $PBS::Shell::silent_commands = $PBS::Shell::silent_commands ;
 local $PBS::Shell::silent_commands_output = $PBS::Shell::silent_commands_output ;
@@ -202,11 +204,12 @@ if($node_needs_rebuild || !$pbs_config->{HIDE_SKIPPED_BUILDS})
 		&&  ( $pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || $pbs_config->{CREATE_LOG} )
 		)
 		{
-		PBS::Information::DisplayNodeInformation($file_tree, $pbs_config, $pbs_config->{CREATE_LOG}, $inserted_nodes) ;
+		PBS::Information::DisplayNodeInformation($node, $pbs_config, $pbs_config->{CREATE_LOG}, $inserted_nodes) ;
+		$node_info_displayed++ ;
 		}
 	else
 		{
-		PrintNoColor PBS::Information::GetNodeHeader($file_tree, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
+		PrintNoColor PBS::Information::GetNodeHeader($node, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 
 		$PBS::Shell::silent_commands = 1 ;
 		$PBS::Shell::silent_commands_output = 1 ;
@@ -219,7 +222,7 @@ if($node_needs_rebuild)
 	{
 	if($rule_used_to_build)
 		{
-		unless ($file_tree->{__VIRTUAL})
+		unless ($node->{__VIRTUAL})
 			{
 			my ($basename, $path, $ext) = File::Basename::fileparse($build_name, ('\..*')) ;
 			make_path($path, { error => \my $make_path_errors}) ;
@@ -238,7 +241,7 @@ if($node_needs_rebuild)
 				1, # do it!
 				$pbs_config,
 				$rule_used_to_build,
-				$file_tree,
+				$node,
 				$dependencies,
 				$triggered_dependencies,
 				$inserted_nodes,
@@ -246,37 +249,37 @@ if($node_needs_rebuild)
 		}
 	else
 		{
-		my $reason .= @{$file_tree->{__MATCHING_RULES}} ? "\tmatching rules have no builder\n" : "\tno matching rule\n"  ;
+		my $reason .= @{$node->{__MATCHING_RULES}} ? "\tmatching rules have no builder\n" : "\tno matching rule\n"  ;
 		
 		# show why the node was to be build
-		$reason.= "\t$_->{NAME} ($_->{REASON})\n" for @{$file_tree->{__TRIGGERED}} ;
+		$reason.= "\t$_->{NAME} ($_->{REASON})\n" for @{$node->{__TRIGGERED}} ;
 			
-		$file_tree->{__BUILD_FAILED} = $reason ;
+		$node->{__BUILD_FAILED} = $reason ;
 		
 		($build_result, $build_message) = (BUILD_FAILED, $reason) ;
 		}
 
-	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) ;
+	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $node, $dependencies, $triggered_dependencies, $inserted_nodes) ;
 	}
 else
 	{
 	# skipped build, these must ends up in digest
-	$file_tree->{__RUN_COMMANDS} = \@node_commands ;
-	$file_tree->{__ENV} = \%node_ENV ;
+	$node->{__RUN_COMMANDS} = \@node_commands ;
+	$node->{__ENV} = \%node_ENV ;
 	}
 
 if($build_result == BUILD_SUCCESS)
 	{
 	# record MD5 while the file is still fresh in the OS file cache
-	if(exists $file_tree->{__VIRTUAL})
+	if(exists $node->{__VIRTUAL})
 		{
-		$file_tree->{__MD5} = 'VIRTUAL' ;
-		#eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ; # will remove digest
+		$node->{__MD5} = 'VIRTUAL' ;
+		#eval { PBS::Digest::GenerateNodeDigest($node) ; } ; # will remove digest
 		($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 	
 		if(-e $build_name)
 			{
-			PrintWarning2 "Build: '$file_tree->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
+			PrintWarning2 "Build: '$node->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
 				unless -d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY} ;
 			}
 		}
@@ -285,22 +288,45 @@ if($build_result == BUILD_SUCCESS)
 		PBS::Digest::FlushMd5Cache($build_name) ;
 		my $current_md5 = GetFileMD5($build_name) ;
 
-		$file_tree->{__MD5} = $current_md5 ;
+		$node->{__MD5} = $current_md5 ;
 
 		if( $current_md5 ne "invalid md5")
 			{
-			$file_tree->{__MD5} = $current_md5 ;
+			$node->{__MD5} = $current_md5 ;
 			
-			eval { PBS::Digest::GenerateNodeDigest($file_tree) ; } ;
+			eval { PBS::Digest::GenerateNodeDigest($node) ; } ;
 			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
 			}
 		else
 			{
-			PBS::Digest::RemoveNodeDigest($file_tree) ;
+			PBS::Digest::RemoveNodeDigest($node) ;
 			($build_result, $build_message) = (BUILD_FAILED, "Build: error generating MD5 for '$build_name', $!.") ;
 			}
 		}
 	}
+else
+	{
+	unless ($node_info_displayed)
+		{
+		$node->{__PBS_CONFIG}{BUILD_AND_DISPLAY_NODE_INFO}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_CONFIG}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_ORIGIN}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_DEPENDENCIES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_CAUSE}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_RULES}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_BUILD_SEQUENCER_INFO}++ ;
+		$node->{__PBS_CONFIG}{DISPLAY_TEXT_TREE_USE_ASCII}++ ;
+		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
+		
+		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
+		
+		$build_message //= 'no message' ;
+		#Say Error "\terror message: $build_message" ;
+		} 
+	}
+
 
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
 
@@ -311,12 +337,12 @@ if($build_result == BUILD_SUCCESS)
 		$build_message //= '' ;
 		}
 
-	$file_tree->{__BUILD_DONE} = "BuildNode Done." ;
-	$file_tree->{__BUILD_TIME} = $build_time  ;
+	$node->{__BUILD_DONE} = "BuildNode Done." ;
+	$node->{__BUILD_TIME} = $build_time  ;
 	}
 else
 	{
-	PrintError("Build: '$file_tree->{__NAME}':\n$build_message\n") ;
+	PrintError("Build: '$node->{__NAME}':\n$build_message\n") ;
 	}
 	
 if($pbs_config->{TIME_BUILDERS} && ! $pbs_config->{DISPLAY_NO_BUILD_HEADER})
@@ -345,20 +371,20 @@ $tree->{__NAME} =~ /^\./
 
 sub GetNodeDependencies
 {
-my ($file_tree) = @_ ;
+my ($node) = @_ ;
 
 my @dependencies ;
-for my $dependency (grep { $_ !~ /^__/ ;}(keys %$file_tree))
+for my $dependency (grep { $_ !~ /^__/ ;}(keys %$node))
 	{
-	push @dependencies, exists $file_tree->{$dependency}{__BUILD_NAME}
-				? $file_tree->{$dependency}{__BUILD_NAME}
+	push @dependencies, exists $node->{$dependency}{__BUILD_NAME}
+				? $node->{$dependency}{__BUILD_NAME}
 				: $dependency ;
 	}
 	
 my (@triggered_dependencies, %triggered_dependencies_build_names) ;
 
 # build a list of triggering_dependencies and weed out doublets
-for my $triggering_dependency (@{$file_tree->{__TRIGGERED}})
+for my $triggering_dependency (@{$node->{__TRIGGERED}})
 	{
 	my $dependency_name = $triggering_dependency->{NAME} ;
 	
@@ -381,11 +407,11 @@ return \@dependencies, \@triggered_dependencies ;
 
 sub RunRuleBuilder
 {
-my ($do_build, $pbs_config, $rule_used_to_build, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
+my ($do_build, $pbs_config, $rule_used_to_build, $node, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
 
 my $builder    = $rule_used_to_build->{DEFINITION}{BUILDER} ;
-my $build_name = $file_tree->{__BUILD_NAME} ;
-my $name       = $file_tree->{__NAME} ;
+my $build_name = $node->{__BUILD_NAME} ;
+my $name       = $node->{__NAME} ;
 
 my ($build_result, $build_message) = (BUILD_SUCCESS, '') ;
 
@@ -401,18 +427,18 @@ eval # rules might throw an exception
 	my %debug_data = 
 		(
 		TYPE                   => 'BUILD',
-		CONFIG                 => $file_tree->{__CONFIG},
-		NODE_NAME              => $file_tree->{__NAME},
+		CONFIG                 => $node->{__CONFIG},
+		NODE_NAME              => $node->{__NAME},
 		NODE_BUILD_NAME        => $build_name,
 		DEPENDENCIES           => $dependencies,
 		TRIGGERED_DEPENDENCIES => $triggered_dependencies,
-		NODE                   => $file_tree,
+		NODE                   => $node,
 		) ;
 		
 	#DEBUG HOOK, jump into perl debugger if so asked
 	$DB::single++ if PBS::Debug::CheckBreakpoint($pbs_config, %debug_data, PRE => 1) ;
 	
-	my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($file_tree) ;
+	my ($node_ENV, $warnings, $regex_matches, $regex_number) = GetNodeENV($node) ;
 
 	local %ENV = (%ENV, %$node_ENV) ;
 
@@ -422,19 +448,19 @@ eval # rules might throw an exception
 		Say Warning "ENV: exported variables: $regex_matches, expected minimum: $regex_number" if $regex_matches < $regex_number ;
 		}
 
-	$file_tree->{__ENV} = $node_ENV ; # ends up in digest
+	$node->{__ENV} = $node_ENV ; # ends up in digest
 
 	# get all the config variables from the node's package
-	local $file_tree->{__LOAD_PACKAGE} = $file_tree->{__NAME} ;
+	local $node->{__LOAD_PACKAGE} = $node->{__NAME} ;
 
 	@result = $builder->
 			(
 			$do_build,
-			$file_tree->{__CONFIG},
+			$node->{__CONFIG},
 			$build_name,
 			$dependencies,
 			$triggered_dependencies,
-			$file_tree,
+			$node,
 			$inserted_nodes,
 			$rule_used_to_build,
 			) ;
@@ -443,17 +469,17 @@ eval # rules might throw an exception
 
 	if($pbs_config->{DISPLAY_NODE_CONFIG_USAGE} && $do_build)
 		{
-		my $accessed = PBS::Config::GetConfigAccess($file_tree->{__NAME}) ;
+		my $accessed = PBS::Config::GetConfigAccess($node->{__NAME}) ;
 
 		my @not_accessed = grep 
 					{
 					! exists $accessed->{$_}
 					&& ($pbs_config->{DISPLAY_TARGET_PATH_USAGE} || $_ ne 'TARGET_PATH')
 					}
-					sort keys %{$file_tree->{__CONFIG}} ;
+					sort keys %{$node->{__CONFIG}} ;
 
 		PrintInfo DumpTree { Accessed => $accessed, 'Not accessed' => \@not_accessed},
-			 "\nConfig: variable usage for '$file_tree->{__NAME}:", DISPLAY_ADDRESS => 0 ;
+			 "\nConfig: variable usage for '$node->{__NAME}:", DISPLAY_ADDRESS => 0 ;
 		}
 
 	unless(defined $build_result || $build_result == BUILD_SUCCESS || $build_result == BUILD_FAILED)
@@ -498,14 +524,14 @@ return @result unless $do_build;
 if($build_result == BUILD_FAILED)
 	{
 	#~ PrintInfo("Removing '$build_name'.\n") ;
-	unlink($build_name) if NodeIsGenerated($file_tree) ;
+	unlink($build_name) if NodeIsGenerated($node) ;
 		
 	my $rule_info =  $rule_used_to_build->{DEFINITION}{NAME}
 			. $rule_used_to_build->{DEFINITION}{ORIGIN} ;
 			
 	$build_message .= ERROR "\tbuilder: #$rule_used_to_build->{INDEX} '$rule_info'. \n" ;
 
-	$file_tree->{__BUILD_FAILED} = $build_message ;
+	$node->{__BUILD_FAILED} = $build_message ;
 	}
 
 return $build_result, $build_message ;
@@ -541,16 +567,16 @@ for my $regex ( @{ $node->{__EXPORT_CONFIG} // [] } )
 
 sub ExtractRulesWithBuilder
 {
-my ($file_tree) = @_ ;
+my ($node) = @_ ;
 
 # returns a list with elements following this format:
 # {INDEX => rule_number, DEFINITION => rule } ;
 
-my $pbs_config = $file_tree->{__PBS_CONFIG} ;
+my $pbs_config = $node->{__PBS_CONFIG} ;
 
 my @rules_with_builders ;
 
-for my $rule (@{$file_tree->{__MATCHING_RULES}})
+for my $rule (@{$node->{__MATCHING_RULES}})
 	{
 	my $rule_number = $rule->{RULE}{INDEX} ;
 	my $dependencies_and_build_rules = $rule->{RULE}{DEFINITIONS} ;
@@ -568,16 +594,16 @@ return \@rules_with_builders ;
 
 sub RunPostBuildCommands
 {
-my ($node_build_result, $node_build_message, $pbs_config, $file_tree, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
+my ($node_build_result, $node_build_message, $pbs_config, $node, $dependencies, $triggered_dependencies, $inserted_nodes) = @_ ;
 
-my $build_name = $file_tree->{__BUILD_NAME} ;
-my $name       = $file_tree->{__NAME} ;
+my $build_name = $node->{__BUILD_NAME} ;
+my $name       = $node->{__NAME} ;
 
-return $node_build_result, $node_build_message unless exists $file_tree->{__POST_BUILD_COMMANDS} ;
+return $node_build_result, $node_build_message unless exists $node->{__POST_BUILD_COMMANDS} ;
 
 my ($build_result, $build_message) = (BUILD_FAILED, 'default post build message') ;
 
-for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
+for my $post_build_command (@{$node->{__POST_BUILD_COMMANDS}})
 	{
 	eval
 		{
@@ -585,13 +611,13 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		my %debug_data = 
 			(
 			TYPE                   => 'POST_BUILD',
-			CONFIG                 => $file_tree->{__CONFIG},
-			NODE_NAME              => $file_tree->{__NAME},
+			CONFIG                 => $node->{__CONFIG},
+			NODE_NAME              => $node->{__NAME},
 			NODE_BUILD_NAME        => $build_name,
 			DEPENDENCIES           => $dependencies,
 			TRIGGERED_DEPENDENCIES => $triggered_dependencies,
 			ARGUMENTS              => \$post_build_command->{BUILDER_ARGUMENTS},
-			NODE                   => $file_tree,
+			NODE                   => $node,
 			NODE_BUILD_RESULT      => $node_build_result,
 			NODE_BUILD_MESSAGE     => $node_build_message, 
 			) ;
@@ -603,12 +629,12 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 							(
 							$node_build_result,
 							$node_build_message,
-							$file_tree->{__CONFIG},
+							$node->{__CONFIG},
 							[$name, $build_name],
 							$dependencies,
 							$triggered_dependencies,
 							$post_build_command->{BUILDER_ARGUMENTS},
-							$file_tree,
+							$node,
 							$inserted_nodes,
 							) ;
 							
@@ -638,8 +664,8 @@ for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 		
 	if($build_result == BUILD_FAILED)
 		{
-		unlink($build_name) if NodeIsGenerated($file_tree) ;
-		$file_tree->{__BUILD_FAILED} = $build_message ;
+		unlink($build_name) if NodeIsGenerated($node) ;
+		$node->{__BUILD_FAILED} = $build_message ;
 		last ;
 		}
 	}

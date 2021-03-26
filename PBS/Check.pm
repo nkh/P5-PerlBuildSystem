@@ -222,7 +222,7 @@ for my $dependency_name (sort keys %$tree)
 
 				$tree->{__CHILDREN_TO_BUILD}++ ;
 				push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-					if $pbs_config->{DISPLAY_JOBS_INFO} ;
+					if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} ;
 				}
 			}
 
@@ -279,7 +279,7 @@ for my $dependency_name (sort keys %$tree)
 			push @$build_sequence, $dependency if $dependency->{__PARALLEL_DEPEND} ;
 			
 			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
+				if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} && $name !~ /^__PBS/ ;
 			}
 		}
 	else
@@ -314,7 +314,7 @@ for my $dependency_name (sort keys %$tree)
 			push @dependency_triggering, $dependency ;
 
 			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-				if $pbs_config->{DISPLAY_JOBS_INFO} && $name !~ /^__PBS/ ;
+				if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} && $name !~ /^__PBS/ ;
 			}
 		}
 	}
