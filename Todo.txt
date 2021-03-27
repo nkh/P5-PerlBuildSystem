@@ -1,3 +1,7 @@
+%index when multiple completion choices
+
+distributed build sequence must be handled differently
+	need to know if a parallel node triggers to create athe build sequence
 
 some processes get a very large amount of nodes while other don't
 	we can
@@ -6,16 +10,20 @@ some processes get a very large amount of nodes while other don't
 
 -w 0 and nothing to build, check: 1 sec
 	warp 0.2s
-		warp doesn't need to open and verify 1000 digests
+		warp doesn't need to open and verify 1000s digests
 
 distributed build
 
-setting priority for nodes accros parallel pbs
+setting priority for nodes across parallel pbs
 
 distributed post pbs
 	h files are merged back to graph but the h nodes
 		are in a sub process
 			we can read the files but the code to read the files is in a sub process
+
+-tno displays cycles
+	-tno is run before check so it doesn't have the information
+		either run it again or change the order
 
 #-nh stops node builder log generation? no output when error
 	-> when -bpb0

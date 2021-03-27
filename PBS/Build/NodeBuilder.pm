@@ -321,9 +321,6 @@ else
 		$node->{__PBS_CONFIG}{TIME_BUILDERS}++ ;
 		
 		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
-		
-		$build_message //= 'no message' ;
-		#Say Error "\terror message: $build_message" ;
 		} 
 	}
 

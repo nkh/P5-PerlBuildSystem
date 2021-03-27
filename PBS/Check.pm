@@ -32,141 +32,76 @@ my @cyclic_trail ;
 
 sub CheckDependencyTree
 {
-# also checks the tree for cyclic dependencies
-# generates a build sequence
+# checks the tree for cyclic dependencies and  generates a build sequence
 
-my ($tree, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $node_checker_rule, $build_sequence, $files_in_build_sequence)  = @_ ;
+my ($node, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $node_checker_rule, $build_sequence, $files_in_build_sequence)  = @_ ;
 
-if(exists $tree->{__PARALLEL_DEPEND} || exists $tree->{__PARALLEL_NODE})
-	{
-	my $triggered = (exists $tree->{__CHECKED} and exists $tree->{__TRIGGERED}) ? ', triggered' : '' ;
-	
-	$PBS::Output::indentation_depth = 0 ;
-
-	Say EC "<I>Check∥ : <I3>$tree->{__NAME}<I2>$triggered, pid: $$"
-		if exists $tree->{__PARALLEL_NODE} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
-
-	Say EC "<I>Check<W>∥ <I>: <I3>$tree->{__NAME}<I2>$triggered, pid: $$"
-		if exists $tree->{__PARALLEL_HEAD} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
-	}
-
-return exists $tree->{__TRIGGERED} if exists $tree->{__CHECKED} ; # check once only
-
-# we also build data for the build step
-$tree->{__CHILDREN_TO_BUILD} = 0 ;
-
-my $indent = $PBS::Output::indentation ;
-
-Print EC "\e[K<I>Check: $checked_dependency_tree<I2> \\<$$>\r", 0
-	unless $checked_dependency_tree++ % 29 || \$config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+return exists $node->{__TRIGGERED} if exists $node->{__CHECKED} ; # check once only
 
 $build_sequence //= [] ; 
 $files_in_build_sequence //= {} ;
 
-my $build_directory    = $tree->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
-my $source_directories = $tree->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ; 
+$node->{__LEVEL} = $node_level ;
 
+my $name = $node->{__NAME} ;
 my $triggered = 0 ; 
-	
-$tree->{__LEVEL} = $node_level ;
-my $name = $tree->{__NAME} ;
 
-push @cyclic_trail, $tree ;
+# collect data for the build step
+$node->{__CHILDREN_TO_BUILD} = 0 ;
 
-if(exists $tree->{__CYCLIC_FLAG})
-	{
-	$tree->{__CYCLIC_ROOT}++; # used in graph generation
-	
-	if(NodeIsGenerated($tree))
-		{
-		my ($number_of_cycles, $cycles) = PBS::Cyclic::GetUserCyclicText($tree, $inserted_nodes, $pbs_config, \@cyclic_trail) ; 
-		PrintError "\e[KCheck: cyclic dependencies detected:\n$cycles", 1 ;
+Print EC "\e[K<I>Check: $checked_dependency_tree<I2> \\<$$>\r", 0
+	unless $checked_dependency_tree++ % 29 || \$config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 
-		die "cyclic dependencies detected\n" ;
-		}
-	
-	if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
-		{
-		die ;
-		}
-	else
-		{
-		if(exists $tree->{__TRIGGERED})
-			{
-			return 1 ;
-			}
-		else
-			{
-			return 0 ;
-			}
-		}
-
-	my $node_info = "inserted at '$tree->{__INSERTED_AT}{INSERTION_FILE}' rule '$tree->{__INSERTED_AT}{INSERTION_RULE}'" ;
-	
-	if(NodeIsGenerated($tree))
-		{
-		#Say Error "Cycle at node '$name' $node_info" ;
-		}
-	else
-		{
-		Say Warning "Check: cycle at node '$name' $node_info (source node)" unless ($pbs_config->{NO_SOURCE_CYCLIC_WARNING}) ;
-		}
-	}
-	
-$tree->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
+my $cycle = CheckCycle($node, $inserted_nodes, $pbs_config, \@cyclic_trail) ; 
+return $cycle if defined $cycle ;
 
 PrintInfo "\e[K\e[K" ; # bleah!
 
-# warn if node isn't depended or has no dependencies
-unless (NodeIsSource($tree))
+if(NodeIsGenerated($node) && ! exists $node->{__PARALLEL_DEPEND} )
 	{
+	# warn if node isn't depended or has no dependencies
 	#use Carp ;
-	#print Carp::croak unless defined $tree->{__NAME} ;
+	#print Carp::croak unless defined $node->{__NAME} ;
 
-	my $matching_rules = @{$tree->{__MATCHING_RULES}} ;
+	my $matching_rules = @{$node->{__MATCHING_RULES}} ;
 	 
-	my @dependencies = grep { $_ !~ /^__/ } keys %$tree ;
+	my @dependencies = grep { $_ !~ /^__/ } keys %$node ;
 
-	my $inserted_at = GetRunRelativePath($pbs_config, GetInsertionRule($tree) // '') // '';
+	my $inserted_at = GetRunRelativePath($pbs_config, GetInsertionRule($node) // '') // '';
 
 	my $depended_at = '' ;
 
 	if($matching_rules)
 		{
-		my $matching_rule = $tree->{__MATCHING_RULES}[0]{RULE} ;
+		my $matching_rule = $node->{__MATCHING_RULES}[0]{RULE} ;
 		my $rule = $matching_rule->{DEFINITIONS}[$matching_rule->{INDEX}] ;
 		$depended_at  = $rule->{NAME} . ':' ;
 		$depended_at .= GetRunRelativePath($pbs_config, $rule->{FILE}) . ':' ;
 		$depended_at .= $rule->{LINE} ;
 		}
-
+	
 	Say EC "<I>Check: <I3>$name<W> inserted and depended in different pbsfiles<I2>, inserted: $inserted_at, depended: $depended_at"
-		if $tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{__MATCHED_SUBPBS};
-
-	if($tree->{__PARALLEL_DEPEND})
+		if $node->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $node->{__MATCHED_SUBPBS};
+	
+	if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($node->{__LOAD_PACKAGE}, $node))
 		{
+		Say EC "<I>Check: <I3>$name<W>, no dependencies"
+			. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
+			. "<I2>, inserted: $inserted_at"
+			. ($node->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
+				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
 		}
-	else
+	elsif(0 == $matching_rules)
 		{
-		if( 0 == @dependencies && ! PBS::Digest::OkNoDependencies($tree->{__LOAD_PACKAGE}, $tree))
-			{
-			Say EC "<I>Check: <I3>$name<W>, no dependencies"
-				. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
-				. "<I2>, inserted: $inserted_at"
-				. ($tree->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
-					unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
-			}
-		elsif(0 == $matching_rules)
-			{
-			Say EC "<I>Check: <I3>$name <W>no matching rules<I2>, inserted: $inserted_at" ;
-			}
+		Say EC "<I>Check: <I3>$name <W>no matching rules<I2>, inserted: $inserted_at" ;
 		}
 	}
 
-my ($full_name, $is_alternative_source, $alternative_index) = ('', 0, 0) ;
-my $is_virtual = exists $tree->{__VIRTUAL} ;
+my $is_virtual         = exists $node->{__VIRTUAL} ;
+my $build_directory    = $node->{__PBS_CONFIG}{BUILD_DIRECTORY} ;
+my $source_directories = $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES} ;
 
-($full_name, $is_alternative_source, $alternative_index) = 
+my ($build_name, $alt_source, $alt_index) = 
 		LocateSource
 			(
 			$name,
@@ -176,36 +111,32 @@ my $is_virtual = exists $tree->{__VIRTUAL} ;
 			$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
 			) ;
 
-if ($is_alternative_source)
+$build_name = $node->{__BUILD_NAME} = exists $node->{__FIXED_BUILD_NAME} ? $node->{__FIXED_BUILD_NAME} : $build_name ;
+
+if ($alt_source)
 	{
-	$tree->{__ALTERNATE_SOURCE_DIRECTORY} = $source_directories->[$alternative_index] ;
+	$node->{__ALTERNATE_SOURCE_DIRECTORY} = $source_directories->[$alt_index] ;
 	}
 else
 	{
-	$tree->{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
+	$node->{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
 	}
 
-$full_name = $tree->{__FIXED_BUILD_NAME} if(exists $tree->{__FIXED_BUILD_NAME}) ;
-$tree->{__BUILD_NAME} = $full_name ;
-
-Say EC "<I>Place: <I3>$name<I2>" 
-	. ($is_alternative_source ? ' -> [R]' : '')
-	. ($is_virtual ? ' -> [V]' : $full_name ne $name ? " -> '$full_name'" : '')
+Say EC "<I>Place: <I3>$name<I2>" . ($alt_source ? ' -> [R]' : '') . ($is_virtual ? ' -> [V]' : $build_name ne $name ? " -> '$build_name'" : '')
 	if $pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/ ;
 
-my @dependency_triggering ;
-my @tally ;
+my (@dependency_triggering, @tally) ;
 
-# IMPORTANT: this also generates child parents links for parallel build
+# NOTE: this also generates child parents links for parallel build
 # do not make the block depend on previous triggers
-for my $dependency_name (sort keys %$tree)
+for my $dependency_name (sort grep { ! /^__/ } keys %$node)
 	{
-	my $dependency = $tree->{$dependency_name} ;
-
-	next if $dependency_name =~ /^__/ ; # eliminate private data
+	my $dependency = $node->{$dependency_name} ;
 	
-	if(DependencyIsSource($tree, $dependency->{__NAME}, $inserted_nodes))
+	if(DependencyIsSource($node, $dependency->{__NAME}, $inserted_nodes))
 		{
+		$node->{$dependency_name}{__BUILD_DONE}++ ;
+		
 		# trigger on our dependencies because they won't trigger themselves if they match 
 		# and are a source node. If a source node triggered, it would need to be rebuild.
 		my $trigger_match = 0 ;
@@ -215,22 +146,21 @@ for my $dependency_name (sort keys %$tree)
 				{
 				Say Info2 "Trigger: source $dependency_name matches /$trigger_regex/" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				$trigger_match++ ;
-
-				push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
+				
+				push @{$node->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
 				push @{$dependency->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 				$triggered++ ;
-
-				$tree->{__CHILDREN_TO_BUILD}++ ;
-				push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-					if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} ;
+				
+				$node->{__CHILDREN_TO_BUILD}++ ;
+				push @tally, "<I2>Tally: $name [$node->{__CHILDREN_TO_BUILD}], child: $dependency_name" ;
 				}
 			}
-
+		
 		Say Info2 "Trigger: $dependency_name not triggered"
 			 if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
-
+		
 		#source file are not checked but they must be located
-		my ($full_name, $is_alternative_source, $alternative_index) = 
+		my ($located_name, $alt_source, $alt_index) = 
 				LocateSource
 					(
 					$dependency_name,
@@ -239,23 +169,21 @@ for my $dependency_name (sort keys %$tree)
 					$pbs_config->{DISPLAY_SEARCH_INFO},
 					$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
 					) ;
-
-		if ($is_alternative_source)
+		
+		if ($alt_source)
 			{
-			$tree->{$dependency_name}{__ALTERNATE_SOURCE_DIRECTORY} = $source_directories->[$alternative_index] ;
+			$node->{$dependency_name}{__ALTERNATE_SOURCE_DIRECTORY} = $source_directories->[$alt_index] ;
 			}
 		else
 			{
-			$tree->{$dependency_name}{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
+			$node->{$dependency_name}{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
 			}
-
-		$full_name = $tree->{$dependency_name}{__FIXED_BUILD_NAME} if(exists $tree->{$dependency_name}{__FIXED_BUILD_NAME}) ;
-
-		$tree->{$dependency_name}{__BUILD_NAME} = $full_name ;
-		$tree->{$dependency_name}{__BUILD_DONE}++ ;
-
-		Say EC "<I>Place: <I3>$dependency_name <I2>-> $full_name"
-			if $pbs_config->{DISPLAY_FILE_LOCATION} && $dependency_name !~ /^__/ ;
+		
+		$located_name = $node->{$dependency_name}{__BUILD_NAME} = exists $node->{$dependency_name}{__FIXED_BUILD_NAME}
+										 ? $node->{$dependency_name}{__FIXED_BUILD_NAME}
+										 : $located_name ; 
+		
+		Say EC "<I>Place: <I3>$dependency_name <I2>-> $located_name" if $pbs_config->{DISPLAY_FILE_LOCATION} ;
 		}
 	elsif(exists $dependency->{__CHECKED})
 		{
@@ -267,19 +195,16 @@ for my $dependency_name (sort keys %$tree)
 			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
 					if scalar(@{$dependency->{__TRIGGERED}}) > 1 ;
 			
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
+			push @{$node->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
 			
 			# data used to parallelize build
 			
-			push @{$dependency->{__PARENTS}}, $tree ;
+			push @{$dependency->{__PARENTS}}, $node ;
 			push @dependency_triggering, $dependency ;
 			
-			$tree->{__CHILDREN_TO_BUILD}++ ;
+			$node->{__CHILDREN_TO_BUILD}++ ;
 			
-			push @$build_sequence, $dependency if $dependency->{__PARALLEL_DEPEND} ;
-			
-			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-				if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} && $name !~ /^__PBS/ ;
+			push @tally, "<I2>Tally: $name [$node->{__CHILDREN_TO_BUILD}], child: $dependency_name" ;
 			}
 		}
 	else
@@ -304,84 +229,94 @@ for my $dependency_name (sort keys %$tree)
 			my $reason = $dependency->{__TRIGGERED}[0]{NAME} ;
 			$reason .= ', ... (' . scalar(@{$dependency->{__TRIGGERED}}) . ')'
 					if scalar(@{$dependency->{__TRIGGERED}}) > 1 ;
-
-			push @{$tree->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
+			
+			push @{$node->{__TRIGGERED}}, {NAME => $dependency_name, REASON => $reason} ;
 			$triggered++ ;
 			
 			# data used to parallelize build
-			$tree->{__CHILDREN_TO_BUILD}++ ;
-			push @{$dependency->{__PARENTS}}, $tree ;
+			$node->{__CHILDREN_TO_BUILD}++ ;
+			push @{$dependency->{__PARENTS}}, $node ;
 			push @dependency_triggering, $dependency ;
-
-			push @tally, EC "<I2>Tally: $name [$tree->{__CHILDREN_TO_BUILD}], child: $dependency_name"
-				if $pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY} && $name !~ /^__PBS/ ;
+			
+			push @tally, "<I2>Tally: $name [$node->{__CHILDREN_TO_BUILD}], child: $dependency_name" ;
 			}
 		}
 	}
 
-#----------------------------------------------------------------------------
 # handle the node type
-#----------------------------------------------------------------------------
 if($is_virtual)
 	{
-	if(exists $tree->{__LOCAL})
+	if(exists $node->{__LOCAL})
 		{
 		die ERROR("Node/File '$name' can't be VIRTUAL and LOCAL") ;
 		}
 		
-	if(-e $full_name)
+	if(-e $build_name)
 		{
-		if(-d $full_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
+		if(-d $build_name && $pbs_config->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY})
 			{
 			# do not generate warning
 			}
 		else
 			{
-			Say Warning2 "Check: '$name' is VIRTUAL but file '" . GetRunRelativePath($pbs_config, $full_name) . "' exists" ;
+			Say Warning2 "Check: '$name' is VIRTUAL but file '" . GetRunRelativePath($pbs_config, $build_name) . "' exists" ;
 			}
 		}
 	}
 	
-if(exists $tree->{__FORCED})
+#----------------------------------------------------------------------------
+
+local $PBS::Output::indentation_depth = 0 ;
+
+if(exists $node->{__PARALLEL_DEPEND})
 	{
-	push @{$tree->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
+	Say EC "<I>Check<W>∥ <I>: <I3>$node->{__NAME}<I2>, pid: $$"
+		if exists $node->{__PARALLEL_HEAD} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 	
-	Say Warning "Check: '$name' FORCED" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+	push @{$node->{__TRIGGERED}}, {NAME => '__SELF', REASON => '__PARALLEL_DEPEND'};
 	$triggered++ ;
 	}
-	
-#----------------------------------------------------------------------------
+
+if(exists $node->{__FORCED})
+	{
+	Say Warning "Check: '$name' FORCED" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+
+	push @{$node->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
+	$triggered++ ;
+	}
 
 unless(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	{
-	if( ! exists $tree->{__VIRTUAL} && ! -e $full_name)
+	if( ! exists $node->{__VIRTUAL} && ! -e $build_name)
 		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found"} ;
 		Say Info2 "Check: '$name' not found" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+		
+		push @{$node->{__TRIGGERED}}, {NAME => '__SELF', REASON => ": not found"} ;
 		$triggered++ ;
 		}
 	}
 	
 if(! $triggered && defined $node_checker_rule)
 	{
-	my ($must_build, $why) = $node_checker_rule->($tree, $full_name) ;
+	my ($must_build, $why) = $node_checker_rule->($node, $build_name) ;
 	if($must_build)
 		{
-		push @{$tree->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
 		Say Info2 "Check: '$name' $why" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
+	
+		push @{$node->{__TRIGGERED}}, {NAME => '__SELF', REASON => ':' . $why} ;
 		$triggered++ ;
 		}
 	}
 
-if(exists $tree->{__PBS_FORCE_TRIGGER})
+if(exists $node->{__PBS_FORCE_TRIGGER})
 	{
-	for my $forced_trigger (@{$tree->{__PBS_FORCE_TRIGGER}})
+	for my $forced_trigger (@{$node->{__PBS_FORCE_TRIGGER}})
 		{
 		my $message = $forced_trigger->{MESSAGE} // $forced_trigger->{REASON} // 'no message' ;
 		
 		Say Info "Check: '$name' PBS_FORCE_TRIGGER $message" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 		
-		push @{$tree->{__TRIGGERED}}, $forced_trigger ;
+		push @{$node->{__TRIGGERED}}, $forced_trigger ;
 		$triggered++ ;
 		}
 	}
@@ -391,7 +326,7 @@ if($pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} && $name !~ /^__/)
 	Say Info2 "Check: '$name' triggered by '$_->{__NAME}'" for @dependency_triggering ;
 	}
 
-if(exists $tree->{__VIRTUAL})
+if(exists $node->{__VIRTUAL})
 	{
 	# no digest files for virtual nodes
 	}
@@ -400,19 +335,19 @@ else
 	# the dependencies have been checked recursively ; the only thing a digest check could trigger with
 	# is package or node dependencies like pbsfile, variables, etc..
 	
-	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} || $triggered || ! -e $full_name)
+	unless(defined $pbs_config->{DEBUG_TRIGGER_NONE} || $triggered || ! -e $build_name)
 		{
 		# check digest
 		my $t0 = [gettimeofday];
 		
 		my ($must_build_because_of_digest, $reason) = (0, '') ;
-		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($tree, $inserted_nodes) unless $triggered ;
+		($must_build_because_of_digest, $reason) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) unless $triggered ;
 		
 		if($must_build_because_of_digest)
 			{
 			for (@$reason)
 				{
-				push @{$tree->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $_} ;
+				push @{$node->{__TRIGGERED}}, {NAME => '__DIGEST_TRIGGERED', REASON => $_} ;
 				Say Info2 "Check: '$name' $_" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 				}
 			
@@ -424,7 +359,7 @@ else
 		}
 	}
 
-if(NodeIsGenerated($tree))
+if(NodeIsGenerated($node))
 	{
 	my $trigger_match = 0 ;
 	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
@@ -436,7 +371,7 @@ if(NodeIsGenerated($tree))
 
 			$trigger_match++ ;
 
-			push @{$tree->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
+			push @{$node->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
 			$triggered++ ;
 			}
 		}
@@ -459,23 +394,23 @@ if($triggered)
 		(
 		$pbs_config->{TRIGGERS_FILE},
 		{append => 1, err_mode => "carp"},
-		"{NAME => '$tree->{__NAME}', TRIGGERS =>\n"
-			. Data::Dumper->Dump([$tree->{__TRIGGERED}])
+		"{NAME => '$node->{__NAME}', TRIGGERS =>\n"
+			. Data::Dumper->Dump([$node->{__TRIGGERED}])
 			."},\n"
 		) or do
 			{
 			Say Error "Check: Couldn't append to trigger file '$pbs_config->{TRIGGERS_FILE}'" ;
 			die "\n" ;
 			} ;
-
-	my $full_name ;
-	if(exists $tree->{__FIXED_BUILD_NAME})
+	
+	my $build_name ;
+	if(exists $node->{__FIXED_BUILD_NAME})
 		{
-		$full_name = $tree->{__FIXED_BUILD_NAME}  ;
+		$build_name = $node->{__FIXED_BUILD_NAME}  ;
 		}
 	else
 		{
-		($full_name) = LocateSource
+		($build_name) = LocateSource
 					(
 					$name,
 					$build_directory,
@@ -485,130 +420,93 @@ if($triggered)
 					) ;
 		}
 	
-	if($tree->{__BUILD_NAME} ne $full_name)
+	if($node->{__BUILD_NAME} ne $build_name)
 		{
 		if(defined $pbs_config->{DISPLAY_FILE_LOCATION})
 			{
-			Say Warning "Check: relocating '$name' @ '$full_name'\n\tWas $tree->{__BUILD_NAME}"  ;
-			PrintWarning DumpTree($tree->{__TRIGGERED}, 'Cause:') ;
+			Say Warning "Check: relocating '$name' @ '$build_name'\n\tWas $node->{__BUILD_NAME}"  ;
+			PrintWarning DumpTree($node->{__TRIGGERED}, 'Cause:') ;
 			}
 			
-		$tree->{__BUILD_NAME} = $full_name ;
-		$tree->{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
-		delete $tree->{__ALTERNATE_SOURCE_DIRECTORY} ;
+		$node->{__BUILD_NAME} = $build_name ;
+		$node->{__SOURCE_IN_BUILD_DIRECTORY} = 1 ;
+		delete $node->{__ALTERNATE_SOURCE_DIRECTORY} ;
 		}
-		
-		
-	$files_in_build_sequence->{$name} = $tree ;
-	push @$build_sequence, $tree  ;
+	
+	$files_in_build_sequence->{$name} = $node ;
+	push @$build_sequence, $node  ;
 	}
 else
 	{
-	if(exists $tree->{__LOCAL})
+	$node->{__BUILD_DONE} = "node not triggered" ;
+	}
+	
+if($pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY})
+	{
+	Say EC $_ for sort @tally ;
+	}
+
+delete($node->{__CYCLIC_FLAG}) ;
+pop @cyclic_trail ;
+
+$node->{__CHECKED}++ ;
+
+return $triggered ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub CheckCycle
+{
+my ($node, $inserted_nodes, $pbs_config, $cyclic_trail) = @_ ;
+ 
+my $node_name = $node->{__NAME} ;
+
+push @$cyclic_trail, $node ;
+
+if(exists $node->{__CYCLIC_FLAG})
+	{
+	$node->{__CYCLIC_ROOT}++; # used in graph generation
+	
+	if(NodeIsGenerated($node))
 		{
-		# never get here if the node doesn't exists as it would have triggered
+		my $cycles = PBS::Cyclic::GetUserCyclicText($node, $inserted_nodes, $pbs_config, $cyclic_trail) ; 
+		PrintError "\e[KCheck: cyclic dependencies detected:\n$cycles", 1 ;
 		
-		my ($build_directory_name) = LocateSource
-						(
-						$name,
-						$build_directory,
-						undef,
-						$pbs_config->{DISPLAY_SEARCH_INFO},
-						$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
-						) ;
-
-		my ($repository_name) = LocateSource
-						(
-						$name,
-						$build_directory,
-						$source_directories,
-						$pbs_config->{DISPLAY_SEARCH_INFO},
-						$pbs_config->{DISPLAY_SEARCH_ALTERNATES},
-						) ;
-		
-		unless($repository_name eq $build_directory_name)
-			{
-			Say Warning "PBS: forcing local copy of '$repository_name' to '$build_directory_name'" if defined $pbs_config->{DISPLAY_FILE_LOCATION} ;
-			
-			# build a  localizer rule on the fly for this node
-			my $localizer =
-				[
-					{
-					TYPE => ['__LOCAL'],
-					NAME => '__LOCAL:Internal rule', # name, package, ...
-					FILE => 'Internal',
-					LINE => 0,
-					ORIGIN => '',
-					DEPENDER => undef,
-					BUILDER  => sub 
-							{
-							use File::Copy ;
-							
-							my ($basename, $path, $ext) = File::Basename::fileparse($build_directory_name, ('\..*')) ;
-							
-							# create path to the node so external commands succeed
-							unless(-e $path)
-								{
-								use File::Path ;
-								mkpath($path) ;
-								}
-								
-							my $result ;
-							eval 
-								{
-								$result = copy($repository_name, $build_directory_name) ;
-								} ;
-							
-							if($@)
-								{
-								return 0, "Copy '$repository_name' -> '$build_directory_name' failed! $@\n" ;
-								}
-								
-							if($result)
-								{
-								return 1, "Copy '$repository_name' -> '$build_directory_name' succes.\n" ;
-								}
-							else
-								{
-								return 0, "Copy '$repository_name' -> '$build_directory_name' failed! $!\n" ;
-								}
-							},
-					TEXTUAL_DESCRIPTION => 'Rule to localize a file from the repository.',
-					}
-				] ;
-				
-			# localizer will be called as it is the last rule
-			push @{$tree->{__MATCHING_RULES}}, 
-				{
-				RULE => 
-					{
-					INDEX        => -1,
-					DEFINITIONS  => $localizer,
-					},
-
-				DEPENDENCIES => [],
-				};
-			
-			push @{$tree->{__TRIGGERED}}, {NAME => '__LOCAL', REASON => 'Local file'};
-			
-			$files_in_build_sequence->{$name} = $tree ;
-			push @$build_sequence, $tree  ; # build only once
-			}
+		die "cyclic dependencies detected @ $node_name\n" ;
+		}
+	
+	if($pbs_config->{DIE_SOURCE_CYCLIC_WARNING})
+		{
+		die "cyclic dependencies detected @ $node_name\n" ;
 		}
 	else
 		{
-		$tree->{__BUILD_DONE} = "node not triggered" ;
+		if(exists $node->{__TRIGGERED})
+			{
+			return 1 ;
+			}
+		else
+			{
+			return 0 ;
+			}
+		}
+	
+	my $node_info = "inserted at '$node->{__INSERTED_AT}{INSERTION_FILE}' rule '$node->{__INSERTED_AT}{INSERTION_RULE}'" ;
+	
+	if(NodeIsGenerated($node))
+		{
+		#Say Error "Cycle at node '$name' $node_info" ;
+		}
+	else
+		{
+		Say Warning "Check: cycle at node '$node_name' $node_info (source node)" unless ($pbs_config->{NO_SOURCE_CYCLIC_WARNING}) ;
 		}
 	}
 	
-Say $_ for sort @tally ;
+$node->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 
-delete($tree->{__CYCLIC_FLAG}) ;
-pop @cyclic_trail ;
-
-$tree->{__CHECKED}++ ;
-
-return $triggered ;
+return undef
 }
 
 #-------------------------------------------------------------------------------
@@ -729,7 +627,7 @@ PBS::Check  -
 	use PBS::Check ;
 	my $triggered = CheckDependencyTree
 				(
-				$tree,
+				$node,
 				$inserted_nodes,
 				$pbs_config,
 				$config,

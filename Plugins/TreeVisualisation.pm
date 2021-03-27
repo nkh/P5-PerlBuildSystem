@@ -156,7 +156,18 @@ if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					$tag  = "[V] " . ($tag // $_) if(exists $tree->{$_}{__VIRTUAL}) ;
 					$tag .= "* " . ($tag // $_)   if(exists $tree->{$_}{__TRIGGERED}) ;
 					
-					$tag  = $is_source ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
+					$tag  = exists $inserted_nodes->{$_}{__CYCLIC_FLAG}
+							? _ERROR_
+								(
+								"⮔  " . ($tag // $_)
+								. _INFO2_
+									GetRunRelativePath
+									(
+									$pbs_config,
+									" $tree->{__INSERTED_AT}{INSERTION_RULE_FILE}:$tree->{__INSERTED_AT}{INSERTION_RULE_LINE}"
+									)
+								)
+							: $is_source ? _WARNING_($tag // $_) : _INFO3_($tag // $_) ;
 					
 					$tag .= _WARNING_(' ⋂') if $tree->{$_}{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} && ! $tree->{$_}{__MATCHED_SUBPBS};
 					

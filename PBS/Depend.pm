@@ -1343,7 +1343,8 @@ my $short_dependency_name = GetTargetRelativePath($pbs_config, $dependency_name)
 #ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ᵠ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ 
 # • ■ ○ dkmdklf
 # ☘ ♾ ♿ ⚒ ⚓ ⚔ ⚕ ⚖ ⚗ ⚘ ⚙ ⚚ ⚛ ⚜ ☀ 
-
+# ⚯  ⦿ ፨ ⊚ ⊙ ⊖ 🔗  
+ 
 my ($linked_node_info, @link_type) ;
 
 if($dependency_is_source)

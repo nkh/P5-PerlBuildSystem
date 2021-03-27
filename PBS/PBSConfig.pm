@@ -495,7 +495,6 @@ unless($pbs_config->{FORCE_BUILD})
 		if($debug_flag =~ /^DEBUG/ && defined $value)
 			{
 			$pbs_config->{DO_BUILD} = 0 ;
-			keys %$pbs_config;
 			last ;
 			}
 		}

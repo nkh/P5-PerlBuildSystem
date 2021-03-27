@@ -274,9 +274,6 @@ else
 		unless $pbs_config->{QUIET} || $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 
-PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes)
-	if $pbs_config->{PBS_JOBS} && ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
-
 my ($build_node, $build_sequence) =
 	Check
 		(
@@ -296,7 +293,9 @@ return BUILD_SUCCESS, 'Generated build sequence', $build_sequence
 
 #-------------------------------------------------------------------------------
 
-Build
+PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes) ;
+
+PBS::PBS::Forked::Build
 	(
 	$pbs_config,
 	$config,
@@ -537,6 +536,8 @@ else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
 	
+	my $reset_hash_iterator = keys %$pbs_config ;
+
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{
 		Say Warning "Build: $debug_flag" if ! defined $pbs_config->{NO_BUILD} && $debug_flag =~ /^DEBUG/ && defined $value ;

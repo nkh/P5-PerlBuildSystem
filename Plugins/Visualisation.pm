@@ -40,7 +40,7 @@ use PBS::Log::ForkedLNI ;
 
 sub PostDependAndCheck
 {
-my ($pbs_config, $dependency_tree, $inserted_nodes, $build_sequence) = @_ ;
+my ($pbs_config, $node, $inserted_nodes, $build_sequence) = @_ ;
 
 if($pbs_config->{DISPLAY_PBSUSE_STATISTIC})
 	{
@@ -156,9 +156,9 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 	{
 	my $parallel_nodes = grep { $_->{__NAME} !~ /^__/ && $_->{__PARALLEL_DEPEND}} @$build_sequence ;
 	my $nodes = @$build_sequence ;
-	my $ratio = sprintf('%.02f', $parallel_nodes / $nodes) ;
+	my $ratio = $nodes ? sprintf('ratio: %.02f', $parallel_nodes / $nodes) : 'up to date' ;
 
-	Say Info "Sequence: nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, ratio: $ratio" : '');
+	Say Info "Sequence: $node->{__NAME}, nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, $ratio" : '');
 	
 	unless ($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY})
 		{

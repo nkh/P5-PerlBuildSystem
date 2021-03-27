@@ -236,7 +236,7 @@ if(defined $node)
 		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
 		
 		$build_message //= 'no message' ;
-		Say Error "\terror message: $build_message" ;
+		Say Error "\tError message: $build_message" ;
 		}
 
 	if($exception)

@@ -689,6 +689,38 @@ for my $node (@$nodes)
 
 #-------------------------------------------------------------------------------------------------------
 
+sub Build
+{
+my
+	(
+	$pbs_config,
+	$config,
+	$targets,
+	$inserted_nodes,
+	$tree,
+	$build_point,
+	$build_type,
+	$build_node,
+	$build_sequence,
+	) = @_ ;
+
+if(0 && $pbs_config->{PBS_JOBS})
+	{
+	PBS::Net::Post
+		(
+		$pbs_config, $pbs_config->{RESOURCE_SERVER},
+		'build_all',
+			{
+			},
+		$$
+		) ;
+	}
+else
+	{
+	PBS::DefaultBuild::Build(@_) ;
+	}
+}
+
 sub BuildNode
 {
 my ($node, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;

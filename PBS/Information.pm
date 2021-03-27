@@ -63,7 +63,7 @@ my $parallel_depended = exists $file_tree->{__PARALLEL_NODE} ;
 my $parallel_node     = $parallel_depend || $parallel_depended ;
 
 my $tag = $parallel_depend
-		? _WARNING2_ ('∥ ')
+		? _WARNING_ ('∥ ')
 		: $parallel_depended
 			? _INFO2_ ('∥ ')
 			: '' ;
