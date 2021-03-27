@@ -446,12 +446,11 @@ if($pbs_config->{DISPLAY_JOBS_INFO} && ! $pbs_config->{DISPLAY_JOBS_NO_TALLY})
 	Say EC $_ for sort @tally ;
 	}
 
-delete($node->{__CYCLIC_FLAG}) ;
-pop @cyclic_trail ;
+ClearCycleFlag($node, \@cyclic_trail) ;
 
 $node->{__CHECKED}++ ;
 
-return $triggered ;
+$triggered
 }
 
 #-------------------------------------------------------------------------------
@@ -507,6 +506,14 @@ if(exists $node->{__CYCLIC_FLAG})
 $node->{__CYCLIC_FLAG}++ ; # used to detect when a cycle has started
 
 return undef
+}
+
+sub ClearCycleFlag
+{
+my ($node, $cyclic_trail) = @_ ;
+
+delete $node->{__CYCLIC_FLAG} ;
+pop @$cyclic_trail ;
 }
 
 #-------------------------------------------------------------------------------

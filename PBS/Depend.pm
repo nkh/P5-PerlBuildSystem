@@ -1339,6 +1339,7 @@ my $short_dependency_name = GetTargetRelativePath($pbs_config, $dependency_name)
 
 #  ⁻ · ⁽ ⁾ ⁺ ⁻ ⁼ 
 # ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹
+# ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ;
 #ᴬ ᴮ ᶜ ᴰ ᴱ ᶠ ᴳ ᴴ ᴵ ᴶ ᴷ ᴸ ᴹ ᴺ ᴼ ᴾ ᵠ ᴿ ˢ ᵀ ᵁ ⱽ ᵂ ˣ ʸ ᶻ > 
 #ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ᵠ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ 
 # • ■ ○ dkmdklf

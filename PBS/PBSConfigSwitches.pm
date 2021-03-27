@@ -15,9 +15,10 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(RegistredFlagsAndHelp) ;
 our $VERSION = '0.04' ;
 
-use Data::Dumper ;
+#use Data::Dumper ;
 use Carp ;
 use List::Util qw(max any);
+use Sort::Naturally ;
 use File::Slurp ;
 
 use PBS::Constants ;
@@ -1551,23 +1552,26 @@ if($word_to_complete !~ /^-?-?\s?$/)
 	{
 	my (@slice, @options) ;
 	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
-
+	
 	my ($names, $option_tuples )= Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
-
+	
 	my $aliases = AliasOptions([]) ;
 	push @$names, keys %$aliases ;
-
+	
 	@$names = sort @$names ;
 	
-	my $reduce = $word_to_complete =~ s/-$// ;
-	my $expand = $word_to_complete =~ s/\+$// ;
-
+	$word_to_complete =~ s/(\+)(\d+)$// ;
+	my $point = $2 ;
+	
+	my $reduce  = $word_to_complete =~ s/-$// ;
+	my $expand  = $word_to_complete =~ s/\+$// ;
+	
 	use Tree::Trie ;
 	my $trie = new Tree::Trie ;
-	$trie->add( map { ("-" . $_) , ("--" . $_) }  @{$names }) ;
-
-	my @matches = $trie->lookup($word_to_complete) ;
-
+	$trie->add( map { ("-" . $_) , ("--" . $_) }  @{$names } ) ;
+	
+	my @matches = nsort $trie->lookup($word_to_complete) ;
+	
 	if(@matches)
 		{
 		if($reduce || $expand)
@@ -1587,18 +1591,28 @@ if($word_to_complete !~ /^-?-?\s?$/)
 			}
 		else
 			{
-			print join("\n", @matches) . "\n" ;
+			@matches = $matches[$point - 1] if $point and defined $matches[$point - 1] ;
+			
+			if(@matches < 2)
+				{
+				print join("\n",  @matches) . "\n" ;
+				}
+			else
+				{
+				my $counter = 0 ;
+				print join("\n", map { $counter++ ; "$_₊" . subscript($counter)} @matches) . "\n" ;
+				}
 			}
 		}
 	elsif($word_to_complete =~ /[^\?\-\+]+/)
 		{
-		if($word_to_complete =~ /\?\??$/)
+		if($word_to_complete =~ /\?$/)
 			{
-			my ($word, $only_one) = $word_to_complete =~ /^-*(.+?)(\?\??)$/ ;
+			my ($whole_option, $word) = $word_to_complete =~ /^(-*)(.+?)\?$/ ;
 			
-			@matches = $only_one eq '?'
-					? (grep { /^$word/ } @$names)[0]
-					: grep { /$word/ } @$names ;
+			my $matcher = $whole_option eq '' ? $word : "^$word" ;
+			
+			@matches = grep { $_ =~ $matcher } @$names ;
 			
 			if(@matches)
 				{
@@ -1606,24 +1620,37 @@ if($word_to_complete !~ /^-?-?\s?$/)
 				
 				DisplaySwitchesHelp(@matches) ;
 				
-				@matches = grep { /$word/ } @$names ;
-				
-				print @matches > 1 ? join("\n", map { "--$_" } @matches) . "\n" : "\n​\n" ;
+				my $c = 0 ;
+				print @matches > 1 ? join("\n", map { $c++ ; "--$_₊" . subscript($c) } nsort @matches) . "\n" : "\n​\n" ;
 				}
 			else
 				{
-				print join("\n", map { "--$_" } grep { /$word/ } @$names) . "\n" ;
+				my $c = 0 ;
+				print join("\n", map { $c++ ; "--$_₊" . subscript($c)} nsort grep { $_ =~ $matcher } @$names) . "\n" ;
 				}
 			}
 		else
 			{
 			my $word = $word_to_complete =~ s/^-*//r ;
 			
-			print join("\n", map { "--$_" } sort grep { /$word/ } @$names) . "\n" ;
+			my @matches = nsort grep { /$word/ } @$names ;
+			   @matches = $matches[$point - 1] if $point and defined $matches[$point - 1] ;
+			
+			if(@matches < 2)
+				{
+				print join("\n", map { "--$_" } @matches) . "\n" ;
+				}
+			else
+				{
+				my $c = 0 ;
+				print join("\n", map { $c++ ; "--$_₊" . subscript($c)} @matches) . "\n" ;
+				}
 			}
 		}
 	}
 }
+
+sub subscript { join '', map { qw / ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ /[$_] } split '', $_[0] ; } 
 
 #-------------------------------------------------------------------------------
 
