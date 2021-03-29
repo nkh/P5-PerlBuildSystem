@@ -639,7 +639,7 @@ EOT
 	'dde|display_depend_end', 'Display when a depend ends.', '',
 		\$config->{DISPLAY_DEPEND_END},
 		
-	'log_parallel_depend', 'Creates a log of the parallel depend.', '',
+	'ddplg|log_parallel_depend', 'Creates a log of the parallel depend.', '',
 		\$config->{LOG_PARALLEL_DEPEND},
 
 	'dpds|display_parallel_depend_start', 'Display a message when a parallel depend starts.', '',
@@ -659,6 +659,12 @@ EOT
 
 	'ddplv|display_parallel_depend_linking_verbose', 'Display a verbose parallel depend linking result.', '',
 		\$config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE},
+
+	'ddtt|display_parallel_depend_tree', 'Display the distributed dependency graph using a text dumper', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_TREE},
+
+	'ddttp|display_parallel_depend_process_tree', 'Display the distributed process graph using a text dumper', '',
+		\$config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE},
 
 	'ddrp|display_depend_remaining_processes', 'Display how many depend processes are running after the main depend process ended.', '',
 		\$config->{DISPLAY_DEPEND_REMAINING_PROCESSES},

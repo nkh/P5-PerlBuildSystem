@@ -53,10 +53,9 @@ our $pbs_run_information =
 our $pbs_runs ;
 my %Pbs_runs ;
 
-sub GetPbsRuns
-{
-return($pbs_runs) ;
-}
+sub GetPbsRuns   { $pbs_runs }
+sub ResetPbsRuns { $pbs_runs = 0 }
+
 
 sub Pbs
 {

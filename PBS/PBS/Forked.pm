@@ -20,10 +20,11 @@ use Storable qw(freeze thaw) ;
 use Compress::Zlib ;
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
-use PBS::Depend ;
-use PBS::Output ;
 use PBS::Constants ;
+use PBS::Depend ;
 use PBS::Net ;
+use PBS::Output ;
+use PBS::Plugin ;
 
 use constant 
 	{
@@ -140,6 +141,7 @@ my $parent_pid ;
 sub StartNewDepender
 {
 my ($pbs_config, $node, $args) = @_ ;
+my $t0 = [gettimeofday];
 
 my $depender ; 
 
@@ -163,7 +165,8 @@ if($resource_id)
 			$node->{__PARALLEL_DEPEND} = $pid ;
 			
 			$forked_children{$pid}++ ; 
-			#SUT \%forked_children, $$ ;
+			
+			Say EC "\t<I>Depend<W>∥ <I2>: <I3>" . GetRunRelativePath($pbs_config, $node->{__NAME}) . "<I2>, pid: $pid"  ;
 			
 			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
 			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
@@ -172,6 +175,8 @@ if($resource_id)
 			{
 			$node->{__PARALLEL_DEPEND} = $$ ;
 			$node->{__PARALLEL_HEAD} = $$ ;
+			
+			PBS::PBS::ResetPbsRuns() ;
 			
 			# if fork ok depend in other process otherwise depend in this process
 			
@@ -219,7 +224,7 @@ if($resource_id)
 				my $server     = PBS::Net::StartHttpDeamon($pbs_config) ;
 				my $server_url = $server->url ;
 				
-	 			for (@new_nodes, $target)
+				for (@new_nodes, $target)
 					{
 					$inserted_nodes->{$_}{__PARALLEL_NODE}   = $$ ;
 					$inserted_nodes->{$_}{__PARALLEL_SERVER} = $server_url
@@ -234,10 +239,14 @@ if($resource_id)
 				my %not_depended ;
 				my %graph  = 
 					(
+					TIME     => sprintf("%0.2f s.", tv_interval ($t0, [gettimeofday])),
 					PID      => $$,
+					ADDRESS  => $server_url,
+					
 					TARGET   => $target,
 					PARENT   => $parent_pid,
 					CHILDREN => \%forked_children,
+					PBS_RUNS => PBS::PBS::GetPbsRuns(),
 					
 					NODES => 
 						{
@@ -279,7 +288,6 @@ if($resource_id)
 					) ;
 				
 				$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
-				$graph{ADDRESS}          = $server_url ;
 				
 				my $serialized_graph = freeze \%graph ;
 				   $serialized_graph = Compress::Zlib::memGzip($serialized_graph) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
@@ -372,7 +380,7 @@ use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
 sub LinkMainGraph
 {
-my ($pbs_config, $inserted_nodes) = @_ ;
+my ($pbs_config, $inserted_nodes, $targets, $time) = @_ ;
 
 if($pbs_config->{PBS_JOBS})
 	{
@@ -399,17 +407,15 @@ if($pbs_config->{PBS_JOBS})
 	Say Error $@ if $@ ;
 	
 	my $number_of_dependers = scalar keys %$dependers ;
-
-	my $graphs = LinkChildren($pbs_config, $dependers, $inserted_nodes) ;
-
-	my $t0 = [gettimeofday];
-
+	
+	my $graphs = LinkChildren($pbs_config, $dependers, $inserted_nodes, $time) ;
+	
 	for my $graph ( grep { $_->{ADDRESS} ne 'main graph' } values %$graphs)
 		{
 		my $response = PBS::Net::Post($pbs_config, $graph->{ADDRESS}, 'build', {}, $$) ;
 		}
 	
-	$t0 = [gettimeofday];
+	my $t0 = [gettimeofday];
 	
 	if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
 		{
@@ -423,16 +429,24 @@ if($pbs_config->{PBS_JOBS})
 	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'stop') ;
 	
 	PrintInfo sprintf("PBS∥ : shutdown: %0.2f s.\n", tv_interval ($t0, [gettimeofday])) ;
+
+	for (@$targets)
+		{
+		RunPluginSubs($pbs_config, 'PostDependAndCheck', $pbs_config, $inserted_nodes->{$_}, $inserted_nodes, [], $inserted_nodes->{$_})
+			if $pbs_config->{DISPLAY_PARALLEL_DEPEND_TREE} ;
+		}
 	} 
 }
 
 sub LinkChildren
 {
-my ($pbs_config, $dependers, $inserted_nodes) = @_ ;
+my ($pbs_config, $dependers, $inserted_nodes, $time) = @_ ;
 
 my $t0_link = [gettimeofday];
 
+my $pbs_runs  = 0 ;
 my $data_size = 0 ;
+
 my %graphs = map 
 		{
 		my $response = PBS::Net::Get($pbs_config, $dependers->{$_}{ADDRESS}, 'get_graph', {}, $$, RAW) ;
@@ -440,6 +454,8 @@ my %graphs = map
 	
 		$response = Compress::Zlib::memGunzip($response) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
 		my $graph = thaw $response ;
+		
+		$pbs_runs += $graph->{PBS_RUNS} ;
 		
 		$_ => $graph ; 
 		} keys %$dependers ;
@@ -452,9 +468,11 @@ my $download_time = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
 
 my $main_graph = 
 	{
+	TIME         => sprintf('%0.2f s.', $time),
 	PID          => $$,
 	ADDRESS      => 'main graph',
-	TARGET       => 'ROOT',
+	
+	TARGET       => join(' ', @{$pbs_config->{TARGETS}}),
 	PARENT       => $parent_pid,
 	CHILDREN     => \%forked_children,
 	NODES        => $inserted_nodes,
@@ -465,10 +483,12 @@ my $main_graph =
 			},
 	} ;
 
-my (%nodes, %targets, %not_linked) ;
+my (%nodes, %targets, %not_linked, %processes) ;
 
 for my $graph ($main_graph, values %graphs)
 	{
+	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
+	
 	$targets{$graph->{TARGET}} = $graph ;
 	
 	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >" if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
@@ -505,6 +525,33 @@ for my $graph ($main_graph, values %graphs)
 	}
 	
 $graphs{$$} = $main_graph ;
+
+my $trigger = scalar @{$graphs{$$}{NODES}{$graphs{$$}{TARGET}}{__TRIGGERED}} > 1 ? ' *' : '' ;
+
+SIT $processes{$$},
+	EC("∥ $$ * $trigger<I2> $graphs{$$}{TARGET}, " . scalar(keys %{$graphs{$$}{NODES}}) . "/" . $graphs{$$}{TIME}),
+	NO_NO_ELEMENTS => 1, DISPLAY_ADDRESS => 0,
+	FILTER => sub 
+			{
+			my ($tree, $level, $path, $nodes_to_display, $setup) = @_ ;
+			if('HASH' eq ref $tree)
+				{
+				my @keys_to_dump ;
+				
+				for (keys %$tree)
+					{
+					my $trigger = scalar @{$graphs{$_}{NODES}{$graphs{$_}{TARGET}}{__TRIGGERED}} > 1 ? ' *' : '' ;
+					
+					push @keys_to_dump, [ $_,  EC("∥ $_$trigger<I2> $graphs{$_}{TARGET}, " . scalar(keys %{$graphs{$_}{NODES}}) . "/" . $graphs{$_}{TIME}) ],
+					}
+					
+				return('HASH', undef, sort @keys_to_dump) ;
+				}
+				
+			return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+			}
+	
+	 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE} ;
 
 # re-generate main graph
 
@@ -651,18 +698,19 @@ for my $graph ( values %graphs)
 # send link info to remote pbs
 PBS::Net::Put($pbs_config, $_, 'link', freeze($chained_nodes{$_}), $$) for keys %chained_nodes ;
 
-my $time                    = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
+my $time2                    = sprintf '%0.2f', tv_interval ($t0_link, [gettimeofday]) ;
 my $nodes                   = keys %nodes ;
 my $not_linked              = keys %not_linked ;
 my $number_of_dependers     = keys %$dependers ;
 my $dependers_with_no_links = $number_of_dependers - $linked_dependers ;
 
-Say Info "Depend∥ : dependers: $number_of_dependers, linked: $linked_dependers, terminal: $dependers_with_no_links"
+Say Info "Depend∥ : dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
 		. ", nodes: $nodes, links: $linked/$not_linked"
-		. ", time: $time s., dl: $data_size in $download_time s." ;
+		. ", time: $time2 s., dl: $data_size in $download_time s." ;
 
 \%graphs
 }
+
 
 #-------------------------------------------------------------------------------------------------------
 

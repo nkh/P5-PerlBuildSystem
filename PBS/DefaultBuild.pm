@@ -233,7 +233,6 @@ if($pbs_config->{DISPLAY_CONFIG_USAGE})
 		 "Config: variable usage for '$targets->[0]':", DISPLAY_ADDRESS => 0 ;
 	}
 
-
 Say ' ' if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 
 for my $target (@$targets)
@@ -263,9 +262,11 @@ my $nodes          = scalar keys %$inserted_nodes ;
 my $non_warp_nodes = scalar grep{! exists $inserted_nodes->{$_}{__WARP_NODE}} keys %$inserted_nodes ;
 my $warp_nodes     = $nodes - $non_warp_nodes ;
 
+my $time = tv_interval ($t0_depend, [gettimeofday]) ;
+
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes", tv_interval ($t0_depend, [gettimeofday]))
+	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes", $time)
 		unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 else
@@ -293,7 +294,8 @@ return BUILD_SUCCESS, 'Generated build sequence', $build_sequence
 
 #-------------------------------------------------------------------------------
 
-PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes) ;
+PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes, $targets, $time) ;
+
 
 PBS::PBS::Forked::Build
 	(
@@ -348,7 +350,7 @@ else
 		else
 			{
 			my @matches = GetCloseMatches($build_point, $inserted_nodes) ;
-
+			
 			if(@matches == 0)
 				{
 				Say Error "PBS: no such node '$build_point', found nothing matching" ;

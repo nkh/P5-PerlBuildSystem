@@ -1,7 +1,14 @@
-%index when multiple completion choices
+
+parallel depend log
+	always ON and option for off?
+	pipe?
+	align to the left?
+	display via resource manager to avoid garbled output
+
+	handle this when main depend is a parallel depend and resource server is the main thread
 
 distributed build sequence must be handled differently
-	need to know if a parallel node triggers to create athe build sequence
+	need to know if a parallel node triggers to create the build sequence
 
 some processes get a very large amount of nodes while other don't
 	we can
@@ -11,48 +18,18 @@ some processes get a very large amount of nodes while other don't
 -w 0 and nothing to build, check: 1 sec
 	warp 0.2s
 		warp doesn't need to open and verify 1000s digests
+		gimmme MESO!
 
 distributed build
 
 setting priority for nodes across parallel pbs
+	the problem is that the build sequence is already distributed
+	it's possible to diffuse the priority when nodes are chained
 
 distributed post pbs
 	h files are merged back to graph but the h nodes
 		are in a sub process
 			we can read the files but the code to read the files is in a sub process
-
--tno displays cycles
-	-tno is run before check so it doesn't have the information
-		either run it again or change the order
-
-#-nh stops node builder log generation? no output when error
-	-> when -bpb0
-
-	# when building in parallel, we can put as much possible in the log even if
-	# the progress bar is displayed, when it isn't, it's up to the user what gets in
-
-
-	=> the user will want everything in the log even if she doesn't add -bv
-
-	=> generate two information pages, one for display the other one for log
-
-#wizard broken
-
-#-hs, long help
-
-#completion long help ?
-
-#-check header not shown properly when parallel node head
-
-#embedded color names
-	Say <P> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
-	Say <C> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
-
-	Say Indented "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
-	Say Colored "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
-
-	SEC "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
-
 
 node digest bypassed by warp on distro change!
 
@@ -66,7 +43,6 @@ node digest bypassed by warp on distro change!
 		^C
 
 	=> warp verifies the digest -> OK, warp verifies the nodes md5 NOT THEIR DIGEST
-
 
 debugger
 	insertion breakpoint locally changes options to display the depending of a specific node
@@ -567,6 +543,41 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#%index when multiple completion choices
+
+#-tno displays cycles
+	-tno is run before check so it doesn't have the information
+		either run it again or change the order
+
+#-nh stops node builder log generation? no output when error
+	-> when -bpb0
+
+	# when building in parallel, we can put as much possible in the log even if
+	# the progress bar is displayed, when it isn't, it's up to the user what gets in
+
+
+	=> the user will want everything in the log even if she doesn't add -bv
+
+	=> generate two information pages, one for display the other one for log
+
+#wizard broken
+
+#-hs, long help
+
+#completion long help ?
+
+#-check header not shown properly when parallel node head
+
+#embedded color names
+	Say <P> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+	Say <C> "$indent<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+
+	Say Indented "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+	Say Colored "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+
+	SEC "<I3>'$node_name'<I> nothing to do <W3>[IMMEDIATE_BUILD]" ;
+
 
 #IsSource can be cached in the node in depend.pm
 
