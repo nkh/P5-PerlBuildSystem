@@ -609,10 +609,10 @@ EOT
 	'display_target_path_usage', "Don't remove TARGET_PATH from config usage report.", '',
 		\$config->{DISPLAY_TARGET_PATH_USAGE},
 		
-	'display_nodes_per_pbsfile', 'Display how many nodes where added by each pbsfile run.', '',
+	'dpn|display_nodes_per_pbsfile', 'Display how many nodes where added by each pbsfile run.', '',
 		\$config->{DISPLAY_NODES_PER_PBSFILE},
 		
-	'display_nodes_per_pbsfile_names', 'Display which nodes where added by each pbsfile run.', '',
+	'dpnn|display_nodes_per_pbsfile_names', 'Display which nodes where added by each pbsfile run.', '',
 		\$config->{DISPLAY_NODES_PER_PBSFILE_NAMES},
 		
 	'dl|depend_log', 'Created a log for each subpbs.', '',

@@ -99,7 +99,7 @@ if($pbs_config->{PBS_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
 		}
 	else
 		{
-		$depender = StartNewDepender($pbs_config, $node, $args) ;
+		$depender = GetParallelDepender($pbs_config, $node, \&PBS::PBS::Pbs, $args, $args) ;
 		}
 	
 	}
@@ -137,22 +137,19 @@ PBS::PBS::Pbs
 my %nodes_snapshot ;
 my %forked_children ;
 my $parent_pid ;
+my $parent_pid_copy ;
 
-sub StartNewDepender
+sub GetParallelDepender
 {
-my ($pbs_config, $node, $args) = @_ ;
-my $t0 = [gettimeofday];
+my ($pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
+
+# save our pid for children 
+$parent_pid_copy = $$ ;
 
 my $depender ; 
-
-#return $depender if $args->[INSERTED_NODES] - $args->[START_NODES] < $pbs_config->{PARALLEL_MINIMUM_NODES} ;
- 
 my $response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // {} ;
 
 my $resource_id = $response->{ID} ;
-
-# save our pid for children 
-my $parent_pid_copy = $$ ;
 
 if($resource_id)
 	{
@@ -166,151 +163,13 @@ if($resource_id)
 			
 			$forked_children{$pid}++ ; 
 			
-			Say EC "\t<I>Depend<W>∥ <I2>: <I3>" . GetRunRelativePath($pbs_config, $node->{__NAME}) . "<I2>, pid: $pid"  ;
-			
 			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
 			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
 			}
 		else
 			{
-			$node->{__PARALLEL_DEPEND} = $$ ;
-			$node->{__PARALLEL_HEAD} = $$ ;
-			
-			PBS::PBS::ResetPbsRuns() ;
-			
-			# if fork ok depend in other process otherwise depend in this process
-			
-			my (@args) = @_ ;
-			
-			%forked_children = () ; # forget parents children
-			$parent_pid = $parent_pid_copy ;
-			my $target = $args[TARGETS][0] ;
-			
-			my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
-			Say Color 'test_bg',  "Depend: parallel start$node_text, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
-			
-			my $log_file = GetRedirectionFile($pbs_config, $node) ;
-			my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-			
-			PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { pid => $$ }, $$) ;
-				
-			%nodes_snapshot = %{$args[INSERTED_NODES]} ;
-			
-			$args[BUILD_TYPE] = DEPEND_AND_CHECK ;
-			
-			my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package) =
-				PBS::PBS::Pbs(@args) ;
-			
-			my @new_nodes = grep { ! exists $nodes_snapshot{$_} } keys %$inserted_nodes ;
-			my $new_nodes = @new_nodes ;
-			
-			if(defined $pid)
-				{
-				RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-			
-				my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
-				my $info = ", children: " . scalar(keys %forked_children) . ", new nodes: $new_nodes" ;
-				
-				Say Color 'test_bg2', "Depend: parallel end$node_text$info, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
-				
-				PBS::Net::Post
-					(
-					$pbs_config, $pbs_config->{RESOURCE_SERVER},
-					'return_depend_resource',
-					{ id => $resource_id },
-					$$
-					) ;
-				
-				my $server     = PBS::Net::StartHttpDeamon($pbs_config) ;
-				my $server_url = $server->url ;
-				
-				for (@new_nodes, $target)
-					{
-					$inserted_nodes->{$_}{__PARALLEL_NODE}   = $$ ;
-					$inserted_nodes->{$_}{__PARALLEL_SERVER} = $server_url
-					}
-				
-				# remove undefined variables from pbs_configs, 10% speedup, 20% size
-				for my $pbs_config (grep { state %seen ; ! $seen{$_}++ } map { $inserted_nodes->{$_}{__PBS_CONFIG} } @new_nodes, $target )
-					{
-					delete @$pbs_config{ grep { ! defined $pbs_config->{$_} } keys %$pbs_config }
-					}
-				
-				my %not_depended ;
-				my %graph  = 
-					(
-					TIME     => sprintf("%0.2f s.", tv_interval ($t0, [gettimeofday])),
-					PID      => $$,
-					ADDRESS  => $server_url,
-					
-					TARGET   => $target,
-					PARENT   => $parent_pid,
-					CHILDREN => \%forked_children,
-					PBS_RUNS => PBS::PBS::GetPbsRuns(),
-					
-					NODES => 
-						{
-						map 
-							{
-							my $node_name = $_ ;
-							my $node = $inserted_nodes->{$node_name} ;
-							
-							$not_depended{$node_name}++ if ! exists $node->{__DEPENDED} && ! $node->{__IS_SOURCE} ;
-							
-							$node_name =>
-								{
-								(
-								map 
-									{
-									my $ref = ref $node->{$_} ;
-									
-									'' eq $ref
-										? ($_ => $node->{$_})
-										: 'HASH' eq $ref
-											? 
-												(
-												$_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
-													? ($_ => $node->{$_})
-													: ($_ => {} )
-												)
-											:
-												(
-												$_ eq  '__TRIGGERED'
-													? ($_ => $node->{$_})
-													: ($_ => [] )
-												)
-									} 
-									keys %$node
-								),
-								}
-							} @new_nodes, $target
-						},
-					) ;
-				
-				$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
-				
-				my $serialized_graph = freeze \%graph ;
-				   $serialized_graph = Compress::Zlib::memGzip($serialized_graph) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
-				
-				BecomeDependServer
-					(
-					$pbs_config, $pbs_config->{RESOURCE_SERVER}, $server,
-					{
-						NODE    => $node,
-						ARGS    => $args,
-						ADDRESS => $server_url,
-						GRAPH   => $serialized_graph
-					}) ;
-				
-				exit 0 ;
-				}
-			else
-				{
-				RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-				return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package ;
-				}
-			} ;
-			
+			RunParallelPbs($pid, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) ;
+			}
 		}
 	}
 else
@@ -321,6 +180,149 @@ else
 
 $depender ; 
 }
+
+sub RunParallelPbs
+{
+my ($pid, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
+
+my $t0 = [gettimeofday];
+
+$node->{__PARALLEL_DEPEND} = $$ ;
+$node->{__PARALLEL_HEAD} = $$ ;
+
+PBS::PBS::ResetPbsRuns() ;
+
+%forked_children = () ; # forget parents children
+$parent_pid = $parent_pid_copy ;
+my $target = $args->[TARGETS][0] ;
+
+my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
+Say Color 'test_bg',  "Depend: parallel start$node_text, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
+
+my $log_file = GetRedirectionFile($pbs_config, $node) ;
+my $redirection = RedirectOutputToFile($pbs_config, $log_file) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
+
+PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_depend', { pid => $$ }, $$) ;
+	
+%nodes_snapshot = %{$args->[INSERTED_NODES]} ;
+
+$args->[BUILD_TYPE] = DEPEND_AND_CHECK ;
+
+# RUN
+my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package, $build_sequence) =
+	$pbs_entry_point->(@$entry_point_args) ;
+
+my @new_nodes = grep { ! exists $nodes_snapshot{$_} } keys %$inserted_nodes ;
+my $new_nodes = @new_nodes ;
+
+if(defined $pid)
+	{
+	RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
+
+	my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
+	my $info = ", children: " . scalar(keys %forked_children) . ", new nodes: $new_nodes" ;
+	
+	Say Color 'test_bg2', "Depend: parallel end$node_text$info, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
+	
+	PBS::Net::Post
+		(
+		$pbs_config, $pbs_config->{RESOURCE_SERVER},
+		'return_depend_resource',
+		{ id => $resource_id },
+		$$
+		) ;
+	
+	my $server     = PBS::Net::StartHttpDeamon($pbs_config) ;
+	my $server_url = $server->url ;
+	
+	for (@new_nodes, $target)
+		{
+		$inserted_nodes->{$_}{__PARALLEL_NODE}   = $$ ;
+		$inserted_nodes->{$_}{__PARALLEL_SERVER} = $server_url
+		}
+	
+	# remove undefined variables from pbs_configs, 10% speedup, 20% size
+	for my $pbs_config (grep { state %seen ; ! $seen{$_}++ } map { $inserted_nodes->{$_}{__PBS_CONFIG} } @new_nodes, $target )
+		{
+		delete @$pbs_config{ grep { ! defined $pbs_config->{$_} } keys %$pbs_config }
+		}
+	
+	my %not_depended ;
+	my %graph  = 
+		(
+		TIME     => sprintf("%0.2f s.", tv_interval ($t0, [gettimeofday])),
+		PID      => $$,
+		ADDRESS  => $server_url,
+		
+		TARGET   => $target,
+		PARENT   => $parent_pid,
+		CHILDREN => \%forked_children,
+		PBS_RUNS => PBS::PBS::GetPbsRuns(),
+		
+		NODES => 
+			{
+			map 
+				{
+				my $node_name = $_ ;
+				my $node = $inserted_nodes->{$node_name} ;
+				
+				$not_depended{$node_name}++ if ! exists $node->{__DEPENDED} && ! $node->{__IS_SOURCE} ;
+				
+				$node_name =>
+					{
+					(
+					map 
+						{
+						my $ref = ref $node->{$_} ;
+						
+						'' eq $ref
+							? ($_ => $node->{$_})
+							: 'HASH' eq $ref
+								? 
+									(
+									$_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
+										? ($_ => $node->{$_})
+										: ($_ => {} )
+									)
+								:
+									(
+									$_ eq  '__TRIGGERED'
+										? ($_ => $node->{$_})
+										: ($_ => [] )
+									)
+						} 
+						keys %$node
+					),
+					}
+				} @new_nodes, $target
+			},
+		) ;
+	
+	$graph{NOT_DEPENDED}{$_} = $graph{NODES}{$_} for keys %not_depended ;
+	
+	my $serialized_graph = freeze \%graph ;
+	   $serialized_graph = Compress::Zlib::memGzip($serialized_graph) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
+	
+	BecomeDependServer
+		(
+		$pbs_config, $pbs_config->{RESOURCE_SERVER}, $server,
+		{
+			NODE    => $node,
+			ARGS    => $args,
+			ADDRESS => $server_url,
+			GRAPH   => $serialized_graph
+		}) ;
+	
+	exit 0 ;
+	}
+else
+	{
+	RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
+	return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package ;
+	}
+
+
+} 
 
 #-------------------------------------------------------------------------------------------------------
 
@@ -335,11 +337,14 @@ PBS::Net::BecomeServer($pbs_config, 'depender', $server, $data) ;
 
 #-------------------------------------------------------------------------------------------------------
 
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my $now_string =  "${mday}_${mon}_${hour}_${min}_${sec}" ;
+
 sub GetRedirectionFile
 {
 my ($pbs_config, $node) = @_ ;
 
-my $redirection_file = $pbs_config->{BUILD_DIRECTORY} . "/parallel_depend/$node->{__NAME}" ; 
+my $redirection_file = $pbs_config->{BUILD_DIRECTORY} . "/.parallel_depend_$now_string/$node->{__NAME}" ; 
 $redirection_file =~ s/\/\.\//\//g ;
 
 my ($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;

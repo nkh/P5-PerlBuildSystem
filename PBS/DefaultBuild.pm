@@ -30,7 +30,6 @@ use PBS::Output ;
 use PBS::Constants ;
 use PBS::Information ;
 use PBS::Plugin ;
-use PBS::PBS::Forked ;
 
 #-------------------------------------------------------------------------------
 
@@ -294,10 +293,7 @@ return BUILD_SUCCESS, 'Generated build sequence', $build_sequence
 
 #-------------------------------------------------------------------------------
 
-PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes, $targets, $time) ;
-
-
-PBS::PBS::Forked::Build
+Build
 	(
 	$pbs_config,
 	$config,

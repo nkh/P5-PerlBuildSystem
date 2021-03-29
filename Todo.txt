@@ -1,8 +1,15 @@
 
+
+targets with +\d are options handle them
+
+handle crashes in //pbs
+	send an exception to pbs server
+	handle timeout, and since we know what was depended we can restart it!
+
 parallel depend log
 	always ON and option for off?
 	pipe?
-	align to the left?
+	#align to the left?
 	display via resource manager to avoid garbled output
 
 	handle this when main depend is a parallel depend and resource server is the main thread

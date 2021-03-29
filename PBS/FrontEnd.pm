@@ -269,7 +269,7 @@ $pbs_config->{TARGET_PATH} = '' ;
 
 # make the variables below accessible from a post pbs script
 my $build_success = 1 ;
-my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
+my ($buil_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 	 = (BUILD_FAILED, 'no_message', {}, {}, '', {}) ;
 
 my $parent_config = $pbs_config->{LOADED_CONFIG} || {} ;
@@ -279,29 +279,13 @@ if(@$targets)
 	PBS::Debug::setup_debugger_run($pbs_config) ;
 	$DB::single = 1 ;
 
-	if($pbs_config->{PBS_JOBS})
-		{
-		eval { use PBS::Net  } ;
-		die $@ if $@ ;
+	my $StartPbs = $pbs_config->{PBS_JOBS} ? \&PBS::Net::StartPbsServer : \&StartPbs ;
 
-		$pbs_config->{RESOURCE_SERVER} = PBS::Net::StartResourceServer($pbs_config) ;
-		} 
-
-	eval
-		{
-		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
-			= PBS::Warp::WarpPbs($targets, $pbs_config, $parent_config) ;
-		} ;
-		
-	if($@)
-		{
-		print STDERR $@ ;
-		}
-		
-	$build_result = BUILD_FAILED unless defined $build_result;
+	($build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
+			$StartPbs->($targets, $pbs_config, $parent_config) ;
 	
-	$build_success = 0 if($@ || ($build_result != BUILD_SUCCESS)) ;
-
+	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
+	
 	# move all stat into the nodes as they are build in different process
 	# the stat displaying would need to traverse the tree, after synchronizing from the build processes
 
@@ -345,13 +329,6 @@ if(@$targets)
 		$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
 		}
 
-	my $total_time_in_pbs = tv_interval ($t0, [gettimeofday]) ;
-	if ($total_time_in_pbs > $pbs_config->{DISPLAY_MINIMUM_TIME})
-		{
-		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs ;
-		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if ($pbs_config->{DISPLAY_PBS_TOTAL_TIME} && ! $pbs_config->{QUIET}) ;
-		}
-
 	RunPluginSubs($pbs_config, 'PostPbs', $build_success, $pbs_config, $dependency_tree, $inserted_nodes) ;
 
 	my $run = 0 ;
@@ -362,7 +339,7 @@ if(@$targets)
 		our $x_build_success = $build_success ;
 		our $x_dependency_tree = $dependency_tree ;
 		our $inserted_nodes = $inserted_nodes ;
-
+		
 		eval
 			{
 			PBS::PBS::LoadFileInPackage
@@ -380,9 +357,16 @@ if(@$targets)
 				  . "my \$pbs_run_information = \$PBS::pbs_run_information ; \n",
 				) ;
 			} ;
-
+		
 		PrintError("PBS: couldn't run post pbs script '$post_pbs':\n   $@") if $@ ;
 		}
+	
+	if ($total_time_in_pbs > $pbs_config->{DISPLAY_MINIMUM_TIME})
+		{
+		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs ;
+		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if ($pbs_config->{DISPLAY_PBS_TOTAL_TIME} && ! $pbs_config->{QUIET}) ;
+		}
+	
 	}
 else
 	{
@@ -392,10 +376,30 @@ else
 	$build_success = 0 ;
 	}
 
-my $plural= @$targets < 2 ? '' : 's' ;
 my $short_pbsfile = GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) ;
 
-return($build_success, "PBS: target$plural: [@$targets], pbsfile: $short_pbsfile\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
+return($build_success, "PBS: targets: [@$targets], pbsfile: $short_pbsfile\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
+}
+
+sub StartPbs
+{
+my ($targets, $pbs_config, $parent_config) = @_ ;
+
+my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
+
+eval
+	{
+	($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
+		= PBS::Warp::WarpPbs($targets, $pbs_config, $parent_config) ;
+	} ;
+	
+print STDERR $@ if $@ ;
+	
+$build_result = BUILD_FAILED unless defined $build_result;
+
+my $build_success = (! $@) && $build_result == BUILD_SUCCESS ;
+
+$build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
 }
 
 #-------------------------------------------------------------------------------
