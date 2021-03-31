@@ -42,6 +42,11 @@ use List::Util qw(any) ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
+	'tnto',
+	"Display only triggering nodes.",
+	'',
+	'DISPLAY_ONLY_TRIGGERING_NODES',
+	
 	'tnonh',
 	"Do not display header files in the tree dump.",
 	'',
@@ -66,13 +71,13 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 sub PostDependAndCheck
 {
 my ($pbs_config, $dependency_tree, $inserted_nodes) = @_ ;
-
+		
 #------------------
 #  DTD filters,
 #------------------
 my $FilterDump;
 
-if(defined $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
+if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 	{
 	$FilterDump = 
 		sub #no private data
@@ -356,7 +361,7 @@ use Term::ANSIColor qw(:constants) ;
 my @colors = map { GetColor($_) } qw ( ttcl1 ttcl2 ttcl3 ttcl4 ) ;
 my @one_color = map { GetColor($_) } qw ( ttcl1 ) ;
 
-push @extra_options, 'COLOR_LEVELS' => $pbs_config->{TREE_COLOR_LEVELS} ? [\@colors, ''] : [\@one_color, ''] ;
+push @extra_options, 'COLOR_LEVELS' => $pbs_config->{TREE_COLOR_LEVELS} ? [\@colors, GetColor('info6')] : [\@one_color, ''] ;
 push @extra_options, 'WRAP_WIDTH' => $pbs_config->{WRAP_WIDTH} if $pbs_config->{WRAP_WIDTH} ;
 push @extra_options, 'MAX_DEPTH' => $pbs_config->{MAX_DEPTH} if $pbs_config->{MAX_DEPTH} ;
 
@@ -378,7 +383,7 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 
 	if(@trees == 0)
 		{ 
-		PrintWarning("Tree visualization: No node matched the regex you gave.\n") ;
+		Say Warning "Tree visualization: No node matched the regex you gave." ;
 		}
 	if(@trees == 1)
 		{
@@ -393,35 +398,32 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 			{
 			($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
 			}
-
-		PrintInfo DumpTree
-				(
-				$node,
-				_INFO3_($node_name),
-				FILTER => $FilterDump,
-				INDENTATION => $PBS::Output::indentation,
-				@extra_options
-				)
+		
+		$node_name .= _WARNING2_ ('∥ ') if exists $node->{__PARALLEL_DEPEND} ;
+		$node_name = '* ' . $node_name if  exists $node->{__TRIGGERED} ;
+		
+		SIT $node,
+			_INFO3_($node_name),
+			FILTER => $FilterDump,
+			INDENTATION => $PBS::Output::indentation,
+			@extra_options ;
 		}
 	else
 		{
 		my %trees = ( map { ($_ => $inserted_nodes->{$_}) } @trees ) ;
-
-		PrintInfo DumpTree
-				(
-				\%trees,
-				"dependency graphs",
-				FILTER => $FilterDump,
-				INDENTATION => $PBS::Output::indentation,
-				@extra_options
-				) ;
+		
+		SIT \%trees,
+			"dependency graphs",
+			FILTER => $FilterDump,
+			INDENTATION => $PBS::Output::indentation,
+			@extra_options ;
 		}
 	}
 else
 	{
 	my ($node, $node_name) ;
-
-	if ($dependency_tree->{__INSERTED_AT}{INSERTING_NODE} eq 'Root load')
+	
+	if (($dependency_tree->{__INSERTED_AT}{INSERTING_NODE} // '') eq 'Root load')
 		{
 		($node_name) = grep {!/^__/} keys %$dependency_tree ;
 		$node = $dependency_tree->{$node_name} ;
@@ -430,18 +432,21 @@ else
 		{
 		($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
 		}
-
+	
 	my $root = $node ;
+	
 	my $root_name = $node_name ;
-
+	$root_name .= _WARNING2_ ('∥ ') if  exists $root->{__PARALLEL_DEPEND} ;
+	$root_name = '* ' . $root_name if  exists $root->{__TRIGGERED} ;
+	
 	my @roots  = {$root_name => $root} ;
-
+	
 	for my $node_name (keys %$inserted_nodes)
 		{
 		if(exists $inserted_nodes->{$node_name}{__TRIGGER_ROOT})
 			{
 			$root_name = 'roots' ;
-
+			
 			push @roots, 
 				{
 				"$node_name" . _INFO2_ (", triggered by: '$inserted_nodes->{$node_name}{__TRIGGER_INSERTED}'")
@@ -449,15 +454,15 @@ else
 				} ;
 			}
 		}
-
-	PrintInfo DumpTree
-			(
-			(@roots == 1 ? $root : \@roots),
-			$root_name,
-			FILTER => $FilterDump,
-			INDENTATION => $PBS::Output::indentation,
-			@extra_options
-			)
+	
+	SIT
+		(
+		(@roots == 1 ? $root : \@roots),
+		_INFO3_($root_name),
+		FILTER => $FilterDump,
+		INDENTATION => $PBS::Output::indentation,
+		@extra_options
+		)
 		if $pbs_config->{DEBUG_DISPLAY_TEXT_TREE} ;
 	}
 	

@@ -273,7 +273,7 @@ if(exists $node->{__PARALLEL_DEPEND})
 	Say EC "<I>Check<W>∥ <I>: <I3>$node->{__NAME}<I2>, pid: $$"
 		if exists $node->{__PARALLEL_HEAD} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 	
-	push @{$node->{__TRIGGERED}}, {NAME => '__SELF', REASON => '__PARALLEL_DEPEND'};
+	push @{$node->{__TRIGGERED}}, {NAME => '__SELF', REASON => '__PARALLEL_DEPEND'} ;
 	$triggered++ ;
 	}
 
@@ -281,7 +281,7 @@ if(exists $node->{__FORCED})
 	{
 	Say Warning "Check: '$name' FORCED" if $pbs_config->{DEBUG_DISPLAY_TRIGGERED_DEPENDENCIES} ;
 
-	push @{$node->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'};
+	push @{$node->{__TRIGGERED}}, {NAME => '__FORCED', REASON => 'Forced build'} ;
 	$triggered++ ;
 	}
 

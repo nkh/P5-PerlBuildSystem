@@ -118,7 +118,7 @@ my $package  = shift || caller() ;
 if(defined $pbs_configuration{$package})
 	{
 	return([@{$pbs_configuration{$package}{SOURCE_DIRECTORIES}}]) ;
-}
+	}
 else
 	{
 	PrintError("Config: GetSourceDirectories: no configuration for package '$package'. Returning empty list.\n") ;
@@ -135,17 +135,11 @@ sub ParseSwitches
 {
 my ($user_options, $user_config, $switches_to_parse, $ignore_error) = @_ ;
 
-my ($options, $config) = defined $user_options
-				? ($user_options, $user_config)
-				: (PBS::PBSConfigSwitches::GetOptions()) ;
+my ($options, $config) = defined $user_options ? ($user_options, $user_config) : (PBS::PBSConfigSwitches::GetOptions()) ;
 
 local @ARGV = @$switches_to_parse ;
 
-local $SIG{__WARN__} 
-	= sub 
-		{
-		Print Warning $_[0] unless $ignore_error ;
-		} ;
+local $SIG{__WARN__} = sub { Print Warning $_[0] unless $ignore_error } ;
 
 my @flags = PBS::PBSConfigSwitches::Get_GetoptLong_Data($options) ;
 
@@ -160,11 +154,11 @@ my $catchall =
 	#Say Info2 "Pbs: option '$_[0]'" ;
 	if($ignore_error)
 		{
-		#Say Warning "Pbs: invalid option '$_[0]' ignoring ..." if $_[0] =~ /^-/ ;
+		#Say Warning "PBS: invalid option '$_[0]' ignoring ..." if $_[0] =~ /^-/ ;
 		}
 	else
 		{
-		Say Error "Pbs: invalid option '$_[0]'" if $_[0] =~ /^-/ ;
+		Say Error "PBS: invalid option '$_[0]'" if $_[0] =~ /^-/ ;
 
 		$parse_errors++ if $_[0] =~ /^-/ ;
 
@@ -174,7 +168,19 @@ my $catchall =
 
 do
 	{
-	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ ;
+	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ && $ARGV[0] !~ /\+\d+$/ ;
+
+	#todo accept ???+\d as an option
+	if ($ARGV[0] =~ /\w\+\d+$/)
+		{
+		Say Error "PBS: invalid option '$ARGV[0]'" ;
+		die "\n" ; 
+
+		#$ARGV[0] =  PBS::PBSConfigSwitches::Complete($options, $ARGV[0]) ;
+		#chomp $ARGV[0] ;
+		#SDT $ARGV[0] ;
+		#die;
+		}
 	
 	unless(GetOptions(@flags, '<>' => $catchall))
 		{
@@ -192,7 +198,7 @@ push @{$config->{TARGETS}}, @targets ;
 
 die "\n" if $parse_errors ;
  
-return 1, '', $config ;
+1, '', $config ;
 }
 
 #-------------------------------------------------------------------------------
@@ -210,14 +216,14 @@ elsif(defined $ENV{USERNAME} && $ENV{USERNAME} ne '')
 	$user = $ENV{USERNAME} ;
 	}
 	
-return $user ;
+$user
 }
 
 #-------------------------------------------------------------------------------
 
 sub CheckPbsConfig
 {
-my $pbs_config = shift ;
+my ($pbs_config) = @_ ;
 
 my $success_message = '' ;
 
@@ -232,10 +238,7 @@ $pbs_config->{DISPLAY_PROGRESS_BAR}++ if $pbs_config->{DISPLAY_PROGRESS_BAR_PROC
 
 $pbs_config->{DISPLAY_TOO_MANY_NODE_WARNING} //= 250 ;
 
-if($pbs_config->{DEPEND_FULL_LOG})
-	{
-	undef $pbs_config->{DEPEND_LOG} ;
-	}
+undef $pbs_config->{DEPEND_LOG} if $pbs_config->{DEPEND_FULL_LOG} ;
 
 if($pbs_config->{DISPLAY_PROGRESS_BAR})
 	{
@@ -283,15 +286,9 @@ if($pbs_config->{DISPLAY_PBS_TIME})
 	$pbs_config->{DISPLAY_WARP_TIME}++ ;
 	}
 
-if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
-	{
-	$pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME}++ ;
-	}
+$pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME}++ if $pbs_config->{DISPLAY_DEPENDENCY_TIME} ;
 
-if($pbs_config->{TIME_BUILDERS})
-	{
-	$pbs_config->{DISPLAY_TOTAL_BUILD_TIME}++ ;
-	}
+$pbs_config->{DISPLAY_TOTAL_BUILD_TIME}++ if $pbs_config->{TIME_BUILDERS} ;
 
 $pbs_config->{DISPLAY_PBSUSE_TIME}++ if $pbs_config->{DISPLAY_PBSUSE_TIME_ALL} ;
 
@@ -336,8 +333,7 @@ else
 	push @{$pbs_config->{DISPLAY_DEPENDENCIES_REGEX}}, '.' ;
 	}
 
-push @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}}, '.'
-	unless @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
+push @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}}, '.' unless @{$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO_REGEX}} ;
 
 undef $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} if $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} ;
 
@@ -378,8 +374,7 @@ if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_IN
 	
 $pbs_config->{DISPLAY_NODE_ORIGIN}++ if $pbs_config->{DISPLAY_NODE_PARENTS} ;
 
-push @{$pbs_config->{NODE_ENVIRONMENT_REGEX}}, '.'
-	if @{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}} && ! @{$pbs_config->{NODE_ENVIRONMENT_REGEX} } ;
+push @{$pbs_config->{NODE_ENVIRONMENT_REGEX}}, '.' if @{$pbs_config->{DISPLAY_NODE_ENVIRONMENT}} && ! @{$pbs_config->{NODE_ENVIRONMENT_REGEX} } ;
 
 # ------------------------------------------------------------------------------
 
@@ -435,16 +430,10 @@ if($pbs_config->{DISTRIBUTE})
 	}
 else
 	{
-	if(! $pbs_config->{JOBS} || $pbs_config->{JOBS} < 0)
-		{
-		$pbs_config->{JOBS} = 8 ; 
-		}
+	$pbs_config->{JOBS} = 8 if ! $pbs_config->{JOBS} || $pbs_config->{JOBS} < 0 ;
 	}
 
-if($pbs_config->{DEBUG_TRIGGER_ALL})
-	{
-	push @{$pbs_config->{TRIGGER}}, '.' ;
-	}
+push @{$pbs_config->{TRIGGER}}, '.' if $pbs_config->{DEBUG_TRIGGER_ALL} ;
 
 push @{$pbs_config->{TRIGGER}}, 
 	grep { $_ ne '' && $_ !~ /^\s*#/ }
@@ -459,10 +448,7 @@ if($pbs_config->{DEBUG_TRIGGER_NONE} && $pbs_config->{DEBUG_TRIGGER_ALL})
 	delete $pbs_config->{DEBUG_TRIGGER_NONE} ;
 	}
 
-if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
-	{
-	$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ ;
-	}
+$pbs_config->{DEBUG_DISPLAY_TEXT_TREE}++ if $pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY} ;
 	
 if(@{$pbs_config->{DISPLAY_TREE_FILTER} // []})
 	{
@@ -520,10 +506,7 @@ $pbs_config->{PBSFILE} = './' . $pbs_config->{PBSFILE} unless $pbs_config->{PBSF
 #--------------------------------------------------------------------------------
 
 my $cwd = getcwd() ;
-if(0 == @{$pbs_config->{SOURCE_DIRECTORIES}})
-	{
-	push @{$pbs_config->{SOURCE_DIRECTORIES}}, $cwd ;
-	}
+push @{$pbs_config->{SOURCE_DIRECTORIES}}, $cwd if 0 == @{$pbs_config->{SOURCE_DIRECTORIES}} ;
 
 for my $plugin_path (@{$pbs_config->{PLUGIN_PATH}})
 	{
@@ -564,10 +547,7 @@ CheckPackageDirectories($pbs_config) ;
 
 #----------------------------------------- Log -----------------------------------------
 
-if($pbs_config->{CREATE_LOG_HTML})
-	{
-	$pbs_config->{CREATE_LOG}++ ;
-	}
+$pbs_config->{CREATE_LOG}++ if $pbs_config->{CREATE_LOG_HTML} ;
 
 PBS::Log::CreatePbsLog($pbs_config) if defined $pbs_config->{CREATE_LOG} ;
 
@@ -651,10 +631,7 @@ if($pbs_config->{PBSFILE})
 	{
 	$pbsfile = $pbs_config->{PBSFILE} ;
 	
-	if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-		{
-		PrintInfo "Config: Using pbsfile '$pbsfile' (given as argument).\n" ;
-		}
+	PrintInfo "Config: Using pbsfile '$pbsfile' (given as argument).\n" if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 	}
 else
 	{
@@ -663,13 +640,9 @@ else
 
 	@pbsfile_extensions = qw(*.pl *.pbs) unless @pbsfile_extensions ;
 
-	if($^O eq 'MSWin32')
+	 unless (@pbsfile_names)
 		{
-		@pbsfile_names = qw(pbsfile.pl pbsfile) unless @pbsfile_names;
-		}
-	else
-		{
-		@pbsfile_names = qw(Pbsfile.pl pbsfile.pl Pbsfile pbsfile) unless @pbsfile_names ;
+		@pbsfile_names = $^O eq 'MSWin32' ?  qw(pbsfile.pl pbsfile) : qw(Pbsfile.pl pbsfile.pl Pbsfile pbsfile) ;
 		}
 
 	my %existing_pbsfile = map{( $_ => 1)} grep { -e "./$_"} @pbsfile_names ;
@@ -679,10 +652,8 @@ else
 		if(keys %existing_pbsfile == 1)
 			{
 			($pbsfile) = keys %existing_pbsfile ;
-			if($pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO})
-				{
-				PrintInfo "PBS: Using pbsfile '$pbsfile'.\n" ;
-				}
+			
+			PrintInfo "PBS: Using pbsfile '$pbsfile'.\n" if $pbs_config->{DISPLAY_SUBPBS_SEARCH_INFO} ;
 			}
 		else
 			{

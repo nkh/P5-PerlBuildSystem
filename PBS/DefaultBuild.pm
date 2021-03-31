@@ -534,7 +534,7 @@ else
 	{
 	($build_result, $build_message) = (BUILD_SUCCESS, 'DO_BUILD not set') ;
 	
-	my $reset_hash_iterator = keys %$pbs_config ;
+	keys %$pbs_config ; # reset_hash_iterator
 
 	while(my ($debug_flag, $value) = each %$pbs_config) 
 		{

@@ -174,6 +174,31 @@ night =>
 	],
 }
 
+PBS::PBSConfigSwitches::RegisterFlagsAndHelp
+	(
+	'color_display_definitons',
+	"Display a list of colors defined in ColorDefinition plugin.",
+	GetColorHelp(),
+	'COLOR_DISPLAY_DEFINITIONS',
+	) ;
+
+sub GetColorHelp
+{
+my %colors     = GetColorDefinitions() ;
+my @colors_256 = $colors{256}->@* ;
+my $reset      = color('reset') ;
+my $help       = '' ;
+
+while (@colors_256)
+	{
+	my ($k, $v) = splice @colors_256, 0, 2 ;
+
+	$help .= $v . ' ' . $k . ' ' . $reset  . "\n" ;
+	}
+
+$help . "\n"
+}
+
 #-------------------------------------------------------------------------------
 
 1 ;

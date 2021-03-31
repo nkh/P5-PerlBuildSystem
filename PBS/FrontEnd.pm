@@ -162,7 +162,7 @@ if($display_user_help || $extract_pod_from_pbsfile)
 	}
 
 #-------------------------------------------------------------------------------------------
-# run PBS
+# run PBS rule engine
 #-------------------------------------------------------------------------------------------
 
 # verify config first
@@ -391,6 +391,18 @@ eval
 	{
 	($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 		= PBS::Warp::WarpPbs($targets, $pbs_config, $parent_config) ;
+	
+	# parallel pbs start nodes are tagged and trigger
+	# the target nodes go through StartPbs, and warp checking, instead for Subpbs
+	# tag them the same way 
+ 	if($pbs_config->{PBS_JOBS})
+		{
+ 		for ($targets->@*)
+			{
+			$inserted_nodes->{$_}{__PARALLEL_DEPEND}++ ;
+			push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => '__SELF', REASON => '__PARALLEL_DEPEND'} ;
+			}
+		}
 	} ;
 	
 print STDERR $@ if $@ ;

@@ -57,7 +57,7 @@ while( my ($switch, $help1, $help2, $variable) = splice(@options, 0, 4))
 			}
 		}
 		
-	push @registred_flags_and_help, $switch, $variable, $help1, $help2
+	push @registred_flags_and_help, $switch, $help1, $help2, $variable 
 		if $success ;
 	}
 
@@ -642,6 +642,9 @@ EOT
 	'ddplg|log_parallel_depend', 'Creates a log of the parallel depend.', '',
 		\$config->{LOG_PARALLEL_DEPEND},
 
+	'ddpdlg|display_log_parallel_depend', 'Display the parallel depend log when depending ends.', '',
+		\$config->{DISPLAY_LOG_PARALLEL_DEPEND},
+
 	'dpds|display_parallel_depend_start', 'Display a message when a parallel depend starts.', '',
 		\$config->{DISPLAY_PARALLEL_DEPEND_START},
 
@@ -1186,6 +1189,9 @@ EOT
 	'hdp|http_display_post', 'Display a message when a POST is send.', '',
 		\$config->{HTTP_DISPLAY_POST},
 
+	'hdput|http_display_put', 'Display a message when a PUT is send.', '',
+		\$config->{HTTP_DISPLAY_PUT},
+
 	'hdg|http_display_get', 'Display a message when a GET is send.', '',
 		\$config->{HTTP_DISPLAY_GET},
 
@@ -1549,10 +1555,15 @@ PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_
 
 sub GetCompletion
 {
+my (undef, $command_name, $word_to_complete, $previous_arguments) = @ARGV ;
 my ($options) = @_ ;
 
-shift @ARGV ;
-my ($command_name, $word_to_complete, $previous_arguments) = @ARGV ;
+print Complete($options, $word_to_complete) ;
+}
+
+sub Complete
+{
+my ($options, $word_to_complete) = @_ ;
 
 if($word_to_complete !~ /^-?-?\s?$/)
 	{
@@ -1593,7 +1604,7 @@ if($word_to_complete !~ /^-?-?\s?$/)
 					}
 				}
 			
-			print defined $munged ? "-$munged\n": "-$matches[0]\n" ;
+			defined $munged ? "-$munged\n": "-$matches[0]\n" ;
 			}
 		else
 			{
@@ -1601,12 +1612,12 @@ if($word_to_complete !~ /^-?-?\s?$/)
 			
 			if(@matches < 2)
 				{
-				print join("\n",  @matches) . "\n" ;
+				join("\n",  @matches) . "\n" ;
 				}
 			else
 				{
 				my $counter = 0 ;
-				print join("\n", map { $counter++ ; "$_₊" . subscript($counter)} @matches) . "\n" ;
+				join("\n", map { $counter++ ; "$_₊" . subscript($counter)} @matches) . "\n" ;
 				}
 			}
 		}
@@ -1627,12 +1638,12 @@ if($word_to_complete !~ /^-?-?\s?$/)
 				DisplaySwitchesHelp(@matches) ;
 				
 				my $c = 0 ;
-				print @matches > 1 ? join("\n", map { $c++ ; "--$_₊" . subscript($c) } nsort @matches) . "\n" : "\n​\n" ;
+				@matches > 1 ? join("\n", map { $c++ ; "--$_₊" . subscript($c) } nsort @matches) . "\n" : "\n​\n" ;
 				}
 			else
 				{
 				my $c = 0 ;
-				print join("\n", map { $c++ ; "--$_₊" . subscript($c)} nsort grep { $_ =~ $matcher } @$names) . "\n" ;
+				join("\n", map { $c++ ; "--$_₊" . subscript($c)} nsort grep { $_ =~ $matcher } @$names) . "\n" ;
 				}
 			}
 		else
@@ -1644,12 +1655,12 @@ if($word_to_complete !~ /^-?-?\s?$/)
 			
 			if(@matches < 2)
 				{
-				print join("\n", map { "--$_" } @matches) . "\n" ;
+				join("\n", map { "--$_" } @matches) . "\n" ;
 				}
 			else
 				{
 				my $c = 0 ;
-				print join("\n", map { $c++ ; "--$_₊" . subscript($c)} @matches) . "\n" ;
+				join("\n", map { $c++ ; "--$_₊" . subscript($c)} @matches) . "\n" ;
 				}
 			}
 		}

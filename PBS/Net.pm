@@ -37,10 +37,9 @@ $what //= {} ;
 
 #my $t0_message = [gettimeofday];
 
-my $response = HTTP::Tiny->new->put("${url}pbs/$where", {content => $what}) ;
+Say Debug "Http: PUT, size: " . length($what) . ", to: ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_PUT} ;
 
-#SDT $what, sprintf("Http: POST to ${url}pbs/$where, time: %0.4f s.", tv_interval ($t0_message, [gettimeofday])) if $pbs_config->{HTTP_DISPLAY_POST} ;
-SDT $what, "Http: PUT to ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
+my $response = HTTP::Tiny->new->put("${url}pbs/$where", {content => $what}) ;
 
 unless ($response->{success})
 	{
@@ -61,10 +60,9 @@ $what //= {} ;
 
 #my $t0_message = [gettimeofday];
 
-my $response = HTTP::Tiny->new->post_form("${url}pbs/$where", $what) ;
+SDT $what, "Http: POST, to: ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
 
-#SDT $what, sprintf("Http: POST to ${url}pbs/$where, time: %0.4f s.", tv_interval ($t0_message, [gettimeofday])) if $pbs_config->{HTTP_DISPLAY_POST} ;
-SDT $what, "Http: POST to ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
+my $response = HTTP::Tiny->new->post_form("${url}pbs/$where", $what) ;
 
 unless ($response->{success})
 	{
@@ -82,7 +80,7 @@ sub Get
 {
 my ($pbs_config, $url, $where, $what, $whom, $raw) = @_ ;
 
-SDT $what, "Http: POST to ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
+SDT $what, "Http: Get, from: ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
 
 my $HT = HTTP::Tiny->new() ;
 my $response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
@@ -148,11 +146,20 @@ my $pid = fork() ;
 
 if($pid)
 	{
-	BecomeServer($pbs_config, 'PBS server, $$', $daemon, {}) ;
+	BecomeServer
+		(
+		$pbs_config, 'PBS server', $daemon,
+		{
+			PBS     => 1,
+			TARGETS => $targets,
+			TIME    => [gettimeofday],
+		},
+		) ;
+	
 	}
 else
 	{
-	Say Info "PBS: started"  ;
+	Say Info "PBS∥ : start parallel depend"  ;
 	my $depender = PBS::PBS::Forked::GetParallelDepender
 			(
 			$pbs_config,
@@ -177,8 +184,6 @@ else
 	
 	exit 0 ;
 	}
-
-# return to FrontEnd
 }
 
 sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: can't start server") . "\n" }
@@ -187,17 +192,12 @@ sub BecomeServer
 {
 my ($pbs_config, $server_name, $daemon, $data) = @_ ;
 
-my $url = $daemon->url ;
+Say EC "<D>Http: <I>start : $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
 
-Say Debug "Http: starting $server_name <$url>, pid: $$" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
+my ($counter, $allocated, $reused) = (0, 0, 0) ;
 
-my $stop ;
-my $counter = 0 ;
-
+my %dependers ;
 my %resources = map { $_ => 1 } 1 .. $pbs_config->{PBS_JOBS} ;
-my ($allocated, $reused) = (0, 0) ;
-
-my %parallel_dependers ;
 
 my $status = sub
 {
@@ -205,14 +205,17 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	{
 	Say Debug "Depend∥ : " . $_[0]
 			. _INFO2_
-				  ', dependers: ' . scalar( keys %parallel_dependers)
-				. ', idling: ' . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers)
-				. ', reused: ' . $reused
-				. ', leases: ' . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
-				. ', leased: ' . $allocated
+				  ', dependers: ' . scalar( keys %dependers)
+				. ', idling: '    . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers)
+				. ', reused: '    . $reused
+				. ', leases: '    . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
+				. ', leased: '    . $allocated
 	}
 } ; 
 
+my $started_depending ;
+
+my $stop ;
 while (my $c = $daemon->accept) 
 	{
 	RESPONSE_REGISTER $c ;
@@ -223,7 +226,7 @@ while (my $c = $daemon->accept)
 		{
 		my $path = $rq->uri->path ;
 		
-		SDT $rq, "Http: request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
+		Say Debug "Http: server: $server_name - $$, request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
 		
 		if ($rq->method eq 'GET')
 			{
@@ -232,7 +235,7 @@ while (my $c = $daemon->accept)
 			'/pbs/get_depend_resource' eq $path
 				&& do 
 					{
-					my $dependers = keys %parallel_dependers ;
+					my $dependers = keys %dependers ;
 					my $id = first { $resources{$_} } keys %resources ;
 					
 					if
@@ -245,14 +248,14 @@ while (my $c = $daemon->accept)
 						&&
 							(
 							! defined $pbs_config->{DEPEND_PROCESSES}
-							|| (keys %parallel_dependers < $pbs_config->{DEPEND_PROCESSES})
+							|| (keys %dependers < $pbs_config->{DEPEND_PROCESSES})
 							)
 						)
 						{
 						RESPONSE { ID => $id } ;
 						$resources{$id} = 0 ;
 						$allocated++ ;
-					
+						$started_depending++ ;
 						$status->("leased, res: $id      ") ;
 						}
 					else
@@ -265,7 +268,7 @@ while (my $c = $daemon->accept)
 				&& do 
 					{
 					my $id = first { $resources{$_} } keys %resources ;
-					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers ;
+					my $idle_depender = first { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers ;
 					
 					if ($id && $idle_depender)
 						{
@@ -288,12 +291,9 @@ while (my $c = $daemon->accept)
 				&& RESPONSE
 					{
 					AVAILABLE_RESOURCES => scalar(grep { $_ } values %resources),
-					ALL_DEPENDERS_DONE  => all { exists $_->{ADDRESS} && $_->{IDLE} } values %parallel_dependers
+					ALL_DEPENDERS_DONE  => all { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers
 					} ;
 					
-			'/pbs/get_parallel_dependers' eq $path
-				&& RESPONSE { SERIALIZED_DEPENDERS => freeze \%parallel_dependers }  ;
-			
 			#  above resource server urls, below depender urls
 			
 			'/pbs/get_graph' eq $path && RESPONSE_RAW $data->{GRAPH} ; 
@@ -356,7 +356,7 @@ while (my $c = $daemon->accept)
 					$resources{$id} = 1 ;
 					$status->("return, res: $id      ") ;
 					
-					my $depender = first { $_->{PID} == $pid } values  %parallel_dependers ;
+					my $depender = first { $_->{PID} == $pid } values  %dependers ;
 					
 					die ERROR("PBS: returned depended, pid: $pid, wasn't allocated") . "\n" unless $depender ;
 					
@@ -368,44 +368,65 @@ while (my $c = $daemon->accept)
 					{
 					my $pid = $parameters->{pid} ;
 					
-					die ERROR("PBS: parallel depender already registered pid: $pid") . "\n" if exists $parallel_dependers{$pid} ;
+					die ERROR("PBS: parallel depender already registered pid: $pid") . "\n" if exists $dependers{$pid} ;
 					
 					$c->send_status_line ;
-					$parallel_dependers{$pid} = {PID => $pid} ;
+					$dependers{$pid} = {PID => $pid} ;
 					$status->("active, pid: $pid") ;
 					} ;
 			
 			'/pbs/parallel_depend_idling' eq $path
 				&& do
 					{
-					my ($pid, $address) = @{$parameters}{'pid', 'address'} ;
+					my ($pid, $log, $address) = @{$parameters}{qw. pid log address .} ;
 					
-					die ERROR("PBS: depender $pid wasn't registered") . "\n" unless exists $parallel_dependers{$pid} ;
+					die ERROR("PBS: depender $pid wasn't registered") . "\n" unless exists $dependers{$pid} ;
 						
 					$c->send_status_line ;
-					$parallel_dependers{$pid}{IDLE}++ ;
-					$parallel_dependers{$pid}{ADDRESS} = $address ;
+					$dependers{$pid}{IDLE}++ ;
+					$dependers{$pid}{LOG} = $log ;
+					$dependers{$pid}{ADDRESS} = $address ;
+					
+					if($pbs_config->{DISPLAY_LOG_PARALLEL_DEPEND})
+						{
+						Say Info2 "Depend∥ : $pid - <$address> done" ;
+						
+						open my $f, '<', $log ;
+						print STDERR while <$f> ;
+						
+						Say '' ;
+						}
+					
 					$status->("idling, pid: $pid") ;
 					} ;
 			}
 		elsif ($rq->method eq 'PUT')
 			{
 			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
-			
 			'/pbs/link' eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
 			}
 		
 		$c->force_last_request ;
 		}
-
+	
+	if
+		(
+		exists $data->{PBS} && $started_depending
+		&& (all { $resources{$_} } keys %resources)
+		&& all { $dependers{$_}{IDLE} } keys %dependers
+		)
+		{
+		Say Info "Depend∥ : done, allocated depend resources: $allocated" ;
+		$stop++ ;
+		}
+	
 	$c->close ;
 	last if $stop ;
 	}
 
+my ($inserted_nodes) = PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, $data->{TIME}, \%dependers)  ;
+
 =pod
-
-PBS::PBS::Forked::LinkMainGraph($pbs_config, $inserted_nodes, $targets, $time) ;
-
 PBS::PBS::Forked::Build
 	(
 	$pbs_config,
@@ -421,6 +442,10 @@ PBS::PBS::Forked::Build
 =cut
 
 Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
+
+# return to FrontEnd
+# $build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
+  1,            , 1            , 'parallel pbs', {},             , {}             , 'PBS',         []  
 }
 
 #-------------------------------------------------------------------------------

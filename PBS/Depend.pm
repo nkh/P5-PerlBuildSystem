@@ -1120,7 +1120,7 @@ elsif(@subpbses)
 				$subpbs_config,
 				[$sub_node_name],
 				$inserted_nodes,
-				("subpbses$subpbs_name" =~ s~[^a-zA-Z0-9_]*~_~gr), # tree name
+				PBS::PBS::CanonizePackageName($subpbs_name), # tree name
 				DEPEND_ONLY,
 				],
 			) ;

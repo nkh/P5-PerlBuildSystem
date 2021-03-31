@@ -175,7 +175,7 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					if (0 == $remaining_nodes)
 						{
 						PrintNoColor "\r\e[K" ;
-						Say Info "Queue: success, nodes: $number_of_already_build_node" ;
+						Say Info "Build: success, nodes: $number_of_already_build_node" ;
 						}
 					}
 					unless $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $number_of_failed_builders ;

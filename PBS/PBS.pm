@@ -596,9 +596,11 @@ return defined $files_loaded_via_PbsUse{__STATISTIC}
 sub CanonizePackageName
 {
 my $package = shift || die ;
+
+$package = GetRunRelativePath({TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => ''}, $package, 1) ;
 $package =~ s/[^a-zA-Z0-9_:]+/_/g ;
 
-return($package) ;
+$package
 }
 
 sub LoadFileInPackage

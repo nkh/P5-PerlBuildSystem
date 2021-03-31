@@ -1,18 +1,21 @@
 
+M for main graph is not displayed
 
-targets with +\d are options handle them
-
-handle crashes in //pbs
-	send an exception to pbs server
-	handle timeout, and since we know what was depended we can restart it!
-
-parallel depend log
+#parallel depend log
 	always ON and option for off?
 	pipe?
 	#align to the left?
 	display via resource manager to avoid garbled output
 
 	handle this when main depend is a parallel depend and resource server is the main thread
+
+targets with +\d are options handle them
+targets with ? show the help for the option
+
+
+handle crashes in //pbs
+	send an exception to pbs server
+	handle timeout, and since we know what was depended we can restart it!
 
 distributed build sequence must be handled differently
 	need to know if a parallel node triggers to create the build sequence
