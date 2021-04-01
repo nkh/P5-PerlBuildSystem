@@ -579,6 +579,9 @@ EOT
 	'dpc|display_pbs_configuration=s', 'Display the pbs configuration matching  the regex.', '',
 		$config->{DISPLAY_PBS_CONFIGURATION},
 		
+	'dpcav|display_pbs_configuration_all_values', 'Include undefined keys when displaying the pbs configuration', '',
+		\$config->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES},
+		
 	'dpcl|display_configuration_location', 'Display the pbs configuration location.', '',
 		\$config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 		

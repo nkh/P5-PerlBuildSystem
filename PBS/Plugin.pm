@@ -13,7 +13,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub LoadPluginFromSubRefs EvalShell) ;
-our $VERSION = '0.04' ;
+our $VERSION = '0.05' ;
 
 use File::Basename ;
 use Getopt::Long ;
@@ -23,9 +23,10 @@ use PBS::Constants ;
 use PBS::PBSConfig ;
 use PBS::Output ;
 
+my $grrpc = {TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'} ;
+
 #-------------------------------------------------------------------------------
 
-my $plugin_load_package = 0 ;
 my %loaded_plugins ;
 
 if($^O eq "MSWin32")
@@ -33,7 +34,7 @@ if($^O eq "MSWin32")
 	# remove an annoying warning
 	local $SIG{'__WARN__'} = sub {print STDERR $_[0] unless $_[0] =~ /^Subroutine CORE::GLOBAL::glob/} ;
 
-	# the normal 'glob' handles ~ as the home directory even if it is not at the begining of the path
+	# the normal 'glob' handles ~ as the home directory even if it is not at the beginning of the path
 	eval "use File::DosGlob 'GLOBAL_glob';" ;
 	die $@ if $@ ;
 	}
@@ -44,23 +45,38 @@ sub GetLoadedPlugins { return(keys %loaded_plugins) }
 
 #-------------------------------------------------------------------------------
 
+sub ScanForPlugins
+{
+my ($config, $plugin_paths) = @_ ;
+
+for my $plugin_path (@$plugin_paths)
+	{
+	my $plugins = my @plugins = glob("$plugin_path/*.pm") ;
+	
+	Say Info "Plugin: found $plugins in $plugin_path" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+	
+	LoadPlugin($config, $_) for @plugins ;
+	}
+}
+
+#-------------------------------------------------------------------------------
+
 sub LoadPlugin
 {
-my ($package, $file_name, $line) = caller() ;
+my (undef, $file_name, $line) = caller() ;
 my ($config, $plugin) = @_;
 
-if($config->{DISPLAY_PLUGIN_LOAD_INFO})
-	{
-	my ($basename, $path, $ext) = File::Basename::fileparse($plugin, ('\..*')) ;
-	#Say Debug "Plugin: loading: '$plugin' from " . GetRunRelativePath($config, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-	PrintDebug "Plugin: loading: '$basename$ext'\n" ;
-	}
+my ($basename, $path, $ext) = File::Basename::fileparse($plugin, ('\..*')) ;
+
+my $package = PBS::PBS::CanonizePackageName($basename) ;
+
+Say Debug "Plugin: $basename.$ext" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 	
 if(exists $loaded_plugins{$plugin})
 	{
-	PrintWarning"Plugin: '$plugin' already loaded, ignoring plugin @ '$file_name:$line'\n" 
-		if ("$file_name:$line" ne $loaded_plugins{$plugin}[1]) || $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-
+	Say Warning"Plugin: $plugin already loaded, ignoring plugin @ $file_name:$line\n" 
+		if "$file_name:$line" ne $loaded_plugins{$plugin}[1] ;
+	
 	return ;
 	}
 	
@@ -70,17 +86,16 @@ eval
 		(
 		'',
 		$plugin,
-		"PBS::PLUGIN_$plugin_load_package",
+		"PBS::PLUGIN_$package",
 		{},
 		"use strict ;\nuse warnings ;\n"
 		  . "use PBS::Output ;\n",
 		) ;
 	} ;
 	
-do { PrintError("Plugin: Couldn't load plugin from '$plugin'.$@") ; die "\n" }  if $@ ;
+do { die ERROR("Plugin: Couldn't load $plugin.$@") . "\n" }  if $@ ;
 
-$loaded_plugins{$plugin} = [$plugin_load_package, "$file_name:$line"];
-$plugin_load_package++ ;
+$loaded_plugins{$plugin} = [$package, "$file_name:$line"] ;
 }
 
 #-------------------------------------------------------------------------------
@@ -90,31 +105,28 @@ sub LoadPluginFromSubRefs
 my ($package, $file_name, $line) = caller() ;
 my ($config, $plugin, %subs) = @_;
 
-Say Debug "Plugin: loading: '$plugin' from " . GetRunRelativePath($config, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+Say Debug "Plugin: $plugin @ " . GetRunRelativePath($grrpc, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 
 if(exists $loaded_plugins{$plugin})
 	{
-	PrintWarning"Plugin: '$plugin' already loaded, ignoring plugin @ '$file_name:$line'\n"
-		if ("$file_name:$line" ne $loaded_plugins{$plugin}[1]) || $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
+	Say Warning "Plugin: $plugin already loaded, ignoring plugin @ $file_name:$line"
+		if "$file_name:$line" ne $loaded_plugins{$plugin}[1] ;
 	}
 else
 	{
-	
 	while (my($sub_name, $sub_ref) = each %subs)
 		{
-		PrintInfo "Plugin: name: '$sub_name'\n" if($config->{DISPLAY_PLUGIN_LOAD_INFO}) ;
+		#Say Info "Plugin: name: $sub_name" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 			
-		eval "* PBS::PLUGIN_${plugin_load_package}::$sub_name = \$sub_ref ;" ;
-
+		eval "*PBS::PLUGIN_${plugin}::$sub_name = \$sub_ref ;" ;
+		
 		if ($@)
 			{
-			PrintError "Plugin: Error: can't load sub ref '$sub_name'\n" ;
-			die $@ ;
+			die ERROR("Plugin: Error: can't load sub ref $sub_name:\n$@") . "\n" ;
 			}
 		}
 	
-	$loaded_plugins{$plugin} = [$plugin_load_package, "$file_name:$line"];
-	$plugin_load_package++ ;
+	$loaded_plugins{$plugin} = [$plugin, "$file_name:$line"] ;
 	}
 }
 
@@ -131,45 +143,29 @@ my ($package, $file_name, $line) = caller() ;
 my ($substitution) = @_ ;
 $eval_shell_counter++ ;
 
-LoadPluginFromSubRefs PBS::PBSConfig::GetPbsConfig($package), "$file_name:$line:$eval_shell_counter",
+LoadPluginFromSubRefs PBS::PBSConfig::GetPbsConfig($package), "${file_name}_${line}_$eval_shell_counter",
 	'EvaluateShellCommand' =>
 		sub 
 		{ 
 		my ($shell_command_ref, $node, $dependencies) = @_ ;
 
 		my $node_name = $node->{__NAME} ;
-
-		PrintInfo2 "EvalShell: $substitution @ '$file_name:$line'\n"
+		
+		Say Info2 "EvalShell: $substitution @ $file_name:$line"
 			 if $node->{__PBS_CONFIG}{EVALUATE_SHELL_COMMAND_VERBOSE} ;
 	
 		eval "\$\$shell_command_ref =~ $substitution" ;
-
+		
 		if ($@)
 			{
-			PrintError "EvalShell: Error in substitution code: $substitution\n" ;
-			die $@ ;
+			die ERROR("EvalShell: Error in substitution code: $substitution\n$@") . "\n" ;
 			}
 		} ;
 }
 
 #-------------------------------------------------------------------------------
 
-sub ScanForPlugins
-{
-my ($config, $plugin_paths) = @_ ;
-
-for my $plugin_path (@$plugin_paths)
-	{
-	PrintInfo "Plugin: scanning directory '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
-	
-	for my $plugin (glob("$plugin_path/*.pm"))
-		{
-		LoadPlugin($config, $plugin) ;
-		}
-	}
-}
-
-#-------------------------------------------------------------------------------
+my %found_subs ;
 
 sub RunPluginSubs
 {
@@ -177,37 +173,44 @@ sub RunPluginSubs
 
 my ($config, $plugin_sub_name, @plugin_arguments) = @_ ;
 
-my ($package, $file_name, $line) = caller() ;
+my (undef, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-for my $plugin_path (sort keys %loaded_plugins)
+my @plugins = exists $found_subs{$plugin_sub_name} ? keys $found_subs{$plugin_sub_name}->%* : keys %loaded_plugins ;
+
+for my $plugin (sort @plugins)
 	{
 	no warnings ;
-
-	my $plugin_load_package = $loaded_plugins{$plugin_path}[0] ;
 	
+	my $package = PBS::PBS::CanonizePackageName($loaded_plugins{$plugin}[0]) ;
 	my $plugin_sub ;
 	
-	eval "\$plugin_sub = *PBS::PLUGIN_${plugin_load_package}::${plugin_sub_name}{CODE} ;" ;
+	eval "\$plugin_sub = *PBS::PLUGIN_${package}::${plugin_sub_name}{CODE} ;" ;
 	
 	if($plugin_sub)
 		{
-		Say EC "<D3>Plugin: <D>$plugin_sub_name<D3>:" . GetRunRelativePath($config, $plugin_path)
-				." @ '". GetRunRelativePath($config,$file_name) . ":$line'"
+		
+		Say EC "<D3>Plugin: <D>$plugin_sub_name<D3> in " . GetRunRelativePath($grrpc, $plugin)
+				." @ ". GetRunRelativePath($grrpc, $file_name) . ":$line"
 			 if $config->{DISPLAY_PLUGIN_RUNS} ;
-	
+		
 		eval {$plugin_sub->(@plugin_arguments)} ;
-		die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
+		
+		$found_subs{$plugin_sub_name}{$plugin}++ ;
+		
+		die ERROR("Plugin: error running $plugin_sub_name:\n$@") . "\n" if $@ ;
 		}
 	else
 		{
-		PrintWarning "\tnot in '$plugin_path'\n" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL} ;
+		Say EC "<D3>Plugin: $plugin_sub_name not in $plugin" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL} ;
 		}
 	}
 }
 
 #-------------------------------------------------------------------------------
+
+my %found_uniq_subs ;
 
 sub RunUniquePluginSub
 {
@@ -217,72 +220,82 @@ my ($config, $plugin_sub_name, @plugin_arguments) = @_ ;
 
 unshift @plugin_arguments, $config ;
 
-my ($package, $file_name, $line) = caller() ;
+my (undef, $file_name, $line) = caller() ;
 $file_name =~ s/^'// ;
 $file_name =~ s/'$// ;
 
-my (@found_plugin, $plugin_path, $plugin_sub) ;
+my (@found_plugin, $plugin_sub) ;
 my ($plugin_sub_to_run, $plugin_to_run_path) ;
 
-for $plugin_path (sort keys %loaded_plugins)
+my @plugins = exists $found_uniq_subs{$plugin_sub_name} ? keys $found_uniq_subs{$plugin_sub_name}->%* : keys %loaded_plugins ;
+
+for my $plugin (sort @plugins)
 	{
 	no warnings ;
-
-	my $plugin_load_package = $loaded_plugins{$plugin_path}[0] ;
 	
-	eval "\$plugin_sub = *PBS::PLUGIN_${plugin_load_package}::${plugin_sub_name}{CODE} ;" ;
-	push @found_plugin, $plugin_path if($plugin_sub) ;
-
+	my $package = PBS::PBS::CanonizePackageName($loaded_plugins{$plugin}[0]) ;
+	
+	eval "\$plugin_sub = *PBS::PLUGIN_${package}::${plugin_sub_name}{CODE} ;" ;
+	
+	push @found_plugin, $plugin if($plugin_sub) ;
+	
 	if($plugin_sub)
 		{
 		$plugin_sub_to_run = $plugin_sub ;
-		$plugin_to_run_path = $plugin_path ;
+		$plugin_to_run_path = $plugin ;
+		
+		$found_uniq_subs{$plugin_sub_name}{$plugin}++ ;
 		}
 	else
 		{
-		Say Warning "\tnot in '$plugin_path'" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL};
+		Say EC "<D3>Plugin: $plugin_sub_name not in $plugin" if $config->{DISPLAY_PLUGIN_RUNS} && $config->{DISPLAY_PLUGIN_RUNS_ALL} ;
 		}
 	}
 	
 if(@found_plugin > 1)
 	{
-	die ERROR "Plugin: error, found more than one plugin for unique '$plugin_sub_name'\n" . join("\n", @found_plugin) . "\n" ;
+	die ERROR "Plugin: error, found more than one plugin for unique $plugin_sub_name\n" . join("\n", @found_plugin) . "\n" ;
 	}
 
 if($plugin_sub_to_run)
 	{
-	Say EC "<D3>Plugin: <D>$plugin_sub_name<D3>:" . GetRunRelativePath($config, $plugin_to_run_path)
-			." @ '". GetRunRelativePath($config,$file_name) . ":$line'"
+	Say EC "<D3>Plugin: <D>$plugin_sub_name<D3> in " . GetRunRelativePath($grrpc, $plugin_to_run_path)
+			." @ ". GetRunRelativePath($grrpc, $file_name) . ":$line"
 		 if $config->{DISPLAY_PLUGIN_RUNS} ;
 	
 	if(! defined wantarray)
 		{
-		eval {$plugin_sub_to_run->(@plugin_arguments)} ;
-		die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
+		eval { $plugin_sub_to_run->(@plugin_arguments) } ;
+		
+		die ERROR("Plugin: error running $plugin_sub_name:\n$@") . "\n" if $@ ;
 		}
 	else
 		{
 		if(wantarray)
 			{
 			my @results ;
-			eval {@results = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 			
-			return(@results) ;
+			eval { @results = $plugin_sub_to_run->(@plugin_arguments) } ;
+			
+			die ERROR("Plugin: error running $plugin_sub_name:\n$@") . "\n" if $@ ;
+			
+			return @results ;
 			}
 		else
 			{
 			my $result ;
-			eval {$result = $plugin_sub_to_run->(@plugin_arguments)} ;
-			die ERROR("Plugin: error running '$plugin_sub_name':\n$@") . "\n" if $@ ;
 			
-			return($result) ;
+			eval { $result = $plugin_sub_to_run->(@plugin_arguments) } ;
+			
+			die ERROR("Plugin: error running $plugin_sub_name:\n$@") . "\n" if $@ ;
+			
+			return $result ;
 			}
 		}
 	}
 else
 	{
-	PrintWarning "Plugin: couldn't find '$plugin_sub_name'\n" if $config->{DISPLAY_PLUGIN_RUNS} ;
+	Say Warning "Plugin: couldn't find $plugin_sub_name, @ " . GetRunRelativePath($grrpc, $file_name) . ":$line" if $config->{DISPLAY_PLUGIN_RUNS} ;
 	return ;
 	}
 }

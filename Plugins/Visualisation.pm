@@ -1,5 +1,4 @@
 
-
 =head1 Plugin Visualisation
 
 This plugin handles the following PBS defined switches:
@@ -136,6 +135,20 @@ if(defined $pbs_config->{DISPLAY_ALL_RULES})
 	PBS::Rules::DisplayAllRules() ;
 	}
    
+DisplayBuildSequence($pbs_config, $build_sequence) ;
+
+if($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE})
+	{
+	write_file($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE}, (map { $_->{__NAME} . "\n" } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)) ;
+	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub DisplayBuildSequence
+{
+my ($pbs_config, $build_sequence) = @_ ;
+
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 	{
 	my $nodes_in_build_sequence = @$build_sequence ;
@@ -155,20 +168,15 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 	{
 	my $parallel_nodes = grep { $_->{__NAME} !~ /^__/ && $_->{__PARALLEL_DEPEND}} @$build_sequence ;
-	my $nodes = @$build_sequence ;
+	my $nodes = @$build_sequence - 1 ;
 	my $ratio = $nodes ? sprintf('ratio: %.02f', $parallel_nodes / $nodes) : 'up to date' ;
 
-	Say Info "Sequence: $node->{__NAME}, nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, $ratio" : '');
-	
+	Say Info "Sequence: nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, $ratio" : '');
+
 	unless ($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY})
 		{
 		Say Info $_ for map { $_->{__NAME} . ($_->{__PARALLEL_DEPEND} ? '∥ ' : '') } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
 		}
-	}
-
-if($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE})
-	{
-	write_file($pbs_config->{SAVE_BUILD_SEQUENCE_SIMPLE}, (map { $_->{__NAME} . "\n" } grep { $_->{__NAME} !~ /^__/ } @$build_sequence)) ;
 	}
 }
 

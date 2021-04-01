@@ -33,6 +33,131 @@ use PBS::Plugin ;
 
 #-------------------------------------------------------------------------------
 
+sub DisplayDependHeader
+{
+my ($pbs_config, $inserted_nodes, $targets, $Pbsfile, $parallel_pid) = @_ ;
+
+my $indent = $PBS::Output::indentation ;
+
+my $short_pbsfile = GetRunRelativePath($pbs_config, $Pbsfile, 1) ;
+
+my $start_nodes = scalar(keys %$inserted_nodes) ;
+   $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
+
+my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
+my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
+
+my $short_target = $em->( join ', ', @$targets) ; 
+
+my $pbs_runs = PBS::PBS::GetPbsRuns() // 0 ;
+
+my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
+my $Depend = 'Depend' . ($parallel_depend ? ($parallel_pid ? _WARNING_('∥ ') . GetColor('info') : '∥ ') : '') ;
+
+my $pid = $parallel_pid ? $parallel_pid : $$ ;
+my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{PBS_JOBS} ? ", pid: $pid" : '') . GetColor('info')  ;
+
+my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
+my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
+my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
+
+
+if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
+	{
+	Say Info  "$Depend: $target" ;
+	Say Info2 "${indent}$pbsfile_info" ;
+	}
+elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
+	{
+	Say Info "$Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
+	}
+elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
+	{
+	Say Info "$Depend: $target"
+	}
+elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
+	{
+	Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	PrintInfo "\n" if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
+	}
+else
+	{
+	Say Info "$Depend: $target" 
+	}
+
+$Depend, $short_pbsfile, $start_nodes, $pbs_runs, $target, $short_target
+}
+
+#-------------------------------------------------------------------------------
+
+sub DisplayPbsConfig
+{
+my ($pbs_config) = @_ ;
+
+if( any { $_ eq '.' } @{$pbs_config->{DISPLAY_PBS_CONFIGURATION}} )
+	{
+	SIT $pbs_config, "pbs config:",
+		FILTER => sub #no private data
+				{
+				my ($tree) = @_ ;
+				
+				if('HASH' eq ref $tree)
+					{
+					my @keys_to_dump ;
+					
+					for my $key (keys $tree->%*)
+						{
+						if($pbs_config->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES})
+							{
+							push @keys_to_dump, $key ;
+							}
+						else
+							{
+							my $ref = ref $pbs_config->{$key} ;
+							
+							''      eq $ref and defined $pbs_config->{$key}     and push @keys_to_dump, $key ;
+							'ARRAY' eq $ref and $pbs_config->{$key}->@*         and push @keys_to_dump, $key ;
+							'HASH'  eq $ref and keys    $pbs_config->{$key}->%* and push @keys_to_dump, $key  ;
+							}
+						}
+					
+					return 'HASH', undef, sort @keys_to_dump ;
+					}
+					
+				return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
+				} ;
+	}
+else
+	{
+	for my $regex (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
+		{
+		for my $key ( grep { /$regex/ } sort keys %{ $pbs_config} )
+			{
+			if('' eq ref $pbs_config->{$key})
+				{
+				if(defined $pbs_config->{$key})
+					{
+					Say INFO "$key: " . $pbs_config->{$key} ;
+					}
+				else
+					{
+					Say INFO "$key: undef" if $pbs_config->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES} ;
+					}
+				}
+			else
+				{
+				my $ref = ref $pbs_config->{$key} ;
+				
+				'ARRAY' eq $ref and $pbs_config->{$key}->@*         and SIT $pbs_config->{$key}, $key ;
+				'HASH'  eq $ref and keys    $pbs_config->{$key}->%* and SIT $pbs_config->{$key}, $key ;
+				}
+			}
+		}
+	}
+}
+
+#-------------------------------------------------------------------------------
+
 sub DefaultBuild
 {
 my
@@ -57,8 +182,6 @@ my $t0_depend = [gettimeofday] ;
 
 my $indent = $PBS::Output::indentation ;
 
-my $short_pbsfile = GetRunRelativePath($pbs_config, $Pbsfile, 1) ;
-
 my $build_directory    = $pbs_config->{BUILD_DIRECTORY} ;
 my $source_directories = $pbs_config->{SOURCE_DIRECTORIES} ;
 
@@ -69,47 +192,13 @@ my $dependency_rules = [PBS::Rules::ExtractRules($pbs_config, $Pbsfile, $rules, 
 
 RunPluginSubs($pbs_config, 'PreDepend', $pbs_config, $package_alias, $config_snapshot, $config, $source_directories, $dependency_rules) ;
 
-my $start_nodes = scalar(keys %$inserted_nodes) ;
-   $start_nodes++ unless 0 == $PBS::Output::indentation_depth; # subpbs target was inserted parent even if it's not in %inserted_nodes
+my ($Depend, $short_pbsfile, $start_nodes, $pbs_runs, $target, $short_target) =
+	DisplayDependHeader($pbs_config, $inserted_nodes, $targets, $Pbsfile) ;
 
-my $available = (chars() // 10_000) - (length($indent x ($PBS::Output::indentation_depth + 2)) + 50 + length($PBS::Output::output_info_label)) ;
-my $em = String::Truncate::elide_with_defaults({ length => ($available < 3 ? 3 : $available), truncate => 'middle' });
-
-my $short_target = $em->( join ', ', @$targets) ; 
-
-my $pbs_runs = PBS::PBS::GetPbsRuns() ;
-
-my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
-my $Depend = 'Depend' . ($parallel_depend ? '∥ ' : '') ;
-
-my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{PBS_JOBS} ? ", pid: $$" : '') . GetColor('info')  ;
-
-my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
-my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
-my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
-
-if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
-	{
-	Say Info  "$Depend: $target" ;
-	Say Info2 "${indent}$pbsfile_info" ;
-	}
-elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
-	{
-	Say Info "$Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
-	}
-elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
-	{
-	Say Info "$Depend: $target"
-	}
-elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
-	{
-	Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
-	PrintInfo "\n" if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
-	}
-else
-	{
-	Say Info "$Depend: $target" 
-	}
+{
+local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
+DisplayPbsConfig($pbs_config) ;
+}
 
 my $local_time =
 	PBS::Depend::CreateDependencyTree
@@ -426,7 +515,7 @@ eval
 	} ;
 
 Say Info sprintf("Check: time: %0.2f s.", tv_interval ($t0_check, [gettimeofday]))
-	if $pbs_config->{DISPLAY_CHECK_TIME} and ! exists $inserted_nodes->{$targets->[0]}{__PARALLEL_HEAD} ;
+	if $pbs_config->{DISPLAY_CHECK_TIME} and ! $pbs_config->{PBS_JOBS} ; 
 
 if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	{

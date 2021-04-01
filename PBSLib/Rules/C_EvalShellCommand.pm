@@ -1,7 +1,7 @@
 
 use PBS::Plugin ;
 
-PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '+001C.pm', 'EvaluateShellCommand' => \&C_eval) ;
+PBS::Plugin::LoadPluginFromSubRefs(GetPbsConfig(), '001C', 'EvaluateShellCommand' => \&C_eval) ;
 
 #-------------------------------------------------------------------------------
 

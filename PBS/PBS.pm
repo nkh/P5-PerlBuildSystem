@@ -197,35 +197,6 @@ my $load_package = $pbs_config->{LOAD_PACKAGE} = 'PBS::Runs::' . $package . '_' 
 
 $inserted_nodes //= {} ;
 
-if( any { $_ eq '.' } @{$pbs_config->{DISPLAY_PBS_CONFIGURATION}} )
-	{
-	SIT $pbs_config, "Package '$package:$Pbsfile' config:" ;
-	}
-else
-	{
-	for my $regex (@{$pbs_config->{DISPLAY_PBS_CONFIGURATION}})
-		{
-		for my $key ( grep { /$regex/ } sort keys %{ $pbs_config} )
-			{
-			if('' eq ref $pbs_config->{$key})
-				{
-				if(defined $pbs_config->{$key})
-					{
-					Say Info "$key: " . $pbs_config->{$key} ;
-					}
-				else
-					{
-					Say Info "$key: undef" ;
-					}
-				}
-			else
-				{
-				SIT $pbs_config->{$key}, $key ;
-				}
-			}
-		}
-	}
-	
 # load meso file
 
 $dependency_tree_name =~ s/\//_/g ;

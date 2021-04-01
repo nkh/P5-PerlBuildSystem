@@ -274,6 +274,8 @@ my ($buil_success, $build_result, $build_message, $dependency_tree, $inserted_no
 
 my $parent_config = $pbs_config->{LOADED_CONFIG} || {} ;
 
+$pbs_config->{PBS_TARGETS} = $targets ;
+
 if(@$targets)
 	{
 	PBS::Debug::setup_debugger_run($pbs_config) ;
@@ -400,7 +402,7 @@ eval
  		for ($targets->@*)
 			{
 			$inserted_nodes->{$_}{__PARALLEL_DEPEND}++ ;
-			push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => '__SELF', REASON => '__PARALLEL_DEPEND'} ;
+			push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => $_, REASON => '__PARALLEL_DEPEND'} ;
 			}
 		}
 	} ;

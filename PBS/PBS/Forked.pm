@@ -20,6 +20,7 @@ use Storable qw(freeze thaw) ;
 use Compress::Zlib ;
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
+
 use PBS::Constants ;
 use PBS::Depend ;
 use PBS::Net ;
@@ -38,75 +39,12 @@ use constant
 	INSERTED_NODES => 7,
 	TREE_NAME      => 8,
 	BUILD_TYPE     => 9,
+	BUILD_SEQUENCE => 10,
 	
 	RAW            => 1,
 	} ;
 
 #-------------------------------------------------------------------------------------------------------
-
-sub Subpbs
-{
-my ($pbs_config, $node, $args) = @_ ;
-
-my $depender ;
-
-if($pbs_config->{PBS_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
-	{
-	my $idle_depender = $pbs_config->{USE_DEPEND_SERVER}
-				? PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_idle_depender', {}, $$)
-				: {} ;
-	
-	if(defined $idle_depender->{ADDRESS})
-		{
-		die Error("PBS: depend in existing idle depender is not enabled") . "\n" ;
-
-		$node->{__PARALLEL_DEPEND} = $idle_depender->{PID} ;
-		
-		$depender =
-			sub
-			{
-			# depend in existing idle depender
-			my 	
-				(
-				$pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config,
-				$parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build,
-				) = @_ ;
-			
-			PBS::Net::Post
-				(
-				$pbs_config, $idle_depender->{ADDRESS},
-				'depend_node',
-					{
-					id => $idle_depender->{ID}, node => $targets->[0], resource_server => $pbs_config->{RESOURCE_SERVER},
-					
-					pbsfile_chain        => Data::Dumper->Dump([$pbsfile_chain], [qw(pbsfile_chain)]),
-					pbsfile_rule_name    => $pbsfile_rule_name,
-					Pbsfile              => $Pbsfile,
-					parent_package       => $parent_package,
-					pbs_config           => Data::Dumper->Dump([$pbs_config], [qw($pbs_config)]),
-					parent_config        => Data::Dumper->Dump([$parent_config], [qw($parent_config)]),
-					targets              => $targets->[0],
-					dependency_tree_name => $dependency_tree_name,
-					depend_and_build     => $depend_and_build,
-					},
-				$$
-				) ;
-			
-			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
-			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
-			} ;
-		}
-	else
-		{
-		$depender = GetParallelDepender($pbs_config, $node, \&PBS::PBS::Pbs, $args, $args) ;
-		}
-	
-	}
-
-$depender //= \&PBS::PBS::Pbs ;
-
-$depender->(@$args) ;
-}
 
 sub Pbs
 {
@@ -133,52 +71,12 @@ PBS::PBS::Pbs
 	) ;
 }
 
+#-------------------------------------------------------------------------------------------------------
+
 my %nodes_snapshot ;
 my %forked_children ;
 my $parent_pid ;
 my $parent_pid_copy ;
-
-sub GetParallelDepender
-{
-my ($pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
-
-# save our pid for children 
-$parent_pid_copy = $$ ;
-
-my $depender ; 
-my $response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // {} ;
-
-my $resource_id = $response->{ID} ;
-
-if($resource_id)
-	{
-	$depender = sub
-		{
-		my $pid = fork() ;
-		
-		if($pid)
-			{
-			$node->{__PARALLEL_DEPEND} = $pid ;
-			
-			$forked_children{$pid}++ ; 
-			
-			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
-			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
-			}
-		else
-			{
-			RunParallelPbs($$, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) ;
-			}
-		}
-	}
-else
-	{
-	Say Warning3 "Depend: no resource to run depend in parallel, node: $node->{__NAME}, pid: $$"
-		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE} ;
-	}
-
-$depender ; 
-}
 
 sub RunParallelPbs
 {
@@ -212,6 +110,12 @@ local $PBS::Output::indentation_depth = -1 ;
 
 my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package, $build_sequence) =
 	$pbs_entry_point->(@$entry_point_args) ;
+
+# temporary fix till PBS and Depender take the same arguments
+# we fake the depender argument when running the top node
+# we need to point at real data
+$args->[INSERTED_NODES] = $inserted_nodes ;
+$args->[BUILD_SEQUENCE] = $build_sequence ;
 
 my @new_nodes = grep { ! exists $nodes_snapshot{$_} } keys %$inserted_nodes ;
 my $new_nodes = @new_nodes ;
@@ -339,6 +243,88 @@ PBS::Net::BecomeServer($pbs_config, 'depender', $server, $data) ;
 
 #-------------------------------------------------------------------------------------------------------
 
+sub Subpbs
+{
+my ($pbs_config, $node, $args) = @_ ;
+
+my $depender ;
+
+if($pbs_config->{PBS_JOBS} && exists $node->{__PARALLEL_SCHEDULE})
+	{
+	my $idle_depender = $pbs_config->{USE_DEPEND_SERVER}
+				? PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_idle_depender', {}, $$)
+				: {} ;
+	
+	if(defined $idle_depender->{ADDRESS})
+		{
+		$depender = ReuseDepender() ;
+		}
+	else
+		{
+		$depender = GetParallelDepender($pbs_config, $node, \&PBS::PBS::Pbs, $args, $args) ;
+		}
+	
+	}
+
+$depender //= \&PBS::PBS::Pbs ;
+
+$depender->(@$args) ;
+}
+
+#-------------------------------------------------------------------------------------------------------
+
+sub GetParallelDepender
+{
+my ($pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
+
+# save our pid for children 
+$parent_pid_copy = $$ ;
+
+my $depender ; 
+my $response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // {} ;
+
+my $resource_id = $response->{ID} ;
+
+if($resource_id)
+	{
+	$depender = sub
+		{
+		my $pid = fork() ;
+		
+		if($pid)
+			{
+			$node->{__PARALLEL_DEPEND} = $pid ;
+			
+			$forked_children{$pid}++ ; 
+			
+			local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
+			
+			$args->[INSERTED_NODES]{$args->[TARGETS][0]}{__PARALLEL_DEPEND} = $pid ;
+			
+			PBS::DefaultBuild::DisplayDependHeader($pbs_config, $args->[INSERTED_NODES], $args->[TARGETS], $args->[SUBPBS_NAME], $pid) ;
+			
+			Say ' ' if $node->{__NAME} eq $args->[PBS_CONFIG]{PBS_TARGETS}[0] ;
+			
+			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
+			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
+			}
+		else
+			{
+			RunParallelPbs($$, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) ;
+			}
+		}
+	}
+else
+	{
+	Say Warning3 "Depend: no resource to run depend in parallel, node: $node->{__NAME}, pid: $$"
+		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE} ;
+	}
+
+$depender ; 
+}
+
+#-------------------------------------------------------------------------------------------------------
+
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 my $now_string = "${mday}_${mon}_${hour}_${min}_${sec}" ;
 
@@ -382,8 +368,6 @@ open STDOUT, '>&' . fileno($OLDOUT) or die "Can't restore STDOUT: $!";
 }
 
 #-------------------------------------------------------------------------------------------------------
-
-use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
 sub LinkMainGraph
 {
@@ -466,7 +450,8 @@ for my $graph (values %graphs)
 	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
 	$targets{$graph->{TARGET}}    = $graph ;
 	
-	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >" if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
+	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >, nodes: " . scalar(keys $graph->{NODES}->%*) . ", target: $graph->{TARGET}"
+		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
 	
 	for (keys %{$graph->{NODES}})
 		{
@@ -496,72 +481,84 @@ for my $graph (values %graphs)
 		}
 	}
 
+my $t0_detrigger = [gettimeofday];
+
 # de-trigger nodes
 my ($build_success, @order) = PBS::Rules::Order::topo_sort(\@target_dependencies) ;
 
+my %detriggered ;
 for (@order)
 	{
-	my $target = $graphs{$_}{TARGET} ;
-	my $node   = $graphs{$_}{NODES}{$target} ;
+	my $target_name    = $graphs{$_}{TARGET} ;
+	my $inserting_node = $graphs{$_}{INSERTING_NODE} ;
+	my $node           = $graphs{$_}{NODES}{$target_name} ;
+	my $node_triggers  = $node->{__TRIGGERED} ;
 	
-	for my $trigger_index (keys $node->{__TRIGGERED}->@*) 
+	for my $trigger_index (keys $node_triggers->@*) 
 		{
-		if($node->{__TRIGGERED}[$trigger_index]{REASON} eq '__PARALLEL_DEPEND')
+		my $reason = $node_triggers->[$trigger_index]{REASON}  ;
+		
+		if($reason eq '__PARALLEL_DEPEND')
 			{
-			splice $node->{__TRIGGERED}->@*, $trigger_index, 1 ;
-			last
+			my $name = $node_triggers->[$trigger_index]{NAME} ;
+			push $detriggered{$_}->@*, [$node->{__NAME}, $name] ;
+			
+			splice $node_triggers->@*, $trigger_index, 1 ;
+			last ;
 			}
 		}
-
-	if(0 != $node->{__TRIGGERED}->@*)
+	
+	if(0 == $node_triggers->@*)
 		{
-		next ; # node still triggers, no de-triggering needed
-		}
-	else
-		{
-		delete $node->{__TRIGGERED} ;
-
-#Say Debug "detrigger node $target" ;
-		next unless exists $target_parents{$_} ;
+		delete $node->{__TRIGGERED} ; 
 		
-		my $parent_graph = $graphs{$target_parents{$_}} ;
-		my $parent_node  = $parent_graph->{NODES}{$graphs{$_}{INSERTING_NODE}} ;
+		next unless exists $target_parents{$_} ; # root has no parent
 		
-		my $node_in_parent_graph  = $parent_graph->{NODES}{$target} ;
-		delete $node_in_parent_graph->{__TRIGGERED} ;
-
-		my @ancestors = [$parent_node, $target] ;
+		my $parent_process = $target_parents{$_} ;
+		my $parent_nodes   = $graphs{$parent_process}{NODES} ;
 		
-#Say Debug "detrigger parent node name $parent_node->{__NAME}, trigger: $target"  ;
+		delete $parent_nodes->{$target_name}{__TRIGGERED} ; # link between processes, only one entry in triggers
+		
+		my @ancestors = [$parent_nodes->{$inserting_node}, $target_name] ;
 		
 		while (my $t = shift @ancestors)
 			{
-			my ($ancestor_node, $child_name) = $t->@* ;
+			my ($ancestor_node, $trigger) = $t->@* ;
+			my $ancestor_node_triggers = $ancestor_node->{__TRIGGERED} ;
 			
-			for my $trigger_index (keys $ancestor_node->{__TRIGGERED}->@*) 
+			for my $trigger_index (keys $ancestor_node_triggers->@*) 
 				{
-				if($ancestor_node->{__TRIGGERED}[$trigger_index]{NAME} eq $child_name)
+				my $name = $ancestor_node_triggers->[$trigger_index]{NAME} ;
+				
+				if($name eq $trigger)
 					{
-					splice $ancestor_node->{__TRIGGERED}->@*, $trigger_index, 1 ;
-#Say Debug "detrigger remove trigger $child_name from $ancestor_node->{__NAME}" ;
+					my $reason = $ancestor_node_triggers->[$trigger_index]{REASON} ;
 					
-					if(0 == $ancestor_node->{__TRIGGERED}->@*)
+					push $detriggered{$parent_process}->@*, [$node->{__NAME}, $name] ;
+					
+					splice $ancestor_node_triggers->@*, $trigger_index, 1 ;
+					
+					if(0 == $ancestor_node_triggers->@*)
 						{
 						delete $ancestor_node->{__TRIGGERED} ;
-					
-#Say Debug "detrigger add ancestors to $ancestor_node->{__NAME} " . join ' ' , $ancestor_node->{__PARENTS}->@* ;
-						#de-trigger it's parents
-						push @ancestors, map { [$parent_graph->{NODES}{$_}, $ancestor_node->{__NAME}] } $ancestor_node->{__PARENTS}->@* ;
+						
+						# de-trigger its parents
+						push @ancestors, map { [$parent_nodes->{$_}, $ancestor_node->{__NAME}] } $ancestor_node->{__PARENTS}->@* ;
 						}
 					last ;
 					}
 				}
-			
-			# Todo: send the updated node trigger list and build sequence to the parallel pbs
-			# send list of de-triggered nodes
 			}
 		}
 	}
+
+#SDT $detriggered{$_}, "PBS: de-triggered parallel nodes $_:" for @order ;
+my $detrigger_computation_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
+
+PBS::Net::Put($pbs_config, $graphs{$_}{ADDRESS}, 'detrigger', freeze($detriggered{$_}), $$) for keys %detriggered ;
+
+my $detrigger_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
+Say EC "<I>Check∥ : detrigger, transfer time: $detrigger_time s., creation time: $detrigger_computation_time s." ;
 
 my $triggered = scalar @{$graphs{$target_pid}{NODES}{$graphs{$target_pid}{TARGET}}{__TRIGGERED} // []} ;
 
@@ -743,7 +740,6 @@ Say Info "Depend∥ : dependers: $number_of_dependers, pbsfiles: $pbs_runs, link
 \%graphs
 }
 
-
 #-------------------------------------------------------------------------------------------------------
 
 my $counter = 0 ;
@@ -755,9 +751,8 @@ my ($pbs_config, $data, $frozen_nodes) = @_ ;
 my $nodes = thaw $frozen_nodes ;
  
 local $PBS::Output::indentation_depth = 0 ;
-use Carp ;
 
-Say EC "<I>Depend∥ : link  <I2>< $$ - $data->{ADDRESS} >" . join(':', caller()) . Carp::longmess() . $counter++
+Say EC "<I>Depend∥ : link  <I2>< $$ - $data->{ADDRESS} > " . $counter++
 	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 
 for my $node (@$nodes)
@@ -769,6 +764,61 @@ for my $node (@$nodes)
 	$data->{ARGS}[INSERTED_NODES]{$node}{__PARALLEL_SERVER} = $node->{node_address} ;
 	}
 }
+
+#-------------------------------------------------------------------------------------------------------
+
+sub Detrigger
+{
+my ($pbs_config, $data, $detriggered) = @_ ;
+
+$detriggered = thaw $detriggered ;
+my $args = $data->{ARGS} ;
+
+Say EC "<I>Build∥ : detrigger  <I2>< $$ - $data->{ADDRESS} > " . $counter++
+	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
+
+my ($inserted_nodes, $build_sequence) = @{$args}[INSERTED_NODES, BUILD_SEQUENCE] ;
+
+#SDT $detriggered, "$$ $data->{NODE}{__NAME}" ;
+
+my %removed_from_build_sequence ;
+
+#DisplayBuildSequence($pbs_config, $build_sequence) ;
+
+for($detriggered->@*)
+	{
+	my ($name, $detrigger_name) = $_->@* ;
+
+	my $node_triggers = $inserted_nodes->{$name}{__TRIGGERED} ; 
+	die ERROR("Check∥ : can't detriggering untriggered node: $name") . "\n" unless defined $node_triggers ;
+
+	#SDT $node_triggers, $name ;
+
+	for my $trigger_index (keys $node_triggers->@*) 
+		{
+		my $trigger        = $node_triggers->[$trigger_index]  ;
+		my $trigger_name   = $trigger->{NAME} ;
+		my $trigger_reason = $trigger->{REASON} ;
+
+		if($detrigger_name eq $trigger_name)
+			{
+			splice $node_triggers->@*, $trigger_index, 1 ;
+			
+			my $left =  scalar($node_triggers->@*) ;
+			
+			Say EC "<I>Check∥ : detrigger $name, left: $left, trigger: $trigger_name" ;
+			
+			last ;
+			}
+		}
+	
+	$removed_from_build_sequence{$name}++ if 0 == $node_triggers->@* ;
+	}
+
+$build_sequence->@* = grep { ! exists $removed_from_build_sequence{$_->{__NAME}} } $build_sequence->@* ;
+
+PBS::PLUGIN_Visualisation::DisplayBuildSequence($pbs_config, $build_sequence) ;
+} 
 
 #-------------------------------------------------------------------------------------------------------
 
@@ -803,6 +853,8 @@ else
 	PBS::DefaultBuild::Build(@_) ;
 	}
 }
+
+#-------------------------------------------------------------------------------------------------------
 
 sub BuildNode
 {
@@ -840,6 +892,51 @@ else
 	{
 	PBS::Build::NodeBuilder::BuildNode(@_) ;
 	}
+}
+
+#-------------------------------------------------------------------------------------------------------
+
+sub ReuseDepender
+{
+die Error("PBS: depend in existing idle depender is not enabled") . "\n" ;
+
+=pod
+$node->{__PARALLEL_DEPEND} = $idle_depender->{PID} ;
+
+$depender =
+	sub
+	{
+	# depend in existing idle depender
+	my 	
+		(
+		$pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config,
+		$parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build,
+		) = @_ ;
+	
+	PBS::Net::Post
+		(
+		$pbs_config, $idle_depender->{ADDRESS},
+		'depend_node',
+			{
+			id => $idle_depender->{ID}, node => $targets->[0], resource_server => $pbs_config->{RESOURCE_SERVER},
+			
+			pbsfile_chain        => Data::Dumper->Dump([$pbsfile_chain], [qw(pbsfile_chain)]),
+			pbsfile_rule_name    => $pbsfile_rule_name,
+			Pbsfile              => $Pbsfile,
+			parent_package       => $parent_package,
+			pbs_config           => Data::Dumper->Dump([$pbs_config], [qw($pbs_config)]),
+			parent_config        => Data::Dumper->Dump([$parent_config], [qw($parent_config)]),
+			targets              => $targets->[0],
+			dependency_tree_name => $dependency_tree_name,
+			depend_and_build     => $depend_and_build,
+			},
+		$$
+		) ;
+	
+	# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
+	return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
+	} ;
+=cut
 }
 
 #-------------------------------------------------------------------------------------------------------

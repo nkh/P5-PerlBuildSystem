@@ -26,7 +26,6 @@ use List::Util qw(all first) ;
 
 use PBS::Output ;
 use PBS::PBS::Forked ;
-#use PBS::Constants ;
 
 #-------------------------------------------------------------------------------
 
@@ -134,6 +133,8 @@ $response_connection->send_response($r) ;
 }
 }
 
+#-------------------------------------------------------------------------------------------------------
+
 sub StartPbsServer
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
@@ -159,7 +160,7 @@ if($pid)
 	}
 else
 	{
-	Say Info "PBS∥ : start parallel depend"  ;
+	Say Info "PBS: run in parallel depend mode"  ;
 	my $depender = PBS::PBS::Forked::GetParallelDepender
 			(
 			$pbs_config,
@@ -185,6 +186,8 @@ else
 	exit 0 ;
 	}
 }
+
+#-------------------------------------------------------------------------------------------------------
 
 sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: can't start server") . "\n" }
 
@@ -389,21 +392,22 @@ while (my $c = $daemon->accept)
 					
 					if($pbs_config->{DISPLAY_LOG_PARALLEL_DEPEND})
 						{
-						Say Info2 "Depend∥ : $pid - <$address> done" ;
-						
 						open my $f, '<', $log ;
 						print STDERR while <$f> ;
 						
-						Say '' ;
+						Say Info2 "Depend∥ : server: <$address>, pid: $pid\n\n" ;
 						}
 					
 					$status->("idling, pid: $pid") ;
 					} ;
+			
 			}
 		elsif ($rq->method eq 'PUT')
 			{
 			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
 			'/pbs/link' eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
+			
+			'/pbs/detrigger' eq $path && PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
 			}
 		
 		$c->force_last_request ;

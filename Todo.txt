@@ -1,4 +1,52 @@
 
+
+idea for output renderer
+	each chunk of data that's displayed also has UUID that's displayed
+	if the renderer only display some information about the data, it's possible to apply
+	another renderer on the same data without having to re-run
+
+	a simple application could update the renderers dynamically
+		or even present a choice of renderers
+
+distributed build
+	update the parallel pbs build sequences
+
+	we have a build sequence of parallel pbs
+		we can build from the main pbs just by building in the right order
+
+		it's not efficient as we may be able to build different branches of the graph
+		without waiting for parallel pbs nodes to be build
+
+	we have also updated the links in the parallel pbs so they can build autonomously
+		compared to the central control we need to modify the build loop to handle remote nodes
+			we may also need to relocate the node locally
+
+	we don't want to wait for a whole graph build to get a node that's already build or build early
+
+	while building, the parallel node is not responsive
+		we could fork the build and have the build process and the server process communicate with a MMap file
+		this allows us to use a call back mechanism where a parallel pbs which needs a node build in another
+		parallel pbs can ask the other process to call back when a node is ready and continue building what it can 
+		in the meantime
+		
+		the build can proceed top parallel pbsfile down, or maybe even in any order, if the parallel pbs is not building
+		it can start building as soon as a node is needed
+
+	the build can be further distributed to nodes that where not part of the graph creation, to build a node we just need
+	a setup of files, a config, a pbsfile and the name of a node to build, the remote build can create a mini graph  of just
+	that node, if  the builder is serialized, it doesn't even need that but we need to make sure the dependency nodes are up to date
+	that can be done by just checking the hash of all the needed nodes, there's not even the need for a graph
+
+
+keep connections up
+
+link and update build sequence at the same time to save on connection time
+
+#distributed build sequence must be handled differently
+	need to know if a parallel node triggers to create the build sequence
+
+PUT /link received twice
+
 M for main graph is not displayed
 
 #parallel depend log
@@ -12,13 +60,9 @@ M for main graph is not displayed
 targets with +\d are options handle them
 targets with ? show the help for the option
 
-
 handle crashes in //pbs
 	send an exception to pbs server
 	handle timeout, and since we know what was depended we can restart it!
-
-distributed build sequence must be handled differently
-	need to know if a parallel node triggers to create the build sequence
 
 some processes get a very large amount of nodes while other don't
 	we can
@@ -29,8 +73,6 @@ some processes get a very large amount of nodes while other don't
 	warp 0.2s
 		warp doesn't need to open and verify 1000s digests
 		gimmme MESO!
-
-distributed build
 
 setting priority for nodes across parallel pbs
 	the problem is that the build sequence is already distributed
