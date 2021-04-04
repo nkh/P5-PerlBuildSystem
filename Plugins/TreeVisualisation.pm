@@ -42,7 +42,7 @@ use List::Util qw(any) ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'tnto',
+	'tnto|tree_node_triggered_only',
 	"Display only triggering nodes.",
 	'',
 	'DISPLAY_ONLY_TRIGGERING_NODES',
@@ -52,17 +52,17 @@ PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	'',
 	'NO_HEADER_FILES_DISPLAY',
 	
-	'tnonr=s',
+	'tnonr|tree_no_nodes_matching_regex=s',
 	"Removes files matching the passed regex from the tree dump.",
 	'',
 	'@DISPLAY_FILTER_REGEXES' ,
 
-	'tww=i',
+	'tww|tree_wrap_width=i',
 	"Set the wrap width.",
 	'',
 	'WRAP_WIDTH' ,
 
-	'ttcl',
+	'ttcl|tree_color_levels',
 	"Color the tree glyphs per level.",
 	'',
 	'TREE_COLOR_LEVELS' ,
@@ -148,8 +148,8 @@ if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					{
 					my $is_source = NodeIsSource($tree->{$_}) ;
 					
-					my $parallel_depend   = exists $inserted_nodes->{$_}{__PARALLEL_DEPEND} ;
-					my $parallel_depended = exists $inserted_nodes->{$_}{__PARALLEL_NODE} ;
+					my $parallel_depend   = $inserted_nodes->{$_}{__PARALLEL_DEPEND} ;
+					my $parallel_depended = $inserted_nodes->{$_}{__PARALLEL_NODE} ;
 					my $parallel_node     = $parallel_depend || $parallel_depended ;
 					
 					my $rules = ! $parallel_node && ! @{$tree->{$_}{__MATCHING_RULES} // []} && ! $is_source
@@ -179,7 +179,7 @@ if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					$tag .=  exists $inserted_nodes->{$_}{__WARP_NODE} ? _INFO2_ ('ᶜ') :  $rules ;
 					
 					$tag .= $parallel_depend
-							? _WARNING2_ ('∥ ')
+							? (_WARNING2_ ('∥ ') . _INFO2_("$parallel_depend"))
 							: $parallel_depended
 								? _INFO2_ ('∥ ')
 								: '' ;

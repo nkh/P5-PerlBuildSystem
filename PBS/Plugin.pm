@@ -72,10 +72,10 @@ my $package = PBS::PBS::CanonizePackageName($basename) ;
 
 Say Debug "Plugin: $basename.$ext" if $config->{DISPLAY_PLUGIN_LOAD_INFO} ;
 	
-if(exists $loaded_plugins{$plugin})
+if(exists $loaded_plugins{$basename})
 	{
-	Say Warning"Plugin: $plugin already loaded, ignoring plugin @ $file_name:$line\n" 
-		if "$file_name:$line" ne $loaded_plugins{$plugin}[1] ;
+	Say Warning"Plugin: $basename already loaded, ignoring plugin @ $file_name:$line\n" 
+		if "$file_name:$line" ne $loaded_plugins{$basename}[1] ;
 	
 	return ;
 	}
@@ -95,7 +95,7 @@ eval
 	
 do { die ERROR("Plugin: Couldn't load $plugin.$@") . "\n" }  if $@ ;
 
-$loaded_plugins{$plugin} = [$package, "$file_name:$line"] ;
+$loaded_plugins{$basename} = [$package, "$file_name:$line"] ;
 }
 
 #-------------------------------------------------------------------------------
@@ -120,10 +120,7 @@ else
 			
 		eval "*PBS::PLUGIN_${plugin}::$sub_name = \$sub_ref ;" ;
 		
-		if ($@)
-			{
-			die ERROR("Plugin: Error: can't load sub ref $sub_name:\n$@") . "\n" ;
-			}
+		die ERROR("Plugin: Error: can't load sub ref $sub_name:\n$@") . "\n" if $@ ;
 		}
 	
 	$loaded_plugins{$plugin} = [$plugin, "$file_name:$line"] ;

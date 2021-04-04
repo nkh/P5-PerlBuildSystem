@@ -97,7 +97,6 @@ if($tree->{__PBS_CONFIG}{DISPLAY_SHELL_INFO} && $do_run)
 	}
 	
 my $display_command_information = $tree->{__PBS_CONFIG}{DISPLAY_NODE_BUILDER} 
-					&& ! $tree->{__PBS_CONFIG}{DISPLAY_NO_BUILD_HEADER} 
 					&& ! $PBS::Shell::silent_commands 
 					&& $do_run ;
 

@@ -711,14 +711,14 @@ else
 				
 				$print_separator++ unless $o eq q{} ;
 				}
-
+			
 			PrintVerbatim "\n" if $print_separator ;
 			}
 		}
 	else
 		{
 		# the build failed, save the builder output to display later and stop building
-		Say Error "Build: $built_node->{__NAME}, error will be reported below" ;
+		Say EC "<I>Build: <I3>$built_node->{__NAME} <E>error will be reported below" ;
 		  
 		print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;
 		while(<$builder_channel>)

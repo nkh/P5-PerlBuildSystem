@@ -176,7 +176,7 @@ night =>
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'color_display_definitons',
+	'color_display_definitions',
 	"Display a list of colors defined in ColorDefinition plugin.",
 	GetColorHelp(),
 	'COLOR_DISPLAY_DEFINITIONS',

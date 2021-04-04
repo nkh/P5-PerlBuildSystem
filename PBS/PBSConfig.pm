@@ -171,7 +171,7 @@ do
 	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ && $ARGV[0] !~ /\+\d+$/ ;
 
 	#todo accept ???+\d as an option
-	if ($ARGV[0] =~ /\w\+\d+$/)
+	if (($ARGV[0] // '') =~ /\w\+\d+$/)
 		{
 		Say Error "PBS: invalid option '$ARGV[0]'" ;
 		die "\n" ; 

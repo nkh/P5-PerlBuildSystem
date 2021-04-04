@@ -151,9 +151,9 @@ if($pid)
 		(
 		$pbs_config, 'PBS server', $daemon,
 		{
-			PBS     => 1,
-			TARGETS => $targets,
-			TIME    => [gettimeofday],
+			PBS_SERVER => 1,
+			TARGETS    => $targets,
+			TIME       => [gettimeofday],
 		},
 		) ;
 	
@@ -415,7 +415,7 @@ while (my $c = $daemon->accept)
 	
 	if
 		(
-		exists $data->{PBS} && $started_depending
+		exists $data->{PBS_SERVER} && $started_depending
 		&& (all { $resources{$_} } keys %resources)
 		&& all { $dependers{$_}{IDLE} } keys %dependers
 		)
@@ -428,28 +428,24 @@ while (my $c = $daemon->accept)
 	last if $stop ;
 	}
 
-my ($inserted_nodes) = PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, $data->{TIME}, \%dependers)  ;
+if(exists $data->{PBS_SERVER})
+	{
+	my ($graphs, $nodes, $order, $parallel_pbs_to_run) = 
+		PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, $data->{TIME}, \%dependers) ;
 
-=pod
-PBS::PBS::Forked::Build
-	(
-	$pbs_config,
-	$config,
-	$targets,
-	$inserted_nodes,
-	$tree,
-	$build_point,
-	$build_type,
-	$build_node,
-	$build_sequence,
-	) ;
-=cut
+	PBS::PBS::Forked::Build($graphs, $nodes, $order, $parallel_pbs_to_run) ;
 
-Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
+	Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
 
-# return to FrontEnd
-# $build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
-  1,            , 1            , 'parallel pbs', {},             , {}             , 'PBS',         []  
+	# return to FrontEnd
+	# $build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
+	 1,            , 1            , 'parallel pbs', {},             , {}             , 'PBS',         []  
+	}
+else
+	{
+	Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
+	exit 0 ;
+	}
 }
 
 #-------------------------------------------------------------------------------

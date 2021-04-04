@@ -169,6 +169,10 @@ for
 	
 		$$shell_command_ref =~ s/\%$_->[0]/$_->[1]/g ;
 		}
+	else
+		{
+		#PrintWarning "Config: $_->[0] => $_->[1]\n"
+		}
 	}
 
 for( grep {  ! /^__/ && defined $tree->{$_}{__USER_ATTRIBUTE} } keys %$tree)
