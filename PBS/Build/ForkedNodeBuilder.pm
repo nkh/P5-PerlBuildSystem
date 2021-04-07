@@ -32,8 +32,8 @@ my ($pbs_config) = @_ ;
 
 $pbs_config->{PARENT_CHANNEL} = $parent_channel ; # make it available for RPC requests
 
-my ($build_log, $build_output) ; # file names for the last build
-my ($build_result, $build_message, $build_time) ; #last node build info
+my ($build_log, $build_output) ; # file names for the latest build
+my ($build_result, $build_message, $build_time) ; # latest node build info
 
 while(defined (my $command_and_args = <$parent_channel>))
 	{
@@ -72,12 +72,12 @@ while(defined (my $command_and_args = <$parent_channel>))
 			my ($node_name, $node_build_sequencer_info) ;
 			
 			(undef, $node_name, $node_build_sequencer_info) = @command_and_args ;
-
+			
 			($build_result, $build_message, $build_log, $build_output, $build_time)
 				= BuildNode($parent_channel, $node_name, $node_build_sequencer_info, @_) ;
-
+			
 			my $BUILD_DONE = 'BUILD_DONE' ;
-
+			
 			print $parent_channel "${BUILD_DONE}__PBS_FORKED_BUILDER__${build_result}__PBS_FORKED_BUILDER__${build_message}\n" ;
 			
 			last ;

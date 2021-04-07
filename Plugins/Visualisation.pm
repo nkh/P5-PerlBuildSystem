@@ -168,10 +168,10 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE})
 if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 	{
 	my $parallel_nodes = grep { $_->{__NAME} !~ /^__/ && $_->{__PARALLEL_DEPEND}} @$build_sequence ;
-	my $nodes = @$build_sequence - 1 ;
+	my $nodes = @$build_sequence ? @$build_sequence - 1 : 0 ;
 	my $ratio = $nodes ? sprintf('ratio: %.02f', $parallel_nodes / $nodes) : 'up to date' ;
 
-	Say Info "Sequence: nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, $ratio" : '');
+	Say Info "Sequence: ". ($pbs_config->{PBS_JOBS} ? "pid: $$, " : '' ) ."nodes: " . $nodes . ($pbs_config->{PBS_JOBS} ? ", parallel: $parallel_nodes, $ratio" : '');
 
 	unless ($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY})
 		{

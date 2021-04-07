@@ -372,7 +372,6 @@ my ($build_node, $build_sequence) =
 		$inserted_nodes,
 		$tree,
 		$build_point,
-		$build_type,
 		) ;
 
 #-------------------------------------------------------------------------------
@@ -389,8 +388,6 @@ Build
 	$targets,
 	$inserted_nodes,
 	$tree,
-	$build_point,
-	$build_type,
 	$build_node,
 	$build_sequence,
 	) ;
@@ -406,7 +403,6 @@ my
 	$inserted_nodes,
 	$tree,
 	$build_point,
-	$build_type,
 	) = @_ ;
 
 my $indent = $PBS::Output::indentation ;
@@ -570,8 +566,6 @@ my
 	$targets,
 	$inserted_nodes,
 	$tree,
-	$build_point,
-	$build_type,
 	$build_node,
 	$build_sequence,
 	) = @_ ;

@@ -79,7 +79,7 @@ sub Get
 {
 my ($pbs_config, $url, $where, $what, $whom, $raw) = @_ ;
 
-SDT $what, "Http: Get, from: ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
+SDT $what, "Http: GET, from: ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
 
 my $HT = HTTP::Tiny->new() ;
 my $response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
@@ -93,10 +93,11 @@ if($response->{success})
 	#	{
 	#	Say Info2 "$k: $_" for ref $v eq 'ARRAY' ? @$v : $v ;
 	#	}
-
+	
 	return $response->{content} if $raw ;
+	
 	return
-		{ 
+		{
 		map { $_ eq 'undef' ? undef : $_ } map { split '=', $_, 2  } split '&', $response->{content}
 		}
 	}
@@ -216,7 +217,7 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	}
 } ; 
 
-my $started_depending ;
+my ($state_depending, $state_building) ;
 
 my $stop ;
 while (my $c = $daemon->accept) 
@@ -258,7 +259,7 @@ while (my $c = $daemon->accept)
 						RESPONSE { ID => $id } ;
 						$resources{$id} = 0 ;
 						$allocated++ ;
-						$started_depending++ ;
+						$state_depending++ ;
 						$status->("leased, res: $id      ") ;
 						}
 					else
@@ -318,11 +319,26 @@ while (my $c = $daemon->accept)
 					{
 					my $id = $parameters->{id} ;
 					
-					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					die ERROR("PBS: returned depend resource $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
 					$c->send_status_line ;
 					$resources{$id} = 1 ;
 					$status->("return, res: $id      ") ;
+					} ;
+			
+			'/pbs/build_done' eq $path
+				&& do
+					{
+					my ($id, $pid, $target) = @{$parameters}{qw. id pid target .} ;
+					
+					die ERROR("PBS: returned build resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					
+					$c->send_status_line ;
+					$resources{$id} = 1 ;
+					$status->("return, res: $id      ") ;
+					Say EC "<I>Build<W>∥ <I>: $target done<I2>, pid: $pid" ;
+					
+					$dependers{$pid}{BUILD_DONE}++ ;
 					} ;
 			
 			# reuse parallel depend for depending another node
@@ -352,7 +368,7 @@ while (my $c = $daemon->accept)
 					{
 					my ($id, $pid) = @{$parameters}{'id', 'pid'} ;
 					
-					die ERROR("PBS: returned resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					die ERROR("PBS: returned depender $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
 					$c->send_status_line ;
 					
@@ -401,51 +417,103 @@ while (my $c = $daemon->accept)
 					$status->("idling, pid: $pid") ;
 					} ;
 			
+			'/pbs/build' eq $path
+				and do
+					{
+					$c->send_status_line ;
+					PBS::PBS::Forked::BuildSubGraph($data) ;
+					$status->("building, pid: $$") ;
+					} ;
+			
 			}
 		elsif ($rq->method eq 'PUT')
 			{
 			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
-			'/pbs/link' eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
 			
-			'/pbs/detrigger' eq $path && PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
+			'/pbs/link'      eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
+			
+			'/pbs/detrigger' eq $path and PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
 			}
 		
 		$c->force_last_request ;
 		}
 	
+	$c->close ;
+	
 	if
 		(
-		exists $data->{PBS_SERVER} && $started_depending
+		exists $data->{PBS_SERVER} && $state_building
+		&& (all { $resources{$_} } keys %resources)
+		&& all { $dependers{$_}{BUILD_DONE} } keys %dependers
+		)
+		{
+		Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
+		}
+	
+	if
+		(
+		exists $data->{PBS_SERVER} && $state_depending && ! $state_building
 		&& (all { $resources{$_} } keys %resources)
 		&& all { $dependers{$_}{IDLE} } keys %dependers
 		)
 		{
+		
 		Say Info "Depend∥ : done, allocated depend resources: $allocated" ;
-		$stop++ ;
+		
+		my ($graphs, $nodes, $order, $parallel_pbs_to_run) = 
+			PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, \%dependers) ;
+		
+		if(keys $parallel_pbs_to_run->%*)
+			{
+			PBS::PBS::Forked::Build($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, \%dependers) ;
+			
+			$state_depending = 0 ;
+			$state_building++ ;
+			}
+		else
+			{
+			Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
+			}
 		}
 	
-	$c->close ;
 	last if $stop ;
 	}
 
+Say EC "<D>Http: <I>stop : $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_STOP} ;
+
 if(exists $data->{PBS_SERVER})
 	{
-	my ($graphs, $nodes, $order, $parallel_pbs_to_run) = 
-		PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, $data->{TIME}, \%dependers) ;
-
-	PBS::PBS::Forked::Build($graphs, $nodes, $order, $parallel_pbs_to_run) ;
-
-	Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
-
 	# return to FrontEnd
 	# $build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
-	 1,            , 1            , 'parallel pbs', {},             , {}             , 'PBS',         []  
+	1               , 1            , 'parallel pbs', {}              , {}             , 'PBS'        , []  
 	}
 else
 	{
-	Say Info "HTTP: server shutdown '$server_name'" if $pbs_config->{HTTP_DISPLAY_SERVER_SHUTDOWN} ;
 	exit 0 ;
 	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub Shutdown
+{
+my ($pbs_config, $dependers, $stop, $start_time) = @_ ;
+
+my $t0 = [gettimeofday];
+
+if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
+	{
+	kill 'KILL',  $_->{PID}  for values %$dependers ;
+	}
+else
+	{
+	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
+	}
+
+PrintInfo sprintf("PBS∥ : shutdown: %0.2f s.\n", tv_interval ($t0, [gettimeofday])) ;
+PrintInfo sprintf("PBS∥ : time: %0.2f s.\n", tv_interval ($start_time, [gettimeofday])) ;
+
+$$stop++ ;
 }
 
 #-------------------------------------------------------------------------------

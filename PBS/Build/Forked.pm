@@ -333,7 +333,7 @@ for my $node (reverse @$build_sequence)
 	$node->{__WEIGHT_PRIORITY} = $priority ;
 
 	#enqueue node if it's terminal
-	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD} || $node->{__PARALLEL_DEPEND})
+	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD})
 		{
 		if(defined $pbs_config->{DISPLAY_JOBS_INFO})
 			{
@@ -393,7 +393,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 	{
 	my $shell = $distributor->GetShell($builder_index) ;
 	
-	my ($builder_channel) = StartBuilderProcess
+	my ($builder_channel, $pid) = StartBuilderProcess
 				(
 				$pbs_config,
 				$inserted_nodes,
@@ -408,7 +408,7 @@ for my$builder_index (0 .. ($number_of_builders - 1))
 		}
 	else
 		{
-		Say Info6 "Build: started build process #$builder_index" if defined $pbs_config->{DISPLAY_JOBS_RUNNING} ;
+		Say Info6 "Build: started build process, index: $builder_index, pid: $pid" if defined $pbs_config->{DISPLAY_JOBS_RUNNING} ;
 		}
 	
 	print $builder_channel "GET_PROCESS_ID" . "__PBS_FORKED_BUILDER__" . "\n";
@@ -453,7 +453,7 @@ if($pid)
 	
 	$to_child->autoflush(1);
 	
-	return($to_child) ;
+	return($to_child, $pid) ;
 	}
 else
 	{

@@ -9,7 +9,9 @@ idea for output renderer
 		or even present a choice of renderers
 
 distributed build
-	update the parallel pbs build sequences
+	#update the parallel pbs build sequences
+
+	//pbs that are terminal and not triggered can send their nodes then stop, they will never be called
 
 	we have a build sequence of parallel pbs
 		we can build from the main pbs just by building in the right order

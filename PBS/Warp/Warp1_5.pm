@@ -681,10 +681,6 @@ my $number_of_nodes_in_the_dependency_tree = keys %$nodes ;
 open(WARP, ">", $warp_file) or die qq[Can't open $warp_file: $!] ;
 print WARP PBS::Log::GetHeader('Warp', $pbs_config) ;
 
-local $Data::Dumper::Purity = 1 ;
-local $Data::Dumper::Indent = 1 ;
-local $Data::Dumper::Sortkeys = 1 ; 
-
 my $js = $pbs_config->{WARP_HUMAN_FORMAT} ? JSON::XS->new->pretty(1) : JSON::XS->new ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;

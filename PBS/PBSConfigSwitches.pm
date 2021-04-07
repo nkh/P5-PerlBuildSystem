@@ -1201,8 +1201,8 @@ EOT
 	'hdss|http_display_server_start', 'Display a message when a server is started.', '',
 		\$config->{HTTP_DISPLAY_SERVER_START},
 
-	'hdssd|http_display_server_shutdown', 'Display a message when a server is sshutdown.', '',
-		\$config->{HTTP_DISPLAY_SERVER_SHUTDOWN},
+	'hdssd|http_display_server_stop', 'Display a message when a server is sshutdown.', '',
+		\$config->{HTTP_DISPLAY_SERVER_STOP},
 
 	'hdr|http_display_request', 'Display a message when a request is received.', '',
 		\$config->{HTTP_DISPLAY_REQUEST},
