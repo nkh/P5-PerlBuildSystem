@@ -490,7 +490,7 @@ for (0 .. ($number_of_builders - 1))
 	if($builders->[$_]{BUILDING})
 		{
 		my $builder = $builders->[$_] ;
-		push @waiting_for_messages, "'$builder->{NODE}{__NAME}', shell: '" . $builder->{SHELL}->GetInfo() . ', pid:' .  $builder->{PID} ;
+		push @waiting_for_messages, "'$builder->{NODE}{__NAME}', shell: '" . $builder->{SHELL}->GetInfo() . ', builder pid:' .  $builder->{PID} ;
 		$select_all->add($builders->[$_]{CHANNEL}) ;
 		}
 	}

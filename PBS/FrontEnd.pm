@@ -402,6 +402,7 @@ eval
  		for ($targets->@*)
 			{
 			$inserted_nodes->{$_}{__PARALLEL_DEPEND} = $$ ;
+			$inserted_nodes->{$_}{__PARALLEL_HEAD} = $$ ;
 			push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => $_, REASON => '__PARALLEL_DEPEND'} ;
 			}
 		}

@@ -69,7 +69,7 @@ my $tag = $parallel_depend
 			: '' ;
 $tag .= GetColor('info3') ;
 
-my $pid = $parallel_depended ? _INFO2_(", pid: " . ($file_tree->{__PARALLEL_DEPEND} // '?')) : '' ;
+my $pid = $parallel_depended ? _INFO2_(", pid: " . ($file_tree->{__PARALLEL_NODE} // '?')) : '' ;
 
 $node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
 			? _INFO3_("Node$tag: $type$name") . _INFO2_(", " . GetRunRelativePath($pbs_config, $build_name, 1) . "$pid\n")

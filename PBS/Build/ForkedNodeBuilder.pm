@@ -118,6 +118,8 @@ my ($base_basename, $base_path, $base_ext) = File::Basename::fileparse($redirect
 
 $redirection_base = $base_path ;
 
+$base_basename .= '_remote' if $node->{__PBS_CONFIG}{PBS_JOBS} && exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD} ;
+
 my $redirection_file = "$redirection_base/.$base_basename$base_ext.pbs_log" ;
 my($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
 mkpath($path) unless(-e $path) ;

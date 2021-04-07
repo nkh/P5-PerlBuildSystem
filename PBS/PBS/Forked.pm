@@ -112,7 +112,7 @@ local $PBS::Output::indentation_depth = -1 ;
 my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package, $build_sequence) =
 	$pbs_entry_point->(@$entry_point_args) ;
 
-# temporary fix till PBS and Depender take the same arguments
+# temporary fix: Depender take the same arguments
 # we fake the depender argument when running the top node
 # we need to point at real data
 $args->[INSERTED_NODES] = $inserted_nodes ;
@@ -230,8 +230,6 @@ else
 	RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
 	return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package ;
 	}
-
-
 } 
 
 #-------------------------------------------------------------------------------------------------------
@@ -529,8 +527,30 @@ for (@order)
 my @detriggered_global_build_sequence =
 	grep { state %seen ; ! $seen{$_}++ and ! exists $removed_from_global_build_sequence{$_} } @global_build_sequence ;
 
-#SWT \@global_build_sequence, "Check∥ : global build sequence:" ;
-#SDT \@detriggered_global_build_sequence, "Check∥ : global build sequence de-triggered:" ;
+my @files_to_rebuild = grep { ! /^__PBS/ } @detriggered_global_build_sequence ;
+
+for(@files_to_rebuild)
+	{
+	my $build_name = $nodes{$_}{NODES}{$_}{__BUILD_NAME} ;
+
+	unlink $build_name ; my $error = $! ;
+
+	die ERROR("PBS: Can't remove node artefact $build_name, error: $error") if -e $build_name ;
+	}
+
+if($pbs_config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE})
+	{
+	Say EC "<I>Check<W>∥ <I>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
+	my @build_sequence = @detriggered_global_build_sequence ;
+	@build_sequence =
+		map
+		{
+		s/^__PBS_PID (.*)/<$1>/ ;
+		m/__PBS/ ? () : $_ ;
+		} @build_sequence ;
+
+	SWT \@build_sequence, '', DISPLAY_ADDRESS => 0 ;
+	}
 
 my %parallel_pbs_to_run ;
 $parallel_pbs_to_run{$nodes{$_}{PID}}++ for grep { ! /^__PBS/ } @detriggered_global_build_sequence ;
@@ -905,8 +925,7 @@ sub BuildNode
 {
 my ($node, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;
 
-SDT $node, $node->{__NAME}, MAX_DEPTH => 1 ;
-if (exists $node->{__PARALLEL_HEAD})
+if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 	{
 	my $t0 = [gettimeofday];
 
@@ -916,11 +935,13 @@ if (exists $node->{__PARALLEL_HEAD})
 	
 	my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 	
+	#todo: what if the node exists but is not valid! virtual nodes don't exists, nor their digest
+	# preferably don't remove nodes that are not valid
 	while (! -e $build_name)
 		{
 		# check timeout here
 		
-		Say EC "<I>Build<W>∥ <I>: waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
+		Say EC "<I>Build<W>∥ <I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
 		usleep 100_000 ;
 		}
 	

@@ -1079,9 +1079,11 @@ EOT
 	'dbss|display_build_sequence_simple', '(DF) List the nodes to be build.', '',
 		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE},
 		
-
 	'dbsss|display_build_sequence_simple_stats', '(DF) display number of nodes to be build.', '',
 		\$config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE_STATS_ONLY},
+		
+	'dgbss|display_global_build_sequence', '(DF) List the nodes to be build and the pid of their parallel pbs.', '',
+		\$config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE},
 		
 	'save_build_sequence_simple=s', 'Save a list of nodes to be build to a file.', '',
 		\$config->{SAVE_BUILD_SEQUENCE_SIMPLE},
