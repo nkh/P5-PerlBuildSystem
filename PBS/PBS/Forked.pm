@@ -128,13 +128,7 @@ if(defined $pid)
 	
 	Say Color 'test_bg2', "Depend: parallel end$node_text$info, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_END} ;
 	
-	PBS::Net::Post
-		(
-		$pbs_config, $pbs_config->{RESOURCE_SERVER},
-		'return_depend_resource',
-		{ id => $resource_id },
-		$$
-		) ;
+	PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'return_depend_resource', { id => $resource_id, pid => $$}, $$) ;
 	
 	my $server     = PBS::Net::StartHttpDeamon($pbs_config) ;
 	my $server_url = $server->url ;
@@ -148,8 +142,10 @@ if(defined $pid)
 	# remove undefined variables from pbs_configs, 10% speedup, 20% size
 	for my $pbs_config (grep { state %seen ; ! $seen{$_}++ } map { $inserted_nodes->{$_}{__PBS_CONFIG} } @new_nodes, $target )
 		{
-		delete @$pbs_config{ grep { ! defined $pbs_config->{$_} } keys %$pbs_config }
+		delete @$pbs_config{ grep { ! defined $pbs_config->{$_} || 'CODE' eq ref $pbs_config->{$_} } keys %$pbs_config }
 		}
+	
+	$pbs_config->{INTERMEDIATE_WARP_WRITE} = 0 ;
 	
 	my %not_depended ;
 	my %graph  = 
@@ -179,22 +175,33 @@ if(defined $pid)
 					map 
 						{
 						my $ref = ref $node->{$_} ;
+						my @tuple ;
 						
-						'' eq $ref
-							? ($_ => $node->{$_})
-							: 'HASH' eq $ref
-								? 
-									(
-									$_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
-										? ($_ => $node->{$_})
-										: ($_ => {} )
-									)
-								:
-									(
-									$_ eq  '__TRIGGERED'
-										? ($_ => $node->{$_})
-										: ($_ => [] )
-									)
+						''     eq $ref and do
+							{
+							@tuple = ($_ => $node->{$_}) ;
+							} ;
+						
+						'HASH' eq $ref and do 
+							{
+							@tuple = $_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
+									? ($_ => $node->{$_})
+									: ($_ => {} )
+							} ;
+						
+						'ARRAY' eq $ref and do 
+							{
+							@tuple = $_ eq  '__TRIGGERED'
+									? ($_ => $node->{$_})
+									: ($_ => [] )
+							} ;
+						
+						'CODE' eq $ref and do 
+							{
+							# remove
+							} ;
+							
+						@tuple
 						} 
 						keys %$node
 					),
@@ -212,7 +219,7 @@ if(defined $pid)
 	   $serialized_graph = Compress::Zlib::memGzip($serialized_graph) if $pbs_config->{DEPEND_PARALLEL_USE_COMPRESSION} ;
 	
 	RestoreOutput($redirection) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
-
+	
 	BecomeDependServer
 		(
 		$pbs_config, $pbs_config->{RESOURCE_SERVER}, $server, $log_file,
@@ -238,7 +245,7 @@ sub BecomeDependServer
 {
 my ($pbs_config, $resource_server_url, $server, $log_file, $data) = @_ ;
 
-PBS::Net::Post($pbs_config, $resource_server_url, 'parallel_depend_idling', { pid => $$ , address => $server->url, log => $log_file}, $$) ;
+PBS::Net::Post($pbs_config, $resource_server_url, 'parallel_depend_idling', { target => $data->{ARGS}[TARGETS], pid => $$ , address => $server->url, log => $log_file}, $$) ;
 PBS::Net::BecomeServer($pbs_config, 'depender', $server, $data) ;
 }
 
@@ -282,7 +289,7 @@ my ($pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
 $parent_pid_copy = $$ ;
 
 my $depender ; 
-my $response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // {} ;
+my $response = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 
 my $resource_id = $response->{ID} ;
 
@@ -843,31 +850,42 @@ sub Build
 {
 my ($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, $dependers) = @_ ;
 
-my $pid = fork ;
+my $stop = 0 ;
 
-if($pid)
+if($pbs_config->{DO_BUILD})
 	{
-	map { $dependers->{$_}{BUILD_DONE}++ } grep { ! exists $parallel_pbs_to_run->{$_}} $order->@* ;
+	my $pid = fork ;
+
+	if($pid)
+		{
+		map { $dependers->{$_}{BUILD_DONE}++ } grep { ! exists $parallel_pbs_to_run->{$_}} $order->@* ;
+		return $stop ; # do the build
+		}
+	else
+		{
+		my $t0 = [gettimeofday];
+		for ($order->@*)
+			{
+			if(exists $parallel_pbs_to_run->{$_})
+				{
+				#Say EC "<I>Build∥ : sub graph: <I2>$graphs->{$_}{PID} - < $graphs->{$_}{ADDRESS} >" ;
+				my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'build', {}, $$) ;
+				}
+			else
+				{
+				my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'stop', {}, $$) ;
+				}
+			}
+		
+		Say Info sprintf('Build∥ : start message, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
+		
+		exit 0 ;
+		}
 	}
 else
 	{
-	my $t0 = [gettimeofday];
-	for ($order->@*)
-		{
-		if(exists $parallel_pbs_to_run->{$_})
-			{
-			#Say EC "<I>Build∥ : sub graph: <I2>$graphs->{$_}{PID} - < $graphs->{$_}{ADDRESS} >" ;
-			my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'build', {}, $$) ;
-			}
-		else
-			{
-			my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'stop', {}, $$) ;
-			}
-		}
-	
-	Say Info sprintf('Build∥ : communication time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
-	
-	exit 0 ;
+	$stop = 1 ;
+	return $stop ;
 	}
 }
 
@@ -895,14 +913,35 @@ my
 			BUILD_SEQUENCE,
 			] ;
 
-my $target = $targets->[0] ;
-my $build_node = $inserted_nodes->{$target} ;
+my $t0 = [gettimeofday] ;
 
-#todo: wait till resource is available
-my $response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', {}, $$) // {} ;
+my $response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 my $resource_id = $response->{ID} ;
+my $last_time   = 0 ;
+
+while (! $resource_id)
+	{
+	# check timeout here
+	
+	my $time        = tv_interval ($t0, [gettimeofday]) ;
+	my $time_string = sprintf("%0.0f s.", $time) ;
+	
+	if(($time - $last_time) > 1)
+		{
+		Say EC "<I2>Build∥ : $$ wait: $time_string" ;
+		$last_time = $time ;
+		}
+	
+	usleep 100_000 ;
+	
+	$response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
+	$resource_id = $response->{ID} ;
+	}
 
 $PBS::Output::indentation_depth = 0 ;
+
+my $target = $targets->[0] ;
+my $build_node = $inserted_nodes->{$targets->[0]} ;
 
 PBS::DefaultBuild::Build
 	(
@@ -915,8 +954,8 @@ PBS::DefaultBuild::Build
 	$build_sequence,
 	) ;
 
-Say EC "<I>Build<W>∥ <I>: $target done <I2> $$ - < $data->{ADDRESS} >" ;
-$response = PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'build_done', {id => $resource_id, pid => $$, target => $target}, $$) ;
+Say EC "<I>Build<W>∥ <I>: $target done <I2>, nodes: " . scalar(@$build_sequence) . ",  $$ - < $data->{ADDRESS} >" ;
+PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'build_done', {id => $resource_id, pid => $$, target => $target, nodes => scalar(@$build_sequence)}, $$) ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -927,7 +966,11 @@ my ($node, $pbs_config, $inserted_nodes, $node_build_sequencer_info) = @_ ;
 
 if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 	{
-	my $t0 = [gettimeofday];
+	my $t0 = [gettimeofday] ;
+
+	my $delay = 100_00 ;
+	my $iterations_before_asking_server = 5 ;
+	my $asked_serve_to_allocate_resource_to_sub_pbs = 0 ;
 
 	my $build_name = $node->{__BUILD_NAME} ;
 	
@@ -936,13 +979,38 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 	my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 	
 	#todo: what if the node exists but is not valid! virtual nodes don't exists, nor their digest
-	# preferably don't remove nodes that are not valid
-	while (! -e $build_name)
+	
+	my ($iterations, $last_time) = (0, 0) ;
+	
+	while (! -s $build_name)
 		{
 		# check timeout here
 		
-		Say EC "<I>Build<W>∥ <I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
-		usleep 100_000 ;
+		if($asked_serve_to_allocate_resource_to_sub_pbs == 0 && $iterations > $iterations_before_asking_server)
+			{
+			#Say EC "<W>PBS: ask resource server to allocate extra resource for pid: $node->{__PARALLEL_DEPEND}" ;
+			
+			PBS::Net::Post
+				(
+				$pbs_config, $pbs_config->{RESOURCE_SERVER}, 'allocate_extra_resource',
+				{ pid => $$, extra_pid => $node->{__PARALLEL_DEPEND} },
+				$$
+				) ;
+			
+			$asked_serve_to_allocate_resource_to_sub_pbs++ ;
+			}
+		
+		my $time        = tv_interval ($t0, [gettimeofday]) ;
+		my $time_string = sprintf("%0.0f s.", $time) ;
+		
+		if(($time - $last_time) > 1)
+			{
+			Say EC "<I>Build<W>∥ <I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
+			$last_time = $time ;
+			}
+			
+		usleep $delay ;
+		$iterations++ ;
 		}
 	
 	Say EC "<I>Build<W>∥ <I>: remote <I3>$node->{__NAME}<I2> done in " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;

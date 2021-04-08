@@ -21,7 +21,7 @@ our @ISA = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
-our $VERSION = '0.49' ;
+our $VERSION = '0.50' ;
 
 #use PBS::Debug ;
 use PBS::Config ;
@@ -382,6 +382,8 @@ my $short_pbsfile = GetRunRelativePath($pbs_config, $pbs_config->{PBSFILE}) ;
 
 return($build_success, "PBS: targets: [@$targets], pbsfile: $short_pbsfile\n", $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 }
+
+#-------------------------------------------------------------------------------
 
 sub StartPbs
 {

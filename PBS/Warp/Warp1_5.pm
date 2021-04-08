@@ -227,7 +227,8 @@ if($run_in_warp_mode)
 		eval
 			{
 			# PBS will link to the  warp nodes instead for creating them
-			my $node_plural = '' ; $node_plural = 's' if $number_of_removed_nodes > 1 ;
+			
+			$pbs_config->{WARP} = 0 ;
 			
 			local $PBS::Output::indentation_depth = -1 ; 
 			($build_result, $build_message, $new_dependency_tree, $inserted_nodes, $load_package, $build_sequence)
@@ -315,13 +316,14 @@ else
 			
 		PrintInfo "\e[K" ;
 		} unless $pbs_config->{NO_PRE_BUILD_WARP} ;
-		
+	
 	my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
-
+	
 	eval
 		{
 		local $PBS::Output::indentation_depth = -1 ;
-
+		$pbs_config->{WARP} = 0 ;
+		
 		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
 			= PBS::PBS::Pbs
 				(
@@ -647,6 +649,7 @@ return (\@nodes_triggered, \@trigger_nodes) ;
 
 sub GenerateWarpFile
 {
+my @a = caller ; SDT \@a ;
 my ($warp_file, $targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_message, $node_names,) = @_ ;
 $warp_message //='' ;
 

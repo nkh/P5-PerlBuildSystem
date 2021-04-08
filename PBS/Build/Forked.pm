@@ -331,7 +331,10 @@ for my $node (reverse @$build_sequence)
 
 	$node->{__WEIGHT} = $node->{__LEVEL} << $priority | ($node->{__CHILDREN_TO_BUILD} // 0) ;
 	$node->{__WEIGHT_PRIORITY} = $priority ;
-
+	
+	# give lowest weight to remote node
+	$node->{__WEIGHT} = 16 * 1024 if exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD} ;
+	
 	#enqueue node if it's terminal
 	if(! defined $node->{__CHILDREN_TO_BUILD} || 0 == $node->{__CHILDREN_TO_BUILD})
 		{
@@ -440,7 +443,7 @@ return(\@builders) ;
 sub StartBuilderProcess
 {
 # all arguments are passed to PBS::Build::ForkedNodeBuilder::NodeBuilder
-#my ($pbs_config, $build_sequence, $inserted_nodes, $shell, $builder_info) = @_ ;
+my ($pbs_config, $build_sequence, $inserted_nodes, $shell, $builder_info) = @_ ;
 
 # PBS sends the name of the node to build, the builder returns the build result
 my ($to_child, $to_parent) ;

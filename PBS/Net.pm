@@ -21,7 +21,7 @@ use HTTP::Request::Params ;
 use HTTP::Tiny;
 
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
-use Storable qw(freeze) ;
+use Storable qw(freeze thaw) ;
 use List::Util qw(all first) ;
 
 use PBS::Output ;
@@ -103,7 +103,8 @@ if($response->{success})
 	}
 else
 	{
-	Say Error "Http: Failed accessing server @ ${url}pbs/$where" ;
+	Say Error "Http: $whom failed accessing server @ ${url}pbs/$where, status: $response->{status}, reason: $response->{reason}" ;
+	return {}
 	}
 } 
 
@@ -190,7 +191,7 @@ else
 
 #-------------------------------------------------------------------------------------------------------
 
-sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: can't start server") . "\n" }
+sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: Error: can't start server") . "\n" }
 
 sub BecomeServer
 {
@@ -198,22 +199,28 @@ my ($pbs_config, $server_name, $daemon, $data) = @_ ;
 
 Say EC "<D>Http: <I>start : $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
 
-my ($counter, $allocated, $reused) = (0, 0, 0) ;
+my ($counter, $allocated, $reused, $used_e_leases) = (0, 0, 0, 0) ;
 
 my %dependers ;
 my %resources = map { $_ => 1 } 1 .. $pbs_config->{PBS_JOBS} ;
+my %extra_resources ; # request from a build to schedule a dependency
 
 my $status = sub
 {
 if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	{
+	my $glyph = ' ' . join'', map { $resources{$_} ? '◼' : ' ' } 1 .. $pbs_config->{PBS_JOBS} ;
+
 	Say Debug "Depend∥ : " . $_[0]
 			. _INFO2_
 				  ', dependers: ' . scalar( keys %dependers)
 				. ', idling: '    . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers)
 				. ', reused: '    . $reused
 				. ', leases: '    . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
+				. $glyph
 				. ', leased: '    . $allocated
+				. ', E-leases: '  . scalar( keys  %extra_resources)
+				. ', used E-leased: ' . $used_e_leases
 	}
 } ; 
 
@@ -239,6 +246,9 @@ while (my $c = $daemon->accept)
 			'/pbs/get_depend_resource' eq $path
 				&& do 
 					{
+					my $content = thaw $rq->content ; 
+					my $pid = $content->{pid} ;
+					
 					my $dependers = keys %dependers ;
 					my $id = first { $resources{$_} } keys %resources ;
 					
@@ -252,19 +262,41 @@ while (my $c = $daemon->accept)
 						&&
 							(
 							! defined $pbs_config->{DEPEND_PROCESSES}
-							|| (keys %dependers < $pbs_config->{DEPEND_PROCESSES})
+							|| ($dependers < $pbs_config->{DEPEND_PROCESSES})
 							)
 						)
 						{
-						RESPONSE { ID => $id } ;
 						$resources{$id} = 0 ;
 						$allocated++ ;
 						$state_depending++ ;
-						$status->("leased, res: $id      ") ;
+						
+						delete $extra_resources{$pid} ;
+						#delete $dependers{$pid}{IDLE} ;
+						
+						RESPONSE { ID => $id } ;
+						
+						$id = sprintf '%7d', $id ;
+						$status->("leased: $id - $pid") ;
 						}
 					else
 						{
-						RESPONSE {} ;
+						if(exists $extra_resources{$pid})
+							{
+							#delete $dependers{$pid}{IDLE} ;
+							$extra_resources{$pid} = {BUILDING => 1} ;
+							
+							$used_e_leases++ ;
+							
+							RESPONSE { ID => $pid } ;
+							
+							my $pid_aligned = sprintf '%7d', $pid ;
+							$status->(_WARNING_ "leased: $pid_aligned - $pid") ;
+							}
+						else
+							{
+							RESPONSE { } ;
+							#$status->("lease status") ;
+							}
 						}
 					} ;
 					
@@ -283,7 +315,7 @@ while (my $c = $daemon->accept)
 						
 						RESPONSE { ID => $id, PID => $idle_depender->{PID}, ADDRESS => $idle_depender->{ADDRESS} } ;
 						
-						$status->("reused, dep: $idle_depender->{PID}, id: $id") ;
+						$status->("reused: dep: $idle_depender->{PID}, id: $id") ;
 						}
 					else
 						{
@@ -314,31 +346,60 @@ while (my $c = $daemon->accept)
 			
 			'/pbs/stop' eq $path && do { $stop++ } ;
 			
+			'/pbs/allocate_extra_resource' eq $path
+				&& do
+					{
+					my ($pid, $extra_pid) = @{$parameters}{qw. pid extra_pid .} ;
+					
+					$extra_resources{$extra_pid}++ ;
+					
+					$pid = sprintf '%7d', $pid ;
+					$status->(_WARNING_ "extra : $pid - $extra_pid") ;
+					} ;
+				
 			'/pbs/return_depend_resource' eq $path
 				&& do
 					{
-					my $id = $parameters->{id} ;
-					
-					die ERROR("PBS: returned depend resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					my ($id, $pid) = @{$parameters}{qw. id pid .} ;
 					
 					$c->send_status_line ;
+					
+					die ERROR("PBS: Error: returned depend resource $id from $pid, wasn't allocated") . "\n" if $resources{$id} ;
+					
 					$resources{$id} = 1 ;
-					$status->("return, res: $id      ") ;
+					
+					$id = sprintf '%7d', $id ;
+					$status->(_INFO2_ "return: $id - $pid") ;
 					} ;
 			
 			'/pbs/build_done' eq $path
 				&& do
 					{
-					my ($id, $pid, $target) = @{$parameters}{qw. id pid target .} ;
+					my ($id, $pid, $target, $nodes) = @{$parameters}{qw. id pid target nodes.} ;
 					
-					die ERROR("PBS: returned build resource $id, wasn't allocated") . "\n" if $resources{$id} ;
+					my $extra_resource ;
+					if(exists $extra_resources{$pid} && 'HASH' eq ref $extra_resources{$pid})
+						{
+						$extra_resource++ ;
+						}
+					else
+						{
+						die ERROR("PBS: Error: returned build resource $id from $pid, wasn't allocated") . "\n" if $resources{$id} ;
+						
+						$resources{$id} = 1 ;
+						}
 					
 					$c->send_status_line ;
-					$resources{$id} = 1 ;
-					$status->("return, res: $id      ") ;
-					Say EC "<I>Build<W>∥ <I>: $target done<I2>, pid: $pid" ;
+					$c->force_last_request ;
+					$c->close ;
 					
+					#Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid" ;
+					
+					delete $extra_resources{$pid} ;
 					$dependers{$pid}{BUILD_DONE}++ ;
+					
+					$id = sprintf '%7d', $id ;
+					$status->(($extra_resource ? \&_WARNING_ : \&_INFO2_)->("return: $id - $pid")) ;
 					} ;
 			
 			# reuse parallel depend for depending another node
@@ -349,8 +410,10 @@ while (my $c = $daemon->accept)
 					
 					# send some id for the current node depend
 					$c->send_status_line ;
+					$c->force_last_request ;
+					$c->close ;
 					
-					$status->("depend, pid: $$, node: $node") ;
+					$status->("depend: pid: $$, node: $node") ;
 					
 					PBS::PBS::Forked::Pbs($data, $parameters) ;
 					
@@ -368,18 +431,21 @@ while (my $c = $daemon->accept)
 					{
 					my ($id, $pid) = @{$parameters}{'id', 'pid'} ;
 					
-					die ERROR("PBS: returned depender $id, wasn't allocated") . "\n" if $resources{$id} ;
+					die ERROR("PBS: Error: returned depender $id, wasn't allocated") . "\n" if $resources{$id} ;
 					
 					$c->send_status_line ;
+					$c->force_last_request ;
+					$c->close ;
 					
 					$resources{$id} = 1 ;
-					$status->("return, res: $id      ") ;
 					
 					my $depender = first { $_->{PID} == $pid } values  %dependers ;
 					
-					die ERROR("PBS: returned depended, pid: $pid, wasn't allocated") . "\n" unless $depender ;
+					die ERROR("PBS: Error: returned depended, pid: $pid, wasn't allocated") . "\n" unless $depender ;
 					
 					$depender->{IDLE}++ ;
+					
+					$status->("return: res: $id      ") ;
 					} ;
 			
 			'/pbs/register_parallel_depend' eq $path
@@ -387,21 +453,25 @@ while (my $c = $daemon->accept)
 					{
 					my $pid = $parameters->{pid} ;
 					
-					die ERROR("PBS: parallel depender already registered pid: $pid") . "\n" if exists $dependers{$pid} ;
+					die ERROR("PBS: Error: parallel depender already registered pid: $pid") . "\n" if exists $dependers{$pid} ;
 					
 					$c->send_status_line ;
+					$c->force_last_request ;
+					$c->close ;
 					$dependers{$pid} = {PID => $pid} ;
-					$status->("active, pid: $pid") ;
+					$status->("active:         - $pid") ;
 					} ;
 			
 			'/pbs/parallel_depend_idling' eq $path
 				&& do
 					{
-					my ($pid, $log, $address) = @{$parameters}{qw. pid log address .} ;
+					my ($pid, $log, $address, $target) = @{$parameters}{qw. pid log address target .} ;
 					
-					die ERROR("PBS: depender $pid wasn't registered") . "\n" unless exists $dependers{$pid} ;
+					die ERROR("PBS: Error: depender $pid wasn't registered") . "\n" unless exists $dependers{$pid} ;
 						
 					$c->send_status_line ;
+					$c->force_last_request ;
+					$c->close ;
 					$dependers{$pid}{IDLE}++ ;
 					$dependers{$pid}{LOG} = $log ;
 					$dependers{$pid}{ADDRESS} = $address ;
@@ -411,18 +481,25 @@ while (my $c = $daemon->accept)
 						open my $f, '<', $log ;
 						print STDERR while <$f> ;
 						
-						Say Info2 "Depend∥ : server: <$address>, pid: $pid\n\n" ;
+						Say Info2 "Depend∥ : done server: <$address>, pid: $pid" ;
+						Say ' ' if $. > 1 ;
 						}
 					
-					$status->("idling, pid: $pid") ;
+					$status->("idling:         - $pid") ;
 					} ;
 			
 			'/pbs/build' eq $path
 				and do
 					{
 					$c->send_status_line ;
+					$c->force_last_request ;
+					$c->close ;
+					
+					use constant TARGETS => 6 ;
+					
+					Say EC "<I>Build<W>∥ <I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$" ;
+					
 					PBS::PBS::Forked::BuildSubGraph($data) ;
-					$status->("building, pid: $$") ;
 					} ;
 			
 			}
@@ -444,6 +521,7 @@ while (my $c = $daemon->accept)
 		(
 		exists $data->{PBS_SERVER} && $state_building
 		&& (all { $resources{$_} } keys %resources)
+		&& 0 == scalar(keys %extra_resources)
 		&& all { $dependers{$_}{BUILD_DONE} } keys %dependers
 		)
 		{
@@ -465,10 +543,17 @@ while (my $c = $daemon->accept)
 		
 		if(keys $parallel_pbs_to_run->%*)
 			{
-			PBS::PBS::Forked::Build($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, \%dependers) ;
+			$stop = PBS::PBS::Forked::Build($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, \%dependers) ;
 			
-			$state_depending = 0 ;
-			$state_building++ ;
+			if($stop)
+				{
+				Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
+				}
+			else
+				{
+				$state_depending = 0 ;
+				$state_building++ ;
+				}
 			}
 		else
 			{
