@@ -159,33 +159,23 @@ my $catchall =
 	else
 		{
 		Say Error "PBS: invalid option '$_[0]'" if $_[0] =~ /^-/ ;
-
+		
 		$parse_errors++ if $_[0] =~ /^-/ ;
-
+		
 		push @targets, $_[0] if $_[0] !~ /^-/ ;
 		}
 	} ;
 
 do
 	{
-	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ && $ARGV[0] !~ /\+\d+$/ ;
-
-	#todo accept ???+\d as an option
-	if (($ARGV[0] // '') =~ /\w\+\d+$/)
-		{
-		Say Error "PBS: invalid option '$ARGV[0]'" ;
-		die "\n" ; 
-
-		#$ARGV[0] =  PBS::PBSConfigSwitches::Complete($options, $ARGV[0]) ;
-		#chomp $ARGV[0] ;
-		#SDT $ARGV[0] ;
-		#die;
-		}
+	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ && $ARGV[0] !~ /\w\+\d+$/ ;
+	
+	# complete +\d options
+	@ARGV = map { chomp($_ = PBS::PBSConfigSwitches::Complete($options, $_)) if /\w\+\d+$/ ; $_  } @ARGV ;
 	
 	unless(GetOptions(@flags, '<>' => $catchall))
 		{
-		return 0, "PBS: Try perl pbs.pl -h.\n", $config, @ARGV
-			unless $ignore_error;
+		return 0, "PBS: Try perl pbs.pl -h.\n", $config, @ARGV unless $ignore_error;
 		}
 	}
 while(@ARGV) ;
@@ -198,7 +188,7 @@ push @{$config->{TARGETS}}, @targets ;
 
 die "\n" if $parse_errors ;
  
-1, '', $config ;
+1, '', $config
 }
 
 #-------------------------------------------------------------------------------
@@ -264,6 +254,7 @@ if($pbs_config->{QUIET})
 $pbs_config->{DISPLAY_BUILD_RESULT}++ if $pbs_config->{BUILD_DISPLAY_RESULT} ;
 
 $pbs_config->{WARP} = 1.5 unless defined $pbs_config->{WARP} ;
+$pbs_config->{WARP_DISPLAY_DIGEST_FILE_NOT_FOUND} //= 0 ;
 
 for my $actions (grep { '' eq ref $_ } @{$pbs_config->{NODE_BUILD_ACTIONS}})
 	{
@@ -341,6 +332,8 @@ undef $pbs_config->{DEBUG_DISPLAY_TRIGGER_INSERTED_NODES} if $pbs_config->{DEBUG
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
 
 $pbs_config->{DISPLAY_SEARCH_INFO}++ if $pbs_config->{DISPLAY_SEARCH_ALTERNATES} ;
+
+$pbs_config->{BUILD_AND_DISPLAY_NODE_INFO}++ if $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM} || $pbs_config->{DISPLAY_NO_PROGRESS_BAR_MINIMUM_2} ;
 
 if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_INFO}})
 	{

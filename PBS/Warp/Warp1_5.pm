@@ -649,7 +649,6 @@ return (\@nodes_triggered, \@trigger_nodes) ;
 
 sub GenerateWarpFile
 {
-my @a = caller ; SDT \@a ;
 my ($warp_file, $targets, $dependency_tree, $inserted_nodes, $pbs_config, $warp_message, $node_names,) = @_ ;
 $warp_message //='' ;
 

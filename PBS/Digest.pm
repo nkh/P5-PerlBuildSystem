@@ -1139,7 +1139,7 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 	}
 else
 	{
-	if(defined (my $current_md5 = GetFileMD5($file, ! $pbs_config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND} )))
+	if(defined (my $current_md5 = GetFileMD5($file, $pbs_config->{WARP_DISPLAY_DIGEST_FILE_NOT_FOUND} )))
 		{
 		unless($current_md5 eq $md5)
 			{

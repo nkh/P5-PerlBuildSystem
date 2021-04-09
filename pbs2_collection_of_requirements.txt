@@ -20,6 +20,14 @@ Do we need 'Rule'
 		reh,
 		reh ;
 		
+idea for output renderer
+	each chunk of data that's displayed also has UUID that's displayed
+	if the renderer only display some information about the data, it's possible to apply
+	another renderer on the same data without having to re-run
+
+	a simple application could update the renderers dynamically
+		or even present a choice of renderers
+
 build distribution
 	the remote node don't need to have the whole graph, they can build sub graphs
 		same environment/tools

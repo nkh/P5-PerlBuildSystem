@@ -902,8 +902,8 @@ of the latest change without rebuilding everything which makes finding the effec
 latest change more difficult.
 EOT
 
-	'wnmw|warp_no_md5_warning', 'Do not display a warning if the file to compute hash for does not exist during warp verification.', '',
-		\$config->{WARP_NO_DISPLAY_DIGEST_FILE_NOT_FOUND},
+	'wmw|warp_md5_warning', 'Display a warning if the file to compute hash for does not exist during warp verification.', '',
+		\$config->{WARP_DISPLAY_DIGEST_FILE_NOT_FOUND},
 		
 	'dfc|display_file_check', 'Display hash checking for individual files.', '',
 		\$config->{DISPLAY_FILE_CHECK},
@@ -1380,15 +1380,17 @@ my (@switches) = @_ ;
 
 my @matches ;
 
+OPTION:
 for my $option (sort { $a->[0] cmp $b->[0] } GetOptionsElements())
 	{
 	for my $option_element (split /\|/, $option->[0])
 		{
 		$option_element =~ s/=.*$// ;
-
+		
 		if( any { $_ eq $option_element} @switches )
 			{
 			push @matches, $option ;
+			next OPTION ;
 			}
 		}
 	}
@@ -1436,7 +1438,7 @@ for (@options)
 
 	my $lht = $long_help eq '' ? ' ' : '*' ;
 
-	Say Info3 sprintf( "--%-${max_long}s %-${max_short}s$lht: ", $long, ($short eq '' ? '' : "--$short"))
+	Say EC sprintf( "<I3>--%-${max_long}s <W3>%-${max_short}s<I3>$lht: ", $long, ($short eq '' ? '' : "--$short"))
 			. ($narrow_display ? "\n" : '')
 			. _INFO_($help) ;
 

@@ -877,7 +877,7 @@ if($pbs_config->{DO_BUILD})
 				}
 			}
 		
-		Say Info sprintf('Build∥ : start message, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
+		Say Info sprintf('Build∥ : send start messages, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
 		
 		exit 0 ;
 		}
