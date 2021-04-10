@@ -422,7 +422,9 @@ for my $graph (values %graphs)
 	push @target_dependencies, [$graph->{PID}, keys %{$graph->{CHILDREN}}] ;
 	$target_parents{$_} = $graph->{PID} for keys $graph->{CHILDREN}->%* ;
 	
+	$processes{$graph->{PID}} //= {} ;
 	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
+	
 	$targets{$graph->{TARGET}}    = $graph ;
 	
 	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >, nodes: " . scalar(keys $graph->{NODES}->%*) . ", target: $graph->{TARGET}"
@@ -591,10 +593,10 @@ SIT $processes{$target_pid},
 					push @keys_to_dump, [ $_,  EC("∥ $_ ($triggered)<I2> $graphs{$_}{TARGET}, " . scalar(keys %{$graphs{$_}{NODES}}) . "/" . $graphs{$_}{TIME}) ],
 					}
 					
-				return('HASH', undef, sort @keys_to_dump) ;
+				return 'HASH', undef, sort @keys_to_dump ;
 				}
 				
-			return (Data::TreeDumper::DefaultNodesToDisplay($tree)) ;
+			return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
 			}
 	 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE} ;
 

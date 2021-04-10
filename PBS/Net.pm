@@ -141,6 +141,17 @@ my $daemon = StartHttpDeamon($pbs_config) ;
 $pbs_config->{RESOURCE_SERVER} = $daemon->url ;
 $pbs_config->{DEPEND_AND_CHECK}++ ;
 
+my ($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_config) ;
+
+unless ($removed_nodes)
+	{
+	#Say Info "PBS∥ : up to date" ;
+	
+	use constant BUILD_SUCCESS => 1 ;
+	
+	return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date"}, $nodes, 'up to date', [] 
+	}
+
 my $pid = fork() ;
 
 if($pid)
@@ -152,19 +163,23 @@ if($pid)
 			PBS_SERVER => 1,
 			TARGETS    => $targets,
 			TIME       => [gettimeofday],
+			WARP       => [$nodes, $removed_nodes, $GenerateWarpFile],
 		},
 		) ;
 	
 	}
 else
 	{
-	Say Info "PBS: run in parallel depend mode"  ;
+	Say Info "PBS∥ : start"  ;
+	
+	delete $pbs_config->{INTERMEDIATE_WARP_WRITE} ;
+	
 	my $depender = PBS::PBS::Forked::GetParallelDepender
 			(
 			$pbs_config,
 			{__NAME => $targets->[0] // 'no target'},
 			\&PBS::FrontEnd::StartPbs,
-			[$targets, $pbs_config, $parent_config],
+			[$targets, $pbs_config, $parent_config, $nodes, $removed_nodes, sub {}],
 			[ #fake depender call arguments
 				[],                     # PBSFILE_CHAIN  => 0,
 				'ROOT',                 # INSERTED_AT    => 1,

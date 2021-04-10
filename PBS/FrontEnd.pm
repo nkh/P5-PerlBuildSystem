@@ -382,14 +382,18 @@ return($build_success, "PBS: targets: [@$targets], pbsfile: $short_pbsfile\n", $
 
 sub StartPbs
 {
-my ($targets, $pbs_config, $parent_config) = @_ ;
+my 
+	(
+	$targets, $pbs_config, $parent_config,
+	$nodes, $removed_nodes, $GenerateWarpFile,
+	) = @_ ;
 
-my ($nodes, $removed_nodes, $GenerateWarpFile) ;
 my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 
 eval
 	{
-	($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_config) ;
+	($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_config)
+		unless defined $nodes ;
 	
 	if($removed_nodes)
 		{

@@ -198,7 +198,7 @@ if($run_in_warp_mode)
 		Say Info sprintf("Warp: $info, load time: %0.2f s., check time: %0.2f s.", $warp_load_time, $warp_verification_time) ;
 		}
 	
-	Say Info "\e[KWarp: Up to date" unless $pbs_config->{QUIET} ;
+	Say Info "\e[KWarp: Up to date" unless $number_of_removed_nodes || $pbs_config->{QUIET} ;
 	}
 
 $pbs_config->{IN_WARP} = $run_in_warp_mode ; # let rest of pbs know that node attributes are stripped
