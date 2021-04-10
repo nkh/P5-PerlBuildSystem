@@ -1,16 +1,74 @@
 package PBS::Output ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
+
+use subs qw - Error Color - ;
 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw() ;
-our $VERSION = '0.03' ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+
+our @EXPORT =
+	(
+	CreateColorFunctions
+		(qw/
+		debug   
+		debug2  
+		debug3  
+		error   
+		error2   
+		error3   
+		on_error
+		info    
+		info2   
+		info3   
+		info4   
+		info5   
+		info6
+		shell   
+		shell2   
+		user    
+		warning 
+		warning2
+		warning3
+		warning4
+		
+		box_11  
+		box_12  
+		box_21  
+		box_22  
+		
+		test_bg 
+		test_bg2
+		
+		ttcl1
+		ttcl2
+		ttcl3
+		ttcl4
+		
+		dark
+		no_match
+		ignoring_local_rule
+		
+		/),
+	qw(
+		Say Print
+
+		COLOR Color GetColor
+		NO_COLOR NoColor _NO_COLOR_
+		Colored EC
+
+		PrintColor PrintNoColor PrintVerbatim
+		
+		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
+
+		GetRunRelativePath GetTargetRelativePath
+	) 
+	);
+
+our $VERSION = '0.09' ;
 
 my $cd = 256 ; # color_depth
 my %cc ;
@@ -114,75 +172,6 @@ for my $color_name (@_)
 
 @exports 
 }
-
-use subs qw - Error Color - ;
-
-use vars qw($VERSION @ISA @EXPORT) ;
-
-require Exporter;
-
-my @exports = 
-	(
-	CreateColorFunctions
-		(qw/
-		debug   
-		debug2  
-		debug3  
-		error   
-		error2   
-		error3   
-		on_error
-		info    
-		info2   
-		info3   
-		info4   
-		info5   
-		info6
-		shell   
-		shell2   
-		user    
-		warning 
-		warning2
-		warning3
-		warning4
-		
-		box_11  
-		box_12  
-		box_21  
-		box_22  
-		
-		test_bg 
-		test_bg2
-		
-		ttcl1
-		ttcl2
-		ttcl3
-		ttcl4
-		
-		dark
-		no_match
-		ignoring_local_rule
-		
-		/),
-	qw(
-		Say Print
-
-		COLOR Color GetColor
-		NO_COLOR NoColor _NO_COLOR_
-		Colored EC
-
-		PrintColor PrintNoColor PrintVerbatim
-		
-		GetLineWithContext PrintWithContext PbsDisplayErrorWithContext
-
-		GetRunRelativePath GetTargetRelativePath
-	) 
-	);
-
-@ISA     = qw(Exporter) ;
-@EXPORT  = @exports ;
-		
-$VERSION = '0.09' ;
 
 #-------------------------------------------------------------------------------
 

@@ -1,14 +1,7 @@
 
 package PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-
-use Data::Dumper ;
-use Data::TreeDumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -35,9 +28,13 @@ our @EXPORT = qw(
 
 our $VERSION = '0.04' ;
 
-use PBS::PBS ;
-use PBS::Output ;
+use Carp ;
+use Data::Dumper ;
+use Data::TreeDumper ;
+
+use PBS::PBS ; # keep this one first or exports stop working!
 use PBS::Information ; 
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 

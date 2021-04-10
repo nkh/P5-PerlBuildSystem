@@ -1,11 +1,8 @@
 
 package PBS::Log::ForkedLNI ;
 
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
-use v5.10 ;
- 
 require Exporter ;
 
 our @ISA = qw(Exporter) ;
@@ -16,11 +13,11 @@ our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
-use PBS::Output ;
-use PBS::Build::ForkedNodeBuilder ; # for log file name
-
-use Socket;
 use IO::Select ;
+use Socket;
+
+use PBS::Build::ForkedNodeBuilder ; # for log file name
+use PBS::Output ;
 
 #-----------------------------------------------------------------------------------------------------------------------
 

@@ -1,17 +1,6 @@
 package PBS::Graph::Snapshots ;
-use PBS::Debug ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-
-use Data::Dumper ;
-use Data::TreeDumper ;
-use File::Path ;
-
-use PBS::Output ;
-use PBS::Constants ;
-use PBS::GraphViz;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -20,6 +9,14 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.02' ;
+
+use PBS::Constants ;
+use PBS::GraphViz;
+use PBS::Output ;
+
+use Data::Dumper ;
+use Data::TreeDumper ;
+use File::Path ;
 
 #-------------------------------------------------------------------------------
 

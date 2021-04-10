@@ -1,10 +1,7 @@
 
 package PBS::Config ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -30,9 +27,9 @@ our @EXPORT = qw(
 		
 our $VERSION = '0.04' ;
 
-use Data::TreeDumper ;
-use Data::Compare;
 use Carp ;
+use Data::Compare;
+use Data::TreeDumper ;
  
 use PBS::Debug ;
 use PBS::Output ;

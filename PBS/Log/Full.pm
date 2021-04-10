@@ -1,11 +1,7 @@
 
 package PBS::Log::Full ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-
-use File::Slurp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -15,9 +11,11 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(GenerateDependFullLog) ;
 our $VERSION = '0.01' ;
 
+use File::Slurp ;
+
 use PBS::Config ;
-use PBS::PBSConfig ;
 use PBS::Output ;
+use PBS::PBSConfig ;
 
 sub GenerateDependFullLog
 {

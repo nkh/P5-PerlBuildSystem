@@ -1,13 +1,7 @@
 
 package PBS::Distributor ;
 
-use PBS::Debug ;
-
-use v5.10 ;
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -16,6 +10,8 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
+
+use Data::TreeDumper ;
 
 use PBS::Output ;
 
@@ -116,17 +112,17 @@ if(defined $distributor_definition)
 	my $file_body  = <<EOT ;
 use strict ;
 use warnings ;
-use PBS::Constants ;
-use PBS::Shell ;
-use PBS::Output ;
-use PBS::Rules ;
-use PBS::Triggers ;
-use PBS::PostBuild ;
-use PBS::PBSConfig ;
-use PBS::Config ;
 use PBS::Check ;
-use PBS::PBS ;
+use PBS::Config ;
+use PBS::Constants ;
 use PBS::Digest;
+use PBS::Output ;
+use PBS::PBS ;
+use PBS::PBSConfig ;
+use PBS::PostBuild ;
+use PBS::Rules ;
+use PBS::Shell ;
+use PBS::Triggers ;
 
 #line 0 '$distributor_definition'
 EOT

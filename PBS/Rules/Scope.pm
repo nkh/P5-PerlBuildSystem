@@ -1,11 +1,7 @@
 
 package PBS::Rules::Scope;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -17,8 +13,8 @@ our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
-use PBS::PBSConfig ;
 use PBS::Output ;
+use PBS::PBSConfig ;
 
 #---------------------------------------------------------------------------------------
 

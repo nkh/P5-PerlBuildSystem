@@ -1,28 +1,24 @@
 
 package PBS::Net ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw() ;
-our $VERSION = '0.01' ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw() ;
+our $VERSION     = '0.01' ;
 
 use HTTP::Daemon ;
-use HTTP::Status ;
 use HTTP::Request::Params ;
+use HTTP::Status ;
 use HTTP::Tiny;
 
-use Time::HiRes qw(usleep gettimeofday tv_interval) ;
-use Storable qw(freeze thaw) ;
 use List::Util qw(all first) ;
+use Storable qw(freeze thaw) ;
+use Time::HiRes qw(usleep gettimeofday tv_interval) ;
 
 use PBS::Output ;
 use PBS::PBS::Forked ;

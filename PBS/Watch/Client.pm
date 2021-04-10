@@ -1,10 +1,7 @@
 
 package PBS::Watch::Client ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -15,6 +12,7 @@ our @EXPORT = qw() ;
 our $VERSION = '0.03' ;
 
 use IO::Socket::INET ;
+
 use PBS::Digest ;
 use PBS::Output ;
 use PBS::PBSConfig ;

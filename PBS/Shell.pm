@@ -1,12 +1,7 @@
 
 package PBS::Shell ;
-use PBS::Debug ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -19,6 +14,10 @@ our $VERSION = '0.02' ;
 our $silent_commands = 0 ;
 our $silent_commands_output = 0 ;
 
+use Carp ;
+use Data::Dumper ;
+
+use PBS::Debug ;
 use PBS::Output ;
 
 #-------------------------------------------------------------------------------

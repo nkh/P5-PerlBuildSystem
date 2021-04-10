@@ -1,11 +1,7 @@
 
 package PBS::Warp ;
-use PBS::Debug ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 

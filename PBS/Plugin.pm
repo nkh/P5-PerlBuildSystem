@@ -1,11 +1,7 @@
 
 package PBS::Plugin;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -15,13 +11,13 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(ScanForPlugins RunPluginSubs RunUniquePluginSub LoadPluginFromSubRefs EvalShell) ;
 our $VERSION = '0.05' ;
 
+use Cwd ;
 use File::Basename ;
 use Getopt::Long ;
-use Cwd ;
 
 use PBS::Constants ;
-use PBS::PBSConfig ;
 use PBS::Output ;
+use PBS::PBSConfig ;
 
 my $grrpc = {TARGET_PATH => '', SHORT_DEPENDENCY_PATH_STRING => '…'} ;
 

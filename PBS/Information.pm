@@ -1,11 +1,7 @@
 
 package PBS::Information ;
-use PBS::Debug ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -18,11 +14,11 @@ our $VERSION = '0.04' ;
 use Data::TreeDumper ;
 use List::Util qw(any) ;
 
-use PBS::Output ;
 use PBS::Constants ;
-use PBS::Rules ;
-use PBS::Digest ;
 use PBS::Depend ;
+use PBS::Digest ;
+use PBS::Output ;
+use PBS::Rules ;
 
 #-------------------------------------------------------------------------------
 

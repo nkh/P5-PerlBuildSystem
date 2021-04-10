@@ -1,10 +1,7 @@
 
 package PBS::Warp::Warp1_5 ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -16,19 +13,19 @@ our $VERSION = '0.11' ;
 
 #-------------------------------------------------------------------------------
 
+use Data::Compare ;
+use File::Path;
+use File::Slurp ;
+use JSON::XS ;
+use List::Util qw(uniq) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
 use PBS::Check::ForkedCheck ;
 use PBS::Constants ;
 use PBS::Digest ;
 use PBS::Output ;
 use PBS::Plugin;
 use PBS::Warp;
-
-use Data::Compare ;
-use File::Slurp ;
-use File::Path;
-use JSON::XS ;
-use List::Util qw(uniq) ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
 
 #-----------------------------------------------------------------------------------------------------------------------
 

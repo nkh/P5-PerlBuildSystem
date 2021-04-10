@@ -1,13 +1,7 @@
 
 package PBS::Config::Subpbs ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-
-#use Data::Dumper ;
-#use Data::TreeDumper ;
-use Data::Compare;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -16,6 +10,8 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
+
+use Data::Compare;
 
 use PBS::Config ;
 use PBS::PBSConfig ;

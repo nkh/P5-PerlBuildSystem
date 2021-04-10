@@ -1,20 +1,19 @@
 
 package PBS::Rules::Nop ;
 
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
 
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
-use Carp ;
- 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk) ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw(AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules ReplaceRule ReplaceRuleTo RemoveRule BuildOk TouchOk) ;
+
 our $VERSION = '0.01' ;
+
+use Carp ;
+use Data::TreeDumper ;
 
 sub AddRule {}
 sub Rule {}

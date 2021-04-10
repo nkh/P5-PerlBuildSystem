@@ -1,11 +1,7 @@
 
 package PBS::Digest;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -34,18 +30,16 @@ our $display_md5_flush = 0 ;
 our $display_md5_compute = 0 ;
 our $display_md5_time = 0 ;
 
-#use Data::Dumper ;
+use Data::Compare;
+use Data::TreeDumper ;
 use File::Find ;
 use File::Spec::Functions qw(:ALL) ;
 use List::Util qw(first) ;
 use Module::Util qw(find_installed) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
-use Data::TreeDumper ;
-use Data::Compare;
-
-use PBS::PBSConfig ;
 use PBS::Output ;
+use PBS::PBSConfig ;
 
 use constant PBS_DISTRIBUTION_DIGEST => '/.pbs_distribution_digest' ;
 
@@ -397,7 +391,7 @@ else
 
 sub md5_NonCached_GetFileMD5
 {
-my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
+my ($file_name) = @_ ;
 
 use IO::File ;
 my $fh = new IO::File ;
@@ -428,7 +422,7 @@ use File::Slurp ;
 
 sub xx_NonCached_GetFileMD5
 {
-my $file_name = shift or carp ERROR "GetFileMD5: Called without argument!\n" ;
+my ($file_name) = @_ ; 
 
 my $t0_md5 = [gettimeofday] ;
 
@@ -881,8 +875,8 @@ sub NodeIsSource
 {
 my($node) = @_ ;
 
-use Carp ;
-confess unless 'HASH' eq ref $node ;
+#use Carp ;
+#confess unless 'HASH' eq ref $node ;
 
 if(defined $node->{__IS_SOURCE})
 	{

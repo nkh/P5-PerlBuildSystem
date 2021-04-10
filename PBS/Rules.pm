@@ -1,44 +1,40 @@
 
 package PBS::Rules ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(
-		AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules 
-		ReplaceRule ReplaceRuleTo RemoveRule
-		BuildOk build_ok TouchOk touch_ok
-		GetRuleTypes
-		) ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw(
+			AddRule Rule rule AddRuleTo AddSubpbsRule Subpbs subpbs AddSubpbsRules 
+			ReplaceRule ReplaceRuleTo RemoveRule
+			BuildOk build_ok TouchOk touch_ok
+			GetRuleTypes
+			) ;
 
 our $VERSION = '0.09' ;
 
+use Carp ;
+use Data::TreeDumper ;
 use File::Basename ;
+use List::Util  qw( any ) ;
 use Time::HiRes qw( gettimeofday tv_interval ) ;
-use List::Util qw( any ) ;
 
-use PBS::Constants ;
-use PBS::Plugin ;
-use PBS::PBSConfig ;
-use PBS::Config ;
-use PBS::Output ;
 use PBS::Caller ;
-use PBS::Stack ;
-use PBS::Shell ;
-
-use PBS::Rules::Dependers ;
+use PBS::Config ;
+use PBS::Constants ;
+use PBS::Output ;
+use PBS::PBSConfig ;
+use PBS::Plugin ;
 use PBS::Rules::Builders ;
+use PBS::Rules::Dependers ;
 use PBS::Rules::Order ;
 use PBS::Rules::Scope ;
+use PBS::Shell ;
+use PBS::Stack ;
 
 #-------------------------------------------------------------------------------
 

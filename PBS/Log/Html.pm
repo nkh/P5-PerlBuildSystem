@@ -1,11 +1,8 @@
 
 package PBS::Log::Html ;
 
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
-use v5.10 ;
- 
 require Exporter ;
 
 our @ISA = qw(Exporter) ;

@@ -1,12 +1,7 @@
 
 package PBS::Triggers ;
-use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -16,17 +11,16 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(AddTrigger Trigger trigger ImportTriggers Triggers triggers) ;
 our $VERSION = '0.01' ;
 
-use File::Basename ;
-use Text::Balanced qw(extract_codeblock) ;
-use File::Spec::Functions qw(:ALL) ;
-
-use PBS::Output ;
-use PBS::Constants ;
-use PBS::Rules ;
-use PBS::Plugin ;
-use PBS::PBSConfig ;
-
 use Data::TreeDumper ;
+use File::Basename ;
+use File::Spec::Functions qw(:ALL) ;
+use Text::Balanced qw(extract_codeblock) ;
+
+use PBS::Constants ;
+use PBS::Output ;
+use PBS::PBSConfig ;
+use PBS::Plugin ;
+use PBS::Rules ;
 
 #-------------------------------------------------------------------------------
 

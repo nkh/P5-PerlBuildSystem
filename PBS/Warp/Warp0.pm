@@ -2,10 +2,7 @@
 package PBS::Warp::Warp0 ;
 use PBS::Debug ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -17,18 +14,18 @@ our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
-use PBS::Output ;
-use PBS::Log ;
-use PBS::Digest ;
+use Cwd ;
+use Data::Compare ;
+use Data::Dumper ;
+use File::Path;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
 use PBS::Constants ;
+use PBS::Digest ;
+use PBS::Log ;
+use PBS::Output ;
 use PBS::Plugin;
 use PBS::Warp;
-
-use Cwd ;
-use File::Path;
-use Data::Dumper ;
-use Data::Compare ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
 
 #-------------------------------------------------------------------------------
 

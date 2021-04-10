@@ -1,37 +1,33 @@
 
 package PBS::FrontEnd ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-
-#use Data::Dumper ;
-use Data::TreeDumper ;
-#use Carp ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use Module::Util qw(find_installed) ;
-use File::Spec::Functions qw(:ALL) ;
-use File::Slurp ;
-use File::HomeDir;
-use List::Util qw(uniq) ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw() ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw() ;
+
 our $VERSION = '0.50' ;
 
-#use PBS::Debug ;
+use Data::TreeDumper ;
+use File::HomeDir;
+use File::Slurp ;
+use File::Spec::Functions qw(:ALL) ;
+use List::Util qw(uniq) ;
+use Module::Util qw(find_installed) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
 use PBS::Config ;
 use PBS::Config::Subpbs ;
-use PBS::PBSConfig ;
-use PBS::PBS ;
-use PBS::Log::Full ;
-use PBS::Output ;
 use PBS::Constants ;
 use PBS::Documentation ;
+use PBS::Log::Full ;
+use PBS::Output ;
+use PBS::PBS ;
+use PBS::PBSConfig ;
 use PBS::Plugin ;
 use PBS::Warp ;
 
@@ -45,12 +41,12 @@ my (%pbs_arguments) = @_ ;
 if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_get_completion')
 	{
 	my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
-
+	
 	ParseSwitchesAndLoadPlugins($options, $pbs_config, []) ; #load plugins options
 	
 	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options
 	PBS::PBSConfigSwitches::GetCompletion($options) ;
-
+	
 	return 1 ;
 	}
 
@@ -136,7 +132,7 @@ if(defined $pbs_config->{WIZARD})
 	{
 	eval "use PBS::Wizard;" ;
 	die $@ if $@ ;
-
+	
 	PBS::Wizard::RunWizard
 		(
 		$pbs_config->{LIB_PATH},
@@ -186,7 +182,7 @@ unless(@$targets)
 	{
 	# try to get them from the pbsfile
 	my $load_package = 'PBS_GET_TARGET_AND_OPTIONS_FROM_PBSFILE' ;
-
+	
 	my $targets_pbs_config = PBS::PBSConfig::RegisterPbsConfig
 				(
 				$load_package,
@@ -223,7 +219,7 @@ unless(@$targets)
 			  . "use PBS::Digest;\n",
 			'1 ;', #$post_code
 			) ;
-
+		
 		die "$@\n" if $@ ;
 		
 		$targets = [ uniq @{$targets_pbs_config->{TARGETS} // []} ] ;
@@ -232,10 +228,10 @@ unless(@$targets)
 			{
 			$pbs_config->{$_} = $targets_pbs_config->{$_} if defined $targets_pbs_config->{$_} ;
 			}
-
+		
 		# CheckPbsConfig would override this on second run
 		local $pbs_config->{DISPLAY_DEPENDENCIES_REGEX} = [];
-
+		
 		PBS::PBSConfig::CheckPbsConfig($pbs_config) ;
 		} ;
 	}
@@ -250,12 +246,12 @@ $targets =
 			{
 			die ERROR "PBS: invalid composite target definition\n" ;
 			}
-
+		
 		if($target =~ /@/)
 			{
 			die ERROR "PBS: only one composite target allowed\n" if @$targets > 1 ;
 			}
-
+		
 		$target = $_ if file_name_is_absolute($_) ; # full path
 		$target = $_ if /^.\// ; # current dir (that's the build dir)
 		$target = "./$_" unless /^[.\/]/ ;
@@ -280,9 +276,9 @@ if(@$targets)
 	{
 	PBS::Debug::setup_debugger_run($pbs_config) ;
 	$DB::single = 1 ;
-
+	
 	my $StartPbs = $pbs_config->{PBS_JOBS} ? \&PBS::Net::StartPbsServer : \&StartPbs ;
-
+	
 	($build_success, $build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) =
 			$StartPbs->($targets, $pbs_config, $parent_config) ;
 	
@@ -290,7 +286,7 @@ if(@$targets)
 	
 	# move all stat into the nodes as they are build in different process
 	# the stat displaying would need to traverse the tree, after synchronizing from the build processes
-
+	
 	if($pbs_config->{DISPLAY_NODES_PER_PBSFILE} ||$pbs_config->{DISPLAY_NODES_PER_PBSFILE_NAMES})
 		{
 		my $nodes_per_pbsfile = PBS::Depend::GetNodesPerPbsRun() ;
@@ -319,20 +315,20 @@ if(@$targets)
 						) ;
 			}
 		}
-
+	
 	if($pbs_config->{DISPLAY_MD5_STATISTICS})
 		{
 		my $md5_statistics = PBS::Digest::Get_MD5_Statistics() ;
-
+		
 		PrintInfo "Digest: hash requests: $md5_statistics->{TOTAL_MD5_REQUESTS}"
 			. ", non cached: $md5_statistics->{NON_CACHED_REQUESTS} " 
 			. ", cache hits: $md5_statistics->{CACHE_HITS} ($md5_statistics->{MD5_CACHE_HIT_RATIO}%), time: $md5_statistics->{MD5_TIME}\n" ;
 			
 		$PBS::pbs_run_information->{MD5_STATISTICS} = $md5_statistics ;
 		}
-
+	
 	RunPluginSubs($pbs_config, 'PostPbs', $build_success, $pbs_config, $dependency_tree, $inserted_nodes) ;
-
+	
 	my $run = 0 ;
 	for my $post_pbs (@{$pbs_config->{POST_PBS}})
 		{
@@ -368,7 +364,6 @@ if(@$targets)
 		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs ;
 		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if ($pbs_config->{DISPLAY_PBS_TOTAL_TIME} && ! $pbs_config->{QUIET}) ;
 		}
-	
 	}
 else
 	{
@@ -492,10 +487,10 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 		
 		push @{$pbs_config->{LIB_PATH}},          @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
 		}
-
+	
 	my $dist_data = File::HomeDir->my_dist_data( 'PBS' ) ;
 	my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
-
+	
 	if(-e $dist_data && -e $pbs_response_file)
 		{
 		($pbs_response_file, my $prf_config) 
@@ -519,6 +514,7 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 		write_file $pbs_response_file, "# pbs default config\n#pbsconfig qw/ --dd -j 12 / ;\n\n1 ;\n"
 		}
 	}
+
 # nothing defined on the command line and in a prf, last resort, use the distribution files
 my $plugin_path_is_default ;
 
@@ -540,7 +536,7 @@ if(!exists $pbs_config->{PLUGIN_PATH} || ! @{$pbs_config->{PLUGIN_PATH}})
 else
 	{
 	push @{$pbs_config->{PLUGIN_PATH}}, $distribution_plugin_path ;
-
+	
 	$parse_message .= "PBS: using plugins from: " . (join ', ', @{$pbs_config->{PLUGIN_PATH}}) . "\n" ;
 	}
 
@@ -562,7 +558,7 @@ if(!exists $pbs_config->{LIB_PATH} || ! @{$pbs_config->{LIB_PATH}})
 else
 	{
 	push @{$pbs_config->{LIB_PATH}}, $distribution_library_path ;
-
+	
 	$parse_message .= "PBS: using libs from: " . (join ', ', @{$pbs_config->{LIB_PATH}}) . "\n" ;
 	}
 	
@@ -616,9 +612,9 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 				}
 			}
 		}
-
+	
 	$pbs_response_file = File::HomeDir->my_dist_data('PBS') . "/pbs.prf" ;
-
+	
 	($pbs_response_file, $prf_config) 
 		= PBS::PBSConfig::ParsePrfSwitches
 			(
@@ -627,7 +623,7 @@ unless(defined $pbs_config->{NO_PBS_RESPONSE_FILE})
 			0,
 			$pbs_config->{DISPLAY_PBS_CONFIGURATION_LOCATION},
 			) ;
-
+	
 	# merging to PBS config, 
 	for my $key (keys %$prf_config)
 		{

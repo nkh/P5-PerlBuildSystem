@@ -1,12 +1,7 @@
 
 package PBS::Build::ForkedNodeBuilder ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Path ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -17,11 +12,14 @@ our @EXPORT = qw() ;
 
 our $VERSION = '0.01' ;
 
-use PBS::Output ;
+use File::Path ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
+use PBS::Build::NodeBuilder ;
+use PBS::Constants ;
 use PBS::Log ;
 use PBS::Log::Html ;
-use PBS::Constants ;
-use PBS::Build::NodeBuilder ;
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 

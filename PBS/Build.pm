@@ -1,13 +1,6 @@
 package PBS::Build ;
 
-
-use PBS::Debug ;
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -17,12 +10,15 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.04' ;
 
+use Data::Dumper ;
+use Data::TreeDumper ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
-use PBS::Output ;
-use PBS::Constants ;
-use PBS::Build::NodeBuilder ;
 use PBS::Build::Forked ;
+use PBS::Build::NodeBuilder ;
+use PBS::Constants ;
+use PBS::Debug ;
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 $|++ ;

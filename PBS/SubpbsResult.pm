@@ -1,8 +1,21 @@
 
 package PBS::SubpbsResult ;
 
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
+
+require Exporter ;
+
+our @ISA         = qw(Exporter) ;
+our %EXPORT_TAGS = ('all' => [ qw() ]) ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw() ;
+
+our $VERSION = '0.02' ;
+
+use Data::Dumper ;
+use Data::TreeDumper ;
+
+#-------------------------------------------------------------------------------
 
 =head1 NAME
 
@@ -98,7 +111,6 @@ Module B build result, when invoked from A's build is a '.subpbs_result' file.
  $subpbs_result->Write($dependent) ;
  }
  
-
 =head2 speeding sub module archives creation
 
 We (Anders and I) had a project, which had a top-down hierarchy, though of building archives at all the sub levels and 
@@ -109,19 +121,6 @@ file where the archive was replaced with a list of file links.
 =head1 MEMBER FUNCTIONS
 
 =cut
-
-require Exporter ;
-
-
-our @ISA = qw(Exporter) ;
-our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw() ;
-
-our $VERSION = '0.02' ;
-
-use Data::Dumper ;
-use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 

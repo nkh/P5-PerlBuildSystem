@@ -1,13 +1,6 @@
 package PBS::Rules::Dependers ;
 
-use PBS::Debug ;
-
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -17,14 +10,15 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(GenerateDepender GenerateDependerFromArray BuildDependentRegex) ;
 our $VERSION = '0.01' ;
 
+use Carp ;
+use Data::TreeDumper ;
 use File::Basename ;
 use List::Util qw(any) ;
 
-use PBS::PBSConfig ;
-use PBS::Output ;
 use PBS::Constants ;
+use PBS::Output ;
+use PBS::PBSConfig ;
 use PBS::Rules ;
-
 use PBS::Rules::Dependers::Subpbs ;
 
 #-------------------------------------------------------------------------------

@@ -2,10 +2,7 @@
 package PBS::Log ;
 use PBS::Debug ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -15,18 +12,17 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
+use Cwd ;
 use Data::TreeDumper;
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use FileHandle;
 use File::MkTemp;
 use File::Path;
-use FileHandle;
-use Cwd ;
 use Term::ANSIColor qw(:constants) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Log::Html ;
 use PBS::Output ;
 use PBS::PBSConfig ;
-
 
 #-------------------------------------------------------------------------------
 

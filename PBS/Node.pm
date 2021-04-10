@@ -1,12 +1,8 @@
 
 package PBS::Node;
 
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
 
-use strict ;
-use warnings ;
-use Carp ;
- 
 require Exporter ;
 
 our @ISA = qw(Exporter) ;

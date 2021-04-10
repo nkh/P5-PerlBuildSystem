@@ -1,18 +1,7 @@
 
 package PBS::Graph ;
-use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
-
-use PBS::Output ;
-use PBS::Constants ;
-
-use PBS::GraphViz;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -22,7 +11,16 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.04' ;
 
+use Data::Dumper ;
+use Data::TreeDumper ;
+
+use PBS::Constants ;
+use PBS::Debug ;
+use PBS::GraphViz;
+use PBS::Output ;
+
 #-------------------------------------------------------------------------------
+
 use constant PBS_ROOT_NAME => 'PBS ROOT' ;
 
 my $free_config_index = 0 ;

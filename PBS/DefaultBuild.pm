@@ -1,13 +1,8 @@
 
 package PBS::DefaultBuild ;
-use PBS::Debug ;
 
-use Data::Dumper ;
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
-use v5.10 ;
- 
 require Exporter ;
 
 our @ISA = qw(Exporter) ;
@@ -17,19 +12,19 @@ our @EXPORT = qw(DefaultBuild) ;
 our $VERSION = '0.04' ;
 
 use Data::TreeDumper;
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use List::Util qw(any) ;
 use String::Truncate ;
 use Term::Size::Any qw(chars) ;
-use List::Util qw(any) ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Build ;
-use PBS::Rules ;
-use PBS::Depend ;
 use PBS::Check ;
-use PBS::Output ;
 use PBS::Constants ;
+use PBS::Depend ;
 use PBS::Information ;
+use PBS::Output ;
 use PBS::Plugin ;
+use PBS::Rules ;
 
 #-------------------------------------------------------------------------------
 
@@ -444,7 +439,7 @@ else
 			else
 				{
 				Say Error "PBS: no such node '$build_point'" ;
-				DisplayCloseMatches $build_point, $inserted_nodes ;
+				DisplayCloseMatches($build_point, $inserted_nodes) ;
 				die "\n" ;
 				}
 			}

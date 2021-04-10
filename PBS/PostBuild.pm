@@ -1,12 +1,7 @@
 
 package PBS::PostBuild ;
-use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -16,13 +11,12 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(AddPostBuildCommand post_build) ;
 our $VERSION = '0.01' ;
 
+use Data::TreeDumper ;
 use File::Basename ;
 use File::Spec::Functions qw(:ALL) ;
 
-use Data::TreeDumper ;
-
-use PBS::Output ;
 use PBS::Constants ;
+use PBS::Output ;
 use PBS::Rules ;
 
 #-------------------------------------------------------------------------------

@@ -1,12 +1,7 @@
 
 package PBS::Check ;
 
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
-use File::Spec::Functions qw(:ALL) ;
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -16,14 +11,17 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(CheckDependencyTree) ;
 our $VERSION = '0.04' ;
 
+use Data::Dumper ;
+use Data::TreeDumper ;
 use File::Basename ;
 use File::Slurp qw (write_file) ;
+use File::Spec::Functions qw(:ALL) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Cyclic ;
-use PBS::Output ;
 use PBS::Digest ;
 use PBS::Node ;
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 
@@ -89,7 +87,7 @@ if(NodeIsGenerated($node) && ! exists $node->{__PARALLEL_DEPEND} )
 			. ($matching_rules ? ", matching rules: $matching_rules" : ", no matching rules")
 			. "<I2>, inserted: $inserted_at"
 			. ($node->{__INSERTED_AND_DEPENDED_DIFFERENT_PACKAGE} ? "<I2>, depended: $depended_at" : '')
-				unless $matching_rules && $pbs_config->{NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES} ;
+				unless $matching_rules && $pbs_config->{NO_WARNING_ZERO_DEPENDENCIES} ;
 		}
 	elsif(0 == $matching_rules)
 		{

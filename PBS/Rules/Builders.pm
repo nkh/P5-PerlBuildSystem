@@ -2,11 +2,7 @@ package PBS::Rules::Builders ;
 
 use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -17,16 +13,15 @@ our @EXPORT = qw(GenerateBuilder RunEvaluatedShellCommand) ;
 our $VERSION = '0.02' ;
 
 use File::Basename ;
-use Sub::Identify qw< sub_name get_code_location > ;
 use List::Util qw( none) ;
+use Sub::Identify qw< sub_name get_code_location > ;
 
-use PBS::Constants ;
 use PBS::Config ;
-use PBS::PBSConfig ;
+use PBS::Constants ;
 use PBS::Output ;
-use PBS::Rules ;
+use PBS::PBSConfig ;
 use PBS::Plugin;
-
+use PBS::Rules ;
 use PBS::Shell ;
 
 #-------------------------------------------------------------------------------

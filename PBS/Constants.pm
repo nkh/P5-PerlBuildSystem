@@ -1,8 +1,6 @@
 package PBS::Constants ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 

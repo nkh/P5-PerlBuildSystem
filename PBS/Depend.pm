@@ -1,19 +1,7 @@
 
 package PBS::Depend ;
-use PBS::Debug ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
-
-#use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Basename ;
-use File::Spec::Functions qw(:ALL) ;
-use String::Truncate ;
-use List::Util qw(any max) ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -23,17 +11,26 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(CreateDependencyTree) ;
 our $VERSION = '0.08' ;
 
-use PBS::Depend::Forked ;
-use PBS::PBS ;
-use PBS::Output ;
+use Data::Dumper ;
+use Data::TreeDumper ;
+use File::Basename ;
+use File::Spec::Functions qw(:ALL) ;
+use List::Util qw(any max) ;
+use String::Truncate ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
 use PBS::Constants ;
-use PBS::Triggers ;
-use PBS::PostBuild ;
-use PBS::Plugin;
-use PBS::Information ;
+use PBS::Debug ;
+use PBS::Depend::Forked ;
 use PBS::Digest ;
-use PBS::Node ;
+use PBS::Information ;
 use PBS::Net ;
+use PBS::Node ;
+use PBS::Output ;
+use PBS::PBS ;
+use PBS::Plugin;
+use PBS::PostBuild ;
+use PBS::Triggers ;
 
 #-------------------------------------------------------------------------------
 

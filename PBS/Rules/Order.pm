@@ -1,12 +1,7 @@
 
 package PBS::Rules::Order ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -16,10 +11,11 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
+use Data::TreeDumper ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
-use PBS::Output ;
 use PBS::Constants ;
+use PBS::Output ;
 
 sub OrderRules
 {
@@ -106,7 +102,7 @@ if($sort_rules)
 				DEPEND_AND_CHECK => 1,
 				QUIET => 1,
 				#DISPLAY_NO_STEP_HEADER => 1,
-				NO_WARNING_MATCHING_WITH_ZERO_DEPENDENCIES => 1,
+				NO_WARNING_ZERO_DEPENDENCIES => 1,
 				},
 
 			PBSFILE_CONTENT => $order_pbsfile,

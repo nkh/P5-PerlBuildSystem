@@ -1,12 +1,7 @@
 
 package PBS::Wizard ;
-use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Carp ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 

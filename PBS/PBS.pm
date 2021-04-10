@@ -2,15 +2,7 @@
 package PBS::PBS ;
 use PBS::Debug ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
-#$Data::TreeDumper::Displaycallerlocation++ ;
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use File::Spec::Functions qw(:ALL) ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -20,18 +12,22 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(PbsUse pbsuse Use) ;
 our $VERSION = '0.03' ;
 
-use PBS::PBSConfig ;
-use PBS::Config ;
-use PBS::Output ;
-use PBS::DefaultBuild ;
-use PBS::Constants ;
-
+use Data::Dumper ;
+use Data::TreeDumper ;
 use Digest::MD5 qw(md5_hex) ;
-use String::Truncate ;
-use File::Slurp ;
 use File::Basename ;
 use File::Path ;
+use File::Slurp ;
+use File::Spec::Functions qw(:ALL) ;
 use List::Util qw(any) ;
+use String::Truncate ;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
+use PBS::Config ;
+use PBS::Constants ;
+use PBS::DefaultBuild ;
+use PBS::Output ;
+use PBS::PBSConfig ;
 
 #-------------------------------------------------------------------------------
 
@@ -47,7 +43,6 @@ our $pbs_run_information =
 	# BUILDER
 	} ;
 
-
 #-------------------------------------------------------------------------------
 
 our $pbs_runs ;
@@ -56,6 +51,7 @@ my %Pbs_runs ;
 sub GetPbsRuns   { $pbs_runs }
 sub ResetPbsRuns { $pbs_runs = 0 }
 
+#-------------------------------------------------------------------------------
 
 sub Pbs
 {
@@ -68,34 +64,34 @@ if(!$pbs_config->{DEPEND_LOG})
 else
 	{
 	my ($pbsfile_chain, $pbsfile_rule_name, $Pbsfile, $parent_package, $pbs_config, $parent_config, $targets, $inserted_nodes, $dependency_tree_name, $depend_and_build) = @_ ;
-
+	
 	my $package = CanonizePackageName($pbs_config->{PACKAGE}) ;
 	my $redirection_file = $pbs_config->{BUILD_DIRECTORY} . "/$targets->[0]" ; 
 	$redirection_file =~ s/\/\.\//\//g ;
-
+	
 	my ($basename, $path, $ext) = File::Basename::fileparse($redirection_file, ('\..*')) ;
-
+	
 	mkpath($path) unless(-e $path) ;
-
+	
 	$redirection_file = $path . '/.' . $basename . $ext . ".$package.pbs_depend_log" ;
-
+	
 	open my $OLDOUT, ">&STDOUT" ;
-
+	
 	local *STDOUT unless $pbs_config->{DEPEND_LOG_MERGED} ;
-
+	
 	open STDOUT,  "|-", " tee $redirection_file" or die "Can't redirect STDOUT to '$redirection_file': $!";
 	STDOUT->autoflush(1) ;
-
+	
 	open my $OLDERR, ">&STDERR" ;
 	open STDERR, '>>&STDOUT' ;
-
+	
 	my @result ;
-
+	
 	eval { @result = _Pbs(@_) } ;
-
+	
 	open STDERR, '>&' . fileno($OLDERR) or die "Can't restore STDERR: $!";
 	open STDOUT, '>&' . fileno($OLDOUT) or die "Can't restore STDOUT: $!";
-
+	
 	die $@ if $@ ;
 	return @result ;
 	}
@@ -252,7 +248,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		
 	push @{$pbs_config->{RULE_NAMESPACES}}, ('BuiltIn', 'User') unless @{$pbs_config->{RULE_NAMESPACES}} ;
 	push @{$pbs_config->{CONFIG_NAMESPACES}}, ('BuiltIn', 'User') unless @{$pbs_config->{CONFIG_NAMESPACES}} ;
-
+	
 	push my @rule_namespaces, @{$pbs_config->{RULE_NAMESPACES}} ;
 	push my @config_namespaces, @{$pbs_config->{CONFIG_NAMESPACES}} ;
 	
@@ -269,7 +265,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 	PBS::Config::AddConfigEntry($load_package, 'PARENT', '__PBS', "parent: '$parent_package' [$target_names]", %{$parent_config}) ;
 	
 	my $config = PBS::Config::ExtractConfig($sub_config, $pbs_config->{CONFIG_NAMESPACES}) ;
-
+	
 	SIT {$config}, "Config: before running '$Pbsfile' in  package '$package':"
 		 if $pbs_config->{DISPLAY_CONFIGURATION_START}  ;
 	
@@ -293,32 +289,32 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			"use strict ;\n"
 			  . "use warnings ;\n"
 			  . "use Data::TreeDumper;\n"
-		  	  . "use PBS::PrfNop ;\n" # for sub AddTargets
+			  . "use PBS::Caller ;\n"
+			  . "use PBS::Config ;\n"
 			  . "use PBS::Constants ;\n"
+			  . "use PBS::Digest;\n"
 			  . "use PBS::Output ;\n"
+			  . "use PBS::PBSConfig ;\n"
+			  . "use PBS::PBS ;\n"
+			  . "use PBS::PostBuild ;\n"
+			  . "use PBS::PrfNop ;\n" # for sub AddTargets
 			  . "use PBS::Rules ;\n"
 			  . "use PBS::Rules::Scope ;\n"
 			  . "use PBS::Triggers ;\n"
-			  . "use PBS::PostBuild ;\n"
-			  . "use PBS::Config ;\n"
-			  . "use PBS::PBS ;\n"
-			  . "use PBS::Caller ;\n"
-			  . "use PBS::Digest;\n"
-			  . "use PBS::PBSConfig ;\n"
 			  . $add_pbsfile_digest,
 			  
 			"1 ;\n",
 			) ;
 		} ;
-
+	
 	die "\n" if $@ ;
 	
 	my @targets = map { file_name_is_absolute($_) || /^\.\// ? $_ : "./$_" } @$targets ;
-
+	
 	{
 	use PBS::Caller ;
 	my $c = CC 0, [$load_package, 'TARGET', '' ] ;
-
+	
 	PBS::Rules::RegisterRule
 		(
 		$pbs_config,
@@ -329,7 +325,7 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 		sub { $_[0] eq $dependency_tree_name ? (1, @targets) : 0 },
 		) ;
 	}
-
+	
 	($build_result, $build_message, $build_sequence)
 		= PBS::DefaultBuild::DefaultBuild
 			(
@@ -350,14 +346,14 @@ if(-e $Pbsfile || defined $pbs_config->{PBSFILE_CONTENT})
 			) ;
 		
 	$PBS::Output::indentation_depth-- ;
-
+	
 	# save meso file here
 	}
 else
 	{
 	my $error = "PBS: error: no pbsfile: $Pbsfile" ;
 	#$error .= "\n\t@ $pbs_config->{SUBPBS_HASH}{ORIGIN}" if defined $pbs_config->{SUBPBS_HASH}{ORIGIN};
-
+	
 	Print Error $error ;
 	die "\n";
 	}
@@ -426,6 +422,7 @@ close(CONFIG) ;
 }
 
 #-------------------------------------------------------------------------------
+
 my %files_loaded_via_PbsUse ;
 my $pbs_use_level = -1 ;
 
@@ -441,7 +438,7 @@ if (! defined $source_name || '' ne ref $source_name)
 	Say Error "PbsUse: Invalid call @ $file_name:$line"  ;
 	die "\n" ;
 	}
-	
+
 my $t0 = [gettimeofday];
 
 my $pbs_config = PBS::PBSConfig::GetPbsConfig($package) ;
@@ -464,7 +461,7 @@ else
 		Say Error "PBS: Can't search for '$source_name', PBS lib path is not defined" ;
 		die "\n" ;
 		}
-
+	
 	for my $lib_path (@{$pbs_config->{LIB_PATH}})
 		{
 		$lib_path .= '/' unless $lib_path =~ /\/$/ ;
@@ -494,8 +491,7 @@ if(exists $files_loaded_via_PbsUse{$package}{$located_source_name})
 	{
 	my $load_information = join(':', $package, $file_name, $line) ;
 	my $previous_load_information = join(':', @{$files_loaded_via_PbsUse{$package}{$located_source_name}}) ;
-
-
+	
 	Say Warning sprintf("PbsUse: '$source_name' load command ignored[$load_information]! Was already loaded at $previous_load_information") ;
 	}
 else
@@ -516,10 +512,10 @@ else
 			"use PBS::Constants ;\n" . $add_as_package_dependency,
 			) ;
 		} ;
-
+	
 	die ERROR("PBS: pbsUse error @ $file_name:$line:\n\n$@\n") . "\n"
 		if $@ ;
-
+	
 	$files_loaded_via_PbsUse{$package}{$located_source_name} = [$package, $file_name, $line];
 	}
 
@@ -558,12 +554,13 @@ if(defined $pbs_config->{DISPLAY_PBSUSE_STATISTIC})
 
 sub GetPbsUseStatistic
 {
-return defined $files_loaded_via_PbsUse{__STATISTIC}
+defined $files_loaded_via_PbsUse{__STATISTIC}
 	? DumpTree($files_loaded_via_PbsUse{__STATISTIC}, "PBS: 'PbsUse' statistic:", DISPLAY_ADDRESS => 0)
 	: "PBS: 'PbsUse' statistic: not used\n" ;
 }
 
 #-------------------------------------------------------------------------------
+
 sub CanonizePackageName
 {
 my $package = shift || die ;
@@ -573,6 +570,8 @@ $package =~ s/[^a-zA-Z0-9_:]+/_/g ;
 
 $package
 }
+
+#-------------------------------------------------------------------------------
 
 sub LoadFileInPackage
 {
@@ -591,7 +590,7 @@ if($type eq 'Pbsfile')
 	{
 	my $available = PBS::Output::GetScreenWidth() ;
 	my $em = String::Truncate::elide_with_defaults({ length => ($available - 12 < 3 ? 3 : $available - 12), truncate => 'left' });
-
+	
 	Print Info "\n" if $pbs_config->{DISPLAY_DEPEND_NEW_LINE} ;
 	Say Info2 "PBS: loading '" . $em->($file) if defined $pbs_config->{DISPLAY_PBSFILE_LOADING} ;
 	
@@ -601,7 +600,7 @@ if($type eq 'Pbsfile')
 	$file_body = $pbs_config->{PBSFILE_CONTENT}
 		if exists $pbs_config->{PBSFILE_CONTENT} ;
 	}
-	
+
 if($file_body eq '')
 	{
 	if(defined $file)
@@ -642,7 +641,7 @@ $post_code
 
 EOS
 
-Print Debug $source if defined ($pbs_config->{DISPLAY_PBSFILE_SOURCE}) ;
+Print Debug $source if defined $pbs_config->{DISPLAY_PBSFILE_SOURCE} ;
 
 my @warnings ;
 local $SIG{__WARN__} = sub { push @warnings, $_[0] } ;
@@ -651,14 +650,13 @@ my $result = eval $source ;
 
 if($@)
 	{
-	# recompile with short name to get a more compact display
 	my $short_file = GetRunRelativePath($pbs_config, $file) ;
 	my $indent = $PBS::Output::indentation ;
-
-	Print Error "\nPBS: error loading '" . $short_file. "'\n\n"
-			. (join '', map { s/$file/$short_file/g ;  "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
-			. (join '', map {s/$file/$short_file/g ; "$indent$_\n" } split(/\n/, $@)) ;
-	die "\n";
+	
+	Say Error "\nPBS: error loading '" . $short_file. "'\n\n"
+			. (join '', map { s/$file/$short_file/g ; "$indent$_\n" } map{ split(/\n/, $_) } @warnings)
+			. (join '', map { s/$file/$short_file/g ; "$indent$_\n" } grep { $_ !~ /^\s*$/ } split(/\n/, $@)) ;
+	die "\n" ;
 	}
 	
 Say Info2 sprintf("PBS: load time: %0.4f.s", tv_interval ($t0, [gettimeofday]))

@@ -1,11 +1,6 @@
 package PBS::Stack ;
 
-use PBS::Debug ;
-
-use v5.10 ;
-
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -14,6 +9,8 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(GetPbsStack) ;
 our $VERSION = '0.01' ;
+
+use PBS::Debug ;
 
 sub GetPbsStack
 {

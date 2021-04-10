@@ -1,9 +1,7 @@
 
 package PBS::Prf ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -18,8 +16,8 @@ our $VERSION = '0.01' ;
 use Getopt::Long ;
 
 use PBS::Config ;
-use PBS::PBSConfig ;
 use PBS::Output ;
+use PBS::PBSConfig ;
 
 #-------------------------------------------------------------------------------
 

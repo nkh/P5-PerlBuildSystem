@@ -1,10 +1,7 @@
 
 package PBS::PrfNop ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-use Data::TreeDumper ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
@@ -13,6 +10,8 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw(AddTargets target AddCommandLineSwitches pbsconfig) ;
 our $VERSION = '0.01' ;
+
+use Data::TreeDumper ;
 
 #-------------------------------------------------------------------------------
 

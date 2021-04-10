@@ -1,10 +1,7 @@
 
 package PBS::Check::ForkedCheck ;
 
-use strict ;
-use warnings ;
-
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -16,12 +13,12 @@ our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
-use PBS::Output ;
-use PBS::Digest ;
-
-use Time::HiRes qw(gettimeofday tv_interval) ;
-use Socket;
 use IO::Select ;
+use Socket;
+use Time::HiRes qw(gettimeofday tv_interval) ;
+
+use PBS::Digest ;
+use PBS::Output ;
 
 #-----------------------------------------------------------------------------------------------------------------------
 

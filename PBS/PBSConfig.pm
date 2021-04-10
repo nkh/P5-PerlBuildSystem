@@ -1,33 +1,32 @@
 
 package PBS::PBSConfig ;
-use PBS::Debug ;
 
-use v5.10 ;
-use strict ;
-use warnings ;
-use Data::Dumper ;
-use Data::TreeDumper ;
-use File::Spec::Functions qw(:ALL) ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA         = qw(Exporter) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw(GetPbsConfig GetBuildDirectory GetSourceDirectories CollapsePath PARSE_SWITCHES_IGNORE_ERROR PARSE_PRF_SWITCHES_IGNORE_ERROR) ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw( GetPbsConfig GetBuildDirectory GetSourceDirectories CollapsePath PARSE_SWITCHES_IGNORE_ERROR PARSE_PRF_SWITCHES_IGNORE_ERROR ) ;
+
 our $VERSION = '0.03' ;
 
+use Cwd ;
+use Data::Dumper ;
+use Data::TreeDumper ;
+use File::Slurp ;
+use File::Spec;
+use File::Spec::Functions qw(:ALL) ;
 use Getopt::Long ;
 use Pod::Parser ;
-use Cwd ;
-use File::Spec;
-use File::Slurp ;
 
-use PBS::Output ;
-use PBS::Log ;
 use PBS::Constants ;
-use PBS::Plugin ;
+use PBS::Debug ;
+use PBS::Log ;
+use PBS::Output ;
 use PBS::PBSConfigSwitches ;
+use PBS::Plugin ;
 
 #-------------------------------------------------------------------------------
 
@@ -69,7 +68,7 @@ else
 	#use Carp ;
 	#Say Debug Carp::longmess ;
 	Say Error "Config: GetPbsConfig: no configuration for package '$package'. Returning empty set." ;
-
+	
 	return {} ;
 	}
 }
@@ -85,7 +84,7 @@ if(defined $pbs_configuration{$package})
 else
 	{
 	Say Error "Config: GetPbsConfig: no configuration for package '$package'. Returning empty set." ;
-
+	
 	Carp::confess ;
 	return {} ;
 	}
@@ -180,7 +179,7 @@ do
 	}
 while(@ARGV) ;
 
-my %cc = RunUniquePluginSub({}, 'GetColorDefinitions') ;
+my %cc = PBS::Plugin::RunUniquePluginSub({}, 'GetColorDefinitions') ;
 
 PBS::Output::SetDefaultColors(\%cc) ;
 
@@ -363,7 +362,7 @@ if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_IN
 		$pbs_config->{DISPLAY_NODE_BUILD_NAME} = 0 ;
 		$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS} = 0 ;
 		}
-
+	
 	$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;
 	}
 	
@@ -396,7 +395,7 @@ if(defined $pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST})
 		}
 	else
 		{
- 		die ERROR("Graph: cluster list '$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}' not found"), "\n" ;
+		die ERROR("Graph: cluster list '$pbs_config->{GENERATE_TREE_GRAPH_CLUSTER_REGEX_LIST}' not found"), "\n" ;
 		}
 	}
 
@@ -411,7 +410,7 @@ for my $include_node_regex (@{$pbs_config->{GENERATE_TREE_GRAPH_INCLUDE}})
 	$include_node_regex =~ s/\./\\./g ;
 	$include_node_regex =~ s/\*/.\*/g ;
 	}
-	
+
 #-------------------------------------------------------------------------------
 
 $pbs_config->{DISPLAY_DIGEST}++ if $pbs_config->{DISPLAY_DIFFERENT_DIGEST_ONLY} ;
@@ -580,7 +579,7 @@ $pbs_response_file =  $pbs_response_file_to_use if defined $pbs_response_file_to
 if($pbs_response_file)
 	{
 	PrintInfo "PBS: loading prf '$pbs_response_file'\n" if $display_location ;
-
+	
 	unless(-e $pbs_response_file)
 		{
 		PrintError "PBS: can't find prf '$pbs_response_file'" ;
@@ -590,8 +589,8 @@ if($pbs_response_file)
 	# we load the prf in its own namespace
 	my ($options, $config) = PBS::PBSConfigSwitches::GetOptions() ;
 	RegisterPbsConfig($prf_load_package, $config, $options) ;
-
- 	$config->{PRF_IGNORE_ERROR} = $ignore_error ;
+	
+	$config->{PRF_IGNORE_ERROR} = $ignore_error ;
 	
 	use PBS::PBS;
 	PBS::PBS::LoadFileInPackage
@@ -604,7 +603,7 @@ if($pbs_response_file)
 		 ."use PBS::Output ;\n",
 		'', #$post_code
 		) ;
-
+	
 	return $pbs_response_file, $config ;
 	}
 else
@@ -632,14 +631,14 @@ else
 	{
 	my @pbsfile_names = split /\s+/, ($pbs_config->{PBSFILE_NAMES} // '') ;
 	my @pbsfile_extensions =  split /\s+/, ($pbs_config->{PBSFILE_EXTENSIONS} // '') ;
-
+	
 	@pbsfile_extensions = qw(*.pl *.pbs) unless @pbsfile_extensions ;
-
+	
 	 unless (@pbsfile_names)
 		{
 		@pbsfile_names = $^O eq 'MSWin32' ?  qw(pbsfile.pl pbsfile) : qw(Pbsfile.pl pbsfile.pl Pbsfile pbsfile) ;
 		}
-
+	
 	my %existing_pbsfile = map{( $_ => 1)} grep { -e "./$_"} @pbsfile_names ;
 	
 	if(keys %existing_pbsfile)
@@ -663,12 +662,12 @@ else
 	else
 		{
 		use File::Find::Rule;
-
+		
 		my @files = File::Find::Rule->file()
 				->name( @pbsfile_extensions, @pbsfile_names )
 				->maxdepth(1)
 				->in( '.' ) ;
-
+		
 		if (0 == @files)
 			{
 			$error_message = "PBS: no 'pbsfile' to define build.\n" ;
@@ -682,7 +681,7 @@ else
 			{
 			PrintWarning "PBS: found the following  files as pbsfile candidates:\n" ;
 			PrintWarning DumpTree \@files, '', DISPLAY_ADDRESS => 0 ;
-
+			
 			$error_message = "PBS: no 'pbsfile' to define build.\n" ;
 			}
 		}

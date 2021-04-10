@@ -1,10 +1,7 @@
 
 package PBS::Shell::Telnet ;
 
-use v5.10 ;
-
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
  
 require Exporter ;
 
@@ -14,9 +11,10 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT = qw() ;
 our $VERSION = '0.01' ;
 
-use PBS::Output ;
 use Net::Telnet ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
+
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 

@@ -1,14 +1,12 @@
 
-use strict ;
-use warnings ;
-use v5.10 ;
+use v5.10 ; use strict ; use warnings ;
 
 use File::Find;
+use Tie::Array::Sorted ;
 
 my $regex = $ARGV[0] or die "Missing regex";
 my $n = $ARGV[1] || 1 ;
 
-use Tie::Array::Sorted ;
 
 tie my @found_files, 'Tie::Array::Sorted', sub {$_[0][0] <=> $_[1][0]} ;
 

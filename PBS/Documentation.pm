@@ -1,18 +1,18 @@
 
 package PBS::Documentation::Indexer ;
 
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
-use Pod::Parser;
-
-our @ISA = qw(Exporter Pod::Parser) ;
+our @ISA         = qw(Exporter Pod::Parser) ;
 our %EXPORT_TAGS = ('all' => [ qw() ]) ;
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-our @EXPORT = qw() ;
+our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT      = qw() ;
+
 our $VERSION = '0.02' ;
+
+use Pod::Parser;
 
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -92,32 +92,26 @@ $parser->{__CAPTURED_TEXT} .= $paragraph if($parser->{__CAPTURE_LEVEL}) ;
 1 ;
 
 #-------------------------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------------------------
 
 package PBS::Documentation ;
 
-use strict ;
-use warnings ;
+use v5.10 ; use strict ; use warnings ;
 
 require Exporter ;
 
-our @ISA = qw(Exporter) ;
+our @ISA          = qw(Exporter) ;
+our %EXPORT_TAGS  = ( 'all' => [ qw() ] ) ;
+our @EXPORT_OK    = ( @{ $EXPORT_TAGS{'all'} } ) ;
+our @EXPORT       = qw() ;
 
-our %EXPORT_TAGS = 
-	(
-	'all' => [ qw() ]
-	) ;
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
-
-our @EXPORT = qw() ;
 our $VERSION = '0.02' ;
 
-use PBS::Output ;
-use Term::ReadLine ;
 use IO::String ;
-use Pod::Text; ;
 use Pod::Simple::Search ;
+use Pod::Text; ;
+use Term::ReadLine ;
+
+use PBS::Output ;
 
 #-------------------------------------------------------------------------------
 
