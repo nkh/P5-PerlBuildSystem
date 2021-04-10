@@ -361,6 +361,7 @@ if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO} || @{$pbs_config->{DISPLAY_NODE_IN
 		$pbs_config->{DISPLAY_NODE_ORIGIN} = 0 ;
 		$pbs_config->{DISPLAY_NO_NODE_BUILD_RULES}++ ;
 		$pbs_config->{DISPLAY_NODE_BUILD_NAME} = 0 ;
+		$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS} = 0 ;
 		}
 
 	$pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS}++ ;

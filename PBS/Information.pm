@@ -289,7 +289,7 @@ my @rules_with_builders ;
 if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_config->{DISPLAY_NO_NODE_BUILD_RULES} )
 	{
 	my @matching_rules = @{$file_tree->{__MATCHING_RULES}} ;
-
+	
 	for my $rule (@matching_rules)
 		{
 		my $rule_number     = $rule->{RULE}{INDEX} ;
@@ -308,7 +308,7 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 					map 	
 						{
 						my $cache = $inserted_nodes->{$_}{__WARP_NODE} && $pbs_config->{NODE_CACHE_INFORMATION} ? _INFO2_('ᶜ') : '' ;
- 
+ 						
 						exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
 							? _ERROR_ $_ . $cache
 							: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
@@ -323,27 +323,21 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
 			{
 			$rule_dependencies = " => no dependencies\n" ;
 			}
-
+		
 		my $rule_tag = GetRuleTypes($rule_definition) ;
 		$rule_tag = _WARNING_ $rule_tag if $rule_tag =~ 'BO' ;
 		
-		my $rule_info = $rule_definition->{NAME}
-					. ($pbs_config->{ADD_ORIGIN} 
-						? $rule_definition->{ORIGIN}
-
-						: ':' . $rule_definition->{FILE}
-						  .':' . $rule_definition->{LINE}
-					  ) ;
-							
+		my $rule_info = $rule_definition->{NAME} . ($pbs_config->{ADD_ORIGIN} ? $rule_definition->{ORIGIN} : ":$rule_definition->{FILE}:$rule_definition->{LINE}" ) ;
+		
 		my $rule_index = @matching_rules > 1 ? "#$rule_number" : '' ;
-
+		
 		$current_node_info =  INFO "${tab}${tab}rule: ${rule_index} $rule_tag " . _INFO_(GetRunRelativePath($pbs_config, $rule_info)) ;
 		$current_node_info .= INFO2 $rule_dependencies ;
 		
 		$log_node_info .= $current_node_info ;
 		$node_info     .= $current_node_info ;
 		}
-
+	
 	unless(@{$file_tree->{__MATCHING_RULES}})
 		{
 		my $current_node_info = _WARNING_("${tab}No matching rule\n") ;
@@ -361,7 +355,7 @@ for my $rule (@rules_with_builders)
 	{
 	my $rule_tag = GetRuleTypes($rule->{DEFINITION}) ;
 	$rule_tag .= "[P]" if exists $rule->{DEFINITION}{COMMANDS_RUN_CODE} ;
-
+	
 	my $rule_info = "#$rule->{INDEX}$rule_tag "
 			. $rule->{DEFINITION}{NAME} . ':'
 			. GetRunRelativePath($pbs_config, $rule->{DEFINITION}{FILE}) . ':'
@@ -409,7 +403,7 @@ for my $rule (@rules_with_builders)
 if (($generate_for_log || $pbs_config->{DISPLAY_NODE_CONFIG}) && defined $file_tree->{__CONFIG})
 	{
 	my $config = INFO( DumpTree($file_tree->{__CONFIG}, "Config:", DISPLAY_ADDRESS => 0, INDENTATION => $tab, USE_ASCII => 1)) ;
-
+	
 	$log_node_info .= $config ;
 	$node_info .= $config if $pbs_config->{DISPLAY_NODE_CONFIG} ;
 	}
@@ -421,7 +415,7 @@ if(exists $pbs_config->{DISPLAY_BUILD_INFO} && @{$pbs_config->{DISPLAY_BUILD_INF
 	{
 	#display shell if any
 	}
-	
+
 #----------------------
 # post build
 #----------------------
@@ -434,7 +428,7 @@ if($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_POST_BUILD_COMMANDS})
 		for my $post_build_command (@{$file_tree->{__POST_BUILD_COMMANDS}})
 			{
 			my $rule_info = $post_build_command->{NAME} . $post_build_command->{ORIGIN} ;
-
+			
 			$current_node_info .= INFO "${tab}${tab}$rule_info\n" ;
 			}
 			
@@ -461,15 +455,7 @@ if($pbs_config->{BUILD_AND_DISPLAY_NODE_INFO})
 
 sub GetCloseMatches     { grep { $_[1]->{$_}{__NAME} =~ /$_[0]/ } keys %{$_[1]} }
 sub DisplayCloseMatches { PrintInfo2 "PBS: found:\n\t" . join("\n\t", GetCloseMatches(@_)) }
-
-#-------------------------------------------------------------------------------
-
-sub GetParentsNames
-{
-my $node = shift ;
-
-map {/^([^,]+)/; $1} grep {! /^__/} keys %{$node->{__DEPENDENCY_TO}} ;
-}
+sub GetParentsNames     { map {/^([^,]+)/; $1} grep {! /^__/} keys %{$_[0]->{__DEPENDENCY_TO}} }
 
 #----------------------------------------------------------------------
 1 ;

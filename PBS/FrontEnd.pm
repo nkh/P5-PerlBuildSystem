@@ -389,34 +389,61 @@ sub StartPbs
 {
 my ($targets, $pbs_config, $parent_config) = @_ ;
 
+my ($nodes, $removed_nodes, $GenerateWarpFile) ;
 my ($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence) ;
 
 eval
 	{
-	($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
-		= PBS::Warp::WarpPbs($targets, $pbs_config, $parent_config) ;
+	($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_config) ;
 	
-	# parallel pbs start nodes are tagged and trigger
-	# the target nodes go through StartPbs, and warp checking, instead for Subpbs
-	# tag them the same way 
- 	if($pbs_config->{PBS_JOBS})
+	if($removed_nodes)
 		{
- 		for ($targets->@*)
-			{
-			$inserted_nodes->{$_}{__PARALLEL_DEPEND} = $$ ;
-			$inserted_nodes->{$_}{__PARALLEL_HEAD} = $$ ;
-			push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => $_, REASON => '__PARALLEL_DEPEND'} ;
-			}
+		local $PBS::Output::indentation_depth = -1 ; 
+		
+		($build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence)
+			= PBS::PBS::Pbs
+				(
+				[$pbs_config->{PBSFILE}],
+				'ROOT',
+				$pbs_config->{PBSFILE},
+				'', # parent package
+				$pbs_config,
+				$parent_config,
+				$targets,
+				$nodes, # inserted files
+				"root__$pbs_config->{PBSFILE}", # tree name
+				DEPEND_CHECK_AND_BUILD,
+				) ;
 		}
 	} ;
+
+my $exception = $@ ;
+
+return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date"}, $nodes, 'up to date', [] 
+	unless $removed_nodes ;
+
+$GenerateWarpFile->($dependency_tree, $exception) ;
+
+# parallel pbs start nodes are tagged and trigger
+# the target nodes go through StartPbs, and warp checking, instead for Subpbs
+# tag them the same way 
+if($pbs_config->{PBS_JOBS})
+	{
+	for ($targets->@*)
+		{
+		$inserted_nodes->{$_}{__PARALLEL_DEPEND} = $$ ;
+		$inserted_nodes->{$_}{__PARALLEL_HEAD} = $$ ;
+		push $inserted_nodes->{$_}{__TRIGGERED}->@*, {NAME => $_, REASON => '__PARALLEL_DEPEND'} ;
+		}
+	}
 	
-print STDERR $@ if $@ ;
+print STDERR $exception . "\n" if $exception ;
 	
 $build_result = BUILD_FAILED unless defined $build_result;
 
 my $build_success = (! $@) && $build_result == BUILD_SUCCESS ;
 
-$build_result, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
+$build_success, $build_message, $dependency_tree, $inserted_nodes, $load_package, $build_sequence
 }
 
 #-------------------------------------------------------------------------------

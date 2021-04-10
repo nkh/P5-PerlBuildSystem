@@ -26,25 +26,19 @@ use Digest::MD5 qw(md5_hex) ;
 
 #-------------------------------------------------------------------------------
 
-sub WarpPbs
+sub Warp
 {
-my ($targets, $pbs_config, $parent_config) = @_ ;
+my ($targets, $pbs_config) = @_ ;
 
 my $warp_module = $pbs_config->{WARP} ;
 $warp_module =~ s/[^0-9a-zA-Z]/_/g ;
 $warp_module = "PBS::Warp::Warp" . $warp_module ;
 
-my @warp_results ;
-
-eval <<EOE ;
-
-use $warp_module ;
-\@warp_results = ${warp_module}::WarpPbs(\$targets, \$pbs_config, \$parent_config) ;
-
-EOE
+my @warp_results = eval " use $warp_module ; ${warp_module}::Warp(\$targets, \$pbs_config) " ;
 
 die $@ if $@ ;
-return(@warp_results) ;
+
+@warp_results ;
 }
 
 #-------------------------------------------------------------------------------

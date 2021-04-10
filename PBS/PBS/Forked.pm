@@ -145,7 +145,7 @@ if(defined $pid)
 		delete @$pbs_config{ grep { ! defined $pbs_config->{$_} || 'CODE' eq ref $pbs_config->{$_} } keys %$pbs_config }
 		}
 	
-	$pbs_config->{INTERMEDIATE_WARP_WRITE} = 0 ;
+	delete $pbs_config->{INTERMEDIATE_WARP_WRITE} ;
 	
 	my %not_depended ;
 	my %graph  = 
