@@ -33,6 +33,53 @@ sub GetOptions
 {
 my $config = shift // {} ;
 
+=pod
+	A
+	BuildOptions      
+
+	CheckOptions      
+	ConfigOptions     
+
+	DebugOptions      
+	DependOptions     
+	DevelOptions      
+	DigestOptions     
+
+	EnvOptions        
+	F
+	GraphOptions      
+
+	HelpOptions       
+	HttpOptions       
+	I 
+	J job
+	K
+	L link
+	MatchOptions      
+	NodeOptions       
+	OutputOptions     
+
+	ParallelOptions   
+	PbsSetupOptions   
+	PluginOptions     
+	PostBuildOptions  
+
+	Q
+	RulesOptions      
+	StatsOptions      
+
+	TreeOptions       
+	TriggerNodeOptions
+	TriggerOptions     
+
+	U
+	V visualization
+	WarpOptions        
+	X
+	Y
+	Z
+=cut
+
 my @options = 
 	(
 	DevelOptions       ($config),
@@ -317,43 +364,6 @@ else
 
 use Term::Bash::Completion::Generator ;
 
-sub GenerateBashCompletionScript
-{
-my $file_name = 'pbs_perl_completion' ;
-
-if (-e $file_name)
-	{
-	if (-e "$file_name.bak")
-		{
-		Say Warning "PBS: backup file '$file_name.bak' for command completion exist, nothing generated" ;
-		return ;
-		}
-	else
-		{
-		rename $file_name, "$file_name.bak" ;
-		}
-	}
-
-my ($options) = GetOptions() ;
-
-my (@slice, @switches) ;
-push @switches, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
-
-my ($completion_list, $option_tuples) = Term::Bash::Completion::Generator::de_getop_ify_list(\@switches) ;
-
-my ($completion_command, $perl_script) = Term::Bash::Completion::Generator::generate_perl_completion_script('pbs', $completion_list, 1) ;
-
-open my $completion_file, '+>', $file_name ;
-print $completion_file $perl_script ;
-chmod 0755, $completion_file ;
-
-use Cwd ;
-my $cwd = Cwd::getcwd() ;
-
-Say Info                                "# Bash completion script '$file_name' generated, add the completion to Bash with:" ;
-PBS::Output::PrintStdOutColor \&WARNING, "complete -o default -C '$cwd/pbs_perl_completion' pbs\n" ;
-}
-
 #-------------------------------------------------------------------------------
 
 sub GetCompletion
@@ -373,7 +383,7 @@ if($word_to_complete !~ /^-?-?\s?$/)
 	my (@slice, @options) ;
 	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
 	
-	my ($names, $option_tuples )= Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
+	my ($names, $option_tuples) = Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
 	
 	my $aliases = AliasOptions([]) ;
 	push @$names, keys %$aliases ;
@@ -643,7 +653,6 @@ EOH
 'pod_extract',                      'Extracts the pod contained in the Pbsfile.',                     '', \$c->{PBS2POD},
 'pod_raw',                          '-pbsfile_pod or -pbs2pod is dumped in raw pod format.',          '', \$c->{RAW_POD},
 'pod_interactive_documenation:s',   'Interactive PBS documentation display and search.',              '', \$c->{DISPLAY_POD_DOCUMENTATION},
-'options_generate_bash_completion', 'create a bash completion script and exits.',                     '', \$c->{GENERATE_BASH_COMPLETION_SCRIPT},
 'options_get_completion',           'return completion list.',                                        '', \$c->{GET_BASH_COMPLETION},
 'options_list',                     'return completion list on stdout.',                              '', \$c->{GET_OPTIONS_LIST},
 'wizard:s',                         'Starts a wizard.',                                               '', \$c->{WIZARD},
@@ -688,9 +697,9 @@ You may want to also add:
 'nil|node_information_located'
 EOT
 
-'c|color_depth=s',                        'Set color depth. Valid values are 2 = black and white, 16, 256', '', \&PBS::Output::SetOutputColorDepth,
+'p|palette_depth=s',                        'Set color depth. Valid values are 2 = black and white, 16, 256', '', \&PBS::Output::SetOutputColorDepth,
 
-'cu|color_user=s',                        "Set a color. eg: -cs 'user:cyan on_yellow'",                  <<EOT, \&PBS::Output::SetOutputColor,
+'pu|palette_user=s',                        "Set a color. eg: -cs 'user:cyan on_yellow'",                  <<EOT, \&PBS::Output::SetOutputColor,
 Term::AnsiColor is used  to color output.
 
 Recognized colors are :
@@ -718,26 +727,26 @@ sub RulesOptions
 my ($c)  = @_ ;
 $c->{RULE_NAMESPACES} //= [] ;
 
-'rule_namespace=s',                     'Rule name space to be used by DefaultBuild()',                    '', $c->{RULE_NAMESPACES},
-'display_rule_to_order',                'Display that there are rules order.',                             '', \$c->{DISPLAY_RULES_TO_ORDER},
-'display_rule_order',                   'Display the order rules.',                                        '', \$c->{DISPLAY_RULES_ORDER},
-'display_rule_ordering',                'Display the pbsfile used to order rules and the rules order.',    '', \$c->{DISPLAY_RULES_ORDERING},
-'rro|rule_run_once',                    'Rules run only once except if they are tagged as MULTI',          '', \$c->{RULE_RUN_ONCE},
-'rns|rule_no_scope',                    'Disable rule scope.',                                             '', \$c->{RULE_NO_SCOPE},
-'display_rule_scope',                   'display scope parsing and generation',                            '', \$c->{DISPLAY_RULE_SCOPE},
-'maximum_rule_recursion',               'Set the maximum rule recusion before pbs, aborts the build',      '', \$c->{MAXIMUM_RULE_RECURSION},
-'rule_recursion_warning',               'Set the level at which pbs starts warning aabout rule recursion', '', \$c->{RULE_RECURSION_WARNING},
-'dnmr|display_non_matching_rules',      'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_NON_MATCHING_RULES},
-'dur|display_used_rules',               'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_USED_RULES},
-'durno|display_used_rules_name_only',   'Display the names of the rules used during the dependency pass.', '', \$c->{DISPLAY_USED_RULES_NAME_ONLY},
-'dar|display_all_rules',                'Display all the rules.',                                          '', \$c->{DISPLAY_ALL_RULES},
-'dr|display_rules',                     '(DF) Display registred rules and which package is queried.',      '', \$c->{DEBUG_DISPLAY_RULES},
-'dir|display_inactive_rules',           'Display rules present i the åbsfile but tagged as NON_ACTIVE.',   '', \$c->{DISPLAY_INACTIVE_RULES},
-'drd|display_rule_definition',          '(DF) Display the definition of each registrated rule.',           '', \$c->{DEBUG_DISPLAY_RULE_DEFINITION},
-'drs|display_rule_statistics',          '(DF) Display rule statistics after each pbs run.',                '', \$c->{DEBUG_DISPLAY_RULE_STATISTICS},
-'dtr|display_trigger_rules',            '(DF) Display which triggers are registred..',                     '', \$c->{DEBUG_DISPLAY_TRIGGER_RULES},
-'dtrd|display_trigger_rule_definition', '(DF) Display the definition of each registrated trigger.',        '', \$c->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION},
-'dspd|display_subpbs_definition',       'Display subpbs definition.',                                      '', \$c->{DISPLAY_SUB_PBS_DEFINITION},
+'ra|rule_all',                 'Display all the rules.',                                          '', \$c->{DISPLAY_ALL_RULES},
+'rd|rule_definition',          '(DF) Display the definition of each registrated rule.',           '', \$c->{DEBUG_DISPLAY_RULE_DEFINITION},
+'ri|rule_inactive',            'Display rules present i the åbsfile but tagged as NON_ACTIVE.',   '', \$c->{DISPLAY_INACTIVE_RULES},
+'rnm|rule_non_matching',       'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_NON_MATCHING_RULES},
+'rns|rule_no_scope',           'Disable rule scope.',                                             '', \$c->{RULE_NO_SCOPE},
+'rro|rule_run_once',           'Rules run only once except if they are tagged as MULTI',          '', \$c->{RULE_RUN_ONCE},
+'r|rule',                      '(DF) Display registred rules and which package is queried.',      '', \$c->{DEBUG_DISPLAY_RULES},
+'rsp|rules_subpbs_definition', 'Display subpbs definition.',                                      '', \$c->{DISPLAY_SUB_PBS_DEFINITION},
+'rs|rule_statistics',          '(DF) Display rule statistics after each pbs run.',                '', \$c->{DEBUG_DISPLAY_RULE_STATISTICS},
+'rtd|rule_trigger_definition', '(DF) Display the definition of each registrated trigger.',        '', \$c->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION},
+'rt|rule_trigger',             '(DF) Display which triggers are registred.',                      '', \$c->{DEBUG_DISPLAY_TRIGGER_RULES},
+'rule_max_recursion',          'Set the maximum rule recusion before pbs, aborts the build',      '', \$c->{MAXIMUM_RULE_RECURSION},
+'rule_namespace=s',            'Rule name space to be used by DefaultBuild()',                    '', $c->{RULE_NAMESPACES},
+'rule_order',                  'Display the order rules.',                                        '', \$c->{DISPLAY_RULES_ORDER},
+'rule_ordering',               'Display the pbsfile used to order rules and the rules order.',    '', \$c->{DISPLAY_RULES_ORDERING},
+'rule_recursion_warning',      'Set the level at which pbs starts warning aabout rule recursion', '', \$c->{RULE_RECURSION_WARNING},
+'rule_scope',                  'display scope parsing and generation',                            '', \$c->{DISPLAY_RULE_SCOPE},
+'rule_to_order',               'Display that there are rules order.',                             '', \$c->{DISPLAY_RULES_TO_ORDER},
+'run|rule_used_name',          'Display the names of the rules used during the dependency pass.', '', \$c->{DISPLAY_USED_RULES_NAME_ONLY},
+'ru|rule_used',                'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_USED_RULES},
 }
 
 sub ConfigOptions
@@ -748,28 +757,26 @@ $c->{DISPLAY_PBS_CONFIGURATION} //= [];
 
 my $load_config_closure = sub { LoadConfig(@_, $c) } ;
 
-'dc|display_config',                   'Display the config used during a Pbs run.',            '', \$c->{DISPLAY_CONFIGURATION},
-'dcs|display_config_start',            'Display the config for a Pbs run pre pbsfile loading', '', \$c->{DISPLAY_CONFIGURATION_START},
-'display_config_delta',                'Display difference with the parent config',            '', \$c->{DISPLAY_CONFIGURATION_DELTA},
-'dcn|display_config_namespaces',       'Display the config namespaces used during a Pbs run.', '', \$c->{DISPLAY_CONFIGURATION_NAMESPACES},
-'dac|display_all_configs',             '(DF). Display all configurations.',                    '', \$c->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
-'dam|display_configs_merge',           '(DF). Display how configurations are merged.',         '', \$c->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
-'display_package_configuration',       'display subpbs package configuration',                 '', \$c->{DISPLAY_PACKAGE_CONFIGURATION},
-'no_silent_override',                  'Disabe SILENT_OVERRIDE.',                              '', \$c->{NO_SILENT_OVERRIDE},
-'config_namespace=s',                  'Configuration name space to used',                     '', $c->{CONFIG_NAMESPACES},
-'load_config=s',                       'Load the given config before running the Pbsfile.',    '', $load_config_closure,
-'no_config_inheritance',               'disable configuration iheritance.',                    '', \$c->{NO_CONFIG_INHERITANCE},
-'dpc|display_pbs_configuration=s',     'Display the pbs configuration matching  the regex.',   '', $c->{DISPLAY_PBS_CONFIGURATION},
-'dpcav|display_pbs_configuration_all', 'Include undefined keys',                               '', \$c->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES},
-'dpcl|display_configuration_location', 'Display the pbs configuration location.',              '', \$c->{DISPLAY_PBS_CONFIGURATION_LOCATION},
-'dspc|display_subpbs_config',          'Display subpbs config.',                               '', \$c->{DISPLAY_SUB_PBS_CONFIG},
-'dcu|display_config_usage',            'Display config variables not used.',                   '', \$c->{DISPLAY_CONFIG_USAGE},
-'dncu|display_node_config_usage',      'Display config variables not used by nodes.',          '', \$c->{DISPLAY_NODE_CONFIG_USAGE},
-'display_target_path_usage',           "Don't remove TARGET_PATH from config usage report.",   '', \$c->{DISPLAY_TARGET_PATH_USAGE},
+'ca|config_all',             '(DF). Display all configurations.',                    '', \$c->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
+'c|config',                  'Display the config used during a Pbs run.',            '', \$c->{DISPLAY_CONFIGURATION},
+'cl|config_location',        'Display the pbs configuration location.',              '', \$c->{DISPLAY_PBS_CONFIGURATION_LOCATION},
+'cm|config_merge',           '(DF). Display how configurations are merged.',         '', \$c->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
+'cn|config_namespaces',      'Display the config namespaces used during a Pbs run.', '', \$c->{DISPLAY_CONFIGURATION_NAMESPACES},
+'cnu|config_node_usage',     'Display config variables not used by nodes.',          '', \$c->{DISPLAY_NODE_CONFIG_USAGE},
+'config_delta',              'Display difference with the parent config',            '', \$c->{DISPLAY_CONFIGURATION_DELTA},
+'config_load=s',             'Load the given config before running the Pbsfile.',    '', $load_config_closure,
+'config_no_inheritance',     'disable configuration iheritance.',                    '', \$c->{NO_CONFIG_INHERITANCE},
+'config_no_silent_override', 'Disabe SILENT_OVERRIDE.',                              '', \$c->{NO_SILENT_OVERRIDE},
+'config_package',            'display subpbs package configuration',                 '', \$c->{DISPLAY_PACKAGE_CONFIGURATION},
+'config_set_namespace=s',    'Configuration name space to used',                     '', $c->{CONFIG_NAMESPACES},
+'config_target_path',        "Don't remove TARGET_PATH from config usage report.",   '', \$c->{DISPLAY_TARGET_PATH_USAGE},
+'cpa|config_pbs_all',        'Include undefined keys',                               '', \$c->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES},
+'cp|config_pbs=s',           'Display the pbs configuration matching  the regex.',   '', $c->{DISPLAY_PBS_CONFIGURATION},
+'cs|config_start',           'Display the config for a Pbs run pre pbsfile loading', '', \$c->{DISPLAY_CONFIGURATION_START},
+'csp|config_subpbs',         'Display subpbs config.',                               '', \$c->{DISPLAY_SUB_PBS_CONFIG},
+'cu|config_usage',           'Display config variables not used.',                   '', \$c->{DISPLAY_CONFIG_USAGE},
+'config_save=s',             'PBS will save the config used in each PBS run',     <<EOT, \$c->{SAVE_CONFIG},
 
-'save_config=s',
-	'PBS will save the config, used in each PBS run, in the build directory',
-	<<EOT, \$c->{SAVE_CONFIG},
 Before a subpbs is run, its start config will be saved in a file. PBS will display the filename so you
 can load it later with '--load_config'. When working with a hirarchical build with configuration
 defined at the top level, it may happend that you want to run pbs at lower levels but have no configuration,
@@ -893,43 +900,43 @@ the command line.
 See also switches: --display_search_info --display_all_alternatives
 EOT
 
-'p|pbsfile=s',                          'Pbsfile use to defines the build.',                                 '', \$c->{PBSFILE},
-'pfn|pbsfile_names=s',                  'space separated file names that can be pbsfiles.',                  '', \$c->{PBSFILE_NAMES},
-'pfe|pbsfile_extensions=s',             'space separated extensionss that can match a pbsfile.',             '', \$c->{PBSFILE_EXTENSIONS},
-'prf|pbs_response_file=s',              'File containing switch definitions and targets.',                   '', \$c->{PBS_RESPONSE_FILE},
-'prfna|pbs_response_file_no_anonymous', 'Use a response file named afte user or given on the command line.', '', \$c->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
-'prfn|pbs_response_file_none',          'Don\'t use any response file.',                                     '', \$c->{NO_PBS_RESPONSE_FILE},
-'pbs_options=s',                        'start subpbs options, argument is a regex matching the target.',    '', \$c->{PBS_OPTIONS},
-'pbs_options_local=s',                  'options that only applied at the local subpbs level.',              '', \$c->{PBS_OPTIONS_LOCAL},
-'pbs_options_end',                      'ends the list of subpbs optionss.',                                 '', \my $not_used,
-'path_lib=s',                           "Pbs libs. Multiple directories can be given.",                      '', $c->{LIB_PATH},
-'path_lib_display',                     "Displays PBS lib paths.",                                           '', \$c->{DISPLAY_LIB_PATH},
-'path_no_default_warning',              "no warning if using the distribution's PBS lib and plugins.",       '', \$c->{NO_DEFAULT_PATH_WARNING},
-'dpu|display_pbsuse',                   "displays which pbs module is loaded by a 'PbsUse'.",                '', \$c->{DISPLAY_PBSUSE},
-'dpuv|display_pbsuse_verbose',          "more verbose --display_pbsuse'",                                    '', \$c->{DISPLAY_PBSUSE_VERBOSE},
-'build_directory=s',                    '',                                                                  '', \$c->{BUILD_DIRECTORY},
-'mandatory_build_directory',            'Build directory must be given.',                                    '', \$c->{MANDATORY_BUILD_DIRECTORY},
-'no_build',                             'Only dependen and check.',                                          '', \$c->{NO_BUILD},
-'fb|force_build',                       'Force build if a debug option was given.',                          '', \$c->{FORCE_BUILD},
-'ns|no_stop',                           'Continues building in case of errror.',                             '', \$c->{NO_STOP},
-'do_immediate_build',                   'do [IMMEDIATE_BUILD] even if --no_build is set.',                   '', \$c->{DO_IMMEDIATE_BUILD},
-'nh|no_header',                         'No header display',                                                 '', \$c->{DISPLAY_NO_STEP_HEADER},
-'nhc|no_header_counter',                'Hide depend counter',                                               '', \$c->{DISPLAY_NO_STEP_HEADER_COUNTER},
-'nhnl|no_header_newline',               'add a new line instead for the counter',                            '', \$c->{DISPLAY_STEP_HEADER_NL},
-'dsi|display_subpbs_info',              'Display extra information for nodes matching a subpbs.',            '', \$c->{DISPLAY_SUBPBS_INFO},
-'l|log|create_log',                     'Create a log for the build',                                        '', \$c->{CREATE_LOG},
-'log_tree',                             'Add a graph to the log.',                                           '', \$c->{LOG_TREE},
-'log_html|create_log_html',             'create a html log for each node, implies --create_log ',            '', \$c->{CREATE_LOG_HTML},
-'pos|original_pbsfile_source',          'Display original Pbsfile source.',                                  '', \$c->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
-'dps|display_pbsfile_source',           'Display Modified Pbsfile source.',                                  '', \$c->{DISPLAY_PBSFILE_SOURCE},
-'dec|display_error_context',            'Display the error line.',                                           '', \$PBS::Output::display_error_context,
-'display_no_perl_context',              'Do not parse the perl code to find the error context.',             '', \$c->{DISPLAY_NO_PERL_CONTEXT},
-'dpl|display_pbsfile_loading',          'Display which pbsfile is loaded.',                                  '', \$c->{DISPLAY_PBSFILE_LOADING},
-'dplt|display_pbsfile_load_time',       'Display the time to load and evaluate a pbsfile.',                  '', \$c->{DISPLAY_PBSFILE_LOAD_TIME},
-'display_subpbs_search_info',           'Display information about how the subpbs files are found.',         '', \$c->{DISPLAY_SUBPBS_SEARCH_INFO},
-'display_all_subpbs_alternatives',      'Display all the subpbs files that could match.',                    '', \$c->{DISPLAY_ALL_SUBPBS_ALTERNATIVES},
-'dsd|display_source_directory',         'display all the source directories.',                               '', \$c->{DISPLAY_SOURCE_DIRECTORIES},
-'allow_virtual_to_match_directory',     'No warning if a virtual node matches a directory.',                 '', \$c->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY},
+'pbsfile=s',                        'Pbsfile use to defines the build.',                      '', \$c->{PBSFILE},
+'pfn|pbsfile_names=s',              'space separated file names that can be pbsfiles.',       '', \$c->{PBSFILE_NAMES},
+'pfe|pbsfile_extensions=s',         'space separated extensionss that can match a pbsfile.',  '', \$c->{PBSFILE_EXTENSIONS},
+'prf=s',                            'File containing switch definitions and targets.',        '', \$c->{PBS_RESPONSE_FILE},
+'prfna|prf_no_anonymous',           'Use the given response file or one  named afte user.',   '', \$c->{NO_ANONYMOUS_PBS_RESPONSE_FILE},
+'prfn|prf_none',                    'Don\'t use any response file.',                          '', \$c->{NO_PBS_RESPONSE_FILE},
+'pbs_options=s',                    'start subpbs options for target matching the regex.',    '', \$c->{PBS_OPTIONS},
+'pbs_options_local=s',              'options that only applied at the local subpbs level.',   '', \$c->{PBS_OPTIONS_LOCAL},
+'pbs_options_end',                  'ends the list of subpbs optionss.',                      '', \my $not_used,
+'path_lib=s',                       "Pbs libs. Multiple directories can be given.",           '', $c->{LIB_PATH},
+'path_lib_display',                 "Displays PBS lib paths.",                                '', \$c->{DISPLAY_LIB_PATH},
+'path_no_default_warning',          "no warning if using PBS default libs and plugins.",      '', \$c->{NO_DEFAULT_PATH_WARNING},
+'dpu|display_pbsuse',               "displays which pbs module is loaded by a 'PbsUse'.",     '', \$c->{DISPLAY_PBSUSE},
+'dpuv|display_pbsuse_verbose',      "more verbose --display_pbsuse'",                         '', \$c->{DISPLAY_PBSUSE_VERBOSE},
+'build_directory=s',                '',                                                       '', \$c->{BUILD_DIRECTORY},
+'mandatory_build_directory',        'Build directory must be given.',                         '', \$c->{MANDATORY_BUILD_DIRECTORY},
+'no_build',                         'Only dependen and check.',                               '', \$c->{NO_BUILD},
+'fb|force_build',                   'Force build if a debug option was given.',               '', \$c->{FORCE_BUILD},
+'ns|no_stop',                       'Continues building in case of errror.',                  '', \$c->{NO_STOP},
+'do_immediate_build',               'do [IMMEDIATE_BUILD] even if --no_build is set.',        '', \$c->{DO_IMMEDIATE_BUILD},
+'nh|no_header',                     'No header display',                                      '', \$c->{DISPLAY_NO_STEP_HEADER},
+'nhc|no_header_counter',            'Hide depend counter',                                    '', \$c->{DISPLAY_NO_STEP_HEADER_COUNTER},
+'nhnl|no_header_newline',           'add a new line instead for the counter',                 '', \$c->{DISPLAY_STEP_HEADER_NL},
+'dsi|display_subpbs_info',          'Add extra information for nodes matching a subpbs.',     '', \$c->{DISPLAY_SUBPBS_INFO},
+'l|log|create_log',                 'Create a log for the build',                             '', \$c->{CREATE_LOG},
+'log_tree',                         'Add a graph to the log.',                                '', \$c->{LOG_TREE},
+'log_html|create_log_html',         'create a html log for each node, implies --create_log ', '', \$c->{CREATE_LOG_HTML},
+'pos|original_pbsfile_source',      'Display original Pbsfile source.',                       '', \$c->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
+'dps|display_pbsfile_source',       'Display Modified Pbsfile source.',                       '', \$c->{DISPLAY_PBSFILE_SOURCE},
+'dec|display_error_context',        'Display the error line.',                                '', \$PBS::Output::display_error_context,
+'display_no_perl_context',          'Do not parse the perl code to find the error context.',  '', \$c->{DISPLAY_NO_PERL_CONTEXT},
+'dpl|display_pbsfile_loading',      'Display which pbsfile is loaded.',                       '', \$c->{DISPLAY_PBSFILE_LOADING},
+'dplt|display_pbsfile_load_time',   'Display the load time for a pbsfile.',                   '', \$c->{DISPLAY_PBSFILE_LOAD_TIME},
+'display_subpbs_search_info',       'Show how the subpbs files are found.',                   '', \$c->{DISPLAY_SUBPBS_SEARCH_INFO},
+'display_all_subpbs_alternatives',  'Display all the subpbs files that could match.',         '', \$c->{DISPLAY_ALL_SUBPBS_ALTERNATIVES},
+'dsd|display_source_directory',     'display all the source directories.',                    '', \$c->{DISPLAY_SOURCE_DIRECTORIES},
+'allow_virtual_to_match_directory', 'No warning if a virtual node matches a directory.',      '', \$c->{ALLOW_VIRTUAL_TO_MATCH_DIRECTORY},
 
 'ce|external_checker=s',
 	'external list of changed nodes',
@@ -1239,11 +1246,11 @@ sub DigestOptions
 {
 my ($c) = @_ ;
 
-'display_digest_exclusion',           'Display node exclusion or inclusion.',                 '', \$c->{DISPLAY_DIGEST_EXCLUSION},
-'display_digest',                     'Display expected and actual digest.',                  '', \$c->{DISPLAY_DIGEST},
-'dddo|display_different_digest_only', 'Only display when a digest are diffrent.',             '', \$c->{DISPLAY_DIFFERENT_DIGEST_ONLY},
-'wmw|warp_md5_warning',               'Warng if the file to compute hash for does\'t exist.', '', \$c->{WARP_DISPLAY_DIGEST_FILE_NOT_FOUND},
-'dfc|display_file_check',             'Display hash checking for individual files.',          '', \$c->{DISPLAY_FILE_CHECK},
+'digest_exclusion',         'Display node exclusion or inclusion.',                 '', \$c->{DISPLAY_DIGEST_EXCLUSION},
+'digest',                   'Display expected and actual digest.',                  '', \$c->{DISPLAY_DIGEST},
+'ddd|digest_different',     'Only display when a digest are diffrent.',             '', \$c->{DISPLAY_DIFFERENT_DIGEST_ONLY},
+'dmw|digest_warp_warnings', 'Warng if the file to compute hash for does\'t exist.', '', \$c->{WARP_DISPLAY_DIGEST_FILE_NOT_FOUND},
+'dfc|digest_file_check',    'Display hash checking for individual files.',          '', \$c->{DISPLAY_FILE_CHECK},
 }  
 
 #-------------------------------------------------------------------------------

@@ -319,6 +319,8 @@ COLOR('', $string, $indent, $no_indent_color, $continuation_color) ;
 
 
 #-------------------------------------------------------------------------------
+use Time::HiRes qw(gettimeofday tv_interval) ;
+my $t0 = [gettimeofday] ;
 
 sub _print
 {
@@ -336,6 +338,8 @@ $data =~ s/\t/$indentation/gm ;
 my $reset = $cc{$cd}{reset} // '' ;
 my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
 $ends_with_newline //= '' ;
+
+$output_info_label = _INFO2_(sprintf ' %05.2f - ', tv_interval($t0, [gettimeofday])) ;
 
 my $lines =  join
 		(

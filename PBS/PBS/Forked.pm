@@ -183,9 +183,30 @@ if(defined $pid)
 						
 						'HASH' eq $ref and do 
 							{
-							@tuple = $_ eq '__PBS_CONFIG' || $_ eq '__CONFIG'
-									? ($_ => $node->{$_})
-									: ($_ => {} )
+							@tuple = ($_ => $node->{$_}) 
+									if $_ eq '__PBS_CONFIG' 
+									|| $_ eq '__CONFIG' 
+									|| $_ eq '__DEPENDED_AT';
+							
+							if ($_ eq '__INSERTED_AT')
+								{
+								# keep data needed by warp
+								my $inserting_node = exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}
+									&& exists $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+									? $node->{__INSERTED_AT}{ORIGINAL_INSERTION_DATA}{INSERTING_NODE}
+									: $node->{__INSERTED_AT}{INSERTING_NODE} ;
+								
+								@tuple = 
+									(
+									$_ => 
+										{
+										INSERTING_NODE => $inserting_node,
+										INSERTION_FILE => $node->{$_}{INSERTION_FILE},
+										}
+									)
+								}
+							
+							@tuple = ($_ => {} ) unless @tuple ;
 							} ;
 						
 						'ARRAY' eq $ref and do 
@@ -422,10 +443,10 @@ for my $graph (values %graphs)
 	push @target_dependencies, [$graph->{PID}, keys %{$graph->{CHILDREN}}] ;
 	$target_parents{$_} = $graph->{PID} for keys $graph->{CHILDREN}->%* ;
 	
-	$processes{$graph->{PID}} //= {} ;
-	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
-	
 	$targets{$graph->{TARGET}}    = $graph ;
+	
+	$processes{$graph->{PID}} = {} ; # single process runs don't create a process tree
+	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
 	
 	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >, nodes: " . scalar(keys $graph->{NODES}->%*) . ", target: $graph->{TARGET}"
 		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
@@ -609,8 +630,15 @@ for my $node (keys %nodes)
 	
 	if(exists $inserted_nodes->{$node})
 		{
-		$main_graph = $inserted_nodes->{$node} == $nodes{$node}{NODES}{$node} ;
-		$display_info &&= ! $main_graph ;
+		if( defined $inserted_nodes->{$node} && defined $nodes{$node}{NODES}{$node})
+			{
+			$main_graph = ($inserted_nodes->{$node} == $nodes{$node}{NODES}{$node}) ;
+			$display_info &&= ! $main_graph ;
+			}
+		else
+			{
+			SE2T $node, "no such node in main graph"  ;
+			}
 		
 		die ERROR("Depend∥ : merge: $node already depended") . "\n"
 			if exists $inserted_nodes->{$node}{__DEPENDED}
@@ -762,7 +790,7 @@ if($pbs_config->{DISPLAY_PARALLEL_DEPEND_TREE})
 		for (@$targets) ;
 	}
 
-\%graphs, \%nodes, \@order, \%parallel_pbs_to_run ;
+\%graphs, \%nodes, $inserted_nodes, \@order, \%parallel_pbs_to_run ;
 }
 
 #-------------------------------------------------------------------------------------------------------
@@ -782,7 +810,7 @@ for my $node (@$nodes)
 	{
 	Say EC "<I>                <I2>< $node->{node_pid} - $node->{node_address} ><I3>$node->{node_name}"
 		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
-					
+	
 	$data->{ARGS}[INSERTED_NODES]{$node}{__PARALLEL_NODE}   = $node->{node_pid} ;
 	$data->{ARGS}[INSERTED_NODES]{$node}{__PARALLEL_SERVER} = $node->{node_address} ;
 	}
@@ -851,8 +879,6 @@ sub Build
 {
 my ($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, $dependers) = @_ ;
 
-my $stop = 0 ;
-
 if($pbs_config->{DO_BUILD})
 	{
 	my $pid = fork ;
@@ -860,7 +886,7 @@ if($pbs_config->{DO_BUILD})
 	if($pid)
 		{
 		map { $dependers->{$_}{BUILD_DONE}++ } grep { ! exists $parallel_pbs_to_run->{$_}} $order->@* ;
-		return $stop ; # do the build
+		return 1 ; # do the build
 		}
 	else
 		{
@@ -885,8 +911,7 @@ if($pbs_config->{DO_BUILD})
 	}
 else
 	{
-	$stop = 1 ;
-	return $stop ;
+	return 0 ;
 	}
 }
 
@@ -956,7 +981,60 @@ PBS::DefaultBuild::Build
 	) ;
 
 Say EC "<I>Build<W>∥ <I>: $target done <I2>, nodes: " . scalar(@$build_sequence) . ",  $$ - < $data->{ADDRESS} >" ;
-PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'build_done', {id => $resource_id, pid => $$, target => $target, nodes => scalar(@$build_sequence)}, $$) ;
+
+# send updated md5 cache
+my @updates ;
+
+for my $node (grep { $_->{__NAME} !~ /^__PBS/ } $build_sequence->@*)
+	{
+	# data needed by warp
+	
+	push @updates, [ $node->{__NAME}, '__MD5', $node->{__MD5} // PBS::Digest::GetFileMD5($node->{__BUILD_NAME}) ] ;
+	push @updates, [ $node->{__NAME}, '__BUILD_DONE', 1 ] ;
+	push @updates, [ $node->{__NAME}, '__IS_SOURCE', $node->{__IS_SOURCE} // PBS::Digest::NodeIsSource($node) ] ;
+	push @updates, [ $node->{__NAME}, '__HAS_DIGEST', $node->{__HAS_DIGEST} ] ;
+	push @updates, [ $node->{__NAME}, '__BUILD_NAME', $node->{__BUILD_NAME} ] ;
+	
+	for (grep { ! $node->{$_}{__VIRTUAL} } grep { $_ !~ /^__/ } keys $node->%*)
+		{
+		push @updates, [ $node->{$_}{__NAME}, '__MD5', $node->{$_}{__MD5} // PBS::Digest::GetFileMD5($node->{$_}{__BUILD_NAME}) ] ;
+		push @updates, [ $node->{$_}{__NAME}, '__BUILD_DONE', 1 ] ;
+		push @updates, [ $node->{$_}{__NAME}, '__NODE_IS_SOURCE', $node->{$_}{__IS_SOURCE} // PBS::Digest::NodeIsSource($node) ] ;
+		push @updates, [ $node->{$_}{__NAME}, '__HAS_DIGEST', $node->{$_}{__HAS_DIGEST} ] ;
+		push @updates, [ $node->{$_}{__NAME}, '__BUILD_NAME', $node->{$_}{__BUILD_NAME} ] ;
+		
+		# eg: a H file inserted by the depender post build so they were not synched
+		push @updates, 
+			[
+			$node->{$_}{__NAME},
+			'__INSERTED_AT',
+				{
+				INSERTING_NODE => $node->{__NAME},
+				INSERTION_FILE => $node->{__INSERTED_AT}{INSERTION_FILE},
+				}
+			] ;
+		push @updates, 
+			[
+			$node->{$_}{__NAME},
+			'__PBS_CONFIG',
+				{
+				BUILD_DIRECTORY => $node->{__PBS_CONFIG}{BUILD_DIRECTORY},
+				SOURCE_DIRECTORIES => $node->{__PBS_CONFIG}{SOURCE_DIRECTORIES}
+				}
+			] ;
+		}
+	}
+
+# send post build nodes or code to do the same
+
+PBS::Net::Put
+	(
+	$pbs_config,
+	$pbs_config->{RESOURCE_SERVER},
+	'build_done',
+	freeze({id => $resource_id, pid => $$, target => $target, nodes => scalar(@$build_sequence), updates => \@updates}),
+	$$
+	) ;
 }
 
 #-------------------------------------------------------------------------------------------------------

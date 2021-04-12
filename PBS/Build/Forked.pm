@@ -690,6 +690,20 @@ else
 		{
 		$built_node->{__BUILD_DONE} = "PBS::Build::Forked Done." ;
 		
+		if(exists $built_node->{__VIRTUAL})
+			{
+			$built_node->{__MD5} = 'VIRTUAL' ;
+			}
+		else
+			{
+			my $build_name = $built_node->{__BUILD_NAME} ;
+			
+			PBS::Digest::FlushMd5Cache($build_name) ;
+			my $current_md5 = PBS::Digest::GetFileMD5($build_name) ;
+			
+			$built_node->{__MD5} = $current_md5 ;
+			}
+		
 		unless($no_output)
 			{
 			print $builder_channel "GET_OUTPUT" . "__PBS_FORKED_BUILDER__" . "\n" ;

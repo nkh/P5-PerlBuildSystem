@@ -65,7 +65,7 @@ my $tag = $parallel_depend
 			: '' ;
 $tag .= GetColor('info3') ;
 
-my $pid = $parallel_depended ? _INFO2_(", pid: " . ($file_tree->{__PARALLEL_NODE} // '?')) : '' ;
+my $pid = $parallel_depended ? _INFO2_(", \$\$: $$") : '' ;
 
 $node_header .= $pbs_config->{DISPLAY_NODE_BUILD_NAME}
 			? _INFO3_("Node$tag: $type$name") . _INFO2_(", " . GetRunRelativePath($pbs_config, $build_name, 1) . "$pid\n")
@@ -250,7 +250,7 @@ if ($generate_for_log || $pbs_config->{DISPLAY_NODE_DEPENDENCIES} || $pbs_config
 						. 	(
 							exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
 								? _ERROR_ $_ . $cache . "\n"
-								: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
+								: $inserted_nodes->{$_}{__IS_SOURCE} // NodeIsSource($inserted_nodes->{$_})
 									? _WARNING_ $_ . $cache . "\n"
 									: _INFO3_   $_ . $cache . "\n"
 							)
@@ -307,7 +307,7 @@ if(($generate_for_log || $pbs_config->{DISPLAY_NODE_BUILD_RULES}) && ! $pbs_conf
  						
 						exists $triggered_dependencies{$_} || $file_tree->{$_}{__TRIGGERED}
 							? _ERROR_ $_ . $cache
-							: $inserted_nodes->{$_}{__IS_SOURCE} || NodeIsSource($inserted_nodes->{$_})
+							: $inserted_nodes->{$_}{__IS_SOURCE} // NodeIsSource($inserted_nodes->{$_})
 								? _WARNING_ $_ . $cache
 								: _INFO3_   $_ . $cache
 							if $pbs_config->{DISPLAY_NODE_DEPENDENCIES} ;

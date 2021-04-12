@@ -21,7 +21,7 @@ our @EXPORT = qw(
 		GetDigest
 		
 		GetFileMD5
-
+		
 		NodeIsGenerated NodeIsSource DependencyIsSource
 		) ;
 
@@ -41,8 +41,6 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 use PBS::Output ;
 use PBS::PBSConfig ;
 
-use constant PBS_DISTRIBUTION_DIGEST => '/.pbs_distribution_digest' ;
-
 #-------------------------------------------------------------------------------
 
 my %package_dependencies ;
@@ -53,207 +51,6 @@ my %node_config_variable_dependencies ;
 
 my %exclude_from_digest ;
 my %force_digest ;
-
-my %has_no_dependencies ;
-
-#-----------------------------------------------------------------------------------------
-
-sub HasNoDependencies
-{
-my ($package, $file_name, $line) = caller() ;
-
-die ERROR "Invalid 'HasNoDependencies' arguments at $file_name:$line\n" if @_ % 2 ;
-
-_HasNoDependencies($package, $file_name, $line, @_) ;
-}
-
-sub _HasNoDependencies
-{
-my ($package, $file_name, $line, %exclusion_patterns) = @_ ;
- 
-for my $name (keys %exclusion_patterns)
-	{
-	if(exists $has_no_dependencies{$package}{$name})
-		{
-		PrintWarning
-			(
-			"Depend: overriding HasNoDependencies entry '$name' defined at $has_no_dependencies{$package}{$name}{ORIGIN}:\n"
-			. "\t$has_no_dependencies{$package}{$name}{PATTERN} "
-			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
-			) ;
-		}
-		
-	$has_no_dependencies{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
-	}
-}
-
-sub OkNoDependencies
-{
-my ($package, $node) = @_ ;
-my ($ok, $node_name, $pbs_config)  = (0, $node->{__NAME}, $node->{__PBS_CONFIG}) ;
-
-for my $name (keys %{$has_no_dependencies{$package}})
-	{
-	if($node_name =~ $has_no_dependencies{$package}{$name}{PATTERN})
-		{
-		PrintWarning
-			(
-			"Depend: '$node_name' OK no dependencies,  rule: '$name' [$has_no_dependencies{$package}{$name}{PATTERN}]"
-			. (defined $pbs_config->{ADD_ORIGIN} ? " @ $has_no_dependencies{$package}{$name}{ORIGIN}" : '')
-			.".\n"
-			) if(defined $pbs_config->{DISPLAY_NO_DEPENDENCIES_OK}) ;
-			
-		$ok++ ;
-		last ;
-		}
-	}
-
-$ok ;
-}
-
-#-----------------------------------------------------------------------------------------
-
-{ # computed once
-my ($PBS_DIGEST, $PBS_DIGEST_FOR_NODE) ;
-
-sub GetPbsDigest
-{
-my ($pbs_config) = @_ ;
-
-unless (defined $PBS_DIGEST)
-	{
-	my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
-	#compute digest for all files in directory
-	my $pbs_digest = {} ;
-
-	File::Find::find
-		(
-			{
-			wanted => sub { $pbs_digest->{$File::Find::name} = GetFileMD5($File::Find::name) unless -d $File::Find::name },
-			no_chdir => 1,
-			follow => 1
-			},
-		$path,
-		) ;
-
-	# write digest
-	my $digest_file_name = $pbs_config->{BUILD_DIRECTORY} . PBS_DISTRIBUTION_DIGEST ;
-
-	WriteDigest($digest_file_name, 'current pbs distribution digest', $pbs_digest, '# caller_data', 1, 'return $digest', 0) ;
-
-	if(defined (my $file_digest = GetFileMD5($digest_file_name, 0)))
-		{
-		$PBS_DIGEST = $pbs_digest ;
-		$PBS_DIGEST_FOR_NODE = "\n\$pbs_digest = { '$digest_file_name' => '$file_digest'}  ;\n\n" ;
-		}
-	else
-		{
-		die ERROR("Digest: Can't compute digest for pbs distribution '$digest_file_name'.") . "\n" ;
-		}
-	}
-
-return $PBS_DIGEST, $PBS_DIGEST_FOR_NODE ;
-}
-
-} # compute once
-
-my %pbs_digest_checked ; # check files ones, we shouldn't be called with multiple files
-
-sub RebuildBecauseOfPbsDependency
-{
-my ($pbs_config, $digest_to_check) = @_ ;
-
-return (0, ['DEVEL_NO_DISTRIBUTION_CHECK is set'], 0 ) if $pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK} ;
-
-my ($digest_file, $digest_file_md5) = (each %{$digest_to_check}) ;
-
-unless (exists $pbs_digest_checked{$digest_file})
-	{
-	$pbs_digest_checked{$digest_file} = [_CompareDistributionDigests($pbs_config, $digest_file, $digest_file_md5)] ; 
-	}
-
-return @{$pbs_digest_checked{$digest_file}} ;
-}
-
-sub CheckDistribution
-{
-my ($pbs_config, $digest_to_check, $caller) = @_ ;
-
-my $digest_file = $pbs_config->{BUILD_DIRECTORY} . PBS_DISTRIBUTION_DIGEST . '_' . $caller ;
-
-WriteDigest
-	(
-	$digest_file,
-	"$caller pbs distribution digest",
-	$digest_to_check,
-	"# caller data",
-	1, # create path
-	'return $digest', # postamble
-	1, # add time stamp
-	) ;
-
-return _CompareDistributionDigests($pbs_config, $digest_file, GetFileMD5($digest_file, 0)) ;
-}
-
-sub _CompareDistributionDigests
-{
-my ($pbs_config, $digest_file, $digest_file_md5) = @_ ;
-
-return (0, ['DEVEL_NO_DISTRIBUTION_CHECK is set'], 0 ) if $pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK} ;
-
-my ($rebuild_because_of_digest, $reasons, $number_of_differences) = (0, ['digest ok'], 0 ) ;
-
-if(-e $digest_file)
-	{
-	# check digest file's md5
-	my $current_md5 ;
-
-	if(defined ($current_md5 = GetFileMD5($digest_file, 0)) && $current_md5 eq $digest_file_md5)
-		{
-		my $digest ; 
-		unless ($digest = do $digest_file) 
-			{
-			PrintWarning "Digest: couldn't parse '$digest_file': $@" if $@;
-			}
-			
-		my ($pbs_digest) = GetPbsDigest($pbs_config) ; # writes the digest to disk
-
-		# check all files in distribution
-		if('HASH' eq ref $digest)
-			{
-			my ($digest_is_different, $why) =
-				CompareDigests
-					(
-					$pbs_config,
-					$digest_file,
-					undef, # will not be used pbs_digest values are all set
-					0, # don't --trigger pbs distibution
-					[ sort keys %$pbs_digest],
-					$pbs_digest,
-					$digest,
-					) ;
-					
-			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, $why, scalar @{$why} ) if $digest_is_different ;
-			}
-		else
-			{
-			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['empty pbs distribution digest'], 1) ;
-			}
-		}
-	else
-		{
-		PrintWarning "Digest: file '$digest_file' different digest.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
-		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['changes in pbs distribution'], 1) ;
-		}
-	}
-else
-	{
-	PrintWarning "Digest: file '$digest_file' not found.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
-	($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["pbs distribution digest file '$digest_file' not found"], 1) ;
-	}
-
-return $rebuild_because_of_digest, $reasons, $number_of_differences ;
-}
 
 #-------------------------------------------------------------------------------
 # cached MD5 functions
@@ -291,12 +88,12 @@ my $file = shift ;
 if(defined $file)
 	{
 	delete $md5_cache{$file} ;
-	PrintWarning sprintf "Digest: hash cache flush: $file\n" if $display_md5_flush ;
+	Say Warning sprintf "Digest: hash cache flush: $file" if $display_md5_flush ;
 	}
 else
 	{
 	%md5_cache = () ;
-	PrintError  "Digest: hash cache flush all.\n" if $display_md5_flush ;
+	Say Error  "Digest: hash cache flush all" if $display_md5_flush ;
 	}
 }
 
@@ -356,13 +153,13 @@ else
 		$md5_cache{$file} = $md5 ;
 
 		my $time = tv_interval($t0_md5, [gettimeofday]) ;
-		PrintInfo2 sprintf("Digest: [" . (scalar(keys %md5_cache)) . "] %.6f s., $md5, $file\n", $time) if $display_md5_time ;
+		Say Info2 sprintf("Digest: [" . (scalar(keys %md5_cache)) . "] %.6f s., $md5, $file", $time) if $display_md5_time ;
 
 		my $md5_time += $time ;
 		}
 	else
 		{
-		PrintWarning  "Digest: can't read file '$file' to generate MD5\n" if $warn ;
+		Say Warning  "Digest: can't read file '$file' to generate MD5" if $warn ;
 		}
 	}
 
@@ -405,7 +202,7 @@ if(-f $file_name && $fh->open($file_name))
 	undef $fh ;
 	
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
-	PrintUser sprintf("Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
+	Say User sprintf("Digest: compute MD5, time: %.6f, hash: $md5sum, file: $file_name", $time) if $display_md5_compute ;
 
 	return $md5sum // 'invalid md5' ;
 	}
@@ -433,7 +230,7 @@ if(-f $file_name)
 	my $md5sum = xxhash32_hex($bin, 'PBS_xxHash') ;
 	
 	my $time = tv_interval($t0_md5, [gettimeofday]) ;
-	PrintUser sprintf("Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name\n", $time) if $display_md5_compute ;
+	Say User sprintf("Digest: compute XXHash, time: %.6f, hash: $md5sum, file: $file_name", $time) if $display_md5_compute ;
 
 	return $md5sum // 'invalid md5' ;
 	}
@@ -909,6 +706,7 @@ my($dependent, $node_name, $inserted_nodes) = @_ ;
 my $is_source ;
 if (exists $inserted_nodes->{$node_name})
 	{
+=pod
 	my $package = exists $inserted_nodes->{$node_name}
 			&& exists $inserted_nodes->{$node_name}{__MATCHING_RULES}
 			&& @{$inserted_nodes->{$node_name}{__MATCHING_RULES}}
@@ -935,6 +733,9 @@ if (exists $inserted_nodes->{$node_name})
 			$package,
 			$inserted_nodes->{$node_name}
 			) ; 
+=cut
+	
+	NodeIsSource($inserted_nodes->{$node_name}) ;
 	}
 else
 	{
@@ -946,7 +747,7 @@ else
 			&& defined $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				? $dependent->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: $dependent->{__LOAD_PACKAGE} ;
-
+	
 	$is_source = ! IsDigestToBeGenerated
 			(
 			$package,
@@ -964,6 +765,8 @@ my ($package, $node) = @_ ;
 my $node_name  = $node->{__NAME} ;
 my $pbs_config = $node->{__PBS_CONFIG} ;
 
+return $node->{__HAS_DIGEST} if exists $node->{__HAS_DIGEST} ;
+
 my $generate_digest = 1 ;
 
 for my $name (keys %{$exclude_from_digest{$package}})
@@ -972,8 +775,8 @@ for my $name (keys %{$exclude_from_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning "Digest: '$node_name' no digest, rule: '$name', pattern: '$exclude_from_digest{$package}{$name}{PATTERN}'"
-					. _INFO2_(", file: $exclude_from_digest{$package}{$name}{ORIGIN}\n")  ;
+			Say EC "<W>Digest: $node_name no digest, rule: $name, pattern: $exclude_from_digest{$package}{$name}{PATTERN}"
+				. "<I2>, file: $exclude_from_digest{$package}{$name}{ORIGIN}"  ;
 			}
 			
 		$generate_digest = 0 ;
@@ -987,8 +790,8 @@ for my $name (keys %{$force_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			PrintWarning "Digest: '$node_name' forced digest, rule: '$name', pattern: '$force_digest{$package}{$name}{PATTERN}'"
-					. _INFO2_(", file: $force_digest{$package}{$name}{ORIGIN}\n") ;
+			Say EC "<W>Digest: $node_name forced digest, rule: $name, pattern: $force_digest{$package}{$name}{PATTERN}"
+				. "<I2>, file: $force_digest{$package}{$name}{ORIGIN}" ;
 			}
 			
 		$generate_digest = 1 ;
@@ -996,7 +799,7 @@ for my $name (keys %{$force_digest{$package}})
 		}
 	}
 
-return $generate_digest ;
+$node->{__HAS_DIGEST} = $generate_digest ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1091,8 +894,8 @@ if(NodeIsGenerated($node))
 		}
 	else
 		{
-		PrintWarning "Digest: file '$digest_file_name' not found.\n" if defined $pbs_config->{DISPLAY_DIGEST} ;
-		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["digest file '$digest_file_name' not found"], 1) ;
+		Say Warning "Digest: file $digest_file_name not found." if defined $pbs_config->{DISPLAY_DIGEST} ;
+		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["digest file $digest_file_name not found"], 1) ;
 		}
 	}
 else
@@ -1119,17 +922,17 @@ if(defined $pbs_config->{DEBUG_TRIGGER_NONE})
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger: '$file' matches /$trigger_regex/ (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			Say User "Trigger: $file matches /$trigger_regex/ (digest)" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
 			$file_is_modified++ ;
-
-			PrintDebug "\nCheck: --triger match: $file\n" if $pbs_config->{DISPLAY_FILE_CHECK} ;
-
+			
+			Say Debug "Check: --triger match: $file" if $pbs_config->{DISPLAY_FILE_CHECK} ;
+			
 			last ;
 			}
 		}
 
-	PrintInfo2 "Trigger: '$file' not triggered (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	Say Info2 "Trigger: $file not triggered (digest check)" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 else
 	{
@@ -1137,7 +940,9 @@ else
 		{
 		unless($current_md5 eq $md5)
 			{
-			PrintDebug "\nDigest: check hash, got '$current_md5', expected '$md5' for '$file'\n"
+			$md5 = "''" unless length $md5 ;
+			
+			Say Debug "Digest: hash: $current_md5, expected: $md5, file: $file"
 				if $pbs_config->{DISPLAY_FILE_CHECK} ;
 				
 			$file_is_modified++ ;
@@ -1145,7 +950,7 @@ else
 		}
 	else
 		{
-		PrintDebug "\nDigest: no such file '$file'\n"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
+		Say Debug "Digest: no such file $file"  if $pbs_config->{DISPLAY_FILE_CHECK} ;
 		
 		$file_is_modified++ ;
 		}
@@ -1155,19 +960,18 @@ else
 		{
 		if($file =~ /$trigger_regex/)
 			{
-			PrintUser "Trigger: '$file' matches /$trigger_regex/ (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+			Say User "Trigger: $file matches /$trigger_regex/ (digest)" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 			$trigger_match++ ;
-
+			
 			$file_is_modified++ ;
-
-			PrintDebug "\nDigest: --triger match: $file\n"
-				if $pbs_config->{DISPLAY_FILE_CHECK} ;
-
+			
+			Say Debug "Digest: --triger match: $file" if $pbs_config->{DISPLAY_FILE_CHECK} ;
+			
 			last ;
 			}
 		}
 	
-	PrintInfo2 "Trigger: '$file' not trigger (digest check)\n" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
+	Say Info2 "Trigger: $file not trigger (digest check)" if ! $trigger_match && $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY};
 	}
 
 return $file_is_modified ;
@@ -1201,7 +1005,7 @@ for my $key (@$order)
 		 	{
 			if( my $trigger_regex = first { $key =~ $_ } @{$pbs_config->{TRIGGER}} )
 				{
-				#PrintUser "Trigger: $key matches '$trigger_regex' (digest)\n" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				#Say User "Trigger: $key matches $trigger_regex (digest)" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
 				
 				push @digest_different_text, "$key [--trigger] " ;
 			
@@ -1246,7 +1050,7 @@ for my $key( keys %$digest)
 	
 if($digest_is_different)
 	{
-	PrintWarning "Digest: file: $name differences [$digest_is_different]:\n" if $display_digest ;
+	Say Warning "Digest: file: $name differences [$digest_is_different]:" if $display_digest ;
 	
 	for my $key (@in_file_digest_but_not_expected_digest)
 		{
@@ -1255,7 +1059,7 @@ if($digest_is_different)
 		my $only_in_file_digest_text = "key '$key' exists only in old digest" ;
 		push @digest_different_text, $only_in_file_digest_text ;
 		
-		PrintWarning "\t$only_in_file_digest_text.\n" if $display_digest ;
+		Say Warning "\t$only_in_file_digest_text." if $display_digest ;
 		}
 		
 	for my $key (@different_in_file_digest)
@@ -1266,7 +1070,7 @@ if($digest_is_different)
 		my $different_digest_text = "$key: $digest_value != $expected_digest_value" ;
 		push @digest_different_text, $different_digest_text ;
 		
-		PrintError "\t$different_digest_text\n" if $display_digest ;
+		Say Error "\t$different_digest_text" if $display_digest ;
 		}
 		
 	for my $key (@in_expected_digest_but_not_file_digest)
@@ -1276,7 +1080,7 @@ if($digest_is_different)
 		my $only_in_expected_digest_text = "key '$key' exists only in expected digest" ;
 		push @digest_different_text, $only_in_expected_digest_text ;
 		
-		PrintError "\t$only_in_expected_digest_text\n"  if $display_digest ;
+		Say Error "\t$only_in_expected_digest_text"  if $display_digest ;
 		}
 	}
 else
@@ -1284,7 +1088,7 @@ else
 	my $digest_is_identical = "Digest: file '$name' no difference" ;
 	push @digest_different_text, $digest_is_identical ;
 	
-	PrintInfo "$digest_is_identical\n" if $display_digest && ! $display_different_digest_only ;
+	Say Info "$digest_is_identical" if $display_digest && ! $display_different_digest_only ;
 	}
 
 return $digest_is_different, \@digest_different_text, scalar(@digest_different_text)  ;
@@ -1336,7 +1140,7 @@ my $digest_file_name = GetDigestFileName($node) ;
 
 if(-e $digest_file_name)
 	{
-	#PrintWarning "Digest: removing digest file: '$digest_file_name'.\n" ;
+	#Say Warning "Digest: removing digest file: $digest_file_name" ;
 	unlink($digest_file_name) ;
 	}
 }
@@ -1399,7 +1203,7 @@ sub GetDigest
 my $t0_generate_digest_get = [gettimeofday] ;
 my $node = shift ;
 
-PrintDebug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE\n" unless exists $node->{__DEPENDING_PBSFILE} ;
+Say Debug "Digest: node $node->{__NAME} doesn't have __DEPENDING_PBSFILE" unless exists $node->{__DEPENDING_PBSFILE} ;
 
 my $package_digest = GetPackageDigest($node->{__LOAD_PACKAGE}) ;
 my $node_digest = GetNodeDigest($node) ;
@@ -1468,6 +1272,200 @@ close(NODE_DIGEST) ;
 
 #-------------------------------------------------------------------------------
 
+my %has_no_dependencies ;
+
+sub HasNoDependencies
+{
+my ($package, $file_name, $line) = caller() ;
+
+die ERROR "Invalid 'HasNoDependencies' arguments at $file_name:$line\n" if @_ % 2 ;
+
+my (%exclusion_patterns) = @_ ;
+ 
+for my $name (keys %exclusion_patterns)
+	{
+	if(exists $has_no_dependencies{$package}{$name})
+		{
+		PrintWarning
+			(
+			"Depend: overriding HasNoDependencies entry '$name' defined at $has_no_dependencies{$package}{$name}{ORIGIN}:\n"
+			. "\t$has_no_dependencies{$package}{$name}{PATTERN} "
+			. "with $exclusion_patterns{$name} defined at $file_name:$line\n"
+			) ;
+		}
+		
+	$has_no_dependencies{$package}{$name} = {PATTERN => $exclusion_patterns{$name}, ORIGIN => "$file_name:$line"} ;
+	}
+}
+
+sub OkNoDependencies
+{
+my ($package, $node) = @_ ;
+my ($ok, $node_name, $pbs_config)  = (0, $node->{__NAME}, $node->{__PBS_CONFIG}) ;
+
+for my $name (keys %{$has_no_dependencies{$package}})
+	{
+	if($node_name =~ $has_no_dependencies{$package}{$name}{PATTERN})
+		{
+		Say Warning "Depend: $node_name OK no dependencies,  rule: $name [$has_no_dependencies{$package}{$name}{PATTERN}]"
+				. (defined $pbs_config->{ADD_ORIGIN} ? " @ $has_no_dependencies{$package}{$name}{ORIGIN}" : '')
+					if(defined $pbs_config->{DISPLAY_NO_DEPENDENCIES_OK}) ;
+		
+		$ok++ ;
+		last ;
+		}
+	}
+
+$ok ;
+}
+
+#-----------------------------------------------------------------------------------------
+
+{ # computed once
+use constant PBS_DISTRIBUTION_DIGEST => '/.pbs_distribution_digest' ;
+
+my ($PBS_DIGEST, $PBS_DIGEST_FOR_NODE) ;
+
+sub GetPbsDigest
+{
+my ($pbs_config) = @_ ;
+
+unless (defined $PBS_DIGEST)
+	{
+	my ($basename, $path, $ext) = File::Basename::fileparse(find_installed('PBS::PBS'), ('\..*')) ;
+	#compute digest for all files in directory
+	my $pbs_digest = {} ;
+
+	File::Find::find
+		(
+			{
+			wanted => sub { $pbs_digest->{$File::Find::name} = GetFileMD5($File::Find::name) unless -d $File::Find::name },
+			no_chdir => 1,
+			follow => 1
+			},
+		$path,
+		) ;
+
+	# write digest
+	my $digest_file_name = $pbs_config->{BUILD_DIRECTORY} . PBS_DISTRIBUTION_DIGEST ;
+
+	WriteDigest($digest_file_name, 'current pbs distribution digest', $pbs_digest, '# caller_data', 1, 'return $digest', 0) ;
+
+	if(defined (my $file_digest = GetFileMD5($digest_file_name, 0)))
+		{
+		$PBS_DIGEST = $pbs_digest ;
+		$PBS_DIGEST_FOR_NODE = "\n\$pbs_digest = { '$digest_file_name' => '$file_digest'}  ;\n\n" ;
+		}
+	else
+		{
+		die ERROR("Digest: Can't compute digest for pbs distribution '$digest_file_name'.") . "\n" ;
+		}
+	}
+
+return $PBS_DIGEST, $PBS_DIGEST_FOR_NODE ;
+}
+
+} # compute once
+
+my %pbs_digest_checked ; # check files ones, we shouldn't be called with multiple files
+
+sub RebuildBecauseOfPbsDependency
+{
+my ($pbs_config, $digest_to_check) = @_ ;
+
+return (0, ['DEVEL_NO_DISTRIBUTION_CHECK is set'], 0 ) if $pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK} ;
+
+my ($digest_file, $digest_file_md5) = (each %{$digest_to_check}) ;
+
+unless (exists $pbs_digest_checked{$digest_file})
+	{
+	$pbs_digest_checked{$digest_file} = [_CompareDistributionDigests($pbs_config, $digest_file, $digest_file_md5)] ; 
+	}
+
+return @{$pbs_digest_checked{$digest_file}} ;
+}
+
+sub CheckDistribution
+{
+my ($pbs_config, $digest_to_check, $caller) = @_ ;
+
+my $digest_file = $pbs_config->{BUILD_DIRECTORY} . PBS_DISTRIBUTION_DIGEST . '_' . $caller ;
+
+WriteDigest
+	(
+	$digest_file,
+	"$caller pbs distribution digest",
+	$digest_to_check,
+	"# caller data",
+	1, # create path
+	'return $digest', # postamble
+	1, # add time stamp
+	) ;
+
+return _CompareDistributionDigests($pbs_config, $digest_file, GetFileMD5($digest_file, 0)) ;
+}
+
+sub _CompareDistributionDigests
+{
+my ($pbs_config, $digest_file, $digest_file_md5) = @_ ;
+
+return (0, ['DEVEL_NO_DISTRIBUTION_CHECK is set'], 0 ) if $pbs_config->{DEVEL_NO_DISTRIBUTION_CHECK} ;
+
+my ($rebuild_because_of_digest, $reasons, $number_of_differences) = (0, ['digest ok'], 0 ) ;
+
+if(-e $digest_file)
+	{
+	# check digest file's md5
+	my $current_md5 ;
+
+	if(defined ($current_md5 = GetFileMD5($digest_file, 0)) && $current_md5 eq $digest_file_md5)
+		{
+		my $digest ; 
+		unless ($digest = do $digest_file) 
+			{
+			PrintWarning "Digest: couldn't parse '$digest_file': $@" if $@;
+			}
+			
+		my ($pbs_digest) = GetPbsDigest($pbs_config) ; # writes the digest to disk
+		
+		# check all files in distribution
+		if('HASH' eq ref $digest)
+			{
+			my ($digest_is_different, $why) =
+				CompareDigests
+					(
+					$pbs_config,
+					$digest_file,
+					undef, # will not be used pbs_digest values are all set
+					0, # don't --trigger pbs distibution
+					[ sort keys %$pbs_digest],
+					$pbs_digest,
+					$digest,
+					) ;
+					
+			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, $why, scalar @{$why} ) if $digest_is_different ;
+			}
+		else
+			{
+			($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['empty pbs distribution digest'], 1) ;
+			}
+		}
+	else
+		{
+		Say Warning "Digest: file $digest_file different digest" if defined $pbs_config->{DISPLAY_DIGEST} ;
+		($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ['changes in pbs distribution'], 1) ;
+		}
+	}
+else
+	{
+	Say Warning "Digest: file '$digest_file' not found" if defined $pbs_config->{DISPLAY_DIGEST} ;
+	($rebuild_because_of_digest, $reasons, $number_of_differences) = (1, ["pbs distribution digest file '$digest_file' not found"], 1) ;
+	}
+
+return $rebuild_because_of_digest, $reasons, $number_of_differences ;
+}
+
+#-----------------------------------------------------------------------------------------
 1 ;
 
 __END__

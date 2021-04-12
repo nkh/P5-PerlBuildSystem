@@ -19,6 +19,7 @@ use HTTP::Tiny;
 use List::Util qw(all first) ;
 use Storable qw(freeze thaw) ;
 use Time::HiRes qw(usleep gettimeofday tv_interval) ;
+use Data::TreeDumper ;
 
 use PBS::Output ;
 use PBS::PBS::Forked ;
@@ -32,7 +33,7 @@ $what //= {} ;
 
 #my $t0_message = [gettimeofday];
 
-Say Debug "Http: PUT, size: " . length($what) . ", to: ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_PUT} ;
+Say EC "<D>Http: <I> PUT  ${url}pbs/$where<I2>, size: " . length($what) . ", $whom" if $pbs_config->{HTTP_DISPLAY_PUT} ;
 
 my $response = HTTP::Tiny->new->put("${url}pbs/$where", {content => $what}) ;
 
@@ -55,7 +56,8 @@ $what //= {} ;
 
 #my $t0_message = [gettimeofday];
 
-SDT $what, "Http: POST, to: ${url}pbs/$where" if $pbs_config->{HTTP_DISPLAY_POST} ;
+Say EC "<D>Http: <I> POST  ${url}pbs/$where<I2>, $whom" if $pbs_config->{HTTP_DISPLAY_POST} ;
+SIT $what, '', INDENTATION => "\t", DISPLAY_ADDRESS => 0 if $pbs_config->{HTTP_DISPLAY_POST} ;
 
 my $response = HTTP::Tiny->new->post_form("${url}pbs/$where", $what) ;
 
@@ -75,7 +77,7 @@ sub Get
 {
 my ($pbs_config, $url, $where, $what, $whom, $raw) = @_ ;
 
-SDT $what, "Http: GET, from: ${url}pbs/$where by $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
+Say EC "<D>Http: <I>  GET  ${url}pbs/$where<I2>, $whom" if $pbs_config->{HTTP_DISPLAY_GET} ;
 
 my $HT = HTTP::Tiny->new() ;
 my $response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
@@ -145,7 +147,7 @@ my ($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_
 
 unless ($removed_nodes)
 	{
-	#Say Info "PBS∥ : up to date" ;
+	Say Info "PBS∥ : up to date" ;
 	
 	use constant BUILD_SUCCESS => 1 ;
 	
@@ -163,7 +165,7 @@ if($pid)
 			PBS_SERVER => 1,
 			TARGETS    => $targets,
 			TIME       => [gettimeofday],
-			WARP       => [$nodes, $removed_nodes, $GenerateWarpFile],
+			WARP       => { NODES => $nodes, REMOVED_NODES => $removed_nodes, GENERATOR => $GenerateWarpFile },
 		},
 		) ;
 	
@@ -208,13 +210,17 @@ sub BecomeServer
 {
 my ($pbs_config, $server_name, $daemon, $data) = @_ ;
 
-Say EC "<D>Http: <I>start : $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
+Say EC "<D>Http: <I>start server: $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
 
 my ($counter, $allocated, $reused, $used_e_leases) = (0, 0, 0, 0) ;
 
 my %dependers ;
 my %resources = map { $_ => 1 } 1 .. $pbs_config->{PBS_JOBS} ;
 my %extra_resources ; # request from a build to schedule a dependency
+
+# work around PUT being received twice
+my %build_done ;
+my $detriggered ;
 
 my $status = sub
 {
@@ -248,7 +254,8 @@ while (my $c = $daemon->accept)
 		{
 		my $path = $rq->uri->path ;
 		
-		Say Debug "Http: server: $server_name - $$, request: " . $rq->method . " $path" if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
+		Say EC "<D>Http: <I><" . $rq->method . '> ' . $daemon->url . "$path<I2>, count: $counter, $server_name - $$"
+			if $pbs_config->{HTTP_DISPLAY_REQUEST} ;
 		
 		if ($rq->method eq 'GET')
 			{
@@ -355,7 +362,7 @@ while (my $c = $daemon->accept)
 			my $parser = HTTP::Request::Params->new({req => $rq}) ;
 			my $parameters = $parser->params() ;
 			
-			'/pbs/stop' eq $path && do { $stop++ } ;
+			'/pbs/stop' eq $path && do { $c->send_status_line ; $stop++ } ;
 			
 			'/pbs/allocate_extra_resource' eq $path
 				&& do
@@ -381,36 +388,6 @@ while (my $c = $daemon->accept)
 					
 					$id = sprintf '%7d', $id ;
 					$status->(_INFO2_ "return: $id - $pid") ;
-					} ;
-			
-			'/pbs/build_done' eq $path
-				&& do
-					{
-					my ($id, $pid, $target, $nodes) = @{$parameters}{qw. id pid target nodes.} ;
-					
-					my $extra_resource ;
-					if(exists $extra_resources{$pid} && 'HASH' eq ref $extra_resources{$pid})
-						{
-						$extra_resource++ ;
-						}
-					else
-						{
-						die ERROR("PBS: Error: returned build resource $id from $pid, wasn't allocated") . "\n" if $resources{$id} ;
-						
-						$resources{$id} = 1 ;
-						}
-					
-					$c->send_status_line ;
-					$c->force_last_request ;
-					$c->close ;
-					
-					#Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid" ;
-					
-					delete $extra_resources{$pid} ;
-					$dependers{$pid}{BUILD_DONE}++ ;
-					
-					$id = sprintf '%7d', $id ;
-					$status->(($extra_resource ? \&_WARNING_ : \&_INFO2_)->("return: $id - $pid")) ;
 					} ;
 			
 			# reuse parallel depend for depending another node
@@ -506,8 +483,10 @@ while (my $c = $daemon->accept)
 					$c->force_last_request ;
 					$c->close ;
 					
-					use constant TARGETS => 6 ;
+					# update md5 in cache and nodes
+					# insert post build nodes, best would be calling the post pbs functions
 					
+					use constant TARGETS => 6 ;
 					Say EC "<I>Build<W>∥ <I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$" ;
 					
 					PBS::PBS::Forked::BuildSubGraph($data) ;
@@ -516,11 +495,49 @@ while (my $c = $daemon->accept)
 			}
 		elsif ($rq->method eq 'PUT')
 			{
-			local @ARGV = () ; # weird, otherwise it ends up in the parsed parameters
+			local @ARGV = () ; # otherwise it ends up in the parsed parameters
 			
 			'/pbs/link'      eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
 			
 			'/pbs/detrigger' eq $path and PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
+			
+			'/pbs/build_done' eq $path
+				&& do
+					{
+					$c->send_status_line ;
+					
+					my $content = thaw $rq->content ; 
+					my ($id, $pid, $target, $nodes, $updates) = @{$content}{qw. id pid target nodes updates.} ;
+					
+					my $used_extra_resource ;
+					
+					if(exists $extra_resources{$pid} && 'HASH' eq ref $extra_resources{$pid})
+						{
+						$used_extra_resource++ ;
+						}
+					else
+						{
+						#die ERROR("PBS: Error: returned build resource $id from $pid, wasn't allocated") . "\n" if $resources{$id} ;
+						
+						$resources{$id} = 1 ;
+						}
+					
+					Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid" ;
+					
+					delete $extra_resources{$pid} ;
+					$dependers{$pid}{BUILD_DONE}++ ;
+					
+					for ($updates->@*)
+						{
+						my ($name, $field, $value) = $_->@* ;
+						#SDT {$field => $value}, $name ;
+						
+						$data->{INSERTED_NODES}{$name}{$field} = $value ;
+						}
+					
+					$id = sprintf '%7d', $id ;
+					$status->(($used_extra_resource ? \&_WARNING_ : \&_INFO2_)->("return: $id - $pid")) ;
+					} ;
 			}
 		
 		$c->force_last_request ;
@@ -536,6 +553,11 @@ while (my $c = $daemon->accept)
 		&& all { $dependers{$_}{BUILD_DONE} } keys %dependers
 		)
 		{
+		my $exception = '' ;
+		my $target = $data->{TARGETS}[0] ;
+		my $node   = $data->{INSERTED_NODES}{$target} ;
+		$data->{WARP}{GENERATOR}->($node, $data->{INSERTED_NODES}, $exception) ;
+		
 		Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
 		}
 	
@@ -546,28 +568,39 @@ while (my $c = $daemon->accept)
 		&& all { $dependers{$_}{IDLE} } keys %dependers
 		)
 		{
-		
 		Say Info "Depend∥ : done, allocated depend resources: $allocated" ;
 		
-		my ($graphs, $nodes, $order, $parallel_pbs_to_run) = 
+		my ($graphs, $nodes, $inserted_nodes, $order, $parallel_pbs_to_run) = 
 			PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, \%dependers) ;
+		
+		$data->{INSERTED_NODES} = $inserted_nodes ;
 		
 		if(keys $parallel_pbs_to_run->%*)
 			{
-			$stop = PBS::PBS::Forked::Build($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, \%dependers) ;
+			my $build = PBS::PBS::Forked::Build($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, \%dependers) ;
 			
-			if($stop)
-				{
-				Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
-				}
-			else
+			if($build)
 				{
 				$state_depending = 0 ;
 				$state_building++ ;
 				}
+			else
+				{
+				my $exception = '' ;
+				my $target  = $data->{TARGETS}[0] ;
+				my $node = $data->{INSERTED_NODES}{$target} ;
+				$data->{WARP}{GENERATOR}->($node, $data->{INSERTED_NODES}, $exception) ;
+				
+				Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
+				}
 			}
 		else
 			{
+			my $exception = '' ;
+			my $target  = $data->{TARGETS}[0] ;
+			my $node = $data->{INSERTED_NODES}{$target} ;
+			$data->{WARP}{GENERATOR}->($node, $data->{INSERTED_NODES}, $exception) ;
+			
 			Shutdown($pbs_config, \%dependers, \$stop, $data->{TIME}) ;
 			}
 		}
@@ -575,7 +608,7 @@ while (my $c = $daemon->accept)
 	last if $stop ;
 	}
 
-Say EC "<D>Http: <I>stop : $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_STOP} ;
+Say EC "<D>Http: <I>stop server: $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_STOP} ;
 
 if(exists $data->{PBS_SERVER})
 	{
@@ -603,7 +636,7 @@ if($pbs_config->{RESOURCE_QUICK_SHUTDOWN})
 	}
 else
 	{
-	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$)  for values %$dependers ;
+	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$) for values %$dependers ;
 	}
 
 PrintInfo sprintf("PBS∥ : shutdown: %0.2f s.\n", tv_interval ($t0, [gettimeofday])) ;

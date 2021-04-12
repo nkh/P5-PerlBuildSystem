@@ -193,9 +193,9 @@ if($run_in_warp_mode)
 		{
 		my $warp_verification_time = tv_interval($t0_warp_check, [gettimeofday]) ;
 		
-		my $info = "nodes: $nodes_in_warp, triggered:$node_mismatch, removed:$number_of_removed_nodes" ;
-		
-		Say Info sprintf("Warp: $info, load time: %0.2f s., check time: %0.2f s.", $warp_load_time, $warp_verification_time) ;
+		Say EC "<I>Warp: nodes: $nodes_in_warp, triggered: $node_mismatch, "
+			. ( $number_of_removed_nodes ? '<W3>' : '' ). "removed: $number_of_removed_nodes"
+			. sprintf('<I2>, load time: %0.2f s., check time: %0.2f s.', $warp_load_time, $warp_verification_time) ;
 		}
 	
 	Say Info "\e[KWarp: Up to date" unless $number_of_removed_nodes || $pbs_config->{QUIET} ;
@@ -217,18 +217,18 @@ $pbs_config->{INTERMEDIATE_WARP_WRITE} =
 		$pbs_config,
 		$node_names, 
 		) ;
-		
+	
 	PrintInfo "\e[K" ;
 	} unless $pbs_config->{NO_PRE_BUILD_WARP} || $run_in_warp_mode ;
 
 my $GenerateWarpFile = 
 	sub
 	{
-	my ($dependency_tree, $exception) = @_ ;
-
+	my ($dependency_tree, $inserted_nodes, $exception) = @_ ;
+	
 	if($exception)
 		{
-		if($@ =~ /^BUILD_FAILED/)
+		if($exception =~ /^BUILD_FAILED/)
 			{
 			# builder failure
 			GenerateWarpFile
@@ -236,7 +236,7 @@ my $GenerateWarpFile =
 				$warp_file,
 				$targets,
 				$dependency_tree,
-				$nodes,
+				$inserted_nodes,
 				$pbs_config,
 				$node_names, 
 				)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
@@ -249,7 +249,7 @@ my $GenerateWarpFile =
 			$warp_file,
 			$targets,
 			$dependency_tree,
-			$nodes,
+			$inserted_nodes,
 			$pbs_config, 
 			$node_names, 
 			)  unless $pbs_config->{NO_POST_BUILD_WARP} ;
@@ -297,18 +297,18 @@ for my $file (sort {($warp_dependents->{$b}{LEVEL} // 0)  <=> ($warp_dependents-
 	
 	if ($pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} )
 		{
-		Say Info "Warp: checking '$file', " . ERROR('removed nodes: ' . scalar(@nodes_triggered))
+		Say EC "\e[K<W3>Warp: removing <I3>$file<I2>, removed nodes: " . scalar(@nodes_triggered)
 			if @nodes_triggered ;
 		}
 	elsif($pbs_config->{DISPLAY_WARP_CHECKED_NODES})
 		{
 		if (@nodes_triggered)
 			{
-			Say Info "Warp: checking '$file', " . ERROR('removed nodes: ' . scalar(@nodes_triggered)) ;
+			Say EC "\e[K<W3>Warp: removing <I3>$file<I2>, removed nodes: " . scalar(@nodes_triggered) ;
 			}
 		else
 			{
-			Say Info "Warp: checking '$file', OK" ;
+			Say Info "Warp: OK: $file" ;
 			}
 		}
 	
@@ -461,12 +461,17 @@ for my $node (@$nodes_to_check)
 		if (($nodes->{$node}{"__MD5"} // '' ) eq "invalid md5")
 			{
 			$remove_this_node++ ;
-			push @reasons, "signature = '" . ($nodes->{$node}{"__MD5"} // '') . "'" ;
+			push @reasons, "signature = " . ($nodes->{$node}{"__MD5"} // '') ;
+			}
+		if (! -e $nodes->{$node}{__BUILD_NAME})
+			{
+			$remove_this_node++ ;
+			push @reasons, "not found" ;
 			}
 		elsif($IsFileModified->($pbs_config, $nodes->{$node}{__BUILD_NAME}, $nodes->{$node}{__MD5}))
 			{
 			$remove_this_node++ ;
-			push @reasons, 'modified' ;
+			push @reasons, 'digest' ;
 			}
 		}
 	
@@ -482,11 +487,11 @@ for my $node (@$nodes_to_check)
 		{
 		if ($remove_this_node)
 			{
-			Say Info "\e[KWarp: removing: " . INFO3($node) . INFO2(" [" . join(' ,', @reasons) . "]") ;
+			Say EC "\e[K<W3>Warp: removing <I3>$node<I2> [" . join(' ,', @reasons) . "]" ;
 			}
 		else
 			{
-			Say Info "\e[KWarp: OK: " . INFO3($node) unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
+			Say EC "\e[K<I>Warp: OK: $node" unless $pbs_config->{DISPLAY_WARP_CHECKED_NODES_FAIL_ONLY} ;
 			}
 		}
 	
@@ -538,11 +543,7 @@ sub GenerateWarpFile
 my ($warp_file, $targets, $dependency_tree, $inserted_nodes, $pbs_config, $node_names, $warp_message) = @_ ;
 $warp_message //='' ;
 
-unless($pbs_config->{DO_BUILD})
-	{
-	#Say Warning 'Warp: no generation, nothing built' ;
-	return ;
-	}
+return unless $pbs_config->{DO_BUILD} ;
 
 my $warp_configuration = PBS::Warp::GetWarpConfiguration($pbs_config) ;
 
@@ -569,7 +570,7 @@ my $number_of_nodes_in_the_dependency_tree = keys %$nodes ;
 open(WARP, ">", $warp_file) or die qq[Can't open $warp_file: $!] ;
 print WARP PBS::Log::GetHeader('Warp', $pbs_config) ;
 
-my $js = $pbs_config->{WARP_HUMAN_FORMAT} ? JSON::XS->new->pretty(1) : JSON::XS->new ;
+my $js = $pbs_config->{WARP_HUMAN_FORMAT} ? JSON::XS->new->canonical->pretty(1) : JSON::XS->new ;
 
 print WARP '$global_pbs_config = decode_json qq{' . $js->encode( $global_pbs_config ) . "} ;\n\n" ;
 print WARP '$nodes = decode_json qq{' . $js->encode( $nodes ) . "} ;\n\n" ;
@@ -587,11 +588,8 @@ print WARP 'return $nodes, $node_names, $global_pbs_config, $warp_dependents,
 
 close(WARP) ;
 
-if($pbs_config->{DISPLAY_WARP_TIME})
-	{
-	my $warp_generation_time = tv_interval($t0_warp_generate, [gettimeofday]) ;
-	Say Info sprintf("Warp: time: %0.2f s.", $warp_generation_time) ;
-	}
+Say Info sprintf "Warp: time: %0.2f s.", tv_interval($t0_warp_generate, [gettimeofday])
+	if $pbs_config->{DISPLAY_WARP_TIME} ;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------

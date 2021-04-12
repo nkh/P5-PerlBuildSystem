@@ -245,7 +245,7 @@ if(defined $file)
 	
 	if($use_pager)
 		{
-		open my $out, "| $ENV{PAGER}" or die "Can't redirect to system pager: $!\n";
+		open my $out, '|', $ENV{PAGER} or die "Can't redirect to system pager: $!\n";
 		print $out "In file '$file':\n" ;
 		
 		Pod::Text->new (alt => 1, sentence => 0, width => 78)->parse_from_filehandle($fh, $out) ;
@@ -319,7 +319,7 @@ if(defined $selected_entry)
 	
 	if($use_pager)
 		{
-		open my $out, "| $ENV{PAGER}" or die "Can't redirect to system pager$!\n";
+		open my $out, '|', $ENV{PAGER} or die "Can't redirect to system pager$!\n";
 		print $out "In file '$file':\n" ;
 		
 		Pod::Text->new (alt => 1, sentence => 0, width => 78)->parse_from_filehandle($fh, $out) ;

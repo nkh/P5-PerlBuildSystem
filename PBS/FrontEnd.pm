@@ -92,12 +92,6 @@ if($pbs_config->{GET_OPTIONS_LIST})
 	return(1) ;
 	}
 
-if($pbs_config->{GENERATE_BASH_COMPLETION_SCRIPT})
-	{
-	PBS::PBSConfigSwitches::GenerateBashCompletionScript() ;
-	return(1) ;
-	}
-
 if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
 	{
 	PrintWarning "PBS: warning --check_only_terminal_nodes is set.\n" ;
@@ -421,7 +415,7 @@ my $exception = $@ ;
 return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date"}, $nodes, 'up to date', [] 
 	unless $removed_nodes ;
 
-$GenerateWarpFile->($dependency_tree, $exception) ;
+$GenerateWarpFile->($dependency_tree, $inserted_nodes, $exception) ;
 
 # parallel pbs start nodes are tagged and trigger
 # the target nodes go through StartPbs, and warp checking, instead for Subpbs

@@ -74,7 +74,7 @@ my $skip_build_text = '' ;
 if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIES_AT_BUILD_TIME})
 	{
 	my($why, $reasons, $number_of_differences) ;
-
+	
 	if (exists $node->{__VIRTUAL})
 		{
 		# virtual node have no digests so we can't check it
@@ -87,14 +87,14 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 	else
 		{
 		($node_needs_rebuild, $reasons, $number_of_differences) = PBS::Digest::IsNodeDigestDifferent($node, $inserted_nodes) ;
-
+		
 		$why = "\t\tCheck: digest: " . join ("\n\t\tdigest: ", @$reasons) . "\n" if $node_needs_rebuild ;
 		}
-
+	
 	if(1 == $number_of_differences && ($reasons->[0] =~ /__DEPENDING_PBSFILE/ || $reasons->[0] =~ /__VIRTUAL/))
 		{
 		$node_needs_rebuild = 0 ;
-
+		
 		my @evaluated_commands 
 			= RunRuleBuilder
 				(
@@ -111,11 +111,11 @@ if($rule_used_to_build && $node_needs_rebuild && $pbs_config->{CHECK_DEPENDENCIE
 		
 		# compare with previous run commands
 		my $digest_file_name = PBS::Digest::GetDigestFileName($node) ;
-
+		
 		if(-e $digest_file_name)
 			{
 			my ($digest, $sources, $build_ENV, $run_commands, $pbs_digest) ;
-
+			
 			($digest, $sources, $build_ENV, $run_commands, $pbs_digest) = do $digest_file_name ;
 			
 			if('ARRAY' eq ref $run_commands)
@@ -205,11 +205,11 @@ if($node_needs_rebuild || !$pbs_config->{HIDE_SKIPPED_BUILDS})
 	else
 		{
 		PrintNoColor PBS::Information::GetNodeHeader($node, $pbs_config) if $pbs_config->{BUILD_DISPLAY_RESULT} ;
-
+		
 		$PBS::Shell::silent_commands = 1 ;
 		$PBS::Shell::silent_commands_output = 1 ;
 		}
-
+	
 	PrintWarning $skip_build_text if $skip_build_text ne q{} ;
 	}
 
@@ -229,7 +229,7 @@ if($node_needs_rebuild)
 				return (BUILD_FAILED, "'$build_name' error: $error.") ;
 				}
 			}
-
+		
 		($build_result, $build_message) 
 			= RunRuleBuilder
 				(
@@ -253,7 +253,7 @@ if($node_needs_rebuild)
 		
 		($build_result, $build_message) = (BUILD_FAILED, $reason) ;
 		}
-
+	
 	($build_result, $build_message) = RunPostBuildCommands($build_result, $build_message, $pbs_config, $node, $dependencies, $triggered_dependencies, $inserted_nodes) ;
 	}
 else
@@ -282,9 +282,9 @@ if($build_result == BUILD_SUCCESS)
 		{
 		PBS::Digest::FlushMd5Cache($build_name) ;
 		my $current_md5 = GetFileMD5($build_name) ;
-
+		
 		$node->{__MD5} = $current_md5 ;
-
+		
 		if( $current_md5 ne "invalid md5")
 			{
 			$node->{__MD5} = $current_md5 ;
