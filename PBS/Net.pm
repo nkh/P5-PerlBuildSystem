@@ -151,7 +151,7 @@ unless ($removed_nodes)
 	
 	use constant BUILD_SUCCESS => 1 ;
 	
-	return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date"}, $nodes, 'up to date', [] 
+	return BUILD_SUCCESS, "Warp: up to date", {READ_ME => "up to date"}, $nodes, 'up to date', [] 
 	}
 
 my $pid = fork() ;
@@ -228,16 +228,15 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	{
 	my $glyph = ' ' . join'', map { $resources{$_} ? '◼' : ' ' } 1 .. $pbs_config->{PBS_JOBS} ;
 
-	Say Debug "Depend∥ : " . $_[0]
-			. _INFO2_
-				  ', dependers: ' . scalar( keys %dependers)
-				. ', idling: '    . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers)
-				. ', reused: '    . $reused
-				. ', leases: '    . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
-				. $glyph
-				. ', leased: '    . $allocated
-				. ', E-leases: '  . scalar( keys  %extra_resources)
-				. ', used E-leased: ' . $used_e_leases
+	Say EC "<I>Depend∥ : " . $_[0]
+		. '<I2>, dependers: '. scalar( keys %dependers)
+		. ', idling: '       . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers)
+		. ', reused: '       . $reused
+		. ', leases: '       . scalar( grep { $_ } values %resources) . '/' . $pbs_config->{PBS_JOBS}
+		. "<W3>$glyph<I2>"
+		. ', leased: '       . $allocated
+		. ', E-leases: '     . scalar( keys  %extra_resources)
+		. ', used E-leased: '. $used_e_leases
 	}
 } ; 
 
@@ -497,9 +496,9 @@ while (my $c = $daemon->accept)
 			{
 			local @ARGV = () ; # otherwise it ends up in the parsed parameters
 			
-			'/pbs/link'      eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
+			'/pbs/link'       eq $path and PBS::PBS::Forked::Link($pbs_config, $data, $rq->content ) ;
 			
-			'/pbs/detrigger' eq $path and PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
+			'/pbs/detrigger'  eq $path and PBS::PBS::Forked::Detrigger($pbs_config, $data, $rq->content) ;
 			
 			'/pbs/build_done' eq $path
 				&& do
@@ -522,7 +521,8 @@ while (my $c = $daemon->accept)
 						$resources{$id} = 1 ;
 						}
 					
-					Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid" ;
+					Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid"
+						unless $pbs_config->{PARALLEL_NO_BUILD_RESULT} ;
 					
 					delete $extra_resources{$pid} ;
 					$dependers{$pid}{BUILD_DONE}++ ;

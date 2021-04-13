@@ -199,6 +199,7 @@ our $indentation_depth = 0 ;
 our $display_error_context  = 0 ;
 our $no_indentation = 0 ;
 our $output_from_where = 0 ;
+our $clock_label = 0 ;
 
 #-------------------------------------------------------------------------------
 
@@ -339,7 +340,8 @@ my $reset = $cc{$cd}{reset} // '' ;
 my ($ends_with_newline) = $data =~ /(\n+(?:\Q$reset\E)?)$/ ;
 $ends_with_newline //= '' ;
 
-$output_info_label = _INFO2_(sprintf ' %05.2f - ', tv_interval($t0, [gettimeofday])) ;
+$output_info_label = _INFO2_(sprintf ' %06.2f - ', tv_interval($t0, [gettimeofday]))
+	if $clock_label ;
 
 my $lines =  join
 		(

@@ -53,8 +53,6 @@ Print EC "\e[K<I>Check: $checked_dependency_tree<I2> \\<$$>\r", 0
 my $cycle = CheckCycle($node, $inserted_nodes, $pbs_config, \@cyclic_trail) ; 
 return $cycle if defined $cycle ;
 
-PrintInfo "\e[K\e[K" ; # bleah!
-
 if(NodeIsGenerated($node) && ! exists $node->{__PARALLEL_DEPEND} )
 	{
 	# warn if node isn't depended or has no dependencies

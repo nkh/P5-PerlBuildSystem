@@ -38,7 +38,7 @@ sub Pbs
 my $t0 = [gettimeofday];
 my (%pbs_arguments) = @_ ;
 
-if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_get_completion')
+if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	{
 	my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 	
@@ -92,32 +92,20 @@ if($pbs_config->{GET_OPTIONS_LIST})
 	return(1) ;
 	}
 
-if($pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES})
-	{
-	PrintWarning "PBS: warning --check_only_terminal_nodes is set.\n" ;
-	}
+Say Warning 'PBS: warning --check_only_terminal_nodes is set' if $pbs_config->{DEBUG_CHECK_ONLY_TERMINAL_NODES} ;
 
 # override with callers pbs_config
-if(exists $pbs_arguments{PBS_CONFIG})
-	{
-	$pbs_config = {%$pbs_config, %{$pbs_arguments{PBS_CONFIG}} } ;
-	}
+$pbs_config = {%$pbs_config, %{$pbs_arguments{PBS_CONFIG}} } if exists $pbs_arguments{PBS_CONFIG} ;
 
 $pbs_config->{PBSFILE_CONTENT} = $pbs_arguments{PBSFILE_CONTENT} if exists $pbs_arguments{PBSFILE_CONTENT} ;
 
-my $display_help              = $pbs_config->{DISPLAY_HELP} ;
-my $display_switch_help       = $pbs_config->{DISPLAY_SWITCH_HELP} ;
-my $display_help_narrow       = $pbs_config->{DISPLAY_HELP_NARROW_DISPLAY} || 0 ;
-my $display_version           = $pbs_config->{DISPLAY_VERSION} ;
-my $display_pod_documentation = $pbs_config->{DISPLAY_POD_DOCUMENTATION} ;
-
-if($display_help || $display_switch_help || $display_version || defined $display_pod_documentation)
+if($pbs_config->{DISPLAY_HELP} || $pbs_config->{DISPLAY_VERSION} || $pbs_config->{DISPLAY_POD_DOCUMENTATION})
 	{
-	PBS::PBSConfigSwitches::DisplayHelp($display_help_narrow) if $display_help ;
-	PBS::PBSConfigSwitches::DisplaySwitchHelp($display_switch_help) if $display_switch_help ;
-	DisplayVersion() if $display_version ;
-	
-	PBS::Documentation::DisplayPodDocumentation($pbs_config, $display_pod_documentation) if defined $display_pod_documentation ;
+	my $display_help_narrow = $pbs_config->{DISPLAY_HELP_NARROW_DISPLAY} || 0 ;
+
+	DisplayVersion()                                            if $pbs_config->{DISPLAY_VERSION} ;
+	PBS::PBSConfigSwitches::DisplayHelp($display_help_narrow)   if $pbs_config->{DISPLAY_HELP} ;
+	PBS::Documentation::DisplayPodDocumentation($pbs_config, 1) if $pbs_config->{DISPLAY_POD_DOCUMENTATION} ;
 	
 	return(1) ;
 	}
@@ -412,7 +400,7 @@ eval
 
 my $exception = $@ ;
 
-return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date"}, $nodes, 'up to date', [] 
+return BUILD_SUCCESS, "Warp: up to date", {READ_ME => "up to date"}, $nodes, 'up to date', [] 
 	unless $removed_nodes ;
 
 $GenerateWarpFile->($dependency_tree, $inserted_nodes, $exception) ;

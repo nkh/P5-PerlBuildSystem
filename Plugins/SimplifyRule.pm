@@ -17,7 +17,7 @@ use PBS::Config ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'display_simplified_rule_transformation',
+	'show_rule_transformation',
 	"Display debugging data about simplified rule transformation to pure perl rule.",
 	'',
 	'DISPLAY_SIMPLIFIED_RULE_TRANSFORMATION',

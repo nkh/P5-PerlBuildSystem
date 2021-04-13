@@ -42,27 +42,27 @@ use List::Util qw(any) ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'tnto|tree_node_triggered_only',
+	'tree_triggered_only|tnto',
 	"Display only triggering nodes.",
 	'',
 	'DISPLAY_ONLY_TRIGGERING_NODES',
 	
-	'tnonh',
+	'tree_no_header',
 	"Do not display header files in the tree dump.",
 	'',
 	'NO_HEADER_FILES_DISPLAY',
 	
-	'tnonr|tree_no_nodes_matching_regex=s',
-	"Removes files matching the passed regex from the tree dump.",
+	'tree_not_matching=s',
+	"Removes nodes matching the passed regex from the tree dump.",
 	'',
 	'@DISPLAY_FILTER_REGEXES' ,
 
-	'tww|tree_wrap_width=i',
+	'tree_wrap_width=i',
 	"Set the wrap width.",
 	'',
 	'WRAP_WIDTH' ,
 
-	'ttcl|tree_color_levels',
+	'tree_color_levels',
 	"Color the tree glyphs per level.",
 	'',
 	'TREE_COLOR_LEVELS' ,

@@ -512,17 +512,7 @@ for my $plugin_path (@{$pbs_config->{PLUGIN_PATH}})
 	$plugin_path = CollapsePath($plugin_path ) ;
 	}
 	
-unless($pbs_config->{BUILD_DIRECTORY})
-	{
-	if($pbs_config->{MANDATORY_BUILD_DIRECTORY})
-		{
-		return(0, "No Build directory given and --mandatory_build_directory set.\n") ;
-		}
-	else
-		{
-		$pbs_config->{BUILD_DIRECTORY} = $cwd . "/_out_" . GetUserName() ;
-		}
-	}
+$pbs_config->{BUILD_DIRECTORY} //= $cwd . "/_out_" . GetUserName() ;
 
 if(defined $pbs_config->{LIB_PATH})
 	{

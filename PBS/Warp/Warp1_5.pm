@@ -41,9 +41,9 @@ if(@{$pbs_config->{EXTERNAL_CHECKERS}})
 	
 	if(0 == keys %external_checked)
 		{
-		Say Info "\e[KWarp: Up to date" unless $pbs_config->{QUIET} ;
+		Say Info "\e[KWarp:up to date" unless $pbs_config->{QUIET} ;
 		
-		return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, 0 ;
+		return BUILD_SUCCESS, "Warp: up to date", {READ_ME => "up to date warp doesn't have any tree"}, 0 ;
 		}
 	}
 
@@ -134,8 +134,8 @@ if($run_in_warp_mode)
 					) unless $pbs_config->{QUIET} ;
 			}
 			
-		Say Info "\e[KWarp: Up to date" unless $pbs_config->{QUIET} ;
-		return BUILD_SUCCESS, "Warp: Up to date", {READ_ME => "Up to date warp doesn't have any tree"}, $nodes ;
+		Say Info "\e[KWarp: up to date" unless $pbs_config->{QUIET} ;
+		return BUILD_SUCCESS, "Warp: up to date", {READ_ME => "up to date warp doesn't have any tree"}, $nodes ;
 		}
 	
 	$IsFileModified //= \&PBS::Digest::IsFileModified ;
@@ -198,7 +198,7 @@ if($run_in_warp_mode)
 			. sprintf('<I2>, load time: %0.2f s., check time: %0.2f s.', $warp_load_time, $warp_verification_time) ;
 		}
 	
-	Say Info "\e[KWarp: Up to date" unless $number_of_removed_nodes || $pbs_config->{QUIET} ;
+	Say Info "\e[KWarp: up to date" unless $number_of_removed_nodes || $pbs_config->{QUIET} ;
 	}
 
 $pbs_config->{IN_WARP} = $run_in_warp_mode ; # let rest of pbs know that node attributes are stripped

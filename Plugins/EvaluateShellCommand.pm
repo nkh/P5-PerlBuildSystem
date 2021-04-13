@@ -46,7 +46,7 @@ our $evaluate_shell_command_verbose ;
 
 PBS::PBSConfigSwitches::RegisterFlagsAndHelp
 	(
-	'evaluate_shell_command_verbose',
+	'evaluate_shell_verbose',
 	"Will display the transformation this plugin does.",
 	'',
 	'EVALUATE_SHELL_COMMAND_VERBOSE',
