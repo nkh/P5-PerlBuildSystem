@@ -45,7 +45,7 @@ if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	ParseSwitchesAndLoadPlugins($options, $pbs_config, []) ; #load plugins options
 	
 	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options
-	PBS::PBSConfigSwitches::GetCompletion($options) ;
+	PBS::PBSConfigSwitches::GetCompletion($pbs_config, $options) ;
 	
 	return 1 ;
 	}
@@ -548,6 +548,25 @@ else
 	$parse_message .= "PBS: using libs from: " . (join ', ', @{$pbs_config->{LIB_PATH}}) . "\n" ;
 	}
 	
+my $distribution_guide_path = $path . 'PBSLib/Guides' ;
+if(!exists $pbs_config->{GUIDE_PATH} || ! @{$pbs_config->{GUIDE_PATH}})
+	{
+	if(-e $distribution_guide_path)
+		{
+		$pbs_config->{GUIDE_PATH} = [$distribution_guide_path] ;
+		}
+	else
+		{
+		Say Warning "PBS: no guide path set and couldn't found any in the distribution.\n" ;
+		}
+	}
+else
+	{
+	push @{$pbs_config->{GUIDE_PATH}}, $distribution_guide_path ;
+	
+	$parse_message .= "PBS: using guides from: " . (join ', ', @{$pbs_config->{GUIDE_PATH}}) . "\n" ;
+	}
+
 # load the plugins
 PBS::Plugin::ScanForPlugins($pbs_config, $pbs_config->{PLUGIN_PATH}) ; # plugins might add switches
 

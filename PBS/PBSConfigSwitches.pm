@@ -18,6 +18,7 @@ use Sort::Naturally ;
 use File::Slurp ;
 
 use PBS::Constants ;
+use PBS::Options::Complete ;
 use PBS::Output ;
 
 #-------------------------------------------------------------------------------
@@ -348,182 +349,6 @@ else
 
 #-------------------------------------------------------------------------------
 
-use Term::Bash::Completion::Generator ;
-
-#-------------------------------------------------------------------------------
-
-sub GetCompletion
-{
-my (undef, $command_name, $word_to_complete, $previous_arguments) = @ARGV ;
-my ($options) = @_ ;
-
-print Complete($options, $word_to_complete) ;
-}
-
-sub Complete
-{
-my ($options, $word_to_complete) = @_ ;
-
-if($word_to_complete eq '*' and 0 == system 'fzf --version > /dev/null')
-	{
-	my @matches = GetOptionsElements() ;
-	
-	my (@short, @long, @options) ;
-	
-	for (@matches)
-		{
-		my ($option_type, $help) = @{$_}[0..2] ;
-		
-		my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
-		$type //= '' ;
-		
-		my ($long, $short) = split(/\|/, $option, 2) ;
-		$short //= '' ;
-		
-		push @short, length($short) ;
-		push @long , length($long) ;
-		
-		push @options, [$long, $short, $type, $help] ; 
-		}
-	
-	my $max_short = max(@short) + 2 ;
-	my $max_long  = max(@long);
-	
-	open my $fzf_in, '>', 'pbs_fzf_options' ;
-	binmode $fzf_in ;
-	
-	for (@options)
-		{
-		my ($long, $short, $type, $help) = @{$_} ;
-		
-		print $fzf_in 
-			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type)
-				."<I>$help\n") ;
-		}
-	
-	my @fzf = qx"cat pbs_fzf_options | fzf --ansi --reverse -m" ;
-	
-	if(0 == system 'tmux -V > /dev/null')
-		{
-		my $options =  join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf ;
-		qx"tmux send-keys -- C-H '$options '" unless $options eq '' ;
-		
-		return ;
-		}
-	else
-		{
-		return join "\n", ( map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf) ;
-		}
-	}
-
-return () unless $word_to_complete =~ /^-?-?[a-zA-Z0-9_+-?]+/ ;
-
-if($word_to_complete !~ /^-?-?\s?$/)
-	{
-	my (@slice, @options) ;
-	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
-	
-	my ($names, $option_tuples) = Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
-	
-	my $aliases = AliasOptions([]) ;
-	push @$names, keys %$aliases ;
-	
-	@$names = sort @$names ;
-	
-	$word_to_complete =~ s/(\+)(\d+)$// ;
-	my $point = $2 ;
-	
-	my $reduce  = $word_to_complete =~ s/-$// ;
-	my $expand  = $word_to_complete =~ s/\+$// ;
-	
-	use Tree::Trie ;
-	my $trie = new Tree::Trie ;
-	$trie->add( map { ("-" . $_) , ("--" . $_) }  @{$names } ) ;
-	
-	my @matches = nsort $trie->lookup($word_to_complete) ;
-	
-	if(@matches)
-		{
-		if($reduce || $expand)
-			{
-			my $munged ;
-			
-			for  my $tuple (@$option_tuples)
-				{
-				if (any { $word_to_complete =~ /^-*$_$/ } @$tuple)
-					{
-					$munged = $reduce ?  $tuple->[0] : defined $tuple->[1] ? $tuple->[1] : $tuple->[0] ;
-					last ;
-					}
-				}
-			
-			defined $munged ? "-$munged\n": "-$matches[0]\n" ;
-			}
-		else
-			{
-			@matches = $matches[$point - 1] if $point and defined $matches[$point - 1] ;
-			
-			if(@matches < 2)
-				{
-				join("\n",  @matches) . "\n" ;
-				}
-			else
-				{
-				my $counter = 0 ;
-				join("\n", map { $counter++ ; "$_₊" . subscript($counter)} @matches) . "\n" ;
-				}
-			}
-		}
-	elsif($word_to_complete =~ /[^\?\-\+]+/)
-		{
-		if($word_to_complete =~ /\?$/)
-			{
-			my ($whole_option, $word) = $word_to_complete =~ /^(-*)(.+?)\?$/ ;
-			
-			my $matcher = $whole_option eq '' ? $word : "^$word" ;
-			
-			@matches = grep { $_ =~ $matcher } @$names ;
-			
-			if(@matches)
-				{
-				Print Info "\n\n" ;
-				
-				DisplaySwitchesHelp(@matches) ;
-				
-				my $c = 0 ;
-				@matches > 1 ? join("\n", map { $c++ ; "--$_₊" . subscript($c) } nsort @matches) . "\n" : "\n​\n" ;
-				}
-			else
-				{
-				my $c = 0 ;
-				join("\n", map { $c++ ; "--$_₊" . subscript($c)} nsort grep { $_ =~ $matcher } @$names) . "\n" ;
-				}
-			}
-		else
-			{
-			my $word = $word_to_complete =~ s/^-*//r ;
-			
-			my @matches = nsort grep { /$word/ } @$names ;
-			   @matches = $matches[$point - 1] if $point and defined $matches[$point - 1] ;
-			
-			if(@matches < 2)
-				{
-				join("\n", map { "--$_" } @matches) . "\n" ;
-				}
-			else
-				{
-				my $c = 0 ;
-				join("\n", map { $c++ ; "--$_₊" . subscript($c)} @matches) . "\n" ;
-				}
-			}
-		}
-	}
-}
-
-sub subscript { join '', map { qw / ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ /[$_] } split '', $_[0] ; } 
-
-#-------------------------------------------------------------------------------
-
 sub GetOptionsList
 {
 my ($options) = GetOptions() ;
@@ -532,6 +357,16 @@ my (@slice, @switches) ;
 push @switches, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
 
 print join( "\n", map { ("-" . $_) } @{ (Term::Bash::Completion::Generator::de_getop_ify_list(\@switches))[0]} ) . "\n" ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetCompletion
+{
+my (undef, $command_name, $word_to_complete, $previous_arguments) = @ARGV ;
+my ($pbs_config, $options) = @_ ;
+
+print PBS::Options::Complete::Complete($pbs_config, $options, [GetOptionsElements()], $word_to_complete, \&AliasOptions, \&DisplaySwitchesHelp) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -622,11 +457,6 @@ sub ParallelOptions
 my ($c) = @_ ;
 $c->{JOBS_DIE_ON_ERROR} //= 0 ;
 
-'distribute=s',                                 
-	'Define where to distribute the build.',
-	'The file must return a list of hosts in the format defined by the default distributor or define a distributor.',
-	 \$c->{DISTRIBUTE},
-
 'jobs|j=i',                     'Maximum number of build commands run in parallel.',                     '', \$c->{JOBS},
 'jobs_parallel|jp=i',           'Maximum number of dependers run in parallel.',                          '', \$c->{PBS_JOBS},
 'jobs_check|jc=i',              'Maximum number of checker run in parallel.',                            '', \$c->{CHECK_JOBS},
@@ -634,7 +464,7 @@ $c->{JOBS_DIE_ON_ERROR} //= 0 ;
 'jobs_running|jr',              'PBS will display which nodes are under build.',                         '', \$c->{DISPLAY_JOBS_RUNNING},
 'jobs_no_tally|jnt',            'will not display nodes tally.',                                         '', \$c->{DISPLAY_JOBS_NO_TALLY},
 'jobs_die_on_errors|jdoe=i',    '0 (default) finish running jobs. 1 die immediatly. 2 no stop.',         '', \$c->{JOBS_DIE_ON_ERROR},
-
+'jobs_distribute=s',            'File defining the build distribution.',                                 '', \$c->{DISTRIBUTE},
 'parallel_processes|pdp=i',     'Maximum number of depend processes.',                                   '', \$c->{DEPEND_PROCESSES},
 'parallel_log|pl',              'Creates a log of the parallel depend.',                                 '', \$c->{LOG_PARALLEL_DEPEND},
 'parallel_log_display|pld',     'Display the parallel depend log when depending ends.',                  '', \$c->{DISPLAY_LOG_PARALLEL_DEPEND},
@@ -658,23 +488,23 @@ $c->{JOBS_DIE_ON_ERROR} //= 0 ;
 sub HelpOptions
 {
 my ($c) = @_ ;
+$c->{GUIDE_PATH} //= [] ;
 
-my $s = EC "\n\tHelp you define, with <W>colors<I> or dynamic data, ie: time: " . time ;
+'version|v',           'Displays Pbs version.',                                 '', \$c->{DISPLAY_VERSION},
+'help|h',              'Displays this help.',                                   '', \$c->{DISPLAY_HELP},
+'help_narrow_display', 'Writes flags and documentation on separate lines.',     '', \$c->{DISPLAY_HELP_NARROW_DISPLAY},
+'pod_extract',         'Extracts the pod contained in the Pbsfile.',            '', \$c->{PBS2POD},
+'pod_raw',             '-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '', \$c->{RAW_POD},
+'pod_interactive:s',   'Interactive PBS documentation display and search.',     '', \$c->{DISPLAY_POD_DOCUMENTATION},
+'options_completion',  'return completion list.',                               '', \$c->{GET_BASH_COMPLETION},
+'options_list',        'return completion list on stdout.',                     '', \$c->{GET_OPTIONS_LIST},
+'wizard:s',            'Starts a wizard.',                                      '', \$c->{WIZARD},
+'wizard_info',         'Shows Informatin about the found wizards.',             '', \$c->{DISPLAY_WIZARD_INFO},
+'wizard_help',         'Tell the choosen wizards to show help.',                '', \$c->{DISPLAY_WIZARD_HELP},
 
-'version|v',           'Displays Pbs version.',                                          '', \$c->{DISPLAY_VERSION},
-'help|h',              'Displays this help.',                                            '', \$c->{DISPLAY_HELP},
-'help_narrow_display', 'Writes the flag name and its documentation  on separate lines.', '', \$c->{DISPLAY_HELP_NARROW_DISPLAY},
-'how_to_example',      'option can display any information during completion',           $s, \my $ignore,
-'pod_extract',         'Extracts the pod contained in the Pbsfile.',                     '', \$c->{PBS2POD},
-'pod_raw',             '-pbsfile_pod or -pbs2pod is dumped in raw pod format.',          '', \$c->{RAW_POD},
-'pod_interactive:s',   'Interactive PBS documentation display and search.',              '', \$c->{DISPLAY_POD_DOCUMENTATION},
-'options_completion',  'return completion list.',                                        '', \$c->{GET_BASH_COMPLETION},
-'options_list',        'return completion list on stdout.',                              '', \$c->{GET_OPTIONS_LIST},
-'wizard:s',            'Starts a wizard.',                                               '', \$c->{WIZARD},
-'wizard_info',         'Shows Informatin about the found wizards.',                      '', \$c->{DISPLAY_WIZARD_INFO},
-'wizard_help',         'Tell the choosen wizards to show help.',                         '', \$c->{DISPLAY_WIZARD_HELP},
+'guide_path=s',        "Directories containing guides.",                        '', $c->{GUIDE_PATH},
 
-'help_user|hu',        "Displays a user defined help.",                             <<'EOH', \$c->{DISPLAY_PBSFILE_POD},
+'help_user|hu',        "Displays a user defined help.",                    <<'EOH', \$c->{DISPLAY_PBSFILE_POD},
 =for PBS =head1 SOME TITLE
 
 this is extracted by the --pbsfile_pod command
@@ -738,7 +568,7 @@ $c->{RULE_NAMESPACES} //= [] ;
 
 'rule_all|ra',                 'Display all the rules.',                                          '', \$c->{DISPLAY_ALL_RULES},
 'rule_definition|rd',          '(DF) Display the definition of each registrated rule.',           '', \$c->{DEBUG_DISPLAY_RULE_DEFINITION},
-'rule_inactive|ri',            'Display rules present i the åbsfile but tagged as NON_ACTIVE.',   '', \$c->{DISPLAY_INACTIVE_RULES},
+'rule_inactive|ri',            'Display rules present in the pbsfile but tagged as NON_ACTIVE.',  '', \$c->{DISPLAY_INACTIVE_RULES},
 'rule_non_matching|rnm',       'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_NON_MATCHING_RULES},
 'rule_no_scope|rns',           'Disable rule scope.',                                             '', \$c->{RULE_NO_SCOPE},
 'rule_run_once|rro',           'Rules run only once except if they are tagged as MULTI',          '', \$c->{RULE_RUN_ONCE},
@@ -934,12 +764,9 @@ EOT
 'force_build|fb',       'Force build if a debug option was given.',               '', \$c->{FORCE_BUILD},
 'no_stop',              'Continues building in case of errror.',                  '', \$c->{NO_STOP},
 
-'path_lib=s',           "Pbs libs. Multiple directories can be given.",           '', $c->{LIB_PATH},
-'path_lib_display',     "Displays PBS lib paths.",                                '', \$c->{DISPLAY_LIB_PATH},
-'path_no_warning',      "no warning if using PBS default libs and plugins.",      '', \$c->{NO_DEFAULT_PATH_WARNING},
-
-'pbsuse',               "displays which pbs module is loaded by a 'PbsUse'.",     '', \$c->{DISPLAY_PBSUSE},
-'pbsuse_verbose',       "more verbose --display_pbsuse'",                         '', \$c->{DISPLAY_PBSUSE_VERBOSE},
+'lib_path=s',           "Pbs libs. Multiple directories can be given.",           '', $c->{LIB_PATH},
+'lib_path_display',     "Displays PBS lib paths.",                                '', \$c->{DISPLAY_LIB_PATH},
+'lib_path_no_warning',      "no warning if using PBS default libs and plugins.",      '', \$c->{NO_DEFAULT_PATH_WARNING},
 
 'source_directories',   'display all the source directories.',                    '', \$c->{DISPLAY_SOURCE_DIRECTORIES},
 'build_directory=s',    '',                                                       '', \$c->{BUILD_DIRECTORY},
@@ -952,7 +779,10 @@ EOT
 'pbsfile_loading',      'Display which pbsfile is loaded.',                       '', \$c->{DISPLAY_PBSFILE_LOADING},
 'pbsfile_load_time',    'Display the load time for a pbsfile.',                   '', \$c->{DISPLAY_PBSFILE_LOAD_TIME},
 'pbsfile_origin',       'Display original Pbsfile source.',                       '', \$c->{DISPLAY_PBSFILE_ORIGINAL_SOURCE},
+'pbsfile_use',          "displays which file is loaded by a 'PbsUse'.",           '', \$c->{DISPLAY_PBSUSE},
+'pbsfile_use_verbose',  "more verbose --pbsfile_use'",                            '', \$c->{DISPLAY_PBSUSE_VERBOSE},
 'pbsfile_used',         'Display Modified Pbsfile source.',                       '', \$c->{DISPLAY_PBSFILE_SOURCE},
+
 
 'error_context',        'Display the error line.',                                '', \$PBS::Output::display_error_context,
 'no_perl_context',      'Do not parse the perl code to find the error context.',  '', \$c->{DISPLAY_NO_PERL_CONTEXT},

@@ -8,68 +8,69 @@ my %all_modules ;
 my @split_modules ;
 
 my @pm_files = qw(
-PBS/Build.pm
-PBS/Build/NodeBuilder.pm
-PBS/Build/Forked.pm
+
 PBS/Build/ForkedNodeBuilder.pm
+PBS/Build/Forked.pm
+PBS/Build/NodeBuilder.pm
+PBS/Build.pm
 PBS/Caller.pm
 PBS/Check/ForkedCheck.pm
 PBS/Check.pm
-PBS/Cyclic.pm
-PBS/Config/Subpbs.pm
 PBS/Config.pm
+PBS/Config/Subpbs.pm
 PBS/Constants.pm
-PBS/DefaultBuild.pm
+PBS/Cyclic.pm
 PBS/Debug.pm
+PBS/DefaultBuild.pm
 PBS/Depend.pm
 PBS/Digest.pm
 PBS/Distributor.pm
 PBS/Documentation.pm
 PBS/FrontEnd.pm
-PBS/Graph.pm
 PBS/Graph/Html.pm
+PBS/Graph.pm
 PBS/Graph/Snapshots.pm
+PBS/GraphViz.pm
+PBS/Information.pm
+PBS/Log/ForkedLNI.pm
 PBS/Log/Full.pm
 PBS/Log/Html.pm
-PBS/Log/ForkedLNI.pm
-PBS/GraphViz.pm
+PBS/Log.pm
 PBS/Net.pm
 PBS/Node.pm
 PBS/Nop.pm
 PBS/Output.pm
-PBS/PBS.pm
-PBS/PBS/Forked.pm
-PBS/Prf.pm
-PBS/PrfNop.pm
+PBS/Options/Complete.pm
 PBS/PBSConfig.pm
 PBS/PBSConfigSwitches.pm
+PBS/PBS/Forked.pm
+PBS/PBS.pm
 PBS/Plugin.pm
-PBS/Rules.pm
-PBS/Rules.pm
+PBS/PostBuild.pm
+PBS/PrfNop.pm
+PBS/Prf.pm
+PBS/Rules/Builders.pm
 PBS/Rules/Dependers.pm
 PBS/Rules/Dependers/Subpbs.pm
-PBS/Rules/Builders.pm
 PBS/Rules/Order.pm
+PBS/Rules.pm
+PBS/Rules.pm
 PBS/Rules/Scope.pm
-PBS/Triggers.pm
-PBS/PostBuild.pm
 PBS/Shell.pm
 PBS/Shell/SSH.pm
 PBS/Shell/Telnet.pm
 PBS/Stack.pm
-PBS/Wizard.pm
-PBS/Information.pm
-PBS/Log.pm
+PBS/SubpbsResult.pm
+PBS/Triggers.pm
+PBS/Version.pm
 PBS/Warp.pm
 PBS/Warp/Warp0.pm
 PBS/Warp/Warp1_5.pm
 PBS/Warp/Warp1_8.pm
-PBS/SubpbsResult.pm
+PBS/Watch/Client.pm
 PBS/Watch/InotifyWatcher.pm
 PBS/Watch/Win32Watcher.pm
-PBS/Watch/Client.pm
-
-PBS/Version.pm
+PBS/Wizard.pm
 );
 
 for(@pm_files)
@@ -80,8 +81,8 @@ for(@pm_files)
 
 my @extra_modules =
 qw(
-Plugins/CheckNode.pm
 Plugins/CheckNodeName.pm
+Plugins/CheckNode.pm
 Plugins/ColorDefinitions.pm
 Plugins/CreateDump.pm
 Plugins/CreateLog.pm
@@ -89,12 +90,12 @@ Plugins/EvaluateShellCommand.pm
 Plugins/ExpandObjects.pm
 Plugins/FileWatchClient.pm
 Plugins/GraphGeneration.pm
+Plugins/MyOptions.pm
 Plugins/PackageVisualisation.pm
 Plugins/PostPbs.pm
 Plugins/SimplifyRule.pm
 Plugins/TreeVisualisation.pm
 Plugins/Visualisation.pm
-Plugins/MyOptions.pm
 ) ;
 
 for(@extra_modules)
@@ -105,8 +106,8 @@ for(@extra_modules)
 my @PBSLib =
 qw(
 
-PBSLib/Builders/SingleRunBuilder.pm
 PBSLib/Builders/Objects.pm
+PBSLib/Builders/SingleRunBuilder.pm
 
 PBSLib/Node/Config.pm
 
@@ -124,10 +125,10 @@ PBSLib/Dependers/Matchers.pm
 
 PBSLib/Language/Simplified.pm
 
+PBSLib/Rules/C_depender.pm
+PBSLib/Rules/C_EvalShellCommand.pm
 PBSLib/Rules/C.pm
 PBSLib/Rules/Object_rules_utils.pm
-PBSLib/Rules/C_EvalShellCommand.pm
-PBSLib/Rules/C_depender.pm
 
 PBSLib/Rules/Compilers/cl.pm
 PBSLib/Rules/Compilers/compiler.pm
@@ -135,9 +136,9 @@ PBSLib/Rules/Compilers/gcc.pm
 
 PBSLib/Rules/NodeSubs/Config.pm
 
+PBSLib/Rules/cl_pch.pm
 PBSLib/Rules/VisualStudioDSP.pm
 PBSLib/Rules/VisualStudioProject.pm
-PBSLib/Rules/cl_pch.pm
 
 PBSLib/UserBuild/BuildSequenceMiner.pm
 PBSLib/UserBuild/Multiple_O_Compile.pm
@@ -148,16 +149,20 @@ PBSLib/Wizards/Breakpoint.pl
 PBSLib/Wizards/BuilderSub.pl
 PBSLib/Wizards/DependentMatcher.pl
 PBSLib/Wizards/Distributor.pl
+PBSLib/Wizards/menu.pl
 PBSLib/Wizards/NodeSub.pl
-PBSLib/Wizards/PostBuild.pl
 PBSLib/Wizards/Plugin.pl
+PBSLib/Wizards/PostBuild.pl
 PBSLib/Wizards/PostPbs.pl
 PBSLib/Wizards/Prf.pl
 PBSLib/Wizards/SimpleDependerSub.pl
 PBSLib/Wizards/StandardPbsfile.pl
 PBSLib/Wizards/Subpbs.pl
-PBSLib/Wizards/menu.pl
 PBSLib/Wizards/template.pl
+
+PBSLib/Guides/insert_options.pl
+PBSLib/Guides/interactive.pl
+PBSLib/Guides/interactive_list.pl
 ) ;
 
 for(@PBSLib)
@@ -289,45 +294,45 @@ my $build = $class->new
 	
 	build_requires => 
 		{
-		'Text::Diff' => 0,
+		'File::Copy::Recursive' => '0',
+		'File::Slurp'         => '0',
+		'File::Spec'          => '0',
+		'IO::String'          => '0',
+		'Net::SCP' => 0,
 		'Test::Block' => 0,
+		'Test::Class'         => '0',
+		'Test::Cmd'           => '0',
 		'Test::Exception' => 0,
 		'Test::NoWarnings' => 0,
 		'Test::Warn' => 0,
-		'Test::Class'         => '0',
-		'Test::Cmd'           => '0',
-		'File::Spec'          => '0',
-		'File::Slurp'         => '0',
-		'IO::String'          => '0',
-		'File::Copy::Recursive' => '0',
-		'Net::SCP' => 0,
+		'Text::Diff' => 0,
 		},
 	requires => 
 		{
+		'Class::MethodMaker'  => '0',
+		'Cwd'                 => '2.06',
+		'Data::Compare'       => '0',
+		'Data::Compare'       => '0',
+		'Data::Dumper'        => '2.12',
+		'Data::TreeDumper'    => '0.39',
+		'Devel::Cycle'        => '0',
+		'File::Basename'      => '2.71',
+		'File::MkTemp'        => '0',
+		'Getopt::Long'        => '2.32',
+		'List::PriorityQueue' => 0,
 		'Module::Build'       => '0.2611',
 		'Module::Util'       => '0.2611',
-		'Data::TreeDumper'    => '0.39',
-		'Getopt::Long'        => '2.32',
-		'Cwd'                 => '2.06',
-		'Data::Dumper'        => '2.12',
-		'Data::Compare'       => '0',
-		'File::Basename'      => '2.71',
-		'Devel::Cycle'        => '0',
-		'File::MkTemp'        => '0',
-		'Pod::Simple::Search' => '0',
-		'Data::Compare'       => '0',
-		'Class::MethodMaker'  => '0',
-	        'Term::ReadKey'       => '0',
-		'Term::ANSIColor'     => '0',
-		'Term::Size::Any'     => '0',
-	        'Term::Bash::Completion::Generator' => 0.04,
-		'Text::ANSI::Util'    => '0',
+		'Net::SCP'            => 0,
 		'PadWalker'           => '0',
+		'Pod::Simple::Search' => '0',
+		'String::Truncate'    => 0,
 		'Sub::Identify'       => 0,
 		'Sub::Name'           => 0,
-		'Net::SCP'            => 0,
-		'List::PriorityQueue' => 0,
-		'String::Truncate'    => 0,
+		'Term::ANSIColor'     => '0',
+	        'Term::Bash::Completion::Generator' => 0.04,
+	        'Term::ReadKey'       => '0',
+		'Term::Size::Any'     => '0',
+		'Text::ANSI::Util'    => '0',
 
 		'Devel::Depend::Cpp'  => '0.10',
 		'Devel::Depend::Cl'   => '0.06',
