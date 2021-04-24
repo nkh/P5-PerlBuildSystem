@@ -18,6 +18,7 @@ PBS/Check/ForkedCheck.pm
 PBS/Check.pm
 PBS/Config.pm
 PBS/Config/Subpbs.pm
+PBS/Config/Options.pm
 PBS/Constants.pm
 PBS/Cyclic.pm
 PBS/Debug.pm
@@ -163,6 +164,8 @@ PBSLib/Wizards/template.pl
 PBSLib/Guides/insert_options.pl
 PBSLib/Guides/interactive.pl
 PBSLib/Guides/interactive_list.pl
+PBSLib/Guides/man.pl
+PBSLib/Guides/smenu.pl
 ) ;
 
 for(@PBSLib)

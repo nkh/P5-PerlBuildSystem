@@ -21,7 +21,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Constants ;
 use PBS::Debug ;
-use PBS::Depend::Forked ;
+use PBS::PBS::Forked ;
 use PBS::Digest ;
 use PBS::Information ;
 use PBS::Net ;

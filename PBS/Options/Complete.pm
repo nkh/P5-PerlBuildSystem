@@ -11,19 +11,37 @@ our @EXPORT      = qw() ;
 
 our $VERSION = '0.01' ;
 
-#use Carp ;
 use File::Slurp ;
-use File::Find qw() ;
+use File::Find::Rule ;
 use List::Util qw(max any);
 use Sort::Naturally ;
 use Term::Bash::Completion::Generator ;
 use Tree::Trie ;
 	
-
-#use PBS::Constants ;
 use PBS::Output ;
+use PBS::PBSConfigSwitches ;
 
 #-------------------------------------------------------------------------------
+
+=pod
+
+pbs *
+pbs text*
+
+pbs [--]text
+pbs text+number
+
+pbs text?
+
+pbs #file|number
+pbs #man,page
+pbs #smenu
+
+pbs ** 
+
+use readline functions instead for tmux send keys
+
+=cut
 
 sub Complete
 {
@@ -33,20 +51,22 @@ if($word_to_complete =~ /^#/)
 	{
 	my $result ;
 	
-	my ($guide) = ($word_to_complete =~ /^#(.*?)(\d*)$/) ;
-	$guide //= '' ;
+	local @ARGV =  split ',', $word_to_complete ;
+	
+	my ($guide, $argc) = ($ARGV[0] // '', $ARGV[1] // '') ;
+	substr($guide, 0, 1, '') ;
 	
 	my %guides ;
-	
-	File::Find::find( sub { push $guides{$_}->@*, $File::Find::dir }, $pbs_config->{GUIDE_PATH}->@*) ;
+
+	File::Find::Rule->file()->name('*.pl')->maxdepth(1)->exec( sub { push $guides{$_[0]}->@*, $_[1]} )
+			->in( $pbs_config->{GUIDE_PATH}->@* ) ;
 	
 	if(exists $guides{"$guide.pl"})
 		{
-		local @ARGV = ($word_to_complete) ;
 		my $file_located = $guides{"$guide.pl"}[0] . "/$guide.pl" ;
 		
 		$result = do "$file_located" ;
-		#die "PBS: couldn't evaluate SubpbsResult, file: $guide\nFile error: $!\nError: $@\n" unless defined $result;
+		die "PBS: couldn't evaluate file: $guide\nFile error: $!\nError: $@\n" unless defined $result;
 		}
 	else
 		{
@@ -56,7 +76,6 @@ if($word_to_complete =~ /^#/)
 		while (my ($file, $paths) = each %guides)
 			{
 			next unless -f "$paths->[0]/$file" ;
-			next unless $guide eq '' or $file =~ $guide ;
 			
 			open my $guide, '<', "$paths->[0]/$file" ;
 			
@@ -73,15 +92,14 @@ if($word_to_complete =~ /^#/)
 			
 		@guides = sort { $a->[0] cmp $b->[0] } @guides ;
 		
-		if($word_to_complete =~ /^#(?:[^\d]*)(\d+)$/ and $1 != 0 and defined $guides[$1 - 1])
+		if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 			{
-			my $index = $1 - 1 ;
+			my $index = $guide - 1 ;
 			
-			local @ARGV = ($word_to_complete) ;
 			my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 			
 			$result = do "$file_located" ;
-			#die "PBS: couldn't evaluate SubpbsResult, file: $file\nFile error: $!\nError: $@\n" unless defined $result;
+			#die "PBS: couldn't evaluate SubpbsResult, file: $file_located\nFile error: $!\nError: $@\n" unless defined $result;
 			}
 		else
 			{
@@ -92,6 +110,27 @@ if($word_to_complete =~ /^#/)
 		}
 	
 	return ($result ? "\n$result" : "\n​") ;
+	}
+
+if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
+	{
+	my @fzf = qx"fdfind --color=always | fzf --ansi --reverse -m" ;
+	
+	if(@fzf)
+		{
+		if(0 == system 'tmux -V > /dev/null' )
+			{
+			my $options =  join ' ',  map { (($_ // '') =~ /^([a-zA-Z0-9_\/]+)/) } @fzf ;
+			my $command = "tmux send-keys -- " . ('C-H ' x length($word_to_complete)) . " '$options '" ;
+			qx"$command" ;
+			}
+		else
+			{
+			return join "\n", ( map { (($_ // '') =~ /^([a-zA-Z0-9_\/]+)/) } @fzf) ;
+			}
+		}
+	
+	return ;
 	}
 
 if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')

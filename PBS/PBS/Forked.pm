@@ -621,40 +621,22 @@ SIT $processes{$target_pid},
 			}
 	 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE} ;
 
-# re-generate main graph
+# re-generate $inserted_nodes 
 
 for my $node (keys %nodes)
 	{
 	my $display_info = $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
-	my $main_graph ;
 	
-	if(exists $inserted_nodes->{$node})
-		{
-		if( defined $inserted_nodes->{$node} && defined $nodes{$node}{NODES}{$node})
-			{
-			$main_graph = ($inserted_nodes->{$node} == $nodes{$node}{NODES}{$node}) ;
-			$display_info &&= ! $main_graph ;
-			}
-		else
-			{
-			SE2T $node, "no such node in main graph"  ;
-			}
-		
-		die ERROR("Depend∥ : merge: $node already depended") . "\n"
-			if exists $inserted_nodes->{$node}{__DEPENDED}
-				# except if it's a sub graph node that needs to be linked
-				and ! $main_graph ;
-		}
-	else
-		{
-		$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
-		}
+	die ERROR("Depend∥ : merge: $node already depended") . "\n"
+		if exists $inserted_nodes->{$node} and exists $inserted_nodes->{$node}{__DEPENDED} ;
+	
+	$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
 		
 	Say Info "Depend∥ : merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
 	
 	for my $element (keys %{$nodes{$node}{NODES}{$node}})
 		{
- 		if ($element !~ /^__/)
+		if ($element !~ /^__/)
 			{
 			$inserted_nodes->{$element} = $nodes{$node}{NODES}{$element}
 				unless exists $inserted_nodes->{$element} ;
@@ -665,7 +647,7 @@ for my $node (keys %nodes)
 			}
 		else
 			{
-			$inserted_nodes->{$node}{$element} = $nodes{$node}{NODES}{$node}{$element} unless $main_graph ;
+			$inserted_nodes->{$node}{$element} = $nodes{$node}{NODES}{$node}{$element} ;
 			}
 		}
 	}

@@ -13,9 +13,9 @@ more documentation
 	...
 EOC
 
-if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null')
+#if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null')
 	{
-	my @matches = GetOptionsElements() ;
+	my @matches = PBS::PBSConfigSwitches::GetOptionsElements() ;
 	
 	my (@short, @long, @options) ;
 	

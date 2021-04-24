@@ -40,11 +40,18 @@ my (%pbs_arguments) = @_ ;
 
 if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	{
-	my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 	
-	ParseSwitchesAndLoadPlugins($options, $pbs_config, []) ; #load plugins options
+	my ($options, $pbs_config) ;
+	{
+	local @ARGV = split /\s/, $ENV{COMP_LINE} ; # command line may contain paths needed for complation, IE: --path_guide
+	
+	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
+	
+	ParseSwitchesAndLoadPlugins($options, $pbs_config, \@ARGV) ; #load plugins options
 	
 	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options
+	}
+	
 	PBS::PBSConfigSwitches::GetCompletion($pbs_config, $options) ;
 	
 	return 1 ;
