@@ -50,7 +50,7 @@ EOC
 				."<I>$help\n") ;
 		}
 	
-	my @fzf = qx"cat pbs_fzf_x3 | fzf --height=50% --ansi --reverse -m" ;
+	my @fzf = qx"cat pbs_fzf_x3 | fzfp --height=50% --ansi --reverse -m" ;
 	
 	my $options = join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf ;
 	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[0])) . "'$options '" unless $options eq '' ;

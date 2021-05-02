@@ -40,7 +40,6 @@ my (%pbs_arguments) = @_ ;
 
 if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	{
-	
 	my ($options, $pbs_config) ;
 	{
 	local @ARGV = split /\s/, $ENV{COMP_LINE} ; # command line may contain paths needed for complation, IE: --path_guide

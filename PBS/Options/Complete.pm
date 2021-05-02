@@ -39,7 +39,7 @@ pbs #smenu
 
 pbs ** 
 
-use readline functions instead for tmux send keys
+# use readline?, xdotool, ioctl, tmux
 
 =cut
 
@@ -95,7 +95,6 @@ if($word_to_complete =~ /^#/)
 		if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 			{
 			my $index = $guide - 1 ;
-			
 			my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 			
 			$result = do "$file_located" ;
@@ -104,8 +103,25 @@ if($word_to_complete =~ /^#/)
 		else
 			{
 			my $index = 1 ;
-			Say ' ' ;
-			Say EC substr(sprintf("<W3>%d <I>%-${max_length}s", $index++, $_->[0]) . " <I3>$_->[2]", 0, 99) . '<R>' for @guides ;
+			open my $fzf_in, '>', 'pbs_fzf_guides' ;
+			binmode $fzf_in ;
+			
+			print $fzf_in 
+				EC substr(sprintf("<W3>%d <I>%-${max_length}s", $index++, $_->[0]) . " <I3>$_->[2]", 0, 99) . "<R>\n" for @guides ;
+			
+			my $query = $guide eq '' ? '' : "-q $guide" ;
+			
+			my $fzf = qx"cat pbs_fzf_guides | fzfp --width=40% --height=30% --ansi --reverse -1 $query" ;
+			my $guide = substr($fzf // '', 0, 1) ;
+			
+			if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
+				{
+				my $index = $guide - 1 ;
+				my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
+				
+				$result = do "$file_located" ;
+				#die "PBS: couldn't evaluate SubpbsResult, file: $file_located\nFile error: $!\nError: $@\n" unless defined $result;
+				}
 			}
 		}
 	
@@ -114,7 +130,7 @@ if($word_to_complete =~ /^#/)
 
 if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	{
-	my @fzf = qx"fdfind --color=always | fzf --ansi --reverse -m" ;
+	my @fzf = qx"fd --color=always | fzfp --ansi --reverse -m" ;
 	
 	if(@fzf)
 		{
@@ -177,7 +193,7 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 				."<I>$help\n") ;
 		}
 	
-	my @fzf = qx"cat pbs_fzf_options | fzf --ansi --reverse -m -q '$search'" ;
+	my @fzf = qx"cat pbs_fzf_options | fzfp --ansi --reverse -m -q '$search'" ;
 	
 	if(@fzf)
 		{

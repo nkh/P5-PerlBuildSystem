@@ -1,4 +1,4 @@
-# insert 2 options 
+# insert options 
 
 my @options = qw. --abc --def  . ;
 
