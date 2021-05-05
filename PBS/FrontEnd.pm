@@ -22,6 +22,7 @@ use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Config ;
 use PBS::Config::Subpbs ;
+use PBS::PBSConfigSwitches ;
 use PBS::Constants ;
 use PBS::Documentation ;
 use PBS::Log::Full ;

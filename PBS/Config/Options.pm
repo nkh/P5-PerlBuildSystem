@@ -32,41 +32,41 @@ sub ParallelOptions
 my ($c) = @_ ;
 $c->{JOBS_DIE_ON_ERROR} //= 0 ;
 
-'jobs|j=i',                   'Maximum number of build commands run in parallel.',                  '', \$c->{JOBS},
-'jobs_parallel|jp=i',         'Maximum number of dependers run in parallel.',                       '', \$c->{PBS_JOBS},
-'jobs_check=i',               'Maximum number of checker run in parallel.',                         '', \$c->{CHECK_JOBS},
-'jobs_info',                  'PBS will display extra information about the parallel build.',       '', \$c->{DISPLAY_JOBS_INFO},
-'jobs_running',               'PBS will display which nodes are under build.',                      '', \$c->{DISPLAY_JOBS_RUNNING},
-'jobs_no_tally',              'will not display nodes tally.',                                      '', \$c->{DISPLAY_JOBS_NO_TALLY},
-'jobs_die_on_errors=i',       '0 (default) finish running jobs. 1 die immediatly. 2 no stop.',      '', \$c->{JOBS_DIE_ON_ERROR},
-'jobs_distribute=s',          'File defining the build distribution.',                              '', \$c->{DISTRIBUTE},
-'parallel_processes|pdp=i',   'Maximum number of depend processes.',                                '', \$c->{DEPEND_PROCESSES},
-'parallel_log|pl',            'Creates a log of the parallel depend.',                              '', \$c->{LOG_PARALLEL_DEPEND},
-'parallel_log_display|pld',   'Display the parallel depend log when depending ends.',               '', \$c->{DISPLAY_LOG_PARALLEL_DEPEND},
-'parallel_depend_start|pds',  'Display a message when a parallel depend starts.',                   '', \$c->{DISPLAY_PARALLEL_DEPEND_START},
-'parallel_depend_end',        'Display a message when a parallel depend end.',                      '', \$c->{DISPLAY_PARALLEL_DEPEND_END},
-'parallel_node_name',         'Display the node name in parallel depend end messages.',             '', \$c->{DISPLAY_PARALLEL_DEPEND_NODE},
-'parallel_no_resource',       'Display a message when no resource is availabed.',                   '', \$c->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
-'parallel_link',              'Display parallel depend linking result.',                            '', \$c->{DISPLAY_PARALLEL_DEPEND_LINKING},
-'parallel_link_verbose',      'Display a verbose parallel depend linking result.',                  '', \$c->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE},
-'parallel_tree|pt',           'Display the distributed dependency graph using a text dumper',       '', \$c->{DISPLAY_PARALLEL_DEPEND_TREE},
-'parallel_process_tree|ppt',  'Display the distributed process graph using a text dumper',          '', \$c->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE},
-'parallel_compression|puc',   'Compress graphs before sending them',                                '', \$c->{DEPEND_PARALLEL_USE_COMPRESSION},
-'parallel_no_result|pnr',     'Do not display when a parallel pbs has finished building',           '', \$c->{PARALLEL_NO_BUILD_RESULT},
-'parallel_build_sequence',    '(DF) List the nodes to be build and the pid of their parallel pbs.', '', \$c->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE},
-'parallel_processes_left',    'Display running depend processes after the main depend ends.',       '', \$c->{DISPLAY_DEPEND_REMAINING_PROCESSES},
-'parallel_depend_server',     'Use parallel pbs server multiple times.',                            '', \$c->{USE_DEPEND_SERVER},
-'parallel_quick_shutdown',    'Kill parallel Pbs processes',                                        '', \$c->{RESOURCE_QUICK_SHUTDOWN},
-'parallel_resource_event',    'Display a message on resource events.',                              '', \$c->{DISPLAY_RESOURCE_EVENT},
+'jobs|j=i',                'Maximum number of build commands run in parallel.',                  '', \$c->{JOBS},
+'jobs_parallel|jp=i',      'Maximum number of dependers run in parallel.',                       '', \$c->{PBS_JOBS},
+'jobs_check=i',            'Maximum number of checker run in parallel.',                         '', \$c->{CHECK_JOBS},
+'jobs_info',               'PBS will display extra information about the parallel build.',       '', \$c->{DISPLAY_JOBS_INFO},
+'jobs_running',            'PBS will display which nodes are under build.',                      '', \$c->{DISPLAY_JOBS_RUNNING},
+'jobs_no_tally',           'will not display nodes tally.',                                      '', \$c->{DISPLAY_JOBS_NO_TALLY},
+'jobs_die_on_errors=i',    '0 (default) finish running jobs. 1 die immediatly. 2 no stop.',      '', \$c->{JOBS_DIE_ON_ERROR},
+'jobs_distribute=s',       'File defining the build distribution.',                              '', \$c->{DISTRIBUTE},
+'parallel_processes=i',    'Maximum number of depend processes.',                                '', \$c->{DEPEND_PROCESSES},
+'parallel_log',            'Creates a log of the parallel depend.',                              '', \$c->{LOG_PARALLEL_DEPEND},
+'parallel_log_display',    'Display the parallel depend log when depending ends.',               '', \$c->{DISPLAY_LOG_PARALLEL_DEPEND},
+'parallel_depend_start',   'Display a message when a parallel depend starts.',                   '', \$c->{DISPLAY_PARALLEL_DEPEND_START},
+'parallel_depend_end',     'Display a message when a parallel depend end.',                      '', \$c->{DISPLAY_PARALLEL_DEPEND_END},
+'parallel_node_name',      'Display the node name in parallel depend end messages.',             '', \$c->{DISPLAY_PARALLEL_DEPEND_NODE},
+'parallel_no_resource',    'Display a message when no resource is availabed.',                   '', \$c->{DISPLAY_PARALLEL_DEPEND_NO_RESOURCE},
+'parallel_link',           'Display parallel depend linking result.',                            '', \$c->{DISPLAY_PARALLEL_DEPEND_LINKING},
+'parallel_link_verbose',   'Display a verbose parallel depend linking result.',                  '', \$c->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE},
+'parallel_tree',           'Display the distributed dependency graph using a text dumper',       '', \$c->{DISPLAY_PARALLEL_DEPEND_TREE},
+'parallel_process_tree',   'Display the distributed process graph using a text dumper',          '', \$c->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE},
+'parallel_compression',    'Compress graphs before sending them',                                '', \$c->{DEPEND_PARALLEL_USE_COMPRESSION},
+'parallel_no_result',      'Do not display when a parallel pbs has finished building',           '', \$c->{PARALLEL_NO_BUILD_RESULT},
+'parallel_build_sequence', '(DF) List the nodes to be build and the pid of their parallel pbs.', '', \$c->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE},
+'parallel_processes_left', 'Display running depend processes after the main depend ends.',       '', \$c->{DISPLAY_DEPEND_REMAINING_PROCESSES},
+'parallel_depend_server',  'Use parallel pbs server multiple times.',                            '', \$c->{USE_DEPEND_SERVER},
+'parallel_quick_shutdown', 'Kill parallel Pbs processes',                                        '', \$c->{RESOURCE_QUICK_SHUTDOWN},
+'parallel_resource_event', 'Display a message on resource events.',                              '', \$c->{DISPLAY_RESOURCE_EVENT},
 }
 
 sub HelpOptions
 {
 my ($c) = @_ ;
 
-'version|v',           'Displays Pbs version.',                                 '', \$c->{DISPLAY_VERSION},
+'version',             'Displays Pbs version.',                                 '', \$c->{DISPLAY_VERSION},
 
-'help|h',              'Displays this help.',                                   '', \$c->{DISPLAY_HELP},
+'help',                'Displays this help.',                                   '', \$c->{DISPLAY_HELP},
 'help_narrow_display', 'Writes flags and documentation on separate lines.',     '', \$c->{DISPLAY_HELP_NARROW_DISPLAY},
 'doc_extract',         'Extracts the pod contained in the Pbsfile.',            '', \$c->{PBS2POD},
 'doc_raw',             '-pbsfile_pod or -pbs2pod is dumped in raw pod format.', '', \$c->{RAW_POD},
@@ -77,7 +77,7 @@ my ($c) = @_ ;
 'wizard_info',         'Shows Informatin about the found wizards.',             '', \$c->{DISPLAY_WIZARD_INFO},
 'wizard_help',         'Tell the choosen wizards to show help.',                '', \$c->{DISPLAY_WIZARD_HELP},
 
-'help_user|hu',        "Displays a user defined help.",                   <<~'EOH', \$c->{DISPLAY_PBSFILE_POD},
+'help_user',           "Displays a user defined help.",                   <<~'EOH', \$c->{DISPLAY_PBSFILE_POD},
 =for PBS =head1 SOME TITLE
 
 this is extracted by the --pbsfile_pod command
@@ -130,7 +130,7 @@ my ($c) = @_ ;
 'output_path_glyph=s',             'Replace full dependency_path with argument.',     '', \$c->{SHORT_DEPENDENCY_PATH_STRING},
 'output_from_where',               '',                                                '', \$PBS::Output::output_from_where,
 'output_color_depth=s',            'Set color depth; 2 = black and white, 16, 256',   '', \&PBS::Output::SetOutputColorDepth,
-'output_color_user|ocu=s',         "User color, -cs 'user:cyan on_red'",              '', \&PBS::Output::SetOutputColor,
+'output_color_user=s',         "User color, -cs 'user:cyan on_red'",              '', \&PBS::Output::SetOutputColor,
 'output_error_context',            'Display the error line.',                         '', \$PBS::Output::display_error_context,
 'output_error_no_perl_context',    'Do not parse the perl code to find context.',     '', \$c->{DISPLAY_NO_PERL_CONTEXT},
 }
@@ -140,17 +140,17 @@ sub RulesOptions
 my ($c)  = @_ ;
 $c->{RULE_NAMESPACES} //= [] ;
 
-'rule_all|ra',             'Display all the rules.',                                          '', \$c->{DISPLAY_ALL_RULES},
-'rule_definition|rd',      '(DF) Display the definition of each registrated rule.',           '', \$c->{DEBUG_DISPLAY_RULE_DEFINITION},
-'rule_inactive|ri',        'Display rules present in the pbsfile but tagged as NON_ACTIVE.',  '', \$c->{DISPLAY_INACTIVE_RULES},
-'rule_non_matching|rnm',   'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_NON_MATCHING_RULES},
-'rule_no_scope|rns',       'Disable rule scope.',                                             '', \$c->{RULE_NO_SCOPE},
-'rule_run_once|rro',       'Rules run only once except if they are tagged as MULTI',          '', \$c->{RULE_RUN_ONCE},
-'rule|r',                  '(DF) Display registred rules and which package is queried.',      '', \$c->{DEBUG_DISPLAY_RULES},
+'rule_all',                'Display all the rules.',                                          '', \$c->{DISPLAY_ALL_RULES},
+'rule_definition',         '(DF) Display the definition of each registrated rule.',           '', \$c->{DEBUG_DISPLAY_RULE_DEFINITION},
+'rule_inactive',           'Display rules present in the pbsfile but tagged as NON_ACTIVE.',  '', \$c->{DISPLAY_INACTIVE_RULES},
+'rule_non_matching',       'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_NON_MATCHING_RULES},
+'rule_no_scope',           'Disable rule scope.',                                             '', \$c->{RULE_NO_SCOPE},
+'rule_run_once',           'Rules run only once except if they are tagged as MULTI',          '', \$c->{RULE_RUN_ONCE},
+'rule',                    '(DF) Display registred rules and which package is queried.',      '', \$c->{DEBUG_DISPLAY_RULES},
 'rules_subpbs_definition', 'Display subpbs definition.',                                      '', \$c->{DISPLAY_SUB_PBS_DEFINITION},
-'rule_statistics|rs',      '(DF) Display rule statistics after each pbs run.',                '', \$c->{DEBUG_DISPLAY_RULE_STATISTICS},
+'rule_statistics',         '(DF) Display rule statistics after each pbs run.',                '', \$c->{DEBUG_DISPLAY_RULE_STATISTICS},
 'rule_trigger_definition', '(DF) Display the definition of each registrated trigger.',        '', \$c->{DEBUG_DISPLAY_TRIGGER_RULE_DEFINITION},
-'rule_trigger|rt',         '(DF) Display which triggers are registred.',                      '', \$c->{DEBUG_DISPLAY_TRIGGER_RULES},
+'rule_trigger',            '(DF) Display which triggers are registred.',                      '', \$c->{DEBUG_DISPLAY_TRIGGER_RULES},
 'rule_max_recursion',      'Set the maximum rule recusion before pbs, aborts the build',      '', \$c->{MAXIMUM_RULE_RECURSION},
 'rule_namespace=s',        'Rule name space to be used by DefaultBuild()',                    '', $c->{RULE_NAMESPACES},
 'rule_order',              'Display the order rules.',                                        '', \$c->{DISPLAY_RULES_ORDER},
@@ -158,8 +158,8 @@ $c->{RULE_NAMESPACES} //= [] ;
 'rule_recursion_warning',  'Set the level at which pbs starts warning aabout rule recursion', '', \$c->{RULE_RECURSION_WARNING},
 'rule_scope',              'display scope parsing and generation',                            '', \$c->{DISPLAY_RULE_SCOPE},
 'rule_to_order',           'Display that there are rules order.',                             '', \$c->{DISPLAY_RULES_TO_ORDER},
-'rule_used_name|run',      'Display the names of the rules used during the dependency pass.', '', \$c->{DISPLAY_USED_RULES_NAME_ONLY},
-'rule_used|ru',            'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_USED_RULES},
+'rule_used_name',          'Display the names of the rules used during the dependency pass.', '', \$c->{DISPLAY_USED_RULES_NAME_ONLY},
+'rule_used',               'Display the rules used during the dependency pass.',              '', \$c->{DISPLAY_USED_RULES},
 'rule_origin',             'Display the origin of rules in addition to their names.',     <<~EOT, \$c->{ADD_ORIGIN},
 				The origin contains the following information:
 					- Name
@@ -179,12 +179,12 @@ $c->{DISPLAY_PBS_CONFIGURATION} //= [];
 
 my $load_config_closure = sub { LoadConfig(@_, $c) } ;
 
-'config|c',               'Display the config used during a Pbs run.',            '',    \$c->{DISPLAY_CONFIGURATION},
-'config_all|ca',          '(DF). Display all configurations.',                    '',    \$c->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
-'config_location|cl',     'Display the pbs configuration location.',              '',    \$c->{DISPLAY_PBS_CONFIGURATION_LOCATION},
-'config_merge|cm',        '(DF). Display how configurations are merged.',         '',    \$c->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
-'config_namespaces|cn',   'Display the config namespaces used during a Pbs run.', '',    \$c->{DISPLAY_CONFIGURATION_NAMESPACES},
-'config_node_usage|cnu',  'Display config variables not used by nodes.',          '',    \$c->{DISPLAY_NODE_CONFIG_USAGE},
+'config',                 'Display the config used during a Pbs run.',            '',    \$c->{DISPLAY_CONFIGURATION},
+'config_all',             '(DF). Display all configurations.',                    '',    \$c->{DEBUG_DISPLAY_ALL_CONFIGURATIONS},
+'config_location',        'Display the pbs configuration location.',              '',    \$c->{DISPLAY_PBS_CONFIGURATION_LOCATION},
+'config_merge',           '(DF). Display how configurations are merged.',         '',    \$c->{DEBUG_DISPLAY_CONFIGURATIONS_MERGE},
+'config_namespaces',      'Display the config namespaces used during a Pbs run.', '',    \$c->{DISPLAY_CONFIGURATION_NAMESPACES},
+'config_node_usage',      'Display config variables not used by nodes.',          '',    \$c->{DISPLAY_NODE_CONFIG_USAGE},
 'config_delta',           'Display difference with the parent config',            '',    \$c->{DISPLAY_CONFIGURATION_DELTA},
 'config_load=s',          'Load the given config before running the Pbsfile.',    '',    $load_config_closure,
 'config_no_inheritance',  'disable configuration iheritance.',                    '',    \$c->{NO_CONFIG_INHERITANCE},
@@ -192,11 +192,11 @@ my $load_config_closure = sub { LoadConfig(@_, $c) } ;
 'config_package',         'display subpbs package configuration',                 '',    \$c->{DISPLAY_PACKAGE_CONFIGURATION},
 'config_set_namespace=s', 'Configuration name space to used',                     '',    $c->{CONFIG_NAMESPACES},
 'config_target_path',     "Don't remove TARGET_PATH from config usage report.",   '',    \$c->{DISPLAY_TARGET_PATH_USAGE},
-'config_pbs_all|cpa',     'Include undefined keys',                               '',    \$c->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES},
-'config_match|cp=s',      'Display the pbs configuration matching  the regex.',   '',    $c->{DISPLAY_PBS_CONFIGURATION},
-'config_start|cs',        'Display the config for a Pbs run pre pbsfile loading', '',    \$c->{DISPLAY_CONFIGURATION_START},
-'config_subpbs|csp',      'Display subpbs config.',                               '',    \$c->{DISPLAY_SUB_PBS_CONFIG},
-'config_usage|cu',        'Display config variables not used.',                   '',    \$c->{DISPLAY_CONFIG_USAGE},
+'config_pbs_all',         'Include undefined keys',                               '',    \$c->{DISPLAY_PBS_CONFIGURATION_UNDEFINED_VALUES},
+'config_match=s',         'Display the pbs configuration matching  the regex.',   '',    $c->{DISPLAY_PBS_CONFIGURATION},
+'config_start',           'Display the config for a Pbs run pre pbsfile loading', '',    \$c->{DISPLAY_CONFIGURATION_START},
+'config_subpbs',          'Display subpbs config.',                               '',    \$c->{DISPLAY_SUB_PBS_CONFIG},
+'config_usage',           'Display config variables not used.',                   '',    \$c->{DISPLAY_CONFIG_USAGE},
 'config_save=s',          'PBS will save the config used in each PBS run',        <<EOT, \$c->{SAVE_CONFIG},
 
 Before a subpbs is run, its start config will be saved in a file. PBS will display the filename so you
@@ -211,7 +211,7 @@ sub DevelOptions
 {
 my ($config) = @_ ;
 
-'devel_no_distribution_check|DNDC', 'A development flag, not for user.', <<EOT, \$config->{DEVEL_NO_DISTRIBUTION_CHECK},
+'devel_no_distribution_check', 'A development flag, not for user.', <<EOT, \$config->{DEVEL_NO_DISTRIBUTION_CHECK},
 
 Pbs checks its distribution when building and rebuilds everything if it has changed.
 
@@ -228,8 +228,8 @@ my ($c) = @_ ;
 $c->{DISPLAY_TEXT_TREE_REGEX} //= [];
 $c->{DISPLAY_TREE_FILTER}     //= [];
 
-'nodes_list|n',          'List all the nodes in the graph.',                     '', \$c->{DISPLAY_FILE_LOCATION},
-'nodes_list_all|na',     'List all the nodes in the graph.',                     '', \$c->{DISPLAY_FILE_LOCATION_ALL},
+'nodes_list',            'List all the nodes in the graph.',                     '', \$c->{DISPLAY_FILE_LOCATION},
+'nodes_list_all',        'List all the nodes in the graph.',                     '', \$c->{DISPLAY_FILE_LOCATION_ALL},
 
 'tree',                  '(DF) Display the dependency tree using a text dumper', '', \$c->{DEBUG_DISPLAY_TEXT_TREE},
 'tree_name_only|tno',    '(DF) Display the name of the nodes only.',             '', \$c->{DEBUG_DISPLAY_TREE_NAME_ONLY},
@@ -530,10 +530,10 @@ $c->{DISPLAY_BUILD_INFO} //= [] ;
 'build_sequence_info',   'Display information about which node is build.',              '', \$c->{DISPLAY_BUILD_SEQUENCER_INFO},
 'build_info=s',          'Set options: -b -d, ... ; a file or \'*\' can be specified.', '', $c->{DISPLAY_BUILD_INFO},
 
-'link_no_external',      'Stop if Linking from other Pbsfile and local rule matches.',  '', \$c->{NO_EXTERNAL_LINK},
-'link_no_info|lni',      'PBS won\'t display which nodes are linked.',                  '', \$c->{NO_LINK_INFO},
-'link_local_ok|lnli',    'PBS won\'t display linking to local nodes.',                  '', \$c->{NO_LOCAL_LINK_INFO},
-'link_local_rule_ok',    'No warning message if a linked node matches local rules.',    '', \$c->{NO_LOCAL_MATCHING_RULES_INFO},
+'link_no_external',        'Fail if linking from other Pbsfile and local rule matches.', '', \$c->{NO_EXTERNAL_LINK},
+'link_no_info|lni',        'No linking message.',                                        '', \$c->{NO_LINK_INFO},
+'link_no_local_info|lnli', 'No message when linking to local nodes.',                    '', \$c->{NO_LOCAL_LINK_INFO},
+'link_local_rule_ok',      'No message if a linked node matches local rules.',           '', \$c->{NO_LOCAL_MATCHING_RULES_INFO},
 }
 
 sub PostBuildOptions

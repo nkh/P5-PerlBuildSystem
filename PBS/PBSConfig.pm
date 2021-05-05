@@ -25,7 +25,7 @@ use PBS::Constants ;
 use PBS::Debug ;
 use PBS::Log ;
 use PBS::Output ;
-use PBS::PBSConfigSwitches ;
+use PBS::Options::Complete ;
 use PBS::Plugin ;
 
 #-------------------------------------------------------------------------------
@@ -170,7 +170,23 @@ do
 	push @targets, shift @ARGV while @ARGV && $ARGV[0] !~ /^-/ && $ARGV[0] !~ /\w\+\d+$/ ;
 	
 	# complete +\d options
-	@ARGV = map { chomp($_ = PBS::PBSConfigSwitches::Complete({}, $options, $_)) if /\w\+\d+$/ ; $_  } @ARGV ;
+	@ARGV = map 
+		{ chomp
+			(
+			$_ = PBS::Options::Complete::Complete
+					(
+					[],
+					$options,
+					[PBS::PBSConfigSwitches::GetOptionsElements()],
+					$_,
+					\&PBS::PBSConfigSwitches::AliasOptions,
+					\&PBS::PBSConfigSwitches::DisplaySwitchesHelp
+					)
+			) if /\w\+\d+$/ ;
+			
+			s/\s$// ;
+			$_  
+		} @ARGV ;
 	
 	unless(GetOptions(@flags, '<>' => $catchall))
 		{

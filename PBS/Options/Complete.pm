@@ -184,6 +184,79 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	return ;
 	}
 
+if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
+	{
+	my @matches = $options_elements->@* ; ;
+	
+	my (@short, @long, @options) ;
+	
+	for (@matches)
+		{
+		my ($option_type, $help) = @{$_}[0..2] ;
+		
+		my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
+		$type //= '' ;
+		
+		my ($long, $short) = split(/\|/, $option, 2) ;
+		$short //= '' ;
+		
+		push @short, length($short) ;
+		push @long , length($long) ;
+		
+		push @options, [$long, $short, $type, $help] ; 
+		}
+	
+	my $max_short = max(@short) + 2 ;
+	my $max_long  = max(@long);
+	
+	open my $fzf_in, '>', 'pbs_fzf_all_options' ;
+	binmode $fzf_in ;
+	
+	for (@options)
+		{
+		my ($long, $short, $type, $help) = @{$_} ;
+		
+		print $fzf_in 
+			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type)
+				."<I>$help\n") ;
+		}
+	
+	my ($n, $m) ;
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	print STDERR "\n" ;
+	}
+	
+	my @fzf = qx"cat pbs_fzf_all_options | fzf --height=90% --ansi --reverse -m" ;
+	
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	$n -= 1 ; # we added an extra lines
+	}
+	print STDERR "\e[$n;${m}H" ;
+	qx"tput ed 1>&2" ;
+	
+	if(@fzf)
+		{
+		if(0 == system 'tmux -V > /dev/null' )
+			{
+			my $options =  join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf ;
+			my $command = "tmux send-keys -- " . ('C-H ' x length($word_to_complete)) . " '$options '" ;
+			qx"$command" ;
+			}
+		else
+			{
+			return join "\n", ( map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf) ;
+			}
+		}
+	
+	return ;
+	}
+
 if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 	{
 	my (@long, @options) ;
@@ -201,13 +274,15 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 		my ($long, $short) = split(/\|/, $option, 2) ;
 		$short //= '' ;
 		
-		next if $long !~ /$search/ && $short !~ /$search/ ;
+		my $anchor = $word_to_complete =~ /^-/ ? '^' : '' ;
+		
+		next if $long !~ /$anchor$search/ && $short !~ /$anchor$search/ ;
 		
 		push @long, length($long) ;
 		push @options, $long ; 
 		}
 	
-	return unless @options ;
+	return unless @options > 1 ;
 	
 	my $max_long  = max(@long) + 2 + 5 ;
 	
@@ -279,12 +354,12 @@ if($word_to_complete !~ /^-?-?\s?$/)
 				{
 				if (any { $word_to_complete =~ /^-*$_$/ } @$tuple)
 					{
-					$munged = $reduce ?  $tuple->[0] : defined $tuple->[1] ? $tuple->[1] : $tuple->[0] ;
+					$munged = $expand ?  $tuple->[0] : defined $tuple->[1] ? $tuple->[1] : $tuple->[0] ;
 					last ;
 					}
 				}
 			
-			defined $munged ? "-$munged\n": "-$matches[0]\n" ;
+			defined $munged ? "--$munged\n": "$matches[0]\n" ;
 			}
 		else
 			{
