@@ -190,9 +190,14 @@ my (@short, @long, @options) ;
 
 my $has_long_help ;
 
+return unless @matches ;
+
 for (@matches)
 	{
 	my ($option_type, $help, $long_help) = @{$_}[0..2] ;
+	
+	$help //= '' ;
+	$long_help //= '' ;
 	
 	my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
 	$type //= '' ;
@@ -320,7 +325,7 @@ my (undef, $command_name, $word_to_complete, $previous_arguments) = @ARGV ;
 
 my ($pbs_config, $options) = @_ ;
 
-print PBS::Options::Complete::Complete($pbs_config, $options, [GetOptionsElements()], $word_to_complete, \&AliasOptions, \&DisplaySwitchesHelp) ;
+print PBS::Options::Complete::Complete($pbs_config->{GUIDE_PATH}, $options, [GetOptionsElements()], $word_to_complete, \&AliasOptions, \&DisplaySwitchesHelp) ;
 }
 
 #-------------------------------------------------------------------------------

@@ -1,15 +1,24 @@
 # smenu example
 
-# tmux display-message -p '#{pane_id}'
-# tmux list-panes -F "#{pane_id} #{history_size}" -t %126
-
+my ($n, $m) ;
+{
 local $/ = "R" ;
 print STDERR "\033[6n" ;
-my ($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+print STDERR "\n" ;
+}
 
 qx'printf  "prf\nprf_no_anonymous\nprf_none" | smenu -1 "none" -middle -column -tag -restore  2> pbs_smenu 1>&2' ;
 
+{
+local $/ = "R" ;
+print STDERR "\033[6n" ;
+($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+$n -= 1 ; # we added an extra lines
+}
 print STDERR "\e[$n;${m}H" ;
+qx"tput ed 1>&2" ;
+
 
 if(0 == system 'tmux -V > /dev/null' )
 	{
@@ -26,7 +35,7 @@ if(0 == system 'tmux -V > /dev/null' )
 		#qx"$command" ;
 		
 		my $command = (chr(8) x length($ARGV[0])) . $options ;
-		ioctl STDERR, 0x5412, $_ for split //, $command;
+		ioctl STDERR, 0x5412, $_ for split //, $command . ' ' ;
 		}
 	}
 

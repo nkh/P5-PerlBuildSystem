@@ -1,12 +1,19 @@
-target 'all' ;
-
 pbsuse 'Node/Config' ;
+config VARIABLE => 1, TEST => 3 ;
 
-config(VARIABLE => 1, TEST => 3) ;
-
-rule [V], 'all', [all => 1, 2, 3], build_ok ;
+target 'all' ;
+rule   'all', [all => 1, 2, 3], touch_ok ;
 
 rule 1, [1], 'echo $VARIABLE > %TARGET', 'echo %VARIABLE' ;
-rule 2, [2], 'echo $VARIABLE > %TARGET',  'ls', 'echo $VARIABLE %X', [node_config('VARIABLE:SILENT_OVERRIDE' => 2, X =>3), export(qw/VAR abc/)] ;
-rule 3, [3], 'echo $TEST > %TARGET', [export(qw/TEST/)] ;
+
+rule 2, [2], 'echo $VARIABLE > %TARGET',  'ls', 'echo $VARIABLE %X', 
+		[
+		node_config('VARIABLE:SILENT_OVERRIDE' => 2, X =>3),
+		export(qw/VAR abc/)
+		] ;
+
+rule 3, [3], 'echo $TEST > %TARGET',
+		[
+		export(qw/TEST/)
+		] ;
 

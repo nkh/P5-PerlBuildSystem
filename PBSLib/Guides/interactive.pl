@@ -1,5 +1,13 @@
 # option and optional option (I)
 
+my ($n, $m) ;
+{
+local $/ = "R" ;
+print STDERR "\033[6n" ;
+($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+print STDERR "\n" ;
+}
+
 Say EC  <<EOC ;
 
 interactive guide inserting options
@@ -10,6 +18,15 @@ EOC
 
 my $r = getc ;
 
+{
+local $/ = "R" ;
+print STDERR "\033[6n" ;
+($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+$n -= 1 + 5 ; # we added an extra lines
+}
+print STDERR "\e[$n;${m}H" ;
+qx"tput ed 1>&2" ;
+	
 my $command = '' ;
 
 if($r eq "\r")
@@ -26,6 +43,7 @@ else
 	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[0])) . " '--super_xxx '" ;
 	qx"$command" ;
 	}
+
 
 ()
 

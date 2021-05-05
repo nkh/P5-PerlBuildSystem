@@ -45,7 +45,7 @@ pbs **
 
 sub Complete
 {
-my ($pbs_config, $options, $options_elements, $word_to_complete, $AliasOptions, $DisplaySwitchesHelp) = @_ ;
+my ($guide_paths, $options, $options_elements, $word_to_complete, $AliasOptions, $DisplaySwitchesHelp) = @_ ;
 
 if($word_to_complete =~ /^#/)
 	{
@@ -59,7 +59,7 @@ if($word_to_complete =~ /^#/)
 	my %guides ;
 
 	File::Find::Rule->file()->name('*.pl')->maxdepth(1)->exec( sub { push $guides{$_[0]}->@*, $_[1]} )
-			->in( $pbs_config->{GUIDE_PATH}->@* ) ;
+			->in( $guide_paths->@* ) ;
 	
 	if(exists $guides{"$guide.pl"})
 		{
@@ -111,8 +111,24 @@ if($word_to_complete =~ /^#/)
 			
 			my $query = $guide eq '' ? '' : "-q $guide" ;
 			
-			my $fzf = qx"cat pbs_fzf_guides | fzfp --width=40% --height=30% --ansi --reverse -1 $query" ;
+			my ($n, $m) ;
+			{
+			local $/ = "R" ;
+			print STDERR "\033[6n" ;
+			($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+			print STDERR "\n" ;
+			}
+			
+			my $fzf = qx"cat pbs_fzf_guides | fzf --height=30% --ansi --reverse -1 $query" ;
 			my $guide = substr($fzf // '', 0, 1) ;
+			
+			{
+			local $/ = "R" ;
+			print STDERR "\033[6n" ;
+			($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+			$n-- ; # we added an extra newline
+			}
+			print STDERR "\e[$n;${m}H" ;
 			
 			if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 				{
@@ -120,17 +136,36 @@ if($word_to_complete =~ /^#/)
 				my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 				
 				$result = do "$file_located" ;
-				#die "PBS: couldn't evaluate SubpbsResult, file: $file_located\nFile error: $!\nError: $@\n" unless defined $result;
+				#die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" unless defined $result ;
+				die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 				}
 			}
 		}
 	
-	return ($result ? "\n$result" : "\n​") ;
+	#return ($result ? "\n$result" : "\n​") ;
+	return ;
 	}
 
 if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	{
-	my @fzf = qx"fd --color=always | fzfp --ansi --reverse -m" ;
+	my ($n, $m) ;
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	}
+	print STDERR "\n" ;
+
+	my @fzf = qx"fd --color=always | fzf --height=30% --ansi --reverse -m" ;
+
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	$n-- ; # we added an extra newline
+	}
+	print STDERR "\e[$n;${m}H" ;
+
 	
 	if(@fzf)
 		{
@@ -151,16 +186,14 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 
 if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 	{
-	my @matches = $options_elements->@* ; ;
+	my (@long, @options) ;
 	
-	my (@short, @long, @options) ;
-	
-	my ($search) = $word_to_complete =~ /-?-?([^\*]+)\*$/ ;
+	my ($search) = $word_to_complete =~ /-?-?([^\*]+)\*+$/ ;
 	$search //= '' ;
 	
-	for (@matches)
+	for (@$options_elements)
 		{
-		my ($option_type, $help) = @{$_}[0..2] ;
+		my ($option_type) = @{$_} ;
 		
 		my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
 		$type //= '' ;
@@ -170,30 +203,29 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 		
 		next if $long !~ /$search/ && $short !~ /$search/ ;
 		
-		push @short, length($short) ;
-		push @long , length($long) ;
-		
-		push @options, [$long, $short, $type, $help] ; 
+		push @long, length($long) ;
+		push @options, $long ; 
 		}
 	
 	return unless @options ;
 	
-	my $max_short = max(@short) + 2 ;
-	my $max_long  = max(@long);
+	my $max_long  = max(@long) + 2 + 5 ;
 	
 	open my $fzf_in, '>', 'pbs_fzf_options' ;
 	binmode $fzf_in ;
 	
-	for (@options)
-		{
-		my ($long, $short, $type, $help) = @{$_} ;
-		
-		print $fzf_in 
-			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type)
-				."<I>$help\n") ;
-		}
+	print $fzf_in "--$_\n" for @options ;
 	
-	my @fzf = qx"cat pbs_fzf_options | fzfp --ansi --reverse -m -q '$search'" ;
+	my ($n, $m) ;
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	}
+	my @fzf = qx"cat pbs_fzf_options | fzfp -x $m -y $n --height=30% --width $max_long --reverse -m -q '$search'" ;
+
+	print STDERR "\e[$n;${m}H" ;
+
 	
 	if(@fzf)
 		{
