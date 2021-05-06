@@ -90,34 +90,6 @@ while( my ($switch, $help1, $help2, $variable) = splice(@rfh, 0, 4))
 
 #-------------------------------------------------------------------------------
 
-sub AliasOptions
-{
-my ($arguments) = @_ ;
-
-my ($alias_file, %aliases) = ('pbs_option_aliases') ;
-
-if (-e $alias_file)
-	{
-	for my $line (read_file $alias_file)
-		{
-		next if $line =~ /^\s*#/ ;
-		next if $line =~ /^$/ ;
-		$line =~ s/^\s*// ;
-		
-		my ($alias, @rest) = split /\s+/, $line ;
-		$alias =~ s/^-+// ;
-		
-		$aliases{$alias} = \@rest if @rest ;
-		}
-	}
-
-@{$arguments} = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
-
-\%aliases
-}
-
-#-------------------------------------------------------------------------------
-
 my $message_displayed = 0 ; # called twice but want a single message
 
 sub LoadConfig
@@ -149,18 +121,18 @@ sub DisplayHelp { _DisplayHelp($_[0], 0, GetOptionsElements()) }
 
 sub DisplaySwitchesHelp
 {
-my (@switches) = @_ ;
+my ($switches, $options) = @_ ;
 
 my @matches ;
 
 OPTION:
-for my $option (sort { $a->[0] cmp $b->[0] } GetOptionsElements())
+for my $option (sort { $a->[0] cmp $b->[0] } $options->@*)
 	{
 	for my $option_element (split /\|/, $option->[0])
 		{
 		$option_element =~ s/=.*$// ;
 		
-		if( any { $_ eq $option_element} @switches )
+		if( any { $_ eq $option_element} $switches->@* )
 			{
 			push @matches, $option ;
 			next OPTION ;
@@ -321,11 +293,19 @@ print join( "\n", map { ("-" . $_) } @{ (Term::Bash::Completion::Generator::de_g
 
 sub GetCompletion
 {
-my (undef, $command_name, $word_to_complete, $previous_arguments) = @ARGV ;
+my (undef, $command_name, $word_to_complete, $previous_word) = @ARGV ;
 
 my ($pbs_config, $options) = @_ ;
 
-print PBS::Options::Complete::Complete($pbs_config->{GUIDE_PATH}, $options, [GetOptionsElements()], $word_to_complete, \&AliasOptions, \&DisplaySwitchesHelp) ;
+print &PBS::Options::Complete::Complete
+	(
+	$word_to_complete,
+	$previous_word,
+	[GetOptionsElements()],
+	'pbs_option_aliases',
+	\&DisplaySwitchesHelp,
+	$pbs_config->{GUIDE_PATH},
+	) ;
 }
 
 #-------------------------------------------------------------------------------

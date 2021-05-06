@@ -1,20 +1,12 @@
 
 write doc in vimwiki
-
-#completion on words that are not option
-	#word does the same
-	does #wor[tab] show the #guides that start with 'wor'?
-		no
-		if only one match run
-		#list in fzf instead for terminal
+	FAQ, tips, wizards can be written as guides
 
 distributed build
 	warp 1.5
 
 	virtual nodes are not created, can't wait for them to be on the file system
 		that would mean that the subpbs is a virtual node, unlikely but possible
-
-#split switches in multiple modules
 
 log parallel
 	main pbs is not logged
@@ -568,6 +560,17 @@ install pbs on linux and pbs.pl on windows
 Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
+
+#complete option# as if it was #option, set argv accordingly
+
+#completion on words that are not option
+	#word does the same
+	does #wor[tab] show the #guides that start with 'wor'?
+		no
+		#if only one match run
+		#list in fzf instead for terminal
+
+#split switches in multiple modules
 
 #parallel depend log
 	always ON and option for off?

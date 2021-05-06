@@ -174,14 +174,14 @@ do
 		{ chomp
 			(
 			$_ = PBS::Options::Complete::Complete
-					(
-					[],
-					$options,
-					[PBS::PBSConfigSwitches::GetOptionsElements()],
-					$_,
-					\&PBS::PBSConfigSwitches::AliasOptions,
-					\&PBS::PBSConfigSwitches::DisplaySwitchesHelp
-					)
+				(
+				$_,
+				'',
+				[PBS::PBSConfigSwitches::GetOptionsElements()],
+				'pbs_option_aliases',
+				\&PBS::PBSConfigSwitches::DisplaySwitchesHelp,
+				[],
+				)
 			) if /\w\+\d+$/ ;
 			
 			s/\s$// ;

@@ -21,6 +21,7 @@ use Module::Util qw(find_installed) ;
 use Time::HiRes qw(gettimeofday tv_interval) ;
 
 use PBS::Config ;
+use PBS::Options::Complete ;
 use PBS::Config::Subpbs ;
 use PBS::PBSConfigSwitches ;
 use PBS::Constants ;
@@ -57,7 +58,7 @@ if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	return 1 ;
 	}
 
-PBS::PBSConfigSwitches::AliasOptions($pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
+PBS::Options::Complete::AliasOptions(undef, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) ;
 
 my ($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 PBS::PBSConfig::RegisterPbsConfig('PBS', $pbs_config, $options) ;

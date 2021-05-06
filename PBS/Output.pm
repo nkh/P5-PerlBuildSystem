@@ -213,7 +213,7 @@ my ($colors) = @_ ;
 my @colors ;
 
 use Data::TreeDumper ;
-#print DumpTree $colors, 'colors' ;
+#print STDERR DumpTree $colors, 'colors' ;
 
 for my $class (keys %$colors)
 	{
@@ -226,8 +226,8 @@ for my $class (keys %$colors)
 		 
 	$cc{$class}{$_->[0]} = $_->[1] for @colors ;
 	}
-
-#print DumpTree \%cc ;
+	
+#print STDERR DumpTree \%cc ;
 
 CreateColorFunctions(map { $_->[0] } @colors) ;
 }

@@ -9,55 +9,54 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT      = qw() ;
 
-our $VERSION = '0.01' ;
+our $VERSION = '0.02' ;
 
 use File::Slurp ;
 use File::Find::Rule ;
 use List::Util qw(max any);
 use Sort::Naturally ;
-use Term::Bash::Completion::Generator ;
 use Tree::Trie ;
 	
 use PBS::Output ;
-use PBS::PBSConfigSwitches ;
 
 #-------------------------------------------------------------------------------
 
 =pod
 
-pbs *
-pbs text*
-
 pbs [--]text
 pbs text+number
-
 pbs text?
 
 pbs #file|number
 pbs #man,page
 pbs #smenu
 
+pbs *
+pbs text*
 pbs ** 
 
-# use readline?, xdotool, ioctl, tmux
+aliases
 
 =cut
 
 sub Complete
 {
-my ($guide_paths, $options, $options_elements, $word_to_complete, $AliasOptions, $DisplaySwitchesHelp) = @_ ;
+my ($word_to_complete, $previous_word, $options_elements, $AliasOptions, $DisplaySwitchesHelp, $guide_paths) = @_ ;
 
-if($word_to_complete =~ /^#/)
+if($word_to_complete =~ /^#|\w#$/)
 	{
+	$word_to_complete =~ s/(.+)#$/#$1/ if $word_to_complete =~ /\w#$/ ;
+
 	my $result ;
 	
-	local @ARGV =  split ',', $word_to_complete ;
+	my ($guide, @args) = split ',', $word_to_complete ;
 	
-	my ($guide, $argc) = ($ARGV[0] // '', $ARGV[1] // '') ;
+	# make arguments available to the guide
+	local @ARGV = ($previous_word, $guide, @args) ;
+	
 	substr($guide, 0, 1, '') ;
-	
 	my %guides ;
-
+	
 	File::Find::Rule->file()->name('*.pl')->maxdepth(1)->exec( sub { push $guides{$_[0]}->@*, $_[1]} )
 			->in( $guide_paths->@* ) ;
 	
@@ -66,7 +65,7 @@ if($word_to_complete =~ /^#/)
 		my $file_located = $guides{"$guide.pl"}[0] . "/$guide.pl" ;
 		
 		$result = do "$file_located" ;
-		die "PBS: couldn't evaluate file: $guide\nFile error: $!\nError: $@\n" unless defined $result;
+		die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 		}
 	else
 		{
@@ -94,20 +93,26 @@ if($word_to_complete =~ /^#/)
 		
 		if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 			{
+			$ARGV[1] = "#$guide" ;
+			
 			my $index = $guide - 1 ;
 			my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 			
 			$result = do "$file_located" ;
-			#die "PBS: couldn't evaluate SubpbsResult, file: $file_located\nFile error: $!\nError: $@\n" unless defined $result;
+			die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 			}
 		else
 			{
+			return unless @guides ;
+			
 			my $index = 1 ;
 			open my $fzf_in, '>', 'pbs_fzf_guides' ;
 			binmode $fzf_in ;
 			
-			print $fzf_in 
-				EC substr(sprintf("<W3>%d <I>%-${max_length}s", $index++, $_->[0]) . " <I3>$_->[2]", 0, 99) . "<R>\n" for @guides ;
+			print $fzf_in join "\n", map 
+						{
+						EC substr(sprintf("<W3>%d <I>%-${max_length}s <I3>$_->[2]", $index++, $_->[0]), 0, 99) . "<R>"
+						} @guides ;
 			
 			my $query = $guide eq '' ? '' : "-q $guide" ;
 			
@@ -119,7 +124,7 @@ if($word_to_complete =~ /^#/)
 			print STDERR "\n" ;
 			}
 			
-			my $fzf = qx"cat pbs_fzf_guides | fzf --height=30% --ansi --reverse -1 $query" ;
+			my $fzf = qx"cat pbs_fzf_guides | fzf --height=30% --info=inline --ansi --reverse -1 $query" ;
 			my $guide = substr($fzf // '', 0, 1) ;
 			
 			{
@@ -132,11 +137,12 @@ if($word_to_complete =~ /^#/)
 			
 			if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 				{
+				$ARGV[1] = $word_to_complete ;
+				
 				my $index = $guide - 1 ;
 				my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 				
 				$result = do "$file_located" ;
-				#die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" unless defined $result ;
 				die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 				}
 			}
@@ -156,7 +162,7 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	}
 	print STDERR "\n" ;
 
-	my @fzf = qx"fd --color=always | fzf --height=30% --ansi --reverse -m" ;
+	my @fzf = qx"fd --color=always | fzf --info=inline --height=30% --ansi --reverse -m" ;
 
 	{
 	local $/ = "R" ;
@@ -165,7 +171,7 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	$n-- ; # we added an extra newline
 	}
 	print STDERR "\e[$n;${m}H" ;
-
+	
 	
 	if(@fzf)
 		{
@@ -192,7 +198,7 @@ if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
 	
 	for (@matches)
 		{
-		my ($option_type, $help) = @{$_}[0..2] ;
+		my ($option_type, $help) = @{$_}[0..1] ;
 		
 		my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
 		$type //= '' ;
@@ -212,14 +218,13 @@ if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
 	open my $fzf_in, '>', 'pbs_fzf_all_options' ;
 	binmode $fzf_in ;
 	
-	for (@options)
-		{
-		my ($long, $short, $type, $help) = @{$_} ;
-		
-		print $fzf_in 
-			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type)
-				."<I>$help\n") ;
-		}
+	print $fzf_in join "\n",
+			map
+			{
+			my ($long, $short, $type, $help) = @{$_} ;
+			
+			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type) . "<I>$help") ;
+			} @options ;
 	
 	my ($n, $m) ;
 	{
@@ -229,7 +234,7 @@ if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
 	print STDERR "\n" ;
 	}
 	
-	my @fzf = qx"cat pbs_fzf_all_options | fzf --height=90% --ansi --reverse -m" ;
+	my @fzf = qx"cat pbs_fzf_all_options | fzf --height=90% --info=inline --ansi --reverse -m" ;
 	
 	{
 	local $/ = "R" ;
@@ -289,7 +294,7 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 	open my $fzf_in, '>', 'pbs_fzf_options' ;
 	binmode $fzf_in ;
 	
-	print $fzf_in "--$_\n" for @options ;
+	print $fzf_in join "\n", map { "--$_" } @options ;
 	
 	my ($n, $m) ;
 	{
@@ -297,7 +302,7 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 	print STDERR "\033[6n" ;
 	($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
 	}
-	my @fzf = qx"cat pbs_fzf_options | fzfp -x $m -y $n --height=30% --width $max_long --reverse -m -q '$search'" ;
+	my @fzf = qx"cat pbs_fzf_options | fzfp -x $m -y $n --height=30% --width $max_long --info=inline --reverse -m -q '$search'" ;
 
 	print STDERR "\e[$n;${m}H" ;
 
@@ -324,12 +329,13 @@ return () unless $word_to_complete =~ /^-?-?[a-zA-Z0-9_+-?]+/ ;
 if($word_to_complete !~ /^-?-?\s?$/)
 	{
 	my (@slice, @options) ;
-	push @options, $slice[0] while (@slice = splice @$options, 0, 4 ) ; 
+	my ($names, $option_tuples) = de_getop_ify_list([ map { $_->[0] } $options_elements->@* ]) ;
 	
-	my ($names, $option_tuples) = Term::Bash::Completion::Generator::de_getop_ify_list(\@options) ;
-	
-	my $aliases = $AliasOptions->([]) ;
-	push @$names, keys %$aliases ;
+	if($AliasOptions)
+		{
+		my $aliases = AliasOptions->($AliasOptions, []) ;
+		push @$names, keys %$aliases ;
+		}
 	
 	@$names = sort @$names ;
 	
@@ -390,8 +396,15 @@ if($word_to_complete !~ /^-?-?\s?$/)
 				{
 				Print Info "\n\n" ;
 				
-				$DisplaySwitchesHelp->(@matches) ;
-				
+				if($DisplaySwitchesHelp)
+					{
+					$DisplaySwitchesHelp->(\@matches, $options_elements) ;
+					}
+				else
+					{
+					DisplaySwitchesHelp->(\@matches, $options_elements) ;
+					}
+					
 				my $c = 0 ;
 				@matches > 1 ? join("\n", map { $c++ ; "--$_₊" . subscript($c) } nsort @matches) . "\n" : "\n​\n" ;
 				}
@@ -425,6 +438,160 @@ if($word_to_complete !~ /^-?-?\s?$/)
 #-------------------------------------------------------------------------------
 
 sub subscript { join '', map { qw / ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ /[$_] } split '', $_[0] ; } 
+
+#-------------------------------------------------------------------------------
+
+sub AliasOptions
+{
+my ($alias_file, $arguments) = @_ ;
+
+$alias_file //= 'pbs_option_aliases' ;
+
+my (%aliases) ;
+
+if (-e $alias_file)
+	{
+	for my $line (read_file $alias_file)
+		{
+		next if $line =~ /^\s*#/ ;
+		next if $line =~ /^$/ ;
+		$line =~ s/^\s*// ;
+		
+		my ($alias, @rest) = split /\s+/, $line ;
+		$alias =~ s/^-+// ;
+		
+		$aliases{$alias} = \@rest if @rest ;
+		}
+	}
+
+@{$arguments} = map { /^-+/ && exists $aliases{s/^-+//r} ? @{$aliases{s/^-+//r}} : $_ } @$arguments ;
+
+\%aliases
+}
+
+#-------------------------------------------------------------------------------
+
+sub de_getop_ify_list
+{
+
+=head2 de_getop_ify_list(\@completion_list)
+
+Split L<Getopt::Long> option definitions and remove type information
+
+I<Arguments>
+
+=over 2 
+
+=item * \@completion_list - list of options to create completion for
+
+the options can be simple strings or a L<Getopt::Long> specifications 
+
+=back
+
+I<Returns> - an array reference containing all options and  an array reference containing tuples of options
+
+I<Exceptions> - carps if $completion_list is not defined
+
+=cut
+
+my ($completion_list) = @_ ;
+
+my @de_getopt_ified_list ;
+my @de_getopt_ified_list_tuples ;
+
+for my $switch (@{$completion_list})
+	{
+	my @switches = split(/\|/sxm, $switch) ;
+	
+	my @tuple ;
+
+	for (@switches) 
+		{
+		s/=.*$//sxm ;
+		s/:.*$//sxm ;
+		
+		push @de_getopt_ified_list, $_ ;
+		push @tuple, $_ ;
+		}
+
+	push @de_getopt_ified_list_tuples, \@tuple ;
+	}
+	
+return \@de_getopt_ified_list, \@de_getopt_ified_list_tuples ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub DisplaySwitchesHelp
+{
+my ($switches, $options) = @_ ;
+
+my @matches ;
+
+OPTION:
+for my $option (sort { $a->[0] cmp $b->[0] } $options->@*)
+	{
+	for my $option_element (split /\|/, $option->[0])
+		{
+		$option_element =~ s/=.*$// ;
+		
+		if( any { $_ eq $option_element} $switches->@* )
+			{
+			push @matches, $option ;
+			next OPTION ;
+			}
+		}
+	}
+
+my ($narrow_display, $display_long_help) = (0, @matches <= 1) ;
+
+my (@short, @long, @options) ;
+
+my $has_long_help ;
+
+return unless @matches ;
+
+for (@matches)
+	{
+	my ($option_type, $help, $long_help) = @{$_}[0..2] ;
+	
+	$help //= '' ;
+	$long_help //= '' ;
+	
+	my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
+	$type //= '' ;
+		
+	my ($long, $short) =  split(/\|/, ($option =~ s/=.*$//r), 2) ;
+	$short //= '' ;
+	
+	push @short, length($short) ;
+	push @long , length($long) ;
+	
+	$has_long_help++ if length($long_help) ;
+	
+	push @options, [$long, $short, $type, $help, $long_help] ; 
+	}
+
+my $max_short = $narrow_display ? 0 : max(@short) + 2 ;
+my $max_long  = $narrow_display ? 0 : max(@long);
+
+for (@options)
+	{
+	my ($long, $short, $type, $help, $long_help) = @{$_} ;
+
+	my $lht = $has_long_help 
+			? $long_help eq ''
+				? ' '
+				: '*'
+			: '' ;
+
+	Say EC sprintf("<I3>--%-${max_long}s <W3>%-${max_short}s<I3>%-2s%1s: ", $long, ($short eq '' ? '' : "--$short"), $type, $lht)
+			. ($narrow_display ? "\n" : '')
+			. "<I>$help" ;
+
+	Say Info $long_help if $display_long_help && $long_help ne '' ;
+	}
+}
 
 #-------------------------------------------------------------------------------
 1 ;

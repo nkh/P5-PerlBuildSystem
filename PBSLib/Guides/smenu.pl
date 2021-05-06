@@ -30,11 +30,11 @@ if(0 == system 'tmux -V > /dev/null' )
 		{
 		my $options =  '--' . join(' --', split(/\s/, $options)) ;
 		chomp $options ;
-		#my $command = "tmux send-keys -- " . ('C-H ' x length($ARGV[0])) . " '$options '" ;
-		#my $command = "xdotool key " . ('Backspace ' x length($ARGV[0])) . " ; xdotool type -- '$options '" ;
+		#my $command = "tmux send-keys -- " . ('C-H ' x length($ARGV[1])) . " '$options '" ;
+		#my $command = "xdotool key " . ('Backspace ' x length($ARGV[1])) . " ; xdotool type -- '$options '" ;
 		#qx"$command" ;
 		
-		my $command = (chr(8) x length($ARGV[0])) . $options ;
+		my $command = (chr(8) x length($ARGV[1])) . $options ;
 		ioctl STDERR, 0x5412, $_ for split //, $command . ' ' ;
 		}
 	}

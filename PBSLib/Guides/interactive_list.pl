@@ -49,14 +49,13 @@ if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null'
 	open my $fzf_in, '>', 'pbs_fzf_x3' ;
 	binmode $fzf_in ;
 	
-	for (@options)
-		{
-		my ($long, $short, $type, $help) = @{$_} ;
-		
-		print $fzf_in 
-			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type)
-				."<I>$help\n") ;
-		}
+	print $fzf_in join "\n",
+			map
+				{
+				my ($long, $short, $type, $help) = @{$_} ;
+				
+				EC sprintf "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: <I>$help", $long, ($short eq '' ? '' : "--$short"), $type ;
+				} @options ;
 	
 	my $size = qx'stty size' ;
 	my ($screen_lines) = $size =~ /^(\d+)/ ;
@@ -74,7 +73,7 @@ if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null'
 	qx"tput ed 1>&2" ;
 
 	my $options = join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf ;
-	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[0])) . "'$options '" unless $options eq '' ;
+	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[1])) . "'$options '" unless $options eq '' ;
 	qx "$command" ;
 	
 	return ;
