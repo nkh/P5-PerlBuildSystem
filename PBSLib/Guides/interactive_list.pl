@@ -8,7 +8,7 @@ print STDERR "\033[6n" ;
 print STDERR "\n" ;
 }
 
-my $l = length $ARGV[0] ;
+my $l = length $ARGV[1] ;
 
 Say EC  <<EOC ;
 
@@ -61,7 +61,7 @@ if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null'
 	my ($screen_lines) = $size =~ /^(\d+)/ ;
 	my $height = @options > $screen_lines / 2 ? '50%' : @options ; 
 	
-	my @fzf = qx"cat pbs_fzf_x3 | fzf --height=$height --ansi --reverse -m" ;
+	my @fzf = qx"cat pbs_fzf_x3 | fzf --height=$height --info=inline --ansi --reverse -m" ;
 	
 	{
 	local $/ = "R" ;
@@ -73,7 +73,7 @@ if(0 == system 'fzf --version > /dev/null' and 0 == system 'tmux -V > /dev/null'
 	qx"tput ed 1>&2" ;
 
 	my $options = join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @fzf ;
-	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[1])) . "'$options '" unless $options eq '' ;
+	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[2])) . "'$options '" unless $options eq '' ;
 	qx "$command" ;
 	
 	return ;

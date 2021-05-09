@@ -31,7 +31,7 @@ my $command = '' ;
 
 if($r eq "\r")
 	{
-	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[1])) . " '--super_xxx --optional '" ;
+	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[2])) . " '--super_xxx --optional '" ;
 	qx"$command" ;
 	}
 elsif($r eq "\e")
@@ -40,7 +40,7 @@ elsif($r eq "\e")
 	}
 else
 	{
-	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[1])) . " '--super_xxx '" ;
+	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[2])) . " '--super_xxx '" ;
 	qx"$command" ;
 	}
 

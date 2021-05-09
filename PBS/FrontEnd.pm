@@ -48,6 +48,8 @@ if(($pbs_arguments{COMMAND_LINE_ARGUMENTS}[0] // '')  eq '--options_completion')
 	
 	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions() ;
 	
+	$ARGV[1] = '*' if $ARGV[1] eq '--' ;
+	 
 	ParseSwitchesAndLoadPlugins($options, $pbs_config, \@ARGV) ; #load plugins options
 	
 	($options, $pbs_config) = PBS::PBSConfigSwitches::GetOptions($pbs_config) ; # add new options

@@ -23,25 +23,28 @@ use PBS::Output ;
 
 =pod
 
+aliases
+
 pbs [--]text
 pbs text+number
 pbs text?
 
+pbs [--]text*
+pbs *
+pbs ** 
+
 pbs #file|number
 pbs #man,page
 pbs #smenu
-
-pbs *
-pbs text*
-pbs ** 
-
-aliases
 
 =cut
 
 sub Complete
 {
 my ($word_to_complete, $previous_word, $options_elements, $AliasOptions, $DisplaySwitchesHelp, $guide_paths) = @_ ;
+my $command_line = $ENV{COMP_LINE} ;
+
+#todo: check options by calling a checker guide
 
 if($word_to_complete =~ /^#|\w#$/)
 	{
@@ -52,7 +55,7 @@ if($word_to_complete =~ /^#|\w#$/)
 	my ($guide, @args) = split ',', $word_to_complete ;
 	
 	# make arguments available to the guide
-	local @ARGV = ($previous_word, $guide, @args) ;
+	local @ARGV = ($command_line, $previous_word, $guide, @args) ;
 	
 	substr($guide, 0, 1, '') ;
 	my %guides ;
@@ -124,7 +127,7 @@ if($word_to_complete =~ /^#|\w#$/)
 			print STDERR "\n" ;
 			}
 			
-			my $fzf = qx"cat pbs_fzf_guides | fzf --height=30% --info=inline --ansi --reverse -1 $query" ;
+			my $fzf = qx"cat pbs_fzf_guides | fzf --height=50% --info=inline --ansi --reverse -1 $query" ;
 			my $guide = substr($fzf // '', 0, 1) ;
 			
 			{
@@ -162,7 +165,7 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	}
 	print STDERR "\n" ;
 
-	my @fzf = qx"fd --color=always | fzf --info=inline --height=30% --ansi --reverse -m" ;
+	my @fzf = qx"fd --color=always | fzf --info=inline --height=50% --info=inline --ansi --reverse -m" ;
 
 	{
 	local $/ = "R" ;
@@ -190,13 +193,11 @@ if($word_to_complete =~ /^\*\*$/ and 0 == system 'fzf --version > /dev/null')
 	return ;
 	}
 
-if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
+if($word_to_complete =~ /^\-\-?$/)
 	{
-	my @matches = $options_elements->@* ; ;
-	
 	my (@short, @long, @options) ;
 	
-	for (@matches)
+	for($options_elements->@*)
 		{
 		my ($option_type, $help) = @{$_}[0..1] ;
 		
@@ -234,7 +235,7 @@ if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
 	print STDERR "\n" ;
 	}
 	
-	my @fzf = qx"cat pbs_fzf_all_options | fzf --height=90% --info=inline --ansi --reverse -m" ;
+	my @fzf = qx"cat pbs_fzf_all_options | fzf --height=50% --info=inline --ansi --reverse -m" ;
 	
 	{
 	local $/ = "R" ;
@@ -264,14 +265,14 @@ if($word_to_complete =~ /^\*$/ and 0 == system 'fzf --version > /dev/null')
 
 if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 	{
-	my (@long, @options) ;
+	my (@short, @long, @options) ;
 	
-	my ($search) = $word_to_complete =~ /-?-?([^\*]+)\*+$/ ;
+	my ($search) = $word_to_complete =~ /(-?-?[^\*]+)\*+$/ ;
 	$search //= '' ;
 	
-	for (@$options_elements)
+	for($options_elements->@*)
 		{
-		my ($option_type) = @{$_} ;
+		my ($option_type, $help) = @{$_}[0..1] ;
 		
 		my ($option, $type) = $option_type  =~ m/^([^=]+)(=.*)?$/ ;
 		$type //= '' ;
@@ -279,33 +280,44 @@ if($word_to_complete =~ /\*$/ and 0 == system 'fzf --version > /dev/null')
 		my ($long, $short) = split(/\|/, $option, 2) ;
 		$short //= '' ;
 		
-		my $anchor = $word_to_complete =~ /^-/ ? '^' : '' ;
+		push @short, length($short) ;
+		push @long , length($long) ;
 		
-		next if $long !~ /$anchor$search/ && $short !~ /$anchor$search/ ;
-		
-		push @long, length($long) ;
-		push @options, $long ; 
+		push @options, [$long, $short, $type, $help] ; 
 		}
 	
-	return unless @options > 1 ;
-	
-	my $max_long  = max(@long) + 2 + 5 ;
+	my $max_short = max(@short) + 2 ;
+	my $max_long  = max(@long);
 	
 	open my $fzf_in, '>', 'pbs_fzf_options' ;
 	binmode $fzf_in ;
 	
-	print $fzf_in join "\n", map { "--$_" } @options ;
+	print $fzf_in join "\n",
+			map
+			{
+			my ($long, $short, $type, $help) = @{$_} ;
+			
+			EC(sprintf( "<I3>--%-${max_long}s <W3>%--${max_short}s<I3>%2s: ", $long, ($short eq '' ? '' : "--$short"), $type) . "<I>$help") ;
+			} @options ;
 	
 	my ($n, $m) ;
 	{
 	local $/ = "R" ;
 	print STDERR "\033[6n" ;
 	($n, $m) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	print STDERR "\n" ;
 	}
-	my @fzf = qx"cat pbs_fzf_options | fzfp -x $m -y $n --height=30% --width $max_long --info=inline --reverse -m -q '$search'" ;
-
+	
+	my @fzf = qx"cat pbs_fzf_options | fzf --height=50% --info=inline --ansi --reverse -m -q '$search'" ;
+	
+	{
+	local $/ = "R" ;
+	print STDERR "\033[6n" ;
+	($n) = (<STDIN> =~ m/(\d+)\;(\d+)/) ;
+	$n -= 1 ; # we added an extra lines
+	}
 	print STDERR "\e[$n;${m}H" ;
-
+	qx"tput ed 1>&2" ;
 	
 	if(@fzf)
 		{

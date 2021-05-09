@@ -627,11 +627,17 @@ for my $node (keys %nodes)
 	{
 	my $display_info = $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
 	
-	die ERROR("Depend∥ : merge: $node already depended") . "\n"
-		if exists $inserted_nodes->{$node} and exists $inserted_nodes->{$node}{__DEPENDED} ;
+	die ERROR
+		(
+		"Depend∥ : merge: $node already depended, insertion pid: $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID},"
+		. "duplicate pid: $nodes{$node}{PID}"
+		) . "\n"
+		if exists $inserted_nodes->{$node} and exists $inserted_nodes->{$node}{__DEPENDED}
+			and $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID} != $nodes{$node}{PID} ;
 	
 	$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
-		
+	$inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID} = $nodes{$node}{PID} ;
+	
 	Say Info "Depend∥ : merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
 	
 	for my $element (keys %{$nodes{$node}{NODES}{$node}})
@@ -640,6 +646,8 @@ for my $node (keys %nodes)
 			{
 			$inserted_nodes->{$element} = $nodes{$node}{NODES}{$element}
 				unless exists $inserted_nodes->{$element} ;
+			
+			$inserted_nodes->{$element}{__PARALLEL_DEPENDER_PID} = $nodes{$node}{PID} ;
 			
 			$inserted_nodes->{$node}{$element} = $inserted_nodes->{$element} ;
 			
