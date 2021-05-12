@@ -1,5 +1,7 @@
 
 sandboxing a target build by manipulating PATH
+	setup new directories and ln to originalfiles, the rest of the files in the original directory are not visible
+	chroot?
 
 write doc in vimwiki
 	FAQ, tips, wizards can be written as guides
@@ -25,15 +27,13 @@ link and update build sequence at the same time to save on connection time
 
 PUT /link received twice
 
-M for main graph is not displayed
-
 handle crashes in //pbs
 	send an exception to pbs server
 	handle timeout, and since we know what was depended we can restart it!
 
 some processes get a very large amount of nodes while other don't
 	we can
-		fork the last subpbs but that means more processes
+		!fork the last subpbs but that means more processes
 		not fork before a minimum amount of nodes is in the current process
 
 -w 0 and nothing to build, check: 1 sec
@@ -123,14 +123,6 @@ install and where to find tools
 
 		via a node sub
 
-rework the options
-	
-	object verb
-
-	depend display dependencies
-	depend display matchining rules
-	depend display inserting rule
-	
 write the generate file in cmake in pbs
 	all the examples, including generation of subpbs and super build
 
@@ -563,6 +555,16 @@ Add a bunch of test with bad pbsfiles to catch syntax errors
 
 # ---------------------------------------------- below is done ---------------------------------------------------
 
+#better bash completion
+
+#rework the options
+	
+	object verb
+
+	depend display dependencies
+	depend display matchining rules
+	depend display inserting rule
+	
 #complete option# as if it was #option, set argv accordingly
 
 #completion on words that are not option

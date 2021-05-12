@@ -232,6 +232,13 @@ my ($pbs_config) = @_ ;
 
 my $success_message = '' ;
 
+$pbs_config->{DO_BUILD}                       = 1 ;
+$pbs_config->{SHORT_DEPENDENCY_PATH_STRING}   = '…' ;
+$pbs_config->{PBS_QR_OPTIONS}                 //= [] ;
+$pbs_config->{JOBS_DIE_ON_ERROR}              //= 0 ;
+$pbs_config->{GENERATE_TREE_GRAPH_GROUP_MODE} //= GRAPH_GROUP_NONE ;
+$pbs_config->{GENERATE_TREE_GRAPH_SPACING}    //= 1 ;
+
 $pbs_config->{DISPLAY_ENVIRONMENT}++ if $pbs_config->{DISPLAY_ENVIRONMENT_KEPT} ;
 
 #force options

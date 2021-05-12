@@ -10,9 +10,9 @@ our %EXPORT_TAGS = ('all' => [ qw() ]) ;
 our @EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT      = qw(GetOptionsElements RegistredFlagsAndHelp) ;
 
-our $VERSION = '0.06' ;
+our $VERSION = '0.07' ;
 
-use Carp ;
+#use Carp ;
 use List::Util qw(max any);
 use Sort::Naturally ;
 use File::Slurp ;
@@ -27,63 +27,89 @@ use PBS::Config::Options ;
 my %registred_flags ;          # plugins won't override flags
 my @registred_flags_and_help ; # allow plugins to register their switches
 
-RegisterDefaultPbsFlags() ; # reserve them so plugins can't modify their meaning
+RegisterDefaultPbsFlags() ;    # reserve them so plugins can't modify their meaning
 
 #-------------------------------------------------------------------------------
 
 sub GetOptions
 {
 my $config = shift // {} ;
+my @options ;
 
-my @options = 
-	(
-	PBS::Config::Options::HelpOptions        ($config),
-	PBS::Config::Options::WarpOptions        ($config),
-	PBS::Config::Options::DigestOptions      ($config),
-	PBS::Config::Options::EnvOptions         ($config),
-	PBS::Config::Options::PbsSetupOptions    ($config),
-	PBS::Config::Options::PluginOptions      ($config),
-	PBS::Config::Options::ConfigOptions      ($config),
-	PBS::Config::Options::DependOptions      ($config),
-	PBS::Config::Options::TriggerOptions     ($config),
-	PBS::Config::Options::RulesOptions       ($config),
-	PBS::Config::Options::ParallelOptions    ($config),
-	PBS::Config::Options::CheckOptions       ($config),
-	PBS::Config::Options::PostBuildOptions   ($config),
-	PBS::Config::Options::MatchOptions       ($config),
-	PBS::Config::Options::HttpOptions        ($config),
-	PBS::Config::Options::NodeOptions        ($config),
-	PBS::Config::Options::TriggerNodeOptions ($config),
-	PBS::Config::Options::OutputOptions      ($config),
-	PBS::Config::Options::StatsOptions       ($config),
-	PBS::Config::Options::TreeOptions        ($config),
-	PBS::Config::Options::GraphOptions       ($config),
-	PBS::Config::Options::DebugOptions       ($config),
-	PBS::Config::Options::DevelOptions       ($config),
-	) ;
-
-$config->{DO_BUILD}                                = 1 ;
-$config->{SHORT_DEPENDENCY_PATH_STRING}            = '…' ;
-$config->{PBS_QR_OPTIONS}                        //= [] ;
+for my $option_set 
+	(qw(
+	Help
+	Warp
+	Digest
+	Env
+	PbsSetup
+	Plugin
+	Config
+	Depend
+	Trigger
+	Rules
+	Parallel
+	Check
+	PostBuild
+	Match
+	Http
+	Node
+	TriggerNode
+	Output
+	Stats
+	Tree
+	Graph
+	Debug
+	Devel
+	))
+	{
+	my @set_options ;
+	{ no strict ; @set_options = "PBS::Config::Options::$option_set"->($config) ; }
+	
+	while( my ($switch, $help1, $help2, $variable) = splice(@set_options, 0, 4))
+		{
+		if('' eq ref $variable)
+			{
+			if($variable =~ s/^@//)
+				{
+				$variable = $config->{$variable} //= [] ;
+				}
+			elsif($variable =~ s/^%//)
+				{
+				$variable = $config->{$variable} //= {} ;
+				}
+			else
+				{
+				$variable = \$config->{$variable} ;
+				}
+			}
+		
+		push @options, $switch, $help1, $help2, $variable ;
+		}
+	}
 
 my @rfh = @registred_flags_and_help ;
 
 while( my ($switch, $help1, $help2, $variable) = splice(@rfh, 0, 4))
-    {
-    if('' eq ref $variable)
-        {
-        if($variable =~ s/^@//)
-            {
-            $variable = $config->{$variable} = [] ;
-            }
-        else
-            {
-            $variable = \$config->{$variable} ;
-            }
-        }
-
-    push @options, $switch, $help1, $help2, $variable ;
-    }
+	{
+	if('' eq ref $variable)
+		{
+		if($variable =~ s/^@//)
+			{
+			$variable = $config->{$variable} //= [] ;
+			}
+		elsif($variable =~ s/^%//)
+			{
+			$variable = $config->{$variable} //= {} ;
+			}
+		else
+			{
+			$variable = \$config->{$variable} ;
+			}
+		}
+	
+	push @options, $switch, $help1, $help2, $variable ;
+	}
 
 \@options, $config ;
 }

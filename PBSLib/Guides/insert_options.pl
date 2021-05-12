@@ -1,12 +1,11 @@
+#!/bin/env perl
 # insert options 
+
+use strict ; use warnings ;
 
 my @options = qw. --abc --def  . ;
 
-if(0 == system 'tmux -V > /dev/null')
-	{
-	my $options = join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @options ;
-	$command = "tmux send-keys -- " . ('C-H ' x length($ARGV[2])) . "'$options '" unless $options eq '' ;
-	qx "$command" ;
-	}
+my $options = join ' ',  map { (($_ // '') =~ /^(--[a-zA-Z0-9_]+)/) } @options ;
 
-return () ;
+my $command = (chr(8) x length($ARGV[2])) . "$options " unless $options eq '' ;
+ioctl STDERR, 0x5412, $_ for split //, $command  ;

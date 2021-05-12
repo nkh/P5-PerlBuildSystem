@@ -42,20 +42,20 @@ pbs #smenu
 sub Complete
 {
 my ($word_to_complete, $previous_word, $options_elements, $AliasOptions, $DisplaySwitchesHelp, $guide_paths) = @_ ;
-my $command_line = $ENV{COMP_LINE} ;
+my $command_line = ('ARRAY' eq ref $ENV{COMP_LINE}) ? join(' ', $ENV{COMP_LINE}) : $ENV{COMP_LINE} ;
 
 #todo: check options by calling a checker guide
 
 if($word_to_complete =~ /^#|\w#$/)
 	{
 	$word_to_complete =~ s/(.+)#$/#$1/ if $word_to_complete =~ /\w#$/ ;
-
+	
 	my $result ;
 	
 	my ($guide, @args) = split ',', $word_to_complete ;
 	
 	# make arguments available to the guide
-	local @ARGV = ($command_line, $previous_word, $guide, @args) ;
+	local @ARGV = ("'$command_line'", "'$previous_word'", "'$guide'", @args) ;
 	
 	substr($guide, 0, 1, '') ;
 	my %guides ;
@@ -67,7 +67,7 @@ if($word_to_complete =~ /^#|\w#$/)
 		{
 		my $file_located = $guides{"$guide.pl"}[0] . "/$guide.pl" ;
 		
-		$result = do "$file_located" ;
+		qx"$file_located @ARGV" ;
 		die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 		}
 	else
@@ -82,6 +82,8 @@ if($word_to_complete =~ /^#|\w#$/)
 			open my $guide, '<', "$paths->[0]/$file" ;
 			
 			my $line = <$guide>;
+			   $line = <$guide>;
+			
 			$line //= '' ;
 			chomp $line ;
 			
@@ -96,12 +98,12 @@ if($word_to_complete =~ /^#|\w#$/)
 		
 		if(defined $guide and $guide =~ /^\d+$/ and $guide != 0 and defined $guides[$guide - 1])
 			{
-			$ARGV[1] = "#$guide" ;
+			$ARGV[2] = "'#$guide'" ;
 			
 			my $index = $guide - 1 ;
 			my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 			
-			$result = do "$file_located" ;
+			qx"$file_located @ARGV" ;
 			die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 			}
 		else
@@ -145,7 +147,7 @@ if($word_to_complete =~ /^#|\w#$/)
 				my $index = $guide - 1 ;
 				my $file_located = "$guides[$index][1][0]/$guides[$index][0]" ;
 				
-				$result = do "$file_located" ;
+				qx"$file_located @ARGV" ;
 				die "PBS: couldn't evaluate '$file_located', error: $!, exception: $@\n" if $@ ;
 				}
 			}
