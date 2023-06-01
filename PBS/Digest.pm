@@ -675,11 +675,7 @@ my($node) = @_ ;
 #use Carp ;
 #confess unless 'HASH' eq ref $node ;
 
-if(defined $node->{__IS_SOURCE})
-	{
-	$node->{__IS_SOURCE} ;
-	}
-else
+unless (defined $node->{__IS_SOURCE})
 	{
 	$node->{__IS_SOURCE} =
 		! IsDigestToBeGenerated
@@ -692,10 +688,12 @@ else
 			&& defined $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				? $node->{__MATCHING_RULES}[0]{RULE}{DEFINITIONS}[0]{PACKAGE}
 				: $node->{__LOAD_PACKAGE},
-
+			
 			$node
 			) ; 
 	}
+
+$node->{__IS_SOURCE} ;
 }
 
 sub DependencyIsSource
@@ -735,7 +733,7 @@ if (exists $inserted_nodes->{$node_name})
 			) ; 
 =cut
 	
-	NodeIsSource($inserted_nodes->{$node_name}) ;
+	$is_source = NodeIsSource($inserted_nodes->{$node_name}) ;
 	}
 else
 	{
@@ -775,7 +773,9 @@ for my $name (keys %{$exclude_from_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			Say EC "<W>Digest: $node_name no digest, rule: $name, pattern: $exclude_from_digest{$package}{$name}{PATTERN}"
+			my $indent = $PBS::Output::indentation ;
+			
+			Say EC "<W>${indent}Digest: $node_name no digest, rule: $name, pattern: $exclude_from_digest{$package}{$name}{PATTERN}"
 				. "<I2>, file: $exclude_from_digest{$package}{$name}{ORIGIN}"  ;
 			}
 			
@@ -790,7 +790,9 @@ for my $name (keys %{$force_digest{$package}})
 		{
 		if(defined $pbs_config->{DISPLAY_DIGEST_EXCLUSION})
 			{
-			Say EC "<W>Digest: $node_name forced digest, rule: $name, pattern: $force_digest{$package}{$name}{PATTERN}"
+			my $indent = $PBS::Output::indentation ;
+			
+			Say EC "<W>${indent}Digest: $node_name forced digest, rule: $name, pattern: $force_digest{$package}{$name}{PATTERN}"
 				. "<I2>, file: $force_digest{$package}{$name}{ORIGIN}" ;
 			}
 			

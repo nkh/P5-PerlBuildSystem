@@ -90,7 +90,7 @@ unless('Regexp' eq ref $node_regex)
 	if($build_ok)
 		{
 		my $original = $node_regex ;
-		$node_regex = qr/$dependent_path_regex$dependent_prefix_regex$dependent_regex/ ;	
+		$node_regex = qr/$dependent_path_regex$dependent_prefix_regex$dependent_regex/ ;
 		
 		if($display_simplified_rule_transformation)
 			{

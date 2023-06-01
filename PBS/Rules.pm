@@ -384,7 +384,7 @@ my ($builder_sub, $node_subs1, $builder_generated_types) = GenerateBuilder($pbs_
 $builder_generated_types ||= {} ;
 
 my ($depender_sub, $node_subs2, $depender_generated_types) = GenerateDepender($pbs_config, $config, $file_name, $line, $package, $class, $rule_types, $name, $depender_definition) ;
-$depender_generated_types  ||= [] ; 
+$depender_generated_types ||= [] ; 
 
 my $origin = ":$package:$class:$file_name:$line";
 	

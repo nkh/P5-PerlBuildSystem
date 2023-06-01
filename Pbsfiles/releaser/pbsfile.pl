@@ -1,5 +1,5 @@
 config  OEMS => 'OEM1,OEM2', LIBRARIES => 'aaa,xxx' ;
-sources qw- ./repo ./resources/css - ;
+sources qw- ./repo ./resources - ;
 
 target 'release' ;
 rule   'release', [ release => glob config '{%OEMS}/{%LIBRARIES}/encrypted.mol' ], touch_ok ;

@@ -485,8 +485,9 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 		push @{$pbs_config->{LIB_PATH}},          @{$prf_config->{LIB_PATH}} unless (@{$pbs_config->{LIB_PATH}}) ;
 		}
 	
-	my $dist_data = File::HomeDir->my_dist_data( 'PBS' ) ;
+	my $dist_data = File::HomeDir->my_dist_data( 'PBS' , { create => 1 } ) ;
 	my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
+	print "$dist_data, $pbs_response_file\n" ;
 	
 	if(-e $dist_data && -e $pbs_response_file)
 		{

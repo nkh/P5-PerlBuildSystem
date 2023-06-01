@@ -1,3 +1,75 @@
+? use slurm to manage cluster
+
+variables as nodes
+	can have dependencies
+		do they change when dependency change => no
+			but we could warn when a dependent variable is changed after the dependent used it
+				there are two places where variables can change
+					in the pbsfile
+					while the rules are executed
+
+	can be computed
+	can be checked
+	can be a dependency
+
+	all : a.o %CC
+		%CC $< $@
+
+	%CC: %CC_DEBUG
+		if %CC_DEBUG .....
+		%CC = "%CC_DEBUG %CC"
+		%CC == '' and die
+
+	%CC_DEBUG :
+		%CC_DEBUG == '' and die
+		
+warp time
+	load time reduction
+		save graph with
+			link to file containing all nodes data in warp format
+			nodes containing
+				md5
+				link to individual nodes warp data
+					in warp format or preferably in full format (if only fews nodes are reloaded)
+					full node format could be in the node's digest
+	eliminate warp regeneration
+			the graph is not needed
+				just a list of files and what they trigger
+				node depth can be used to optimize node invalidation
+
+			non live nodes data is not accessed anymore, no need to regenerate node
+
+			only added/changed changed data are re-serialize, the graph/list is update
+
+	save time reduction
+		create patch and add it to previous warp file 
+		when necessary do a garbage collection
+
+		
+link graph+hash, all node, individual nodes
+graph patch and gc
+
+
+? Allow code inside rule
+	see shake https://shakebuild.com/manual
+
+	rule 'all',
+		Code => sub which can define rule local variable, ...
+		Match(...)
+		reh ;
+
+FS Log/Stream
+	rather than generate a monolitic output, put the sections pertaining to a node where the node is build
+	output generator can follow nodes instead for reading a stream
+
+FS History
+	add information about the build
+	each build has it's own directory
+	artefacts that are not regenerated can stay in the other build directory and only linked, this gives us history across builds
+		if multiple artefacts are generated in the same directory it becomes difficult to know what rule build what
+			artefact.log tells us
+			.artefact.dir can be a sub directory that contains the artefact, and links to its dependencies
+	and makes it possible to write scripts to track the origin of artefacts
 
 Do we need 'Rule'
 

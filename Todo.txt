@@ -1,3 +1,36 @@
+missing dependencies
+	cpanm PPR
+	cpanm HTML::FromANSI
+	cpanm Digest::xxHash
+	cpanm HTTP::Request::Params
+
+tmux session
+
+output graph and warp file in Yaml?
+	to make it easy to run queries
+	deserializing allows quesries in perl
+
+when building, each step of the build is in a FS layer/directory
+	it works like a history
+	commands can be used to traverse the history, aka directories
+	the prompt in the directory shows information about the build step
+	how do we reuse artefacts
+	dependencies are in sub directories
+		going into them is going back through time
+	tree can be used to show history
+	find --depth | sort by depth | extract info | tree to show info about an artifact build
+	push some data in the directory
+		bash history 
+			commands to build the artefact
+			command to run the build system to build the artefact from the . root
+			
+		log file
+			may alleviate the need to have tmux session
+		level of artefact, graph generation time (to debug parallel builds)
+		
+	link 
+		dependency artefacts  
+		pbsfile
 
 sandboxing a target build by manipulating PATH
 	setup new directories and ln to originalfiles, the rest of the files in the original directory are not visible
@@ -210,7 +243,7 @@ on error generate a script that
 	runs set of commands to ease debugging
 		display debugging information
 
-	run ranger 
+	run ftl 
 
 	save the latest errors let the user start the sessions
 
