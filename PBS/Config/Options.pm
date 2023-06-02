@@ -290,7 +290,7 @@ EOC
 
 'path_source=s',          'Source files location, can be used multiple times.',     '', '@SOURCE_DIRECTORIES',
 'path_source_display',    'display all the source directories.',                    '', 'DISPLAY_SOURCE_DIRECTORIES',
-'path_buildy=s',          'Build directory',                                        '', 'BUILD_DIRECTORY',
+'path_build=s',           'Build directory',                                        '', 'BUILD_DIRECTORY',
 'path_lib=s',             "Pbs libs. Multiple directories can be given.",           '', '@LIB_PATH',
 'path_lib_display',       "Displays PBS lib paths.",                                '', 'DISPLAY_LIB_PATH',
 'path_lib_no_warning',    "no warning if using PBS default libs and plugins.",      '', 'NO_DEFAULT_PATH_WARNING',

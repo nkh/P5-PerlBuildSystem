@@ -487,7 +487,6 @@ unless(defined $command_line_config->{NO_PBS_RESPONSE_FILE})
 	
 	my $dist_data = File::HomeDir->my_dist_data( 'PBS' , { create => 1 } ) ;
 	my $pbs_response_file = File::HomeDir->my_dist_data( 'PBS') . "/pbs.prf" ;
-	print "$dist_data, $pbs_response_file\n" ;
 	
 	if(-e $dist_data && -e $pbs_response_file)
 		{
@@ -683,7 +682,7 @@ print <<EOH ;
 
 PBS version $version
 
-Copyright 2002-2021, Nadim Khemir
+Copyright 2002-2023, Nadim Khemir
 
 Send suggestions and inqueries to <nadim.khemir\@gmail.com>.
 

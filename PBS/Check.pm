@@ -34,7 +34,7 @@ sub CheckDependencyTree
 
 my ($node, $node_level, $inserted_nodes, $pbs_config, $config, $trigger_rule, $node_checker_rule, $build_sequence, $files_in_build_sequence)  = @_ ;
 
-return exists $node->{__TRIGGERED} if exists $node->{__CHECKED} ; # check once only
+return exists $node->{__TRIGGERED} if exists $node->{__CHECKED} ; # check once
 
 $build_sequence //= [] ; 
 $files_in_build_sequence //= {} ;
@@ -121,6 +121,30 @@ else
 Say EC "<I>Place: <I3>$name<I2>" . ($alt_source ? ' -> [R]' : '') . ($is_virtual ? ' -> [V]' : $build_name ne $name ? " -> '$build_name'" : '')
 	if $pbs_config->{DISPLAY_FILE_LOCATION} && $name !~ /^__/ ;
 
+if(NodeIsGenerated($node))
+	{
+	my $trigger_match = 0 ;
+	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
+		{
+		if($name =~ /$trigger_regex/)
+			{
+			Say Info2 "Trigger: '$name' matches /$trigger_regex/"
+				 if $pbs_config->{DEBUG_DISPLAY_TRIGGER} && $name !~ /^__PBS/
+					 && ! exists $node->{__TRIGGERED} ;
+			
+			$trigger_match++ ;
+			
+			push @{$node->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
+			$triggered++ ;
+			}
+		}
+	
+	Say Info2 "Trigger: '$name' not triggered"
+		 if ! $trigger_match
+			&& $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY}
+			&& $name !~ /^__PBS/ ;
+	}
+
 my (@dependency_triggering, @tally) ;
 
 # NOTE: this also generates child parents links for parallel build
@@ -140,14 +164,15 @@ for my $dependency_name (sort grep { ! /^__/ } keys %$node)
 			{
 			if($dependency_name =~ /$trigger_regex/)
 				{
-				Say Info2 "Trigger: source $dependency_name matches /$trigger_regex/" if $pbs_config->{DEBUG_DISPLAY_TRIGGER} ;
+				Say Info2 "Trigger: $name dependency $dependency_name matches /$trigger_regex/"
+					if $pbs_config->{DEBUG_DISPLAY_TRIGGER}
+						&& ! exists $node->{__TRIGGERED} ;
+				
 				$trigger_match++ ;
 				
 				push @{$node->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $dependency_name"} ;
-				push @{$dependency->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => ": $trigger_regex"} ;
 				$triggered++ ;
 				
-				$node->{__CHILDREN_TO_BUILD}++ ;
 				push @tally, "<I2>Tally: $name [$node->{__CHILDREN_TO_BUILD}], child: $dependency_name" ;
 				}
 			}
@@ -353,29 +378,6 @@ else
 			$triggered++ ;
 			}
 		}
-	}
-
-if(NodeIsGenerated($node))
-	{
-	my $trigger_match = 0 ;
-	for my $trigger_regex (@{$pbs_config->{TRIGGER}})
-		{
-		if($name =~ /$trigger_regex/)
-			{
-			Say Info2 "Trigger: '$name' matches /$trigger_regex/"
-				 if $pbs_config->{DEBUG_DISPLAY_TRIGGER} && $name !~ /^__PBS/ ;
-
-			$trigger_match++ ;
-
-			push @{$node->{__TRIGGERED}}, {NAME => '__OPTION --trigger', REASON => "'$trigger_regex'"} ;
-			$triggered++ ;
-			}
-		}
-
-	Say Info2 "Trigger: '$name' not triggered"
-		 if ! $trigger_match
-			&& $pbs_config->{DEBUG_DISPLAY_TRIGGER} && ! $pbs_config->{DEBUG_DISPLAY_TRIGGER_MATCH_ONLY}
-			&& $name !~ /^__PBS/ ;
 	}
 
 # node is checked, add it to the build sequence if triggered
