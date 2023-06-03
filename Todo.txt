@@ -1,3 +1,6 @@
+parallel build
+	in case of error build servers are not killed
+
 broken: time pbs --environment_keep . -j 12 --jobs_parallel 8 -pb0 --parallel_log --parallel_depend_server --parallel_no_resource --parallel_log_display --parallel_node_name --parallel_no_result --parallel_process_tree 
 
 missing dependencies

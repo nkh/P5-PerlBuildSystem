@@ -390,7 +390,7 @@ if($pbs_config->{DISPLAY_FILE_LOCATION_ALL})
 	for my $name (keys %$inserted_nodes)
 		{
 		my $node = $inserted_nodes->{$name} ;
-		my $full_name = $node->{__BUILD_NAME} ;
+		my $full_name = $node->{__BUILD_NAME} // 'no build name' ;
 		
 		my $is_alternative_source++ if exists $node->{__ALTERNATE_SOURCE_DIRECTORY} ;
 		my $is_virtual = exists $node->{__VIRTUAL} ;
@@ -527,7 +527,7 @@ my $short_target = $em->( join ', ', @$targets) ;
 my $pbs_runs = PBS::PBS::GetPbsRuns() // 0 ;
 
 my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
-my $Depend = 'Depend' . ($parallel_depend ? ($parallel_pid ? _WARNING_('∥ ') . GetColor('info') : '∥ ') : '') ;
+my $Depend = 'Depend' . ($parallel_depend ? ($parallel_pid ? _WARNING_('ᴾ') . GetColor('info') : '') : '') ;
 
 my $pid = $parallel_pid ? $parallel_pid : $$ ;
 my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{PBS_JOBS} ? ", pid: $pid" : '') . GetColor('info')  ;
@@ -536,24 +536,14 @@ my $pbsfile_file  = "pbsfile: $short_pbsfile" ;
 my $pbsfile_nodes = _INFO2_ "total nodes: $start_nodes, [$pbs_runs/$PBS::Output::indentation_depth]" ;
 my $pbsfile_info  = "$pbsfile_file, $pbsfile_nodes" ;
 
-
-if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
+if($pbs_config->{DISPLAY_NO_STEP_HEADER})
 	{
-	Say Info  "$Depend: $target" ;
-	Say Info2 "${indent}$pbsfile_info" ;
-	}
-elsif($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES})
-	{
-	Say Info "$Depend: $target\n" . _INFO2_ "${indent}$pbsfile_info"
-	}
-elsif($pbs_config->{DISPLAY_DEPEND_HEADER})
-	{
-	Say Info "$Depend: $target"
-	}
-elsif($pbs_config->{DISPLAY_NO_STEP_HEADER})
-	{
-	Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
+	# Print Info "\r\e[K$Depend: $target $pbsfile_nodes" unless $pbs_config->{DISPLAY_NO_STEP_HEADER_COUNTER} ;
 	PrintInfo "\n" if $pbs_config->{DISPLAY_STEP_HEADER_NL} ;
+	}
+elsif($pbs_config->{DISPLAY_DEPEND_PBSFILE})
+	{
+	Say Info "$Depend: $target" . _INFO2_ ", $pbsfile_info"
 	}
 else
 	{

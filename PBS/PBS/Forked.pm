@@ -94,7 +94,7 @@ $parent_pid = $parent_pid_copy ;
 my $target = $args->[TARGETS][0] ;
 
 my $node_text = $pbs_config->{DISPLAY_PARALLEL_DEPEND_NODE} ? ", node: $node->{__NAME}" : '' ; 
-Say Color 'test_bg',  "Depend: parallel start$node_text, pid: $$", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
+Say Color 'test_bg', "Server: parallel depend  - ${$}$node_text", 1, 1 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_START} ;
 
 my ($log_file, $node_log) = GetRedirectionFiles($pbs_config, $node) ;
 my $redirection = RedirectOutputToFile($pbs_config, $log_file, $node_log) if $pbs_config->{LOG_PARALLEL_DEPEND} ;
@@ -325,7 +325,7 @@ if($resource_id)
 			
 			$forked_children{$pid}++ ; 
 			
-			local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
+			# local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
 			
 			$args->[INSERTED_NODES]{$args->[TARGETS][0]}{__PARALLEL_DEPEND} = $pid ;
 			
@@ -448,7 +448,7 @@ for my $graph (values %graphs)
 	$processes{$graph->{PID}} = {} ; # single process runs don't create a process tree
 	$processes{$graph->{PID}}{$_} = ( $processes{$_} //= {} ) for keys %{$graph->{CHILDREN}} ;
 	
-	Say Debug3 "Depend∥ : fetch $graph->{PID} < $graph->{ADDRESS} >, nodes: " . scalar(keys $graph->{NODES}->%*) . ", target: $graph->{TARGET}"
+	Say Debug3 "Dependᴾ: fetch $graph->{PID} < $graph->{ADDRESS} >, nodes: " . scalar(keys $graph->{NODES}->%*) . ", target: $graph->{TARGET}"
 		if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
 	
 	for (keys %{$graph->{NODES}})
@@ -457,7 +457,7 @@ for my $graph (values %graphs)
 			{
 			if(exists $graph->{NODES}{$_}{__PARALLEL_DEPEND})
 				{
-				#Say Debug "Depend∥ : fetch $_, skipping $graph->{PID}, previous: $nodes{$_}{PID}"
+				#Say Debug "Dependᴾ: fetch $_, skipping $graph->{PID}, previous: $nodes{$_}{PID}"
 				#	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE}
 			
 				# nodes that start another depend process gets overridden
@@ -466,12 +466,12 @@ for my $graph (values %graphs)
 			
 			if(exists $nodes{$_}{NODES}{$_}{__PARALLEL_DEPEND})
 				{
-				#Say Debug "Depend∥ : fetch $_, $graph->{PID} overrides $nodes{$_}{PID}"
+				#Say Debug "Dependᴾ: fetch $_, $graph->{PID} overrides $nodes{$_}{PID}"
 				#	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING_VERBOSE} ;
 				}
 			else
 				{
-				Say Error "Depend∥ : fetch $_, duplicate node in $graph->{PID}, previous: $nodes{$_}{PID}" ;
+				Say Error "Dependᴾ: fetch $_, duplicate node in $graph->{PID}, previous: $nodes{$_}{PID}" ;
 				}
 			}
 		
@@ -569,7 +569,7 @@ for(@files_to_rebuild)
 
 if($pbs_config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE})
 	{
-	Say EC "<I>Check<W>∥ <I>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
+	Say EC "<I>Check<W>ᴾI>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
 	my @build_sequence = @detriggered_global_build_sequence ;
 	@build_sequence =
 		map
@@ -583,7 +583,7 @@ if($pbs_config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE})
 
 my %parallel_pbs_to_run ;
 $parallel_pbs_to_run{$nodes{$_}{PID}}++ for grep { ! /^__PBS/ } @detriggered_global_build_sequence ;
-#SUT \%parallel_pbs_to_run, 'Check∥ : parallel pbs to run:' ;
+#SUT \%parallel_pbs_to_run, 'Checkᴾ: parallel pbs to run:' ;
 
 #SDT $detriggered{$_}, "PBS: de-triggered parallel nodes $_:" for @order ;
 
@@ -592,12 +592,12 @@ my $detrigger_computation_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [g
 PBS::Net::Put($pbs_config, $graphs{$_}{ADDRESS}, 'detrigger', freeze($detriggered{$_}), $$) for keys %detriggered ;
 
 my $detrigger_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
-Say EC "<I>Check∥ : detrigger, transfer time: $detrigger_time s., creation time: $detrigger_computation_time s." ;
+Say EC "<I>Check<W>ᴾ<I> : detrigger, transfer time: $detrigger_time s., creation time: $detrigger_computation_time s." ;
 
 my $triggered = scalar @{$graphs{$target_pid}{NODES}{$graphs{$target_pid}{TARGET}}{__TRIGGERED} // []} ;
 
 SIT $processes{$target_pid},
-	EC("∥ $target_pid ($triggered)<I2> $graphs{$target_pid}{TARGET}, " . scalar(keys %{$graphs{$target_pid}{NODES}}) . "/" . $graphs{$target_pid}{TIME}),
+	EC("<W>ᴾ<I> $target_pid ($triggered)<I2> $graphs{$target_pid}{TARGET}, " . scalar(keys %{$graphs{$target_pid}{NODES}}) . "/" . $graphs{$target_pid}{TIME}),
 	DISPLAY_ADDRESS => 0,
 	NO_NO_ELEMENTS => 1,
 	FILTER => sub 
@@ -611,7 +611,7 @@ SIT $processes{$target_pid},
 					{
 					my $triggered = scalar @{$graphs{$_}{NODES}{$graphs{$_}{TARGET}}{__TRIGGERED} // []};
 					
-					push @keys_to_dump, [ $_,  EC("∥ $_ ($triggered)<I2> $graphs{$_}{TARGET}, " . scalar(keys %{$graphs{$_}{NODES}}) . "/" . $graphs{$_}{TIME}) ],
+					push @keys_to_dump, [ $_,  EC("<W>ᴾ<I> $_ ($triggered)<I2> $graphs{$_}{TARGET}, " . scalar(keys %{$graphs{$_}{NODES}}) . "/" . $graphs{$_}{TIME}) ],
 					}
 					
 				return 'HASH', undef, sort @keys_to_dump ;
@@ -629,7 +629,7 @@ for my $node (keys %nodes)
 	
 	die ERROR
 		(
-		"Depend∥ : merge: $node already depended, insertion pid: $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID},"
+		"Dependᴾ: merge: $node already depended, insertion pid: $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID},"
 		. "duplicate pid: $nodes{$node}{PID}"
 		) . "\n"
 		if exists $inserted_nodes->{$node} and exists $inserted_nodes->{$node}{__DEPENDED}
@@ -638,7 +638,7 @@ for my $node (keys %nodes)
 	$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
 	$inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID} = $nodes{$node}{PID} ;
 	
-	Say Info "Depend∥ : merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
+	Say EC "<I>Depend<W>ᴾ<I>: merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
 	
 	for my $element (keys %{$nodes{$node}{NODES}{$node}})
 		{
@@ -669,18 +669,18 @@ for my $graph ( values %graphs)
 			{
 			$graph->{LINKED}{$_} = $nodes{$_} ;
 			$linked++ ;
-			#Say Debug "Depend∥ : link $_, graph: $graph->{PID}" ;
+			#Say Debug "Dependᴾ: link $_, graph: $graph->{PID}" ;
 			}
 		elsif(exists $targets{$_})
 			{
 			$graph->{LINKED}{$_} = $targets{$_} ;
 			$linked++ ;
-			#Say Debug "Depend∥ : link  $_, graph: $graph->{PID}" ;
+			#Say Debug "Dependᴾ: link  $_, graph: $graph->{PID}" ;
 			}
 		else
 			{
 			$not_linked{$_} = $graph->{NOT_DEPENDED}{$_} ;
-			Say Error "Depend∥ : link : no candidate for $_, graph: $graph->{PID}" ;
+			Say Error "Dependᴾ: link : no candidate for $_, graph: $graph->{PID}" ;
 			}
 		}
 	}
@@ -697,7 +697,7 @@ for my $graph ( values %graphs)
 	
 	if($not_depended != $links)
 		{
-		Say Warning "Depend∥ : not linked: $not_depended/$links, depender: < $graph->{PID} - $graph->{ADDRESS} >" ;
+		Say Warning "Dependᴾ: not linked: $not_depended/$links, depender: < $graph->{PID} - $graph->{ADDRESS} >" ;
 	
 		for my $not_depended (keys %{$graph->{NOT_DEPENDED}})
 			{
@@ -710,7 +710,7 @@ for my $graph ( values %graphs)
 		
  		for (keys %{$graph->{LINKED}})
 			{
-			Say EC "<I>Depend∥ : chain <I2>< $graph->{PID} - $graph->{ADDRESS} > <I3>$graph->{TARGET}"
+			Say EC "<I>Depend<W>ᴾ<I>: chain <I2>< $graph->{PID} - $graph->{ADDRESS} > <I3>$graph->{TARGET}"
 				if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} && ! $main_header_displayed++ ;
 			
 			Say EC "<I2>                < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} ><I3> $_"
@@ -764,7 +764,7 @@ my $not_linked              = keys %not_linked ;
 my $number_of_dependers     = keys %$dependers ;
 my $dependers_with_no_links = $number_of_dependers - $linked_dependers ;
 
-Say Info "Depend∥ : dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
+Say EC "<I>Depend<W>ᴾ<I>: dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
 		. ", nodes: $nodes, links: $linked/$not_linked"
 		. ", time: $time2 s., dl: $data_size in $download_time s." ;
 
@@ -793,7 +793,7 @@ my $nodes = thaw $frozen_nodes ;
  
 local $PBS::Output::indentation_depth = 0 ;
 
-Say EC "<I>Depend∥ : link  <I2>< $$ - $data->{ADDRESS} > "
+Say EC "<I>Depend<W>ᴾ<I>: link  <I2>< $$ - $data->{ADDRESS} > "
 	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 
 for my $node (@$nodes)
@@ -817,7 +817,7 @@ my $args = $data->{ARGS} ;
 
 my ($inserted_nodes, $build_sequence) = @{$args}[INSERTED_NODES, BUILD_SEQUENCE] ;
 
-#SWT $detriggered, "Check∥ : detrigger graph $data->{ARGS}[TARGETS][0]<I2>, pid: $$" ;
+#SWT $detriggered, "Checkᴾ: detrigger graph $data->{ARGS}[TARGETS][0]<I2>, pid: $$" ;
 
 my %removed_from_build_sequence ;
 
@@ -830,7 +830,7 @@ for($detriggered->@*)
 	my $node = $inserted_nodes->{$name} ;
 	my $node_triggers = $node->{__TRIGGERED} ; 
 
-	die ERROR("Check∥ : can't detrigger untriggered node: $name") . "\n" unless defined $node_triggers ;
+	die ERROR("Checkᴾ: can't detrigger untriggered node: $name") . "\n" unless defined $node_triggers ;
 	
 	for my $trigger_index (keys $node_triggers->@*) 
 		{
@@ -847,7 +847,7 @@ for($detriggered->@*)
 			
 			my $left =  scalar($node_triggers->@*) ;
 			
-			Say EC "<I>Check∥ : detrigger $name, trigger: $trigger_name<I2>, triggers left: $left, children left : $children_to_build, pid: $$"
+			Say EC "<I>Check<W>ᴾ<I>: detrigger $name, trigger: $trigger_name<I2>, triggers left: $left, children left : $children_to_build, pid: $$"
 				if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 			
 			last ;
@@ -872,7 +872,7 @@ my ($pbs_config, $graphs, $nodes, $order, $parallel_pbs_to_run, $dependers) = @_
 if($pbs_config->{DO_BUILD})
 	{
 	my $pid = fork ;
-
+	
 	if($pid)
 		{
 		map { $dependers->{$_}{BUILD_DONE}++ } grep { ! exists $parallel_pbs_to_run->{$_}} $order->@* ;
@@ -885,7 +885,7 @@ if($pbs_config->{DO_BUILD})
 			{
 			if(exists $parallel_pbs_to_run->{$_})
 				{
-				#Say EC "<I>Build∥ : sub graph: <I2>$graphs->{$_}{PID} - < $graphs->{$_}{ADDRESS} >" ;
+				#Say EC "<I>Buildᴾ: sub graph: <I2>$graphs->{$_}{PID} - < $graphs->{$_}{ADDRESS} >" ;
 				my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'build', {}, $$) ;
 				}
 			else
@@ -894,7 +894,7 @@ if($pbs_config->{DO_BUILD})
 				}
 			}
 		
-		Say Info sprintf('Build∥ : send start messages, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
+		Say Info sprintf('Build<W>ᴾ<I>: send start messages, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
 		
 		exit 0 ;
 		}
@@ -944,7 +944,7 @@ while (! $resource_id)
 	
 	if(($time - $last_time) > 1)
 		{
-		Say EC "<I2>Build∥ : $$ wait: $time_string" ;
+		Say EC "<I2>Build<W>ᴾ<I2>: $$ wait: $time_string" ;
 		$last_time = $time ;
 		}
 	
@@ -970,7 +970,7 @@ PBS::DefaultBuild::Build
 	$build_sequence,
 	) ;
 
-Say EC "<I>Build<W>∥ <I>: $target done <I2>, nodes: " . scalar(@$build_sequence) . ",  $$ - < $data->{ADDRESS} >" ;
+Say EC "<I>Build<W>ᴾ<I>: $target done <I2>, nodes: " . scalar(@$build_sequence) . ",  $$ - < $data->{ADDRESS} >" ;
 
 # send updated md5 cache
 my @updates ;
@@ -1043,7 +1043,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 
 	my $build_name = $node->{__BUILD_NAME} ;
 	
-	Say EC "<I>Build<W>∥ <I>: remote <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} >" ;
+	Say EC "<I>Build<W>ᴾ<I>: remote <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} >" ;
 	
 	my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 	
@@ -1074,7 +1074,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 		
 		if(($time - $last_time) > 1)
 			{
-			Say EC "<I>Build<W>∥ <I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
+			Say EC "<I>Build<W>ᴾ<I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
 			$last_time = $time ;
 			}
 			
@@ -1082,7 +1082,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 		$iterations++ ;
 		}
 	
-	Say EC "<I>Build<W>∥ <I>: remote <I3>$node->{__NAME}<I2> done in " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
+	Say EC "<I>Build<W>ᴾ<I>: remote <I3>$node->{__NAME}<I2> done in " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
 	
 	$build_result, $build_message
 	}

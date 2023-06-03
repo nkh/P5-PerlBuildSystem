@@ -179,9 +179,9 @@ if($pbs_config->{DEBUG_DISPLAY_TREE_NAME_ONLY})
 					$tag .=  exists $inserted_nodes->{$_}{__WARP_NODE} ? _INFO2_ ('ᶜ') :  $rules ;
 					
 					$tag .= $parallel_depend
-							? (_WARNING2_ ('∥ ') . _INFO2_("$parallel_depend"))
+							? (_WARNING2_ ('ᴾ') . _INFO2_("$parallel_depend"))
 							: $parallel_depended
-								? _INFO2_ ('∥ ')
+								? _INFO2_ ('ᴾ')
 								: '' ;
 					
  					$tag .= GetColor('info2')  ;
@@ -399,7 +399,7 @@ if (@{$pbs_config->{DISPLAY_TEXT_TREE_REGEX}})
 			($node, $node_name) = ($dependency_tree, $dependency_tree->{__NAME}) ;
 			}
 		
-		$node_name .= _WARNING2_ ('∥ ') if exists $node->{__PARALLEL_DEPEND} ;
+		$node_name .= _WARNING2_ ('ᴾ') if exists $node->{__PARALLEL_DEPEND} ;
 		$node_name = '* ' . $node_name if  exists $node->{__TRIGGERED} ;
 		
 		SIT $node,
@@ -436,7 +436,7 @@ else
 	my $root = $node ;
 	
 	my $root_name = $node_name ;
-	$root_name .= _WARNING2_ ('∥ ') if  exists $root->{__PARALLEL_DEPEND} ;
+	$root_name .= _WARNING2_ ('ᴾ') if  exists $root->{__PARALLEL_DEPEND} ;
 	$root_name = '* ' . $root_name if  exists $root->{__TRIGGERED} ;
 	
 	my @roots  = {$root_name => $root} ;

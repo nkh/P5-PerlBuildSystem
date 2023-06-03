@@ -251,29 +251,29 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 			if($pbs_config->{DEBUG_DISPLAY_DEPENDENCIES} && $node_name_matches_ddrr)
 				{
 				my $short_node_name = GetTargetRelativePath($pbs_config, $node_name) ;
-
+				
 				my $subpbs_file = $rule->{TEXTUAL_DESCRIPTION}{PBSFILE} ;
-
+				
 				my $rule_info = $rule_name . _INFO2_(" @ $file:$rule_line") ;
 				$rule_info = GetRunRelativePath($pbs_config, $rule_info, 1) ;
-
+				
 				my $em_length = $available - length($short_node_name) ;
 				$em_length = 40 if $em_length < 40 ;
-
+				
 				my $em = String::Truncate::elide_with_defaults
 						({
 						marker => $pbs_config->{SHORT_DEPENDENCY_PATH_STRING},
 						length => $em_length,
 						truncate => 'middle' 
 						});
-
+				
 				my $display_node_matching_rule = $pbs_config->{DISPLAY_DEPENDENCY_MATCHING_RULE} || $pbs_config->{DISPLAY_SUBPBS_INFO} ;
 				my $display_node_insertion_rule = $pbs_config->{DISPLAY_DEPENDENCY_INSERTION_RULE} || $pbs_config->{DISPLAY_SUBPBS_INFO} ;
-
+				
 				my $node_matching_rule = $display_node_matching_rule ? _INFO2_($em->("$rule_index:$rule_info")) : '' ;
-
+				
 				my $node_insertion_rule = $display_node_insertion_rule
-								? "<I2> inserted at: "
+								? "<I2>inserted at: "
 									. GetRunRelativePath
 										(
 										$pbs_config,
@@ -281,18 +281,18 @@ for(my $rule_index = 0 ; $rule_index < @$dependency_rules ; $rule_index++)
 										1 # no target path replacement
 										)
 								: '' ;
-
+				
 				if(defined $pbs_config->{DEBUG_DISPLAY_DEPENDENCIES_LONG})
 					{
-					Say EC "<I3>${indent}$short_node_name\n<I>$indent${indent}subpbs match<I2>, pbsfile: $subpbs_file";
+					Say EC "<I3>${indent}$short_node_name\n<I>$indent${indent}depend in subpbs<I2>, pbsfile: $subpbs_file";
 					Say EC "<I2>$indent${indent}$node_matching_rule" if $display_node_matching_rule ; 
 					Say EC "<I2>$indent${indent}$node_insertion_rule" if $display_node_insertion_rule ; 
 					}
 				else
 					{
-					Say EC "<I3>${indent}$short_node_name<I> subpbs match<I2>, pbsfile: $subpbs_file"
-						. ($display_node_matching_rule ? ", $node_matching_rule" : '')
-						. ($display_node_insertion_rule ? ", $node_insertion_rule" : '')
+					Say EC "<I3>${indent}$short_node_name<I> depend in subpbs<I2>, pbsfile: $subpbs_file"
+						. ($display_node_matching_rule ? "<I2>, $node_matching_rule" : '')
+						. ($display_node_insertion_rule ? "<I2>, $node_insertion_rule" : '')
 					}
 					
 				PBS::Rules::DisplayRuleTrace($pbs_config, $rule) if defined $pbs_config->{DEBUG_TRACE_PBS_STACK} ;

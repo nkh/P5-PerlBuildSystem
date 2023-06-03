@@ -291,7 +291,7 @@ local $PBS::Output::indentation_depth = 0 ;
 
 if(exists $node->{__PARALLEL_DEPEND})
 	{
-	Say EC "<I>Check<W>∥ <I>: <I3>$node->{__NAME}<I2>, pid: $$"
+	Say EC "<I>Check<W>ᴾ<I>: <I3>$node->{__NAME}<I2>, pid: $$"
 		if exists $node->{__PARALLEL_HEAD} && $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 	
 	push @{$node->{__TRIGGERED}}, {NAME => $node->{__NAME}, REASON => '__PARALLEL_DEPEND'} ;

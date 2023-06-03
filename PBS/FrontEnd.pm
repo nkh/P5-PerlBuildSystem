@@ -166,7 +166,7 @@ unless($switch_parse_ok && $switch_parse_ok_subpbs_options)
 	# deferred to get a chance to display PBS help
 	return(0, $parse_message . ' ' . $parse_message_subpbs_options);
 	}
-	
+
 GenerateDependFullLog($pbs_config, $pbs_arguments{COMMAND_LINE_ARGUMENTS}) if $pbs_config->{DEPEND_FULL_LOG} ;
 
 my $targets = $pbs_config->{TARGETS} ;

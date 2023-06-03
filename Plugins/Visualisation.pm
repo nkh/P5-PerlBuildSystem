@@ -175,7 +175,7 @@ if($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_SIMPLE})
 
 	unless ($pbs_config->{DEBUG_DISPLAY_BUILD_SEQUENCE_STATS})
 		{
-		Say Info $_ for map { $_->{__NAME} . ($_->{__PARALLEL_DEPEND} ? '∥ ' : '') } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
+		Say Info $_ for map { $_->{__NAME} . ($_->{__PARALLEL_DEPEND} ? 'ᴾ' : '') } grep { $_->{__NAME} !~ /^__/ } @$build_sequence ;
 		}
 	}
 }

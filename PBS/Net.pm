@@ -147,7 +147,7 @@ my ($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_
 
 unless ($removed_nodes)
 	{
-	Say Info "PBS∥ : up to date" ;
+	Say Info "PBSᴾ: up to date" ;
 	
 	use constant BUILD_SUCCESS => 1 ;
 	
@@ -172,7 +172,7 @@ if($pid)
 	}
 else
 	{
-	Say Info "PBS∥ : start"  ;
+	Say EC "<I>PBS<W>ᴾ<I>: start"  ;
 	
 	delete $pbs_config->{INTERMEDIATE_WARP_WRITE} ;
 	
@@ -204,13 +204,13 @@ else
 
 #-------------------------------------------------------------------------------------------------------
 
-sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Http: Error: can't start server") . "\n" }
+sub StartHttpDeamon { HTTP::Daemon->new(LocalAddr => 'localhost') or die ERROR("Server: Error: can't start server") . "\n" }
 
 sub BecomeServer
 {
 my ($pbs_config, $server_name, $daemon, $data) = @_ ;
 
-Say EC "<D>Http: <I>start server: $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
+Say EC "<I>Server: START, $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_START} ;
 
 my ($counter, $allocated, $reused, $used_e_leases) = (0, 0, 0, 0) ;
 
@@ -228,7 +228,7 @@ if ($pbs_config->{DISPLAY_RESOURCE_EVENT})
 	{
 	my $glyph = ' ' . join'', map { $resources{$_} ? '◼' : ' ' } 1 .. $pbs_config->{PBS_JOBS} ;
 
-	Say EC "<I>Depend∥ : " . $_[0]
+	Say EC "<I>Server: " . $_[0]
 		. '<I2>, dependers: '. scalar( keys %dependers)
 		. ', idling: '       . scalar( grep { exists $_->{ADDRESS} && $_->{IDLE} } values %dependers)
 		. ', reused: '       . $reused
@@ -468,7 +468,7 @@ while (my $c = $daemon->accept)
 						open my $f, '<', $log ;
 						print STDERR while <$f> ;
 						
-						Say Info2 "Depend∥ : done server: <$address>, pid: $pid" ;
+						Say Info2 "Server: done <$address>, pid: $pid" ;
 						Say ' ' if $. > 1 ;
 						}
 					
@@ -486,7 +486,7 @@ while (my $c = $daemon->accept)
 					# insert post build nodes, best would be calling the post pbs functions
 					
 					use constant TARGETS => 6 ;
-					Say EC "<I>Build<W>∥ <I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$" ;
+					Say EC "<I>Build<W>ᴾ<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$" ;
 					
 					PBS::PBS::Forked::BuildSubGraph($data) ;
 					} ;
@@ -521,7 +521,7 @@ while (my $c = $daemon->accept)
 						$resources{$id} = 1 ;
 						}
 					
-					Say EC "<I>Build<W>∥ <I>: $target done<I2>, nodes: $nodes, pid: $pid"
+					Say EC "<I>Build<W>ᴾ<I>: $target done<I2>, nodes: $nodes, pid: $pid"
 						unless $pbs_config->{PARALLEL_NO_BUILD_RESULT} ;
 					
 					delete $extra_resources{$pid} ;
@@ -568,7 +568,7 @@ while (my $c = $daemon->accept)
 		&& all { $dependers{$_}{IDLE} } keys %dependers
 		)
 		{
-		Say Info "Depend∥ : done, allocated depend resources: $allocated" ;
+		Say EC "<I>Depend<W>ᴾ<I>: done, allocated depend resources: $allocated" ;
 		
 		my ($graphs, $nodes, $inserted_nodes, $order, $parallel_pbs_to_run) = 
 			PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, \%dependers) ;
@@ -608,7 +608,7 @@ while (my $c = $daemon->accept)
 	last if $stop ;
 	}
 
-Say EC "<D>Http: <I>stop server: $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_STOP} ;
+Say EC "<I>Server: STOP, $server_name - $$ <I2><" . $daemon->url . ">" if $pbs_config->{HTTP_DISPLAY_SERVER_STOP} ;
 
 if(exists $data->{PBS_SERVER})
 	{
@@ -639,8 +639,8 @@ else
 	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$) for values %$dependers ;
 	}
 
-PrintInfo sprintf("PBS∥ : shutdown: %0.2f s.\n", tv_interval ($t0, [gettimeofday])) ;
-PrintInfo sprintf("PBS∥ : time: %0.2f s.\n", tv_interval ($start_time, [gettimeofday])) ;
+Say sprintf(EC("<I>PBS<W>ᴾ<I>: shutdown: %0.2f s.\n"), tv_interval ($t0, [gettimeofday])) ;
+Say sprintf(EC("<I>PBS<W>ᴾ<I>: time: %0.2f s.\n"), tv_interval ($start_time, [gettimeofday])) ;
 
 $$stop++ ;
 }

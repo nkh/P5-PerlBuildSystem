@@ -50,7 +50,7 @@ sub Parallel
 'parallel_processes_left', 'Display running depend processes after the main depend ends.',       '', 'DISPLAY_DEPEND_REMAINING_PROCESSES',
 'parallel_depend_server',  'Use parallel pbs server multiple times.',                            '', 'USE_DEPEND_SERVER',
 'parallel_quick_shutdown', 'Kill parallel Pbs processes',                                        '', 'RESOURCE_QUICK_SHUTDOWN',
-'parallel_resource_event', 'Display a message on resource events.',                              '', 'DISPLAY_RESOURCE_EVENT',
+'parallel_server_event',   'Display a message on server events.',                                '', 'DISPLAY_RESOURCE_EVENT',
 }
 
 sub Help
@@ -358,7 +358,7 @@ sub Node
 
 sub Depend
 {
-'depend_header',              'Show depend header.',                                       '', 'DISPLAY_DEPEND_HEADER',
+'depend_pbsfile',             'Show depend pbsfile.',                                      '', 'DISPLAY_DEPEND_PBSFILE',
 'depend_subpbs_info',         'Add extra information for nodes matching a subpbs.',        '', 'DISPLAY_SUBPBS_INFO',
 'depend_log',                 'Created a log for each subpbs.',                            '', 'DEPEND_LOG',
 'depend_full_log',            'Created a log for each subpbs.',                            '', 'DEPEND_FULL_LOG',
@@ -413,12 +413,12 @@ sub Warp
 
 sub Http
 {
-'http_post',    'Display a message when a POST is send.',        '', 'HTTP_DISPLAY_POST',
-'http_put',     'Display a message when a PUT is send.',         '', 'HTTP_DISPLAY_PUT',
-'http_get',     'Display a message when a GET is send.',         '', 'HTTP_DISPLAY_GET',
-'http_start',   'Display a message when a server is started.',   '', 'HTTP_DISPLAY_SERVER_START',
-'http_stop',    'Display a message when a server is sshutdown.', '', 'HTTP_DISPLAY_SERVER_STOP',
-'http_request', 'Display a message when a request is received.', '', 'HTTP_DISPLAY_REQUEST',
+'http_post',           'Display a message when a POST is send.',        '', 'HTTP_DISPLAY_POST',
+'http_put',            'Display a message when a PUT is send.',         '', 'HTTP_DISPLAY_PUT',
+'http_get',            'Display a message when a GET is send.',         '', 'HTTP_DISPLAY_GET',
+'http_server_start',   'Display a message when a server is started.',   '', 'HTTP_DISPLAY_SERVER_START',
+'http_server_stop',    'Display a message when a server is sshutdown.', '', 'HTTP_DISPLAY_SERVER_STOP',
+'http_request',        'Display a message when a request is received.', '', 'HTTP_DISPLAY_REQUEST',
 }
 
 sub Stats

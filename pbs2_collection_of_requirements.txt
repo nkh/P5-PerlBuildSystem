@@ -1,4 +1,43 @@
+
+
+serialized build
+	when  no pbsfiles are changed
+	
+	create a list of dependencies for each node
+	create a build file for each node
+		use the pbsfile to pull in all build subs
+			no depend is run since we already have the dependency list
+		
+		multiple nodes using the pbsfile can be build together
+			loading a pbsfile takes little time 
+	
+	create a list of dependent for each node
+		let us look up serialized build files without having to compute anything 
+
+
+
+prepare for next parallel run
+	once a build is done we can prepare for the next run by analysing the graph
+		split the graph so distribution doesn't require computation
+			given a list of changed nodes we can start only the build of
+			sub graphs and propagate the nodes that are rebuild in the sub graphs up
+			
+			
+
+virtual graph splitting node
+		given a graph with 500 dependencies (this is aan unlikely use case!)
+			create a 5 new nodes, each having 100 dependencies
+			make the original node depend on the 2 new nodes
+			
+			as each new node is a its own sub graph, we can schedule
+			each one separately
+
+			each one can get a simplified pbsfile which doesn't need to run all the
+			rules
+
+
 ? use slurm to manage cluster
+	or simpler bash cluster management
 
 variables as nodes
 	can have dependencies

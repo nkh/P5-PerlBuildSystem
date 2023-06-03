@@ -59,9 +59,9 @@ my $parallel_depended = exists $file_tree->{__PARALLEL_NODE} ;
 my $parallel_node     = $parallel_depend || $parallel_depended ;
 
 my $tag = $parallel_depend
-		? _WARNING_ ('∥ ')
+		? _WARNING_ ('ᴾ')
 		: $parallel_depended
-			? _INFO2_ ('∥ ')
+			? _INFO2_ ('ᴾ')
 			: '' ;
 $tag .= GetColor('info3') ;
 
