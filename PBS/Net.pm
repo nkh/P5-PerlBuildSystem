@@ -148,7 +148,7 @@ my ($nodes, $removed_nodes, $GenerateWarpFile) = PBS::Warp::Warp($targets, $pbs_
 
 unless ($removed_nodes)
 	{
-	Say Info "PBSᴾ: up to date" ;
+	Say EC "<W>PBS: <I>up to date" ;
 	
 	use constant BUILD_SUCCESS => 1 ;
 	
@@ -173,7 +173,7 @@ if($pid)
 	}
 else
 	{
-	Say EC "<I>PBS<W>ᴾ<I>: start"  ;
+	Say EC "<W>PBS<I>: start"  ;
 	
 	delete $pbs_config->{INTERMEDIATE_WARP_WRITE} ;
 	local $PBS::Output::indentation_depth = -1 ;
@@ -633,8 +633,8 @@ else
 	PBS::Net::Post($pbs_config, $_->{ADDRESS}, 'stop', {}, $$) for values %$dependers ;
 	}
 
-Say sprintf(EC("<I>PBS<W>ᴾ<I>: shutdown: %0.2f s.\n"), tv_interval ($t0, [gettimeofday])) ;
-Say sprintf(EC("<I>PBS<W>ᴾ<I>: time: %0.2f s.\n"), tv_interval ($start_time, [gettimeofday])) ;
+Say sprintf EC("<W>PBS<I>: time: %0.2f s., shutdown: %0.2f s.\n"), tv_interval ($start_time, [gettimeofday]), tv_interval ($t0, [gettimeofday])
+		if $pbs_config->{DISPLAY_PBS_TOTAL_TIME} ;
 
 $$stop++ ;
 }

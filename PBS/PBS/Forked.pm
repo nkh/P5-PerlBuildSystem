@@ -567,7 +567,7 @@ for(@files_to_rebuild)
 
 if($pbs_config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE})
 	{
-	Say EC "<I>Build<W>ᴾI>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
+	Say EC "<W>Build<I>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
 	my @build_sequence = @detriggered_global_build_sequence ;
 	@build_sequence =
 		map
@@ -625,7 +625,7 @@ for my $node (keys %nodes)
 	
 	die ERROR
 		(
-		"Dependᴾ: merge: $node already depended, insertion pid: $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID},"
+		"Depend: parallel merge: $node already depended, insertion pid: $inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID},"
 		. "duplicate pid: $nodes{$node}{PID}"
 		) . "\n"
 		if exists $inserted_nodes->{$node} and exists $inserted_nodes->{$node}{__DEPENDED}
@@ -634,7 +634,7 @@ for my $node (keys %nodes)
 	$inserted_nodes->{$node} = $nodes{$node}{NODES}{$node} ;
 	$inserted_nodes->{$node}{__PARALLEL_DEPENDER_PID} = $nodes{$node}{PID} ;
 	
-	Say EC "<I>Depend<W>ᴾ<I>: merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
+	Say EC "<W>Depend<I>: merge $node from $nodes{$node}{ADDRESS} " if $display_info ;
 	
 	for my $element (keys %{$nodes{$node}{NODES}{$node}})
 		{
@@ -693,7 +693,7 @@ for my $graph ( values %graphs)
 	
 	if($not_depended != $links)
 		{
-		Say Warning "Dependᴾ: not linked: $not_depended/$links, depender: < $graph->{PID} - $graph->{ADDRESS} >" ;
+		Say EC "<W>Depend: not linked: $not_depended/$links, depender: < $graph->{PID} - $graph->{ADDRESS} >" ;
 	
 		for my $not_depended (keys %{$graph->{NOT_DEPENDED}})
 			{
@@ -706,7 +706,7 @@ for my $graph ( values %graphs)
 		
  		for (keys %{$graph->{LINKED}})
 			{
-			Say EC "<I>Depend<W>ᴾ<I>: chain <I2>< $graph->{PID} - $graph->{ADDRESS} > <I3>$graph->{TARGET}"
+			Say EC "<W>Depend<I>: chain <I2>< $graph->{PID} - $graph->{ADDRESS} > <I3>$graph->{TARGET}"
 				if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} && ! $main_header_displayed++ ;
 			
 			Say EC "<I2>                < $graph->{LINKED}{$_}{PID} - $graph->{LINKED}{$_}{ADDRESS} ><I3> $_"
@@ -760,11 +760,11 @@ my $not_linked              = keys %not_linked ;
 my $number_of_dependers     = keys %$dependers ;
 my $dependers_with_no_links = $number_of_dependers - $linked_dependers ;
 
-Say EC "<I>Depend<W>ᴾ<I>: done<I2>, dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
+Say EC "<W>Depend<I>: done<I2>, dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
 		. ", nodes: $nodes, links: $linked/$not_linked"
 		. ", time: $time2 s., dl: $data_size in $download_time s." ;
 
-Say EC "<I>Check<W>ᴾ<I>: transfer time: $detrigger_time s., merge time: $detrigger_computation_time s." ;
+Say EC "<W>Check<I>: transfer time: $detrigger_time s., merge time: $detrigger_computation_time s." ;
 
 if($pbs_config->{DISPLAY_PARALLEL_DEPEND_TREE})
 	{
@@ -791,7 +791,7 @@ my $nodes = thaw $frozen_nodes ;
  
 local $PBS::Output::indentation_depth = 0 ;
 
-Say EC "<I>Depend<W>ᴾ<I>: link  <I2>< $$ - $data->{ADDRESS} > "
+Say EC "<W>Depend<I>: link  <I2>< $$ - $data->{ADDRESS} > "
 	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 
 for my $node (@$nodes)
@@ -845,7 +845,7 @@ for($detriggered->@*)
 			
 			my $left =  scalar($node_triggers->@*) ;
 			
-			Say EC "<I>Check<W>ᴾ<I>: detrigger $name, trigger: $trigger_name<I2>, triggers left: $left, children left : $children_to_build, pid: $$"
+			Say EC "<W>Check<I>: detrigger $name, trigger: $trigger_name<I2>, triggers left: $left, children left : $children_to_build, pid: $$"
 				if $pbs_config->{DISPLAY_PARALLEL_DEPEND_LINKING} ;
 			
 			last ;
@@ -878,7 +878,7 @@ if($pbs_config->{DO_BUILD})
 		}
 	else
 		{
-		Say EC '<I>Build<W>ᴾ<I>: subgraphs: ' .  scalar($order->@*) ;
+		Say EC '<W>Build<I>: subgraphs: ' .  scalar($order->@*) ;
 		
 		for ($order->@*)
 			{
@@ -929,7 +929,7 @@ my
 my $t0 = [gettimeofday] ;
 
 $PBS::Output::indentation_depth = 0 ;
-Say EC "<I>Build<W>ᴾ<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$"
+Say EC "<W>Build<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$"
 	if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
  
 my $response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
@@ -945,7 +945,7 @@ while (! $resource_id)
 	
 	if(($time - $last_time) > 1)
 		{
-		Say EC "<I2>Build<W>ᴾ<I2>: $$ wait: $time_string"
+		Say EC "<W>Build<I2>: $$ wait: $time_string"
 			if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
 		
 		$last_time = $time ;
@@ -971,7 +971,7 @@ PBS::DefaultBuild::Build
 	$build_sequence,
 	) ;
 
-Say EC "<I>Build<W>ᴾ<I>: done, target: $target <I2>, nodes: " . scalar(@$build_sequence) . ", pid: $$, < $data->{ADDRESS} >"
+Say EC "<W>Build<I>: done, target: $target <I2>, nodes: " . scalar(@$build_sequence) . ", pid: $$, < $data->{ADDRESS} >"
 	if $pbs_config->{PARALLEL_BUILD_RESULT} ;
 
 # send updated md5 cache
@@ -1045,7 +1045,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 
 	my $build_name = $node->{__BUILD_NAME} ;
 	
-	Say EC "<I>Build<W>ᴾ<I>: remote <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} >" ;
+	Say EC "<W>Build<I>: remote <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} >" ;
 	
 	my ($build_result, $build_message) = (BUILD_SUCCESS, "'$build_name' successful build") ;	
 	
@@ -1076,7 +1076,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 		
 		if(($time - $last_time) > 1)
 			{
-			Say EC "<I>Build<W>ᴾ<I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
+			Say EC "<W>Build<I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
 			$last_time = $time ;
 			}
 			
@@ -1084,7 +1084,7 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 		$iterations++ ;
 		}
 	
-	Say EC "<I>Build<W>ᴾ<I>: remote <I3>$node->{__NAME}<I2> done in " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
+	Say EC "<W>Build<I>: remote <I3>$node->{__NAME}<I2> done in " . sprintf("%0.4f s.", tv_interval ($t0, [gettimeofday])) ;
 	
 	$build_result, $build_message
 	}

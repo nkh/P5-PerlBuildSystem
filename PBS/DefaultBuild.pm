@@ -93,7 +93,8 @@ if ($pbs_config->{DISPLAY_DEPEND_END})
 	my $end_nodes = scalar(keys %$inserted_nodes) ;
 	my $added_nodes = $end_nodes - $start_nodes ;
 	
-	Say EC "<I>$Depend: done, $target<I2>, nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes)" ;
+	Say EC "<I>$Depend: done, $target<I2>, nodes: $added_nodes_in_run, total nodes: $end_nodes (+$added_nodes), pid: $$" ;
+	# Say EC "<I>$Depend: done<I2> $targets->[0], pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes, pid: $$"
 	}
 
 if($pbs_config->{DISPLAY_DEPENDENCY_TIME})
@@ -224,12 +225,13 @@ my $time = tv_interval ($t0_depend, [gettimeofday]) ;
 
 if($pbs_config->{DISPLAY_TOTAL_DEPENDENCY_TIME})
 	{
-	Say Info sprintf("$Depend: pbsfiles: $pbs_runs, time: %0.2f s., nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes, target: $targets->[0]", $time)
+	my $dependency_time = sprintf "time: %0.2f s.", $time ;
+	Say EC "<I>$Depend: done<I2> $targets->[0], $dependency_time, pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes, pid: $$"
 		unless $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 else
 	{
-	Say EC "<I>$Depend: done<I2> $targets->[0], pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes"
+	Say EC "<I>$Depend: done<I2> $targets->[0], pbsfiles: $pbs_runs, nodes: $nodes, warp: $warp_nodes, other: $non_warp_nodes, pid: $$"
 		unless $pbs_config->{QUIET} || $pbs_config->{DISPLAY_NO_STEP_HEADER} ;
 	}
 
@@ -527,7 +529,7 @@ my $short_target = $em->( join ', ', @$targets) ;
 my $pbs_runs = PBS::PBS::GetPbsRuns() // 0 ;
 
 my $parallel_depend = exists $inserted_nodes->{$targets->[0]} && exists $inserted_nodes->{$targets->[0]}{__PARALLEL_DEPEND} ;
-my $Depend = 'Depend' . ($parallel_depend ? ($parallel_pid ? _WARNING_('ᴾ') . GetColor('info') : '') : '') ;
+my $Depend = ($parallel_depend ? ($parallel_pid ? _WARNING_('Depend') . GetColor('info') : 'Depend') : 'Depend') ;
 
 my $pid = $parallel_pid ? $parallel_pid : $$ ;
 my $target = _INFO3_($short_target) . _INFO2_( $pbs_config->{PBS_JOBS} ? ", pid: $pid" : '') . GetColor('info')  ;

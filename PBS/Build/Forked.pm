@@ -176,7 +176,12 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					if (0 == $remaining_nodes)
 						{
 						PrintNoColor "\r\e[K" ;
-						Say EC "<I>Build: success<I3>, target: $target<I2>, nodes: $number_of_already_build_node" ;
+						
+						my $build_time = '' ;
+						$build_time = sprintf "time: %0.2f s, sub time: %0.2f s.", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time
+							if $pbs_config->{DISPLAY_TOTAL_BUILD_TIME} ;
+							
+						Say EC "<I>Build: success<I3>, target: $target<I2>, nodes: $number_of_already_build_node, $build_time" ;
 						}
 					}
 					unless $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $number_of_failed_builders ;
@@ -212,11 +217,12 @@ TerminateBuilders($builders) ;
 
 SWT \%builder_stats, 'Queue: process statistics:', DISPLAY_ADDRESS => 0 if defined $pbs_config->{DISPLAY_SHELL_INFO} ;
 
-my $build_time = sprintf "Build: parallel time: %0.2f s, sub time: %0.2f s., target: $target", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time ;
+my $build_time = sprintf "time: %0.2f s, sub time: %0.2f s.", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time ;
+$build_time = EC "<I2>Build: $target, $build_time" ;
 
 if ($number_of_failed_builders)
 	{
-	Say EC  '<E>' . $build_time if $pbs_config->{DISPLAY_TOTAL_BUILD_TIME} ;
+	Say $build_time if $pbs_config->{DISPLAY_TOTAL_BUILD_TIME} ;
 
 	Say EC "<E>Build: errors: $number_of_failed_builders\n" . $error_output . "\n" 
 		. "<E>Build: nodes: $number_of_nodes_to_build, failed: $number_of_failed_builders"
@@ -225,10 +231,6 @@ if ($number_of_failed_builders)
 	
 	Say EC "<E>Build: failed: <I3>$_->{__NAME}" . ($_->{__IMMEDIATE_BUILD} ? '<W3> [IMMEDIATE_BUILD]' : '')
 		for @failed_nodes ;
-	}
-else
-	{
-	Say Info $build_time if $pbs_config->{DISPLAY_TOTAL_BUILD_TIME} ;
 	}
 
 return !$number_of_failed_builders ;

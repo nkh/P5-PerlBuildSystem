@@ -355,7 +355,7 @@ if(@$targets)
 	if ($total_time_in_pbs > $pbs_config->{DISPLAY_MINIMUM_TIME})
 		{
 		$PBS::pbs_run_information->{TOTAL_TIME_IN_PBS} = $total_time_in_pbs ;
-		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if ($pbs_config->{DISPLAY_PBS_TOTAL_TIME} && ! $pbs_config->{QUIET}) ;
+		PrintInfo(sprintf("PBS: time: %0.2f s.\n", $total_time_in_pbs)) if $pbs_config->{DISPLAY_PBS_TOTAL_TIME} ;
 		}
 	}
 else
