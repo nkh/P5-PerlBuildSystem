@@ -62,11 +62,22 @@ SIT $what, '', INDENTATION => "\t", DISPLAY_ADDRESS => 0 if $pbs_config->{HTTP_D
 
 my $response = HTTP::Tiny->new->post_form("${url}pbs/$where", $what) ;
 
+for (0.05, 0.10, 0.20)
+	{
+	if(!$response->{success})
+		{
+		Say EC "<W>Http: $whom retrying <I2>@ ${url}pbs/$where, status: $response->{status}, delay: $_"
+			unless $pbs_config->{HTTP_TIMEOUT_HIDE} ;
+		
+		select(undef, undef, undef, 0.1) ;
+		$response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
+		}
+	}
+
 unless ($response->{success})
 	{
-	#SDT $response ;
-	#Say Error "PBS: can't POST" ;
-	#die "\n" ;
+	Say Error "Http: $whom failed accessing server @ ${url}pbs/$where, status: $response->{status}, reason: $response->{reason}" ;
+	return {}
 	}
 
 $response->{success}
@@ -82,6 +93,18 @@ Say EC "<D>Http: <I>  GET  ${url}pbs/$where<I2>, $whom" if $pbs_config->{HTTP_DI
 
 my $HT = HTTP::Tiny->new() ;
 my $response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
+
+for (0.05, 0.10, 0.20)
+	{
+	if(!$response->{success})
+		{
+		Say EC "<W>Http: $whom retrying <I2>@ ${url}pbs/$where, status: $response->{status}, delay: $_"
+			unless $pbs_config->{HTTP_TIMEOUT_HIDE} ;
+		
+		select(undef, undef, undef, 0.1) ;
+		$response = $HT->get("${url}pbs/$where", {content => freeze $what}) ;
+		}
+	}
 
 if($response->{success})
 	{

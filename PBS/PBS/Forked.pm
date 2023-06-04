@@ -926,12 +926,9 @@ my
 			BUILD_SEQUENCE,
 			] ;
 
+$PBS::Output::indentation_depth = 0 ;
 my $t0 = [gettimeofday] ;
 
-$PBS::Output::indentation_depth = 0 ;
-Say EC "<W>Build<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$"
-	if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
- 
 my $response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 my $resource_id = $response->{ID} ;
 my $last_time   = 0 ;
@@ -945,8 +942,7 @@ while (! $resource_id)
 	
 	if(($time - $last_time) > 1)
 		{
-		Say EC "<W>Build<I2>: $$ wait: $time_string"
-			if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
+		Say EC("<W>Build<I2>: $$ wait: $time_string") if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
 		
 		$last_time = $time ;
 		}
@@ -955,8 +951,13 @@ while (! $resource_id)
 	
 	$response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 	$resource_id = $response->{ID} ;
+	
+	Say EC("<W>Build<I>: $$ got resource") if $resource_id && $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
 	}
 
+Say EC "<W>Build<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$"
+	if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
+ 
 my $target = $targets->[0] ;
 my $build_node = $inserted_nodes->{$targets->[0]} ;
 
@@ -1076,7 +1077,9 @@ if(exists $node->{__PARALLEL_DEPEND} && ! exists $node->{__PARALLEL_HEAD})
 		
 		if(($time - $last_time) > 1)
 			{
-			Say EC "<W>Build<I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string" ;
+			Say EC "<W>Build<I>: $$ waited <I3>$node->{__NAME}<I2> < $node->{__PARALLEL_SERVER} > $time_string"
+					if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
+			
 			$last_time = $time ;
 			}
 			

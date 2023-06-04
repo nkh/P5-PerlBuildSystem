@@ -91,8 +91,9 @@ else
 	my $nodes_stat = "$number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]" ;
 	my $target = $pbs_config->{TARGETS}[0] ;
 	
-	Say EC "<I>Build: <I3>$target<I2>, nodes: $nodes_stat" ;
-	
+	Say EC "<I>Build: <I3>$target<I2>, nodes: $nodes_stat, pid: $$"
+		unless $pbs_config->{QUIET} ;
+
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
 		_print ($lh,  \&INFO, "Build: \n") ;

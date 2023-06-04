@@ -38,7 +38,7 @@ sub Parallel
 'parallel_log_display',    'Display the parallel depend log when depending ends.',               '', 'DISPLAY_LOG_PARALLEL_DEPEND',
 'parallel_depend_start',   'Display a message when a parallel depend starts.',                   '', 'DISPLAY_PARALLEL_DEPEND_START',
 'parallel_depend_end',     'Display a message when a parallel depend end.',                      '', 'DISPLAY_PARALLEL_DEPEND_END',
-'parallel_build',          'Display a message when doing a parallel build.',                     '', 'DISPLAY_PARALLEL_BUILD',
+'parallel_build_info',     'Display parallel build information.',                                '', 'DISPLAY_PARALLEL_BUILD',
 'parallel_node_name',      'Display the node name in parallel depend end messages.',             '', 'DISPLAY_PARALLEL_DEPEND_NODE',
 'parallel_no_resource',    'Display a message when no resource is availabed.',                   '', 'DISPLAY_PARALLEL_DEPEND_NO_RESOURCE',
 'parallel_link',           'Display parallel depend linking result.',                            '', 'DISPLAY_PARALLEL_DEPEND_LINKING',
@@ -421,6 +421,7 @@ sub Http
 'http_server_start',   'Display a message when a server is started.',   '', 'HTTP_DISPLAY_SERVER_START',
 'http_server_stop',    'Display a message when a server is sshutdown.', '', 'HTTP_DISPLAY_SERVER_STOP',
 'http_request',        'Display a message when a request is received.', '', 'HTTP_DISPLAY_REQUEST',
+'http_timeout_hide',   'No timeout message display.',                   '', 'HTTP_TIMEOUT_HIDE',
 }
 
 sub Stats

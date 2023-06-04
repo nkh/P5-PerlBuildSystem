@@ -181,7 +181,8 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 						$build_time = sprintf "time: %0.2f s, sub time: %0.2f s.", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time
 							if $pbs_config->{DISPLAY_TOTAL_BUILD_TIME} ;
 							
-						Say EC "<I>Build: success<I3>, target: $target<I2>, nodes: $number_of_already_build_node, $build_time" ;
+						Say EC "<I>Build: success<I3>, target: $target<I2>, nodes: $number_of_already_build_node, $build_time, pid: $$"
+							unless $pbs_config->{QUIET} ;
 						}
 					}
 					unless $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $number_of_failed_builders ;
