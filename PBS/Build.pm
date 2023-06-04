@@ -88,11 +88,14 @@ else
 		}
 		
 	my $perl_vs_shellcommands = ", $node_builders_using_perl_subs P, $node_builders_not_using_perl_subs S" ;
-	PrintInfo("Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
-
+	my $nodes_stat = "$number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]" ;
+	my $target = $pbs_config->{TARGETS}[0] ;
+	
+	Say EC "<I>Build: <I3>$target<I2>, nodes: $nodes_stat" ;
+	
 	if(defined (my $lh = $pbs_config->{LOG_FH}))
 		{
-		_print ($lh,  \&INFO, "Build: nodes: $number_of_nodes_to_build [${number_of_virtual_nodes_to_build}V$perl_vs_shellcommands]\n") ;
+		_print ($lh,  \&INFO, "Build: \n") ;
 		}
 		
 	# display which --bi don't match
@@ -178,7 +181,7 @@ for my $node (@$build_sequence)
 	
 	my $percent_done = int(($node_build_index * 100) / $number_of_nodes_to_build ) ;
 	my $tn0 = [gettimeofday];
-
+	
 	($build_result, $build_message) = PBS::Build::NodeBuilder::BuildNode
 						(
 						$node,
@@ -192,14 +195,14 @@ for my $node (@$build_sequence)
 	if($pbs_config->{DISPLAY_PROGRESS_BAR} && $build_result != BUILD_FAILED)
 		{
 		my $time_remaining = (tv_interval ($t0, [gettimeofday]) / $node_build_index) * ($number_of_nodes_to_build -$node_build_index) ;
-
+		
 		$time_remaining = $time_remaining < 60 
 					? sprintf("%0.2f", $time_remaining) . "s." 
 					: sprintf("%02d:%02d:%02d",(gmtime($time_remaining))[2,1,0]) ;
-
+		
 		PrintInfo3 "\r\e[KETA: $time_remaining [" . ($number_of_nodes_to_build -$node_build_index) . "]" ;
 		}
-
+	
 	if(@{$pbs_config->{DISPLAY_BUILD_INFO}})
 		{
 		PrintWarning("--bi defined, continuing.\n") ;

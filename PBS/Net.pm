@@ -1,3 +1,4 @@
+# Http: 318333 failed accessing server @ http://127.0.0.1:60179/pbs/get_depend_resource, status: 599, reason: Internal Exception
 
 package PBS::Net ;
 
@@ -175,6 +176,7 @@ else
 	Say EC "<I>PBS<W>ᴾ<I>: start"  ;
 	
 	delete $pbs_config->{INTERMEDIATE_WARP_WRITE} ;
+	local $PBS::Output::indentation_depth = -1 ;
 	
 	my $depender = PBS::PBS::Forked::GetParallelDepender
 			(
@@ -485,9 +487,6 @@ while (my $c = $daemon->accept)
 					# update md5 in cache and nodes
 					# insert post build nodes, best would be calling the post pbs functions
 					
-					use constant TARGETS => 6 ;
-					Say EC "<I>Build<W>ᴾ<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$" ;
-					
 					PBS::PBS::Forked::BuildSubGraph($data) ;
 					} ;
 			
@@ -520,9 +519,6 @@ while (my $c = $daemon->accept)
 						
 						$resources{$id} = 1 ;
 						}
-					
-					Say EC "<I>Build<W>ᴾ<I>: $target done<I2>, nodes: $nodes, pid: $pid"
-						unless $pbs_config->{PARALLEL_NO_BUILD_RESULT} ;
 					
 					delete $extra_resources{$pid} ;
 					$dependers{$pid}{BUILD_DONE}++ ;
@@ -568,8 +564,6 @@ while (my $c = $daemon->accept)
 		&& all { $dependers{$_}{IDLE} } keys %dependers
 		)
 		{
-		Say EC "<I>Depend<W>ᴾ<I>: done, allocated depend resources: $allocated" ;
-		
 		my ($graphs, $nodes, $inserted_nodes, $order, $parallel_pbs_to_run) = 
 			PBS::PBS::Forked::LinkMainGraph($pbs_config, {}, $data->{TARGETS}, \%dependers) ;
 		

@@ -271,7 +271,7 @@ if($build_result == BUILD_SUCCESS)
 		$node->{__MD5} = 'VIRTUAL' ;
 		#eval { PBS::Digest::GenerateNodeDigest($node) ; } ; # will remove digest
 		($build_result, $build_message) = (BUILD_FAILED, "Build: error generating node digest: $@") if $@ ;
-	
+		
 		if(-e $build_name)
 			{
 			PrintWarning2 "Build: '$node->{__NAME}' is VIRTUAL but file '$build_name' exists.\n"
@@ -318,7 +318,6 @@ else
 		PBS::Information::DisplayNodeInformation($node, $node->{__PBS_CONFIG}, 1, $inserted_nodes) ;
 		} 
 	}
-
 
 my $build_time = tv_interval ($t0, [gettimeofday]) ;
 

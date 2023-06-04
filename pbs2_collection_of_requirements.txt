@@ -1,4 +1,29 @@
 
+remove sub builder
+	sub builders are perl subs that can be used to build a node
+		they are practical and fast but anchor PBS in the perl world
+		building nodes is just creating it from it's dependencies
+		
+		if the node sub builder was written in a separate command (even in perl)
+			it could be called as any other command
+
+		a node can depend on a file that doesn't exist and that file could be the builder
+		
+		allow any language to be a node sub builder
+
+
+		rule a -> dependencies, build_tool.pl
+			./build_tool.pl $Targer $Dependencies $some_pbs_info
+					#some_pbs_info must be checked
+		
+		rule build_tool.pl:
+			echo $the_code > $Target
+
+			# best is to create a few helpers for different languages
+			# which handle argument, exit code ...
+			generate_perl_tool <<
+				the code
+		 
 
 serialized build
 	when  no pbsfiles are changed

@@ -100,7 +100,7 @@ my ($command_returns_ok, $command_message, $command_number) = (1, '', 0) ;
 for my $command (@$commands)
 	{
 	$command_number++ ;
-
+	
 	my $command_information = @$commands > 1
 					? "Build: command $command_number of " . scalar(@$commands) . "\n"
 					: '' ;
@@ -112,7 +112,7 @@ for my $command (@$commands)
 		$file = GetRunRelativePath($tree->{__PBS_CONFIG}, $file) ;
 		
 		push @evaluated_commands, [$command, "rule '$name' @ '" . GetRunRelativePath($pbs_config, $file_name) . ":$line'"] ;
-
+		
 		if($do_run)
 			{
 			my $command_description = $perl_sub_name =~/^BuildOk|TouchOk/
@@ -120,7 +120,7 @@ for my $command (@$commands)
 						: $perl_sub_name =~ /__ANON__/
 							? "sub:$file:$line"
 							: "sub: $perl_sub_name $file:$line" ;
-
+			
 			PrintInfo2 $command_information . "Build: $command_description\n" if $display_command_information ;
 		
 			($command_returns_ok, $command_message) = $shell->RunPerlSub($command, @_) ;
@@ -138,9 +138,9 @@ for my $command (@$commands)
 					$dependencies,
 					$triggering_dependencies,
 					) ;
-
+		
 		push @evaluated_commands, [$shell_command, "rule '$name' @ '" . GetRunRelativePath($pbs_config, $file_name) . ":$line'"] ;
-
+		
 		if($do_run)
 			{
 			$command_message = '' ; # shell commands don't return, they die

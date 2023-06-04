@@ -80,7 +80,7 @@ my $parent_pid_copy ;
 
 sub RunParallelPbs
 {
-my ($pid, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
+my ($pid, $resource_id, $depth, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) = @_ ;
 
 my $t0 = [gettimeofday];
 
@@ -106,7 +106,7 @@ PBS::Net::Post($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'register_parallel_d
 $args->[BUILD_TYPE] = DEPEND_AND_CHECK ;
 
 # RUN
-local $PBS::Output::indentation_depth = -1 ;
+$PBS::Output::indentation_depth = $depth ;
 
 my ($build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package, $build_sequence) =
 	$pbs_entry_point->(@$entry_point_args) ;
@@ -325,20 +325,18 @@ if($resource_id)
 			
 			$forked_children{$pid}++ ; 
 			
-			# local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
+			local $PBS::Output::indentation_depth = $PBS::Output::indentation_depth + 1 ;
 			
 			$args->[INSERTED_NODES]{$args->[TARGETS][0]}{__PARALLEL_DEPEND} = $pid ;
 			
 			PBS::DefaultBuild::DisplayDependHeader($pbs_config, $args->[INSERTED_NODES], $args->[TARGETS], $args->[SUBPBS_NAME], $pid) ;
-			
-			Say ' ' if $node->{__NAME} eq $args->[PBS_CONFIG]{PBS_TARGETS}[0] ;
 			
 			# return $build_result, $build_message, $sub_tree, $inserted_nodes, $subpbs_load_package)
 			return   undef,         undef,          undef,      undef,          "parallel_load_package" ;
 			}
 		else
 			{
-			RunParallelPbs($$, $resource_id, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) ;
+			RunParallelPbs($$, $resource_id, $PBS::Output::indentation_depth, $pbs_config, $node, $pbs_entry_point, $entry_point_args, $args) ;
 			}
 		}
 	}
@@ -569,7 +567,7 @@ for(@files_to_rebuild)
 
 if($pbs_config->{DEBUG_DISPLAY_GLOBAL_BUILD_SEQUENCE})
 	{
-	Say EC "<I>Check<W>ᴾI>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
+	Say EC "<I>Build<W>ᴾI>: nodes: " . scalar(@files_to_rebuild) . ", parallel build sequence:" ;
 	my @build_sequence = @detriggered_global_build_sequence ;
 	@build_sequence =
 		map
@@ -587,12 +585,10 @@ $parallel_pbs_to_run{$nodes{$_}{PID}}++ for grep { ! /^__PBS/ } @detriggered_glo
 
 #SDT $detriggered{$_}, "PBS: de-triggered parallel nodes $_:" for @order ;
 
-my $detrigger_computation_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
-
 PBS::Net::Put($pbs_config, $graphs{$_}{ADDRESS}, 'detrigger', freeze($detriggered{$_}), $$) for keys %detriggered ;
 
+my $detrigger_computation_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
 my $detrigger_time = sprintf '%0.2f', tv_interval ($t0_detrigger, [gettimeofday]) ;
-Say EC "<I>Check<W>ᴾ<I> : detrigger, transfer time: $detrigger_time s., creation time: $detrigger_computation_time s." ;
 
 my $triggered = scalar @{$graphs{$target_pid}{NODES}{$graphs{$target_pid}{TARGET}}{__TRIGGERED} // []} ;
 
@@ -619,7 +615,7 @@ SIT $processes{$target_pid},
 				
 			return Data::TreeDumper::DefaultNodesToDisplay($tree) ;
 			}
-	 if $pbs_config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE} ;
+	if $pbs_config->{DISPLAY_PARALLEL_DEPEND_PROCESS_TREE} ;
 
 # re-generate $inserted_nodes 
 
@@ -764,9 +760,11 @@ my $not_linked              = keys %not_linked ;
 my $number_of_dependers     = keys %$dependers ;
 my $dependers_with_no_links = $number_of_dependers - $linked_dependers ;
 
-Say EC "<I>Depend<W>ᴾ<I>: dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
+Say EC "<I>Depend<W>ᴾ<I>: done<I2>, dependers: $number_of_dependers, pbsfiles: $pbs_runs, linked: $linked_dependers, terminal: $dependers_with_no_links"
 		. ", nodes: $nodes, links: $linked/$not_linked"
 		. ", time: $time2 s., dl: $data_size in $download_time s." ;
+
+Say EC "<I>Check<W>ᴾ<I>: transfer time: $detrigger_time s., merge time: $detrigger_computation_time s." ;
 
 if($pbs_config->{DISPLAY_PARALLEL_DEPEND_TREE})
 	{
@@ -880,7 +878,8 @@ if($pbs_config->{DO_BUILD})
 		}
 	else
 		{
-		my $t0 = [gettimeofday];
+		Say EC '<I>Build<W>ᴾ<I>: subgraphs: ' .  scalar($order->@*) ;
+		
 		for ($order->@*)
 			{
 			if(exists $parallel_pbs_to_run->{$_})
@@ -893,8 +892,6 @@ if($pbs_config->{DO_BUILD})
 				my $response = PBS::Net::Post($pbs_config, $graphs->{$_}{ADDRESS}, 'stop', {}, $$) ;
 				}
 			}
-		
-		Say Info sprintf('Build<W>ᴾ<I>: send start messages, nodes: ' .  scalar($order->@*) . ', time: %0.2f s.', tv_interval ($t0, [gettimeofday])) ;
 		
 		exit 0 ;
 		}
@@ -931,6 +928,10 @@ my
 
 my $t0 = [gettimeofday] ;
 
+$PBS::Output::indentation_depth = 0 ;
+Say EC "<I>Build<W>ᴾ<I>: start, target: $data->{ARGS}[TARGETS][0], pid: $$"
+	if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
+ 
 my $response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 my $resource_id = $response->{ID} ;
 my $last_time   = 0 ;
@@ -944,7 +945,9 @@ while (! $resource_id)
 	
 	if(($time - $last_time) > 1)
 		{
-		Say EC "<I2>Build<W>ᴾ<I2>: $$ wait: $time_string" ;
+		Say EC "<I2>Build<W>ᴾ<I2>: $$ wait: $time_string"
+			if $pbs_config->{DISPLAY_PARALLEL_BUILD} ;
+		
 		$last_time = $time ;
 		}
 	
@@ -953,8 +956,6 @@ while (! $resource_id)
 	$response    = PBS::Net::Get($pbs_config, $pbs_config->{RESOURCE_SERVER}, 'get_depend_resource', { pid => $$ }, $$) // {} ;
 	$resource_id = $response->{ID} ;
 	}
-
-$PBS::Output::indentation_depth = 0 ;
 
 my $target = $targets->[0] ;
 my $build_node = $inserted_nodes->{$targets->[0]} ;
@@ -970,7 +971,8 @@ PBS::DefaultBuild::Build
 	$build_sequence,
 	) ;
 
-Say EC "<I>Build<W>ᴾ<I>: $target done <I2>, nodes: " . scalar(@$build_sequence) . ",  $$ - < $data->{ADDRESS} >" ;
+Say EC "<I>Build<W>ᴾ<I>: done, target: $target <I2>, nodes: " . scalar(@$build_sequence) . ", pid: $$, < $data->{ADDRESS} >"
+	if $pbs_config->{PARALLEL_BUILD_RESULT} ;
 
 # send updated md5 cache
 my @updates ;

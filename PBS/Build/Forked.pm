@@ -52,6 +52,7 @@ my $builders           = StartBuilders($number_of_builders, $pbs_config, $distri
 my ($number_of_already_build_node, $number_of_failed_builders, $excluded, $error_output) = (0, 0, 0, '') ;
 my ($builder_using_perl_time, %builder_stats) = (0,) ;
 
+my $target = $pbs_config->{TARGETS}[0] // 'no target' ;
 my $number_of_nodes_to_build = scalar(grep {$_->{__NAME} !~ /^__/} @$build_sequence) ; # remove PBS root
 
 my $node_build_index = 0 ;
@@ -95,12 +96,12 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 	for my $builder (@builders)
 		{
 		my $built_node = $builder->{NODE} ;
-
+		
 		if($built_node->{__LEVEL} != 0) # hide PBS top node
 			{
 			$level_statistics->[$built_node->{__LEVEL} - 1 ]{nodes}++ ;
 			}
-
+		
 		my ($build_result, $build_time, $node_error_output) =
 			 CollectNodeBuildResult($pbs_config, $built_node, $builders) ;
 		
@@ -114,30 +115,30 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 			} ;
 		
 		my @actions_entries = grep { $built_node->{__NAME} =~ $_->[0]} @{$pbs_config->{NODE_BUILD_ACTIONS}} ;
-
+		
 		for my $template (grep { m/^\s*message\s+/i } map {@$_} @actions_entries)
 			{
 			(my $text = $template) =~ s/^\s*message\s+//i ;
 			$text =~ s/%name/$built_node->{__NAME}/g ;
 			$text =~ s/%build_result/$build_result/g ;
-
+			
 			Say User "Queue: $text" if $text ne q{} ;
 			}
-
+			
 		for my $stop (grep { m/^\s*stop\b/i } map { @$_ } @actions_entries)
 			{
 			(my $text = $stop) =~ s/^\s*stop\s*//i ;
 			$text =~ s/%name/$built_node->{__NAME}/g ;
 			$text =~ s/%build_result/$build_result/g ;
-
+			
 			$text = "'$built_node->{__NAME}'" if $text eq q{} ;
-
+			
 			Say Warning "Stop : $text" ;
-
+			
 			$number_of_failed_builders++ ;
 			$error_output = "\t\tstopped by user defined action\n" ;
 			}
-
+			
 		if($build_result == BUILD_SUCCESS)
 			{
 			if($pbs_config->{DISPLAY_PROGRESS_BAR})
@@ -169,12 +170,13 @@ while ($number_of_nodes_to_build > $number_of_already_build_node)
 					{
 					my $remaining_nodes = $number_of_nodes_to_build - $number_of_already_build_node ;
 				
-					PrintInfo "\r\e[KQueue: ETA: $time_remaining, nodes: $remaining_nodes" ;
+					PrintInfo "\r\e[KQueue: ETA: $time_remaining, nodes: $remaining_nodes"
+						if $pbs_config->{DISPLAY_PROGRESS_ETA} ;
 				
 					if (0 == $remaining_nodes)
 						{
 						PrintNoColor "\r\e[K" ;
-						Say Info "Build: success, nodes: $number_of_already_build_node" ;
+						Say EC "<I>Build: success<I3>, target: $target<I2>, nodes: $number_of_already_build_node" ;
 						}
 					}
 					unless $pbs_config->{DISPLAY_NO_PROGRESS_BAR} || $number_of_failed_builders ;
@@ -210,7 +212,7 @@ TerminateBuilders($builders) ;
 
 SWT \%builder_stats, 'Queue: process statistics:', DISPLAY_ADDRESS => 0 if defined $pbs_config->{DISPLAY_SHELL_INFO} ;
 
-my $build_time = sprintf "Build: parallel time: %0.2f s, sub time: %0.2f s.", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time ;
+my $build_time = sprintf "Build: parallel time: %0.2f s, sub time: %0.2f s., target: $target", tv_interval ($t0, [gettimeofday]), $builder_using_perl_time ;
 
 if ($number_of_failed_builders)
 	{
